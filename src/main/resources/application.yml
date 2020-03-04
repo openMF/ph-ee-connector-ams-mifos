@@ -1,0 +1,29 @@
+camel:
+  server-port: 5000
+  springboot:
+    main-run-controller: true
+  dataformat:
+    json-jackson:
+      auto-discover-object-mapper: true
+
+zeebe:
+  broker:
+    contactpoint: "127.0.0.1:26500"
+
+ams:
+  local:
+    host: https://localhost:8443
+    quote-enabled: false
+    version: 1.4
+    keystore-path: keystore.jks
+    keystore-password: openmf
+    base-url: /fineract-provider/api/v1
+    quote-path: /interoperation/quotes
+    auth-path: /authentication
+    tenants:
+      - name: default
+        user: mifos
+        password: 5787039480429368bf94732aacc771cd0a3ea02bcf504ffe1185ab94213bc63a
+        authtype: basic
+
+

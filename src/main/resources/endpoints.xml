@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:cxf-core="http://cxf.apache.org/core"
+       xmlns:cxf="http://camel.apache.org/schema/cxf"
+       xmlns:http="http://cxf.apache.org/transports/http/configuration"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://camel.apache.org/schema/cxf http://camel.apache.org/schema/cxf/camel-cxf.xsd
+        http://cxf.apache.org/transports/http/configuration http://cxf.apache.org/schemas/configuration/http-conf.xsd
+        http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.0.xsd
+        http://cxf.apache.org/core http://cxf.apache.org/schemas/core.xsd">
+
+    <cxf-core:bus>
+        <cxf-core:inInterceptors>
+            <ref bean="inboundInterceptor"/>
+        </cxf-core:inInterceptors>
+        <cxf-core:outInterceptors>
+            <ref bean="outboundInterceptor"/>
+        </cxf-core:outInterceptors>
+    </cxf-core:bus>
+
+    <cxf:rsClient id="ams.local" address="{{ams.local.host}}">
+        <cxf:properties>
+            <entry key="throwExceptionOnFailure" value="false"/>
+            <entry key="bindingStyle" value="Custom"/>
+            <entry key="binding" value-ref="cfxRsNotStreamingBinding"/>
+            <entry key="synchronous" value="true"/>
+            <entry key="sslContextParameters" value-ref="sslContextParameters"/>
+        </cxf:properties>
+    </cxf:rsClient>
+</beans>
