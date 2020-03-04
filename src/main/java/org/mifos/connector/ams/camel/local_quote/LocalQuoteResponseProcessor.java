@@ -3,7 +3,7 @@ package org.mifos.connector.ams.camel.local_quote;
 import io.zeebe.client.ZeebeClient;
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
-import org.mifos.common.ams.dto.QuoteFspResponseDTO;
+import org.mifos.phee.common.ams.dto.QuoteFspResponseDTO;
 import org.mifos.connector.ams.camel.config.CamelProperties;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
