@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.FileSystemResource;
 import org.springframework.stereotype.Component;
 
 import javax.net.ssl.KeyManagerFactory;
@@ -39,7 +40,7 @@ public class SSLConfig {
     public SSLConfig(@Value("${ams.local.keystore-path}") String keystorePath,
                      @Value("${ams.local.keystore-password}") String keystorePassword) throws IOException {
         this.keystorePassword = keystorePassword;
-        keyStoreFile = new ClassPathResource(keystorePath).getFile();
+        keyStoreFile = new FileSystemResource(keystorePath).getFile();
     }
 
     public SSLContextParameters provideSSLContextParameters() {
