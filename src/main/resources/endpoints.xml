@@ -3,6 +3,7 @@
        xmlns:cxf-core="http://cxf.apache.org/core"
        xmlns:cxf="http://camel.apache.org/schema/cxf"
        xmlns:http="http://cxf.apache.org/transports/http/configuration"
+       xmlns:http-conf="http://cxf.apache.org/transports/http/configuration"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
         http://camel.apache.org/schema/cxf http://camel.apache.org/schema/cxf/camel-cxf.xsd
@@ -28,4 +29,10 @@
             <entry key="sslContextParameters" value-ref="sslContextParameters"/>
         </cxf:properties>
     </cxf:rsClient>
+
+    <http:conduit name="*.http-conduit">
+        <http-conf:client Connection="Keep-Alive" MaxRetransmits="1"
+                          AllowChunking="false" ConnectionTimeout="0" ReceiveTimeout="0" />
+        <http:tlsClientParameters disableCNCheck="true" /> <!-- testing purposes -->
+    </http:conduit>
 </beans>

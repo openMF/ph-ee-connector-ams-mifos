@@ -15,7 +15,12 @@ import javax.annotation.PostConstruct;
 import java.util.Arrays;
 import java.util.List;
 
+import static org.mifos.connector.ams.camel.config.CamelProperties.PAYER_PARTY_IDENTIFIER;
+import static org.mifos.connector.ams.camel.config.CamelProperties.TENANT_ID;
 import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSACTION_ID;
+import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSACTION_REQUEST;
+import static org.mifos.connector.ams.camel.config.CamelProperties.ZEEBE_JOB_KEY;
+import static org.mifos.connector.ams.zeebe.ZeebeProcessStarter.zeebeVariablesToCamelProperties;
 
 @Component
 public class ZeebeeWorkers {
@@ -44,10 +49,17 @@ public class ZeebeeWorkers {
                     logger.info("Job '{}' started from process '{}' with key {}", job.getType(), job.getBpmnProcessId(), job.getKey());
                     if (isLocalQuoteEnabled) {
                         Exchange ex = new DefaultExchange(camelContext);
-                        ex.setProperty(TRANSACTION_ID, job.getVariablesAsMap().get(TRANSACTION_ID));
+                        zeebeVariablesToCamelProperties(job.getVariablesAsMap(), ex,
+                                TRANSACTION_ID,
+                                TRANSACTION_REQUEST,
+                                PAYER_PARTY_IDENTIFIER,
+                                TENANT_ID);
+                        ex.setProperty(ZEEBE_JOB_KEY, job.getKey());
                         producerTemplate.send("direct:send-local-quote", ex);
+                    } else {
+                        zeebeClient.newCompleteCommand(job.getKey())
+                                .send();
                     }
-                    client.newCompleteCommand(job.getKey()).send();
                 })
                 .maxJobsActive(100_000)
                 .open();

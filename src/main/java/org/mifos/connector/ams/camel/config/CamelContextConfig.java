@@ -12,7 +12,7 @@ import java.util.HashMap;
 @Configuration
 public class CamelContextConfig {
 
-    @Value("${camel.server-port}")
+    @Value("${camel.server-port:5000}")
     private int serverPort;
 
     @Bean

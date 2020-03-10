@@ -1,13 +1,13 @@
-package org.mifos.connector.ams.camel.login;
+package org.mifos.connector.ams.quote;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.camel.LoggingLevel;
 import org.apache.camel.model.dataformat.JsonLibrary;
-import org.mifos.phee.common.ams.dto.LoginFineractXResponseDTO;
-import org.mifos.phee.common.camel.ErrorHandlerRouteBuilder;
 import org.mifos.connector.ams.camel.cxfrs.CxfrsUtil;
 import org.mifos.connector.ams.tenant.TenantService;
+import org.mifos.phee.common.ams.dto.LoginFineractXResponseDTO;
+import org.mifos.phee.common.camel.ErrorHandlerRouteBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -15,18 +15,14 @@ import org.springframework.stereotype.Component;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.mifos.connector.ams.camel.config.CamelProperties.LOGIN_PASSWORD;
+import static org.mifos.connector.ams.camel.config.CamelProperties.LOGIN_USERNAME;
+import static org.mifos.connector.ams.camel.config.CamelProperties.TENANT_ID;
 import static org.mifos.connector.ams.camel.cxfrs.HeaderBasedInterceptor.CXF_TRACE_HEADER;
 
 
 @Component
 public class LoginRouteBuilder extends ErrorHandlerRouteBuilder {
-
-    public static final String TENANT_ID_PROPERTY = "TENANT_ID";
-    public static final String LOGIN_USERNAME_PROPERTY = "LOGIN_USERNAME";
-    public static final String LOGIN_PASSWORD_PROPERTY = "LOGIN_PASSWORD";
-
-    @Value("${ams.local.base-url}")
-    private String fpsLocalBaseUrl;
 
     @Value("${ams.local.auth-path}")
     private String fpsLocalAuthPath;
@@ -56,13 +52,13 @@ public class LoginRouteBuilder extends ErrorHandlerRouteBuilder {
                     Map<String, Object> headers = new HashMap<>();
                     headers.put(CXF_TRACE_HEADER, true);
                     headers.put("CamelHttpMethod", "POST");
-                    headers.put("CamelHttpPath", fpsLocalBaseUrl + fpsLocalAuthPath);
+                    headers.put("CamelHttpPath", fpsLocalAuthPath);
                     headers.put("Content-Type", "application/json");
-                    headers.putAll(tenantService.getHeaders(e.getProperty(TENANT_ID_PROPERTY, String.class), false));
+                    headers.putAll(tenantService.getHeaders(e.getProperty(TENANT_ID, String.class), false));
 
                     ObjectNode authJson = objectMapper.createObjectNode();
-                    authJson.put("username", e.getProperty(LOGIN_USERNAME_PROPERTY, String.class));
-                    authJson.put("password", e.getProperty(LOGIN_PASSWORD_PROPERTY, String.class));
+                    authJson.put("username", e.getProperty(LOGIN_USERNAME, String.class));
+                    authJson.put("password", e.getProperty(LOGIN_PASSWORD, String.class));
                     cxfrsUtil.sendInOut("cxfrs:bean:ams.local", e, headers, objectMapper.writeValueAsString(authJson));
                 })
                 .unmarshal().json(JsonLibrary.Jackson, LoginFineractXResponseDTO.class)

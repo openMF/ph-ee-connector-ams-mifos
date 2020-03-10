@@ -12,18 +12,20 @@ zeebe:
 
 ams:
   local:
-    host: https://localhost:8443
-    quote-enabled: false
-    version: 1.4
+    quote-enabled: true
+    version: 1.2
     keystore-path: keystore.jks
     keystore-password: openmf
+    host: https://localhost:8443
     base-url: /fineract-provider/api/v1
-    quote-path: /interoperation/quotes
-    auth-path: /authentication
+    interop-quotes-path: ${ams.local.base-url}/interoperation/quotes
+    interop-parties-path: ${ams.local.base-url}/interoperation/parties/{idType}/{idValue}
+    accounts-path: ${ams.local.base-url}/savingsaccounts
+    auth-path: ${ams.local.base-url}/authentication
     tenants:
-      - name: default
+      - name: tn03
         user: mifos
-        password: 5787039480429368bf94732aacc771cd0a3ea02bcf504ffe1185ab94213bc63a
+        password: password
         authtype: basic
 
 

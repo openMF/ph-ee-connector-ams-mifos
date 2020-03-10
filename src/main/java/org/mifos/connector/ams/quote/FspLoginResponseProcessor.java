@@ -1,4 +1,4 @@
-package org.mifos.connector.ams.camel.login;
+package org.mifos.connector.ams.quote;
 
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;

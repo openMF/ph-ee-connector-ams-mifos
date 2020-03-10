@@ -43,13 +43,13 @@ public class ZeebeProcessStarter {
         logger.debug("zeebee workflow instance {} of type {} created with transactionId {}", instance.getWorkflowInstanceKey(), workflowId, transactionId);
     }
 
-    public static void zeebeVariablesToCamelHeaders(Map<String, Object> variables, Exchange exchange, String... names) {
+    public static void zeebeVariablesToCamelProperties(Map<String, Object> variables, Exchange exchange, String... names) {
         for (String name : names) {
             Object value = variables.get(name);
             if (value == null) {
                 logger.error("failed to find Zeebe variable name {}", name);
             }
-            exchange.getIn().setHeader(name, value);
+            exchange.setProperty(name, value);
         }
     }
 
