@@ -7,6 +7,7 @@ import org.mifos.connector.ams.camel.cxfrs.CxfrsUtil;
 import org.mifos.connector.ams.tenant.TenantService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
@@ -20,6 +21,7 @@ import static org.mifos.connector.ams.camel.config.CamelProperties.TENANT_ID;
 import static org.mifos.connector.ams.camel.cxfrs.HeaderBasedInterceptor.CXF_TRACE_HEADER;
 
 @Component
+@ConditionalOnExpression("${ams.local.quote-enabled}")
 public class AmsService {
 
     @Value("${ams.local.interop-quotes-path}")

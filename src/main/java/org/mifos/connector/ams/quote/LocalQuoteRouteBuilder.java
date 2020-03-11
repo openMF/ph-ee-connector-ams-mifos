@@ -9,15 +9,16 @@ import org.mifos.phee.common.ams.dto.PartyFspResponseDTO;
 import org.mifos.phee.common.camel.ErrorHandlerRouteBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.stereotype.Component;
 
 import static org.mifos.connector.ams.camel.config.CamelProperties.EXTERNAL_ACCOUNT_ID;
 import static org.mifos.connector.ams.camel.config.CamelProperties.PAYER_PARTY_IDENTIFIER;
-import static org.mifos.connector.ams.camel.config.CamelProperties.TENANT_ID;
 import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSACTION_ID;
 
 
 @Component
+@ConditionalOnExpression("${ams.local.quote-enabled}")
 public class LocalQuoteRouteBuilder extends ErrorHandlerRouteBuilder {
 
     @Autowired
@@ -50,16 +51,7 @@ public class LocalQuoteRouteBuilder extends ErrorHandlerRouteBuilder {
 
     @Override
     public void configure() {
-        from("rest:POST:/localq/{tenantId}/{msisdn}")
-                .id("local-quote-http")
-                .process(e -> {
-                    zeebeProcessStarter.startZeebeWorkflow("Process_134o2qs", e.getIn().getBody(String.class), variables -> {
-                        variables.put(PAYER_PARTY_IDENTIFIER, e.getIn().getHeader("msisdn"));
-                        variables.put(TENANT_ID, e.getIn().getHeader("tenantId"));
-                    });
-                });
-
-        if("1.2".equals(amsLocalVersion)) {
+        if ("1.2".equals(amsLocalVersion)) {
             setupFineract12route();
         } else if ("cn".equals(amsLocalVersion)) {
             setupFineractCNroute();

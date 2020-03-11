@@ -10,6 +10,7 @@ import org.mifos.phee.common.ams.dto.LoginFineractXResponseDTO;
 import org.mifos.phee.common.camel.ErrorHandlerRouteBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
@@ -22,6 +23,7 @@ import static org.mifos.connector.ams.camel.cxfrs.HeaderBasedInterceptor.CXF_TRA
 
 
 @Component
+@ConditionalOnExpression("${ams.local.quote-enabled}")
 public class LoginRouteBuilder extends ErrorHandlerRouteBuilder {
 
     @Value("${ams.local.auth-path}")

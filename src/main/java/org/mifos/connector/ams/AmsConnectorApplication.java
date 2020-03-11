@@ -6,16 +6,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.camel.Processor;
 import org.apache.camel.support.jsse.SSLContextParameters;
 import org.mifos.connector.ams.camel.cxfrs.SSLConfig;
-import org.mifos.connector.ams.properties.TenantProperties;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ImportResource;
 
 @SpringBootApplication
-@EnableConfigurationProperties(TenantProperties.class)
-@ImportResource("classpath:endpoints.xml")
 public class AmsConnectorApplication {
 
     public static void main(String[] args) {
@@ -23,6 +19,7 @@ public class AmsConnectorApplication {
     }
 
     @Bean
+    @ConditionalOnExpression("${ams.local.quote-enabled}")
     public SSLContextParameters sslContextParameters(SSLConfig sslConfig) {
         return sslConfig.provideSSLContextParameters();
     }
