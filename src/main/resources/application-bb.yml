@@ -1,0 +1,12 @@
+ams:
+  local:
+    host: https://rhino.mifos.io:8443
+    tenants:
+      - name: tn03
+        user: mifos
+        password: password
+        authtype: basic
+      - name: tn04
+        user: mifos
+        password: password
+        authtype: basic

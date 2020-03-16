@@ -1,0 +1,12 @@
+ams:
+  local:
+    host: https://leopard.mifos.io:8443
+    tenants:
+      - name: tn05
+        user: mifos
+        password: password
+        authtype: basic
+      - name: tn06
+        user: mifos
+        password: password
+        authtype: basic
