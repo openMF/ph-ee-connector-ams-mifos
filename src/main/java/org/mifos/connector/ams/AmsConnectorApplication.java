@@ -4,11 +4,8 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.camel.Processor;
-import org.apache.camel.support.jsse.SSLContextParameters;
-import org.mifos.connector.ams.camel.cxfrs.SSLConfig;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.context.annotation.Bean;
 
 @SpringBootApplication
@@ -16,12 +13,6 @@ public class AmsConnectorApplication {
 
     public static void main(String[] args) {
         SpringApplication.run(AmsConnectorApplication.class, args);
-    }
-
-    @Bean
-    @ConditionalOnExpression("${ams.local.quote-enabled}")
-    public SSLContextParameters sslContextParameters(SSLConfig sslConfig) {
-        return sslConfig.provideSSLContextParameters();
     }
 
     @Bean

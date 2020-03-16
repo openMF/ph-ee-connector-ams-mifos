@@ -31,7 +31,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Component
-@ConditionalOnExpression("${ams.local.quote-enabled}")
+@ConditionalOnExpression("${ams.local.enabled}")
 public class SSLConfig {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());

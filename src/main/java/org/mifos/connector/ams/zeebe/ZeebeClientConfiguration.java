@@ -16,6 +16,7 @@ public class ZeebeClientConfiguration {
         return ZeebeClient.newClientBuilder()
                 .brokerContactPoint(zeebeBrokerContactpoint)
                 .usePlaintext()
+                .defaultJobWorkerMaxJobsActive(1000)
                 .build();
     }
 }

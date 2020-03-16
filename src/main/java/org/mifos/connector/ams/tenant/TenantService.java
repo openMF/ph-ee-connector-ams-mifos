@@ -18,7 +18,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Component
-@ConditionalOnExpression("${ams.local.quote-enabled}")
+@ConditionalOnExpression("${ams.local.enabled}")
 public class TenantService {
 
     @Autowired
@@ -39,7 +39,7 @@ public class TenantService {
     public Map<String, Object> getHeaders(String tenantName, boolean isAuthNeeded) {
         Tenant tenant = tenantProperties.getTenant(tenantName);
         if (tenant == null) {
-            throw new RuntimeException(String.format("Could not call login on FSP, because the provided tenant is not configured! Tenant: %s", tenantName));
+            throw new RuntimeException(String.format("Could not get headers for tenant: %s, no application configuration found!", tenantName));
         }
 
         Map<String, Object> headers = new HashMap<>();

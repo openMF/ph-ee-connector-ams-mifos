@@ -53,16 +53,6 @@ public class ZeebeProcessStarter {
         }
     }
 
-    public static void camelHeadersToZeebeVariables(Exchange exchange, Map<String, Object> variables, String... names) {
-        for (String name : names) {
-            String header = exchange.getIn().getHeader(name, String.class);
-            if (header == null) {
-                logger.error("failed to find Camel Exchange header {}", name);
-            }
-            variables.put(name, header);
-        }
-    }
-
     // TODO generate proper cluster-safe transaction id
     private String generateTransactionId() {
         return UUID.randomUUID().toString();

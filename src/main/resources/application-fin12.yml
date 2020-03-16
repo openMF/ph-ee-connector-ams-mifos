@@ -6,13 +6,15 @@ camel:
     json-jackson:
       auto-discover-object-mapper: true
 
+dfspids: "DFSPID"
+
 zeebe:
   broker:
     contactpoint: "ph-ee-zeebe:26500"
 
 ams:
   local:
-    quote-enabled: true
+    enabled: true
     version: 1.2
     keystore-path: keystore.jks
     keystore-password: openmf
@@ -20,10 +22,11 @@ ams:
     base-url: /fineract-provider/api/v1
     interop-quotes-path: ${ams.local.base-url}/interoperation/quotes
     interop-parties-path: ${ams.local.base-url}/interoperation/parties/{idType}/{idValue}
+    interop-transfers-path: ${ams.local.base-url}/interoperation/transfers
     accounts-path: ${ams.local.base-url}/savingsaccounts
     auth-path: ${ams.local.base-url}/authentication
     tenants:
-      - name: tn03
+      - name: tn05
         user: mifos
         password: password
         authtype: basic

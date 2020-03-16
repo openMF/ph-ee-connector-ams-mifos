@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.camel.LoggingLevel;
 import org.apache.camel.model.dataformat.JsonLibrary;
 import org.mifos.connector.ams.camel.cxfrs.CxfrsUtil;
+import org.mifos.connector.ams.interop.FspLoginResponseProcessor;
 import org.mifos.connector.ams.tenant.TenantService;
 import org.mifos.phee.common.ams.dto.LoginFineractXResponseDTO;
 import org.mifos.phee.common.camel.ErrorHandlerRouteBuilder;
@@ -23,7 +24,7 @@ import static org.mifos.connector.ams.camel.cxfrs.HeaderBasedInterceptor.CXF_TRA
 
 
 @Component
-@ConditionalOnExpression("${ams.local.quote-enabled}")
+@ConditionalOnExpression("${ams.local.enabled}")
 public class LoginRouteBuilder extends ErrorHandlerRouteBuilder {
 
     @Value("${ams.local.auth-path}")
@@ -47,6 +48,7 @@ public class LoginRouteBuilder extends ErrorHandlerRouteBuilder {
 
     @Override
     public void configure() {
+        // fin1.4
         from("direct:send-auth-request")
                 .id("send-local-auth")
                 .log(LoggingLevel.INFO, "local fsp auth request")
