@@ -35,6 +35,7 @@ import static org.mifos.connector.ams.camel.config.CamelProperties.QUOTE_SWITCH_
 import static org.mifos.connector.ams.camel.config.CamelProperties.TENANT_ID;
 import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSACTION_ID;
 import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSACTION_REQUEST;
+import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSACTION_ROLE;
 import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSFER_ACTION;
 import static org.mifos.connector.ams.camel.config.CamelProperties.ZEEBE_JOB_KEY;
 import static org.mifos.connector.ams.zeebe.ZeebeProcessStarter.zeebeVariablesToCamelProperties;
@@ -222,6 +223,7 @@ public class ZeebeeWorkers {
                                 quoteRequest.getAmount().getCurrency());
                         transactionRequest.setAmount(amount);
                         ex.setProperty(TRANSACTION_REQUEST, transactionRequest);
+                        ex.setProperty(TRANSACTION_ROLE, TransactionRole.PAYEE.name());
 
                         producerTemplate.send("direct:send-transfers", ex);
                     })
@@ -255,6 +257,7 @@ public class ZeebeeWorkers {
                                 quoteRequest.getAmount().getCurrency());
                         transactionRequest.setAmount(amount);
                         ex.setProperty(TRANSACTION_REQUEST, transactionRequest);
+                        ex.setProperty(TRANSACTION_ROLE, TransactionRole.PAYEE.name());
 
                         producerTemplate.send("direct:send-transfers", ex);
                     })
