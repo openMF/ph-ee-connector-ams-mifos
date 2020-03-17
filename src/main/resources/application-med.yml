@@ -6,7 +6,11 @@ ams:
         user: mifos
         password: password
         authtype: basic
+        partyIdType: MSISDN
+        partyId: 27710305999
       - name: tn06
         user: mifos
         password: password
         authtype: basic
+        partyIdType: MSISDN
+        partyId: 27710306999

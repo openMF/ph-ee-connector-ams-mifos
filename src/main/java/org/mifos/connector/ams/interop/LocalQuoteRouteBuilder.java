@@ -13,8 +13,8 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.stereotype.Component;
 
 import static org.mifos.connector.ams.camel.config.CamelProperties.EXTERNAL_ACCOUNT_ID;
-import static org.mifos.connector.ams.camel.config.CamelProperties.PAYER_PARTY_IDENTIFIER;
-import static org.mifos.connector.ams.camel.config.CamelProperties.PAYER_PARTY_ID_TYPE;
+import static org.mifos.connector.ams.camel.config.CamelProperties.PARTY_IDENTIFIER_FOR_EXT_ACC;
+import static org.mifos.connector.ams.camel.config.CamelProperties.PARTY_ID_TYPE_FOR_EXT_ACC;
 import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSACTION_ID;
 import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSACTION_REQUEST;
 
@@ -57,18 +57,22 @@ public class LocalQuoteRouteBuilder extends ErrorHandlerRouteBuilder {
     }
 
     private void setupFineract12route() {
+        from("direct:get-external-account")
+                .id("get-external-account")
+                .log(LoggingLevel.INFO, "Get externalAccount with identifierType: ${exchangeProperty." + PARTY_ID_TYPE_FOR_EXT_ACC + "} with value: ${exchangeProperty."
+                        + PARTY_IDENTIFIER_FOR_EXT_ACC + "} for transaction: ${exchangeProperty." + TRANSACTION_ID + "}")
+                .process(amsService::getExternalAccount)
+                .unmarshal().json(JsonLibrary.Jackson, PartyFspResponseDTO.class)
+                .process(e -> e.setProperty(EXTERNAL_ACCOUNT_ID, e.getIn().getBody(PartyFspResponseDTO.class).getAccountId()));
+
         from("direct:send-local-quote")
                 .id("send-local-quote")
                 .process(e -> {
                     TransactionChannelRequestDTO channelRequest = objectMapper.readValue(e.getProperty(TRANSACTION_REQUEST, String.class), TransactionChannelRequestDTO.class);
-                    e.setProperty(PAYER_PARTY_IDENTIFIER, channelRequest.getPayer().getPartyIdInfo().getPartyIdentifier());
-                    e.setProperty(PAYER_PARTY_ID_TYPE, channelRequest.getPayer().getPartyIdInfo().getPartyIdType());
+                    e.setProperty(PARTY_IDENTIFIER_FOR_EXT_ACC, channelRequest.getPayer().getPartyIdInfo().getPartyIdentifier());
+                    e.setProperty(PARTY_ID_TYPE_FOR_EXT_ACC, channelRequest.getPayer().getPartyIdInfo().getPartyIdType());
                 })
-                .log(LoggingLevel.INFO, "Get externalAccount with identifierType: ${exchangeProperty." + PAYER_PARTY_ID_TYPE + "} with value: ${exchangeProperty."
-                        + PAYER_PARTY_IDENTIFIER + "} for transaction: ${exchangeProperty." + TRANSACTION_ID + "}")
-                .process(amsService::getExternalAccount)
-                .unmarshal().json(JsonLibrary.Jackson, PartyFspResponseDTO.class)
-                .process(e -> e.setProperty(EXTERNAL_ACCOUNT_ID, e.getIn().getBody(PartyFspResponseDTO.class).getAccountId()))
+                .to("direct:get-external-account")
                 .log(LoggingLevel.INFO, "Sending local quote request for transaction: ${exchangeProperty."
                         + TRANSACTION_ID + "}")
                 .process(prepareLocalQuoteRequest)

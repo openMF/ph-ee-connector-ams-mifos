@@ -13,8 +13,8 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import static org.mifos.connector.ams.camel.config.CamelProperties.PAYER_PARTY_IDENTIFIER;
-import static org.mifos.connector.ams.camel.config.CamelProperties.PAYER_PARTY_ID_TYPE;
+import static org.mifos.connector.ams.camel.config.CamelProperties.PARTY_IDENTIFIER_FOR_EXT_ACC;
+import static org.mifos.connector.ams.camel.config.CamelProperties.PARTY_ID_TYPE_FOR_EXT_ACC;
 import static org.mifos.connector.ams.camel.config.CamelProperties.TENANT_ID;
 import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSFER_ACTION;
 import static org.mifos.connector.ams.camel.cxfrs.HeaderBasedInterceptor.CXF_TRACE_HEADER;
@@ -52,8 +52,8 @@ public class AmsService {
         Map<String, Object> headers = new HashMap<>();
         headers.put(CXF_TRACE_HEADER, true);
         headers.put("CamelHttpMethod", "GET");
-        headers.put("CamelHttpPath", amsInteropPartiesPath.replace("{idType}", e.getProperty(PAYER_PARTY_ID_TYPE, String.class))
-                .replace("{idValue}", e.getProperty(PAYER_PARTY_IDENTIFIER, String.class)));
+        headers.put("CamelHttpPath", amsInteropPartiesPath.replace("{idType}", e.getProperty(PARTY_ID_TYPE_FOR_EXT_ACC, String.class))
+                .replace("{idValue}", e.getProperty(PARTY_IDENTIFIER_FOR_EXT_ACC, String.class)));
         headers.putAll(tenantService.getHeaders(e.getProperty(TENANT_ID, String.class), true));
         cxfrsUtil.sendInOut("cxfrs:bean:ams.local", e, headers, null);
     }

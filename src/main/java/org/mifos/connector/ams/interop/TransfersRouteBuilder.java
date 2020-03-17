@@ -1,9 +1,7 @@
 package org.mifos.connector.ams.interop;
 
-import io.zeebe.client.ZeebeClient;
 import org.apache.camel.LoggingLevel;
 import org.apache.camel.Processor;
-import org.mifos.connector.ams.zeebe.ZeebeProcessStarter;
 import org.mifos.phee.common.camel.ErrorHandlerRouteBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -22,12 +20,6 @@ public class TransfersRouteBuilder extends ErrorHandlerRouteBuilder {
 
     @Autowired
     private AmsService amsService;
-
-    @Autowired
-    private ZeebeClient zeebeClient;
-
-    @Autowired
-    private ZeebeProcessStarter zeebeProcessStarter;
 
     @Autowired
     private PrepareTransferRequest prepareTransferRequest;

@@ -19,6 +19,7 @@ import static org.mifos.connector.ams.camel.config.CamelProperties.EXTERNAL_ACCO
 import static org.mifos.connector.ams.camel.config.CamelProperties.LOCAL_QUOTE_RESPONSE;
 import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSACTION_ID;
 import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSACTION_REQUEST;
+import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSACTION_ROLE;
 
 @Component
 @ConditionalOnExpression("${ams.local.enabled}")
@@ -48,7 +49,7 @@ public class PrepareTransferRequest implements Processor {
                 amount,
                 localQuoteResponse.getFspFee(),
                 localQuoteResponse.getFspCommission(),
-                TransactionRole.PAYER,
+                TransactionRole.valueOf(exchange.getProperty(TRANSACTION_ROLE, String.class)),
                 transactionType,
                 "");
 

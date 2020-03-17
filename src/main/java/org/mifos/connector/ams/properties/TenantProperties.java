@@ -29,4 +29,15 @@ public class TenantProperties {
                 .findFirst()
                 .orElse(null);
     }
+
+    public Tenant getTenant(String partyIdType, String partyId) {
+        if (partyIdType == null || partyId == null) {
+            return null;
+        }
+
+        return getTenants().stream()
+                .filter(t -> t.getPartyIdType().equals(partyIdType) && t.getPartyId().equals(partyId))
+                .findFirst()
+                .orElse(null);
+    }
 }
