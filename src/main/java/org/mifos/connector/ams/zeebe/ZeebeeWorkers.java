@@ -222,7 +222,7 @@ public class ZeebeeWorkers {
                         MoneyData amount = new MoneyData(quoteRequest.getAmount().getAmountDecimal(),
                                 quoteRequest.getAmount().getCurrency());
                         transactionRequest.setAmount(amount);
-                        ex.setProperty(TRANSACTION_REQUEST, transactionRequest);
+                        ex.setProperty(TRANSACTION_REQUEST, objectMapper.writeValueAsString(transactionRequest));
                         ex.setProperty(TRANSACTION_ROLE, TransactionRole.PAYEE.name());
 
                         producerTemplate.send("direct:send-transfers", ex);
@@ -256,7 +256,7 @@ public class ZeebeeWorkers {
                         MoneyData amount = new MoneyData(quoteRequest.getAmount().getAmountDecimal(),
                                 quoteRequest.getAmount().getCurrency());
                         transactionRequest.setAmount(amount);
-                        ex.setProperty(TRANSACTION_REQUEST, transactionRequest);
+                        ex.setProperty(TRANSACTION_REQUEST, objectMapper.writeValueAsString(transactionRequest));
                         ex.setProperty(TRANSACTION_ROLE, TransactionRole.PAYEE.name());
 
                         producerTemplate.send("direct:send-transfers", ex);
