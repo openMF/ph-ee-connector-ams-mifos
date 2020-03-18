@@ -42,8 +42,6 @@ import static org.mifos.connector.ams.zeebe.ZeebeProcessStarter.zeebeVariablesTo
 import static org.mifos.phee.common.ams.dto.TransferActionType.CREATE;
 import static org.mifos.phee.common.ams.dto.TransferActionType.PREPARE;
 import static org.mifos.phee.common.ams.dto.TransferActionType.RELEASE;
-import static org.mifos.phee.common.mojaloop.type.MojaloopHeaders.FSPIOP_DESTINATION;
-import static org.mifos.phee.common.mojaloop.type.MojaloopHeaders.FSPIOP_SOURCE;
 
 @Component
 public class ZeebeeWorkers {
@@ -109,6 +107,7 @@ public class ZeebeeWorkers {
                                 LOCAL_QUOTE_RESPONSE);
                         ex.setProperty(TRANSFER_ACTION, PREPARE.name());
                         ex.setProperty(ZEEBE_JOB_KEY, job.getKey());
+                        ex.setProperty(TRANSACTION_ROLE, TransactionRole.PAYER.name());
                         producerTemplate.send("direct:send-transfers", ex);
                     } else {
                         zeebeClient.newCompleteCommand(job.getKey())
@@ -131,6 +130,7 @@ public class ZeebeeWorkers {
                                 LOCAL_QUOTE_RESPONSE);
                         ex.setProperty(TRANSFER_ACTION, CREATE.name());
                         ex.setProperty(ZEEBE_JOB_KEY, job.getKey());
+                        ex.setProperty(TRANSACTION_ROLE, TransactionRole.PAYER.name());
                         producerTemplate.send("direct:send-transfers", ex);
                     } else {
                         zeebeClient.newCompleteCommand(job.getKey())
