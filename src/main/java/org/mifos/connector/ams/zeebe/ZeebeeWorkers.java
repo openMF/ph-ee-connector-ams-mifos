@@ -191,6 +191,7 @@ public class ZeebeeWorkers {
                         ex.setProperty(TENANT_ID, tenantId);
                         ex.setProperty(TRANSACTION_ROLE, TransactionRole.PAYEE.name());
                         ex.setProperty(TRANSACTION_REQUEST, objectMapper.writeValueAsString(channelRequest));
+                        ex.setProperty(ZEEBE_JOB_KEY, job.getKey());
                         producerTemplate.send("direct:send-local-quote", ex);
                     })
                     .open();
