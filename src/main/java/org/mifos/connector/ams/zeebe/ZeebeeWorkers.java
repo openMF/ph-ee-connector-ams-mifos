@@ -7,12 +7,11 @@ import org.apache.camel.Exchange;
 import org.apache.camel.ProducerTemplate;
 import org.apache.camel.support.DefaultExchange;
 import org.mifos.connector.ams.properties.TenantProperties;
-import org.mifos.phee.common.ams.dto.QuoteFspResponseDTO;
 import org.mifos.phee.common.channel.dto.TransactionChannelRequestDTO;
-import org.mifos.phee.common.mojaloop.dto.FspMoneyData;
 import org.mifos.phee.common.mojaloop.dto.MoneyData;
 import org.mifos.phee.common.mojaloop.dto.QuoteSwitchRequestDTO;
 import org.mifos.phee.common.mojaloop.dto.TransactionType;
+import org.mifos.phee.common.mojaloop.type.AmountType;
 import org.mifos.phee.common.mojaloop.type.InitiatorType;
 import org.mifos.phee.common.mojaloop.type.Scenario;
 import org.mifos.phee.common.mojaloop.type.TransactionRole;
@@ -23,7 +22,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
@@ -72,19 +70,21 @@ public class ZeebeeWorkers {
     @PostConstruct
     public void setupWorkers() {
         zeebeClient.newWorker()
-                .jobType("local-quote")
+                .jobType("payer-local-quote")
                 .handler((client, job) -> {
                     logger.info("Job '{}' started from process '{}' with key {}", job.getType(), job.getBpmnProcessId(), job.getKey());
                     if (isAmsLocalEnabled) {
                         Exchange ex = new DefaultExchange(camelContext);
                         Map<String, Object> variables = job.getVariablesAsMap();
                         zeebeVariablesToCamelProperties(variables, ex,
-                                TRANSACTION_ID,
-                                TRANSACTION_REQUEST);
+                                TRANSACTION_ID);
 
                         TransactionChannelRequestDTO channelRequest = objectMapper.readValue((String)variables.get(TRANSACTION_REQUEST), TransactionChannelRequestDTO.class);
+                        ex.setProperty(PARTY_IDENTIFIER_FOR_EXT_ACC, channelRequest.getPayer().getPartyIdInfo().getPartyIdentifier());
+                        ex.setProperty(PARTY_ID_TYPE_FOR_EXT_ACC, channelRequest.getPayer().getPartyIdInfo().getPartyIdType());
                         ex.setProperty(TENANT_ID, channelRequest.getPayer().getPartyIdInfo().getTenantId());
                         ex.setProperty(ZEEBE_JOB_KEY, job.getKey());
+                        ex.setProperty(TRANSACTION_ROLE, TransactionRole.PAYER);
                         producerTemplate.send("direct:send-local-quote", ex);
                     } else {
                         zeebeClient.newCompleteCommand(job.getKey())
@@ -167,31 +167,31 @@ public class ZeebeeWorkers {
                     .jobType("payee-quote-" + dfspid)
                     .handler((client, job) -> {
                         logger.info("Job '{}' started from process '{}' with key {}", job.getType(), job.getBpmnProcessId(), job.getKey());
-
                         Map<String, Object> variables = job.getVariablesAsMap();
 
-                        QuoteFspResponseDTO quoteResponse = new QuoteFspResponseDTO();
-                        FspMoneyData zeroPrice = new FspMoneyData(BigDecimal.ZERO, "TZS");
-                        quoteResponse.setFspFee(zeroPrice);
-                        quoteResponse.setFspCommission(zeroPrice);
-                        variables.put(LOCAL_QUOTE_RESPONSE, objectMapper.writeValueAsString(quoteResponse)); // TODO implement payee side local quote
+                        QuoteSwitchRequestDTO quoteRequest = objectMapper.readValue((String) variables.get(QUOTE_SWITCH_REQUEST), QuoteSwitchRequestDTO.class);
+                        String tenantId = tenantProperties.getTenant(quoteRequest.getPayee().getPartyIdInfo().getPartyIdType().name(),
+                                quoteRequest.getPayee().getPartyIdInfo().getPartyIdentifier()).getName();
 
-                        QuoteSwitchRequestDTO quoteSwitchRequest = objectMapper.readValue((String) variables.get(QUOTE_SWITCH_REQUEST), QuoteSwitchRequestDTO.class);
-                        String tenantId = tenantProperties.getTenant(quoteSwitchRequest.getPayee().getPartyIdInfo().getPartyIdType().name(),
-                                quoteSwitchRequest.getPayee().getPartyIdInfo().getPartyIdentifier()).getName();
-                        variables.put(TENANT_ID, tenantId); // TODO tenantId will be needed here, property initialization could be added to bpmn start point
+                        TransactionChannelRequestDTO channelRequest = new TransactionChannelRequestDTO();
+                        TransactionType transactionType = new TransactionType();
+                        transactionType.setInitiator(TransactionRole.PAYEE);
+                        transactionType.setInitiatorType(InitiatorType.CONSUMER);
+                        transactionType.setScenario(Scenario.TRANSFER);
+                        channelRequest.setTransactionType(transactionType);
+                        channelRequest.setAmountType(AmountType.RECEIVE);
+                        MoneyData amount = new MoneyData(quoteRequest.getAmount().getAmount(),
+                                quoteRequest.getAmount().getCurrency());
+                        channelRequest.setAmount(amount);
 
-                        Exchange ex2 = new DefaultExchange(camelContext);
-                        ex2.setProperty(PARTY_IDENTIFIER_FOR_EXT_ACC, quoteSwitchRequest.getPayee().getPartyIdInfo().getPartyIdentifier());
-                        ex2.setProperty(PARTY_ID_TYPE_FOR_EXT_ACC, quoteSwitchRequest.getPayee().getPartyIdInfo().getPartyIdType());
-                        ex2.setProperty(TRANSACTION_ID, variables.get(TRANSACTION_ID));
-                        ex2.setProperty(TENANT_ID, tenantId);
-                        producerTemplate.send("direct:get-external-account", ex2);
-                        variables.put(EXTERNAL_ACCOUNT_ID, ex2.getProperty(EXTERNAL_ACCOUNT_ID));
-
-                        client.newCompleteCommand(job.getKey())
-                                .variables(variables)
-                                .send();
+                        Exchange ex = new DefaultExchange(camelContext);
+                        ex.setProperty(PARTY_IDENTIFIER_FOR_EXT_ACC, quoteRequest.getPayee().getPartyIdInfo().getPartyIdentifier());
+                        ex.setProperty(PARTY_ID_TYPE_FOR_EXT_ACC, quoteRequest.getPayee().getPartyIdInfo().getPartyIdType());
+                        ex.setProperty(TRANSACTION_ID, variables.get(TRANSACTION_ID));
+                        ex.setProperty(TENANT_ID, tenantId);
+                        ex.setProperty(TRANSACTION_ROLE, TransactionRole.PAYEE.name());
+                        ex.setProperty(TRANSACTION_REQUEST, objectMapper.writeValueAsString(channelRequest));
+                        producerTemplate.send("direct:send-local-quote", ex);
                     })
                     .open();
 

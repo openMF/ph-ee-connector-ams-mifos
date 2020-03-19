@@ -1,12 +1,10 @@
 package org.mifos.connector.ams.interop;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.camel.LoggingLevel;
 import org.apache.camel.Processor;
 import org.apache.camel.model.dataformat.JsonLibrary;
 import org.mifos.phee.common.ams.dto.PartyFspResponseDTO;
 import org.mifos.phee.common.camel.ErrorHandlerRouteBuilder;
-import org.mifos.phee.common.channel.dto.TransactionChannelRequestDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
@@ -16,7 +14,6 @@ import static org.mifos.connector.ams.camel.config.CamelProperties.EXTERNAL_ACCO
 import static org.mifos.connector.ams.camel.config.CamelProperties.PARTY_IDENTIFIER_FOR_EXT_ACC;
 import static org.mifos.connector.ams.camel.config.CamelProperties.PARTY_ID_TYPE_FOR_EXT_ACC;
 import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSACTION_ID;
-import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSACTION_REQUEST;
 
 
 @Component
@@ -28,9 +25,6 @@ public class LocalQuoteRouteBuilder extends ErrorHandlerRouteBuilder {
 
     @Autowired
     private Processor pojoToString;
-
-    @Autowired
-    private ObjectMapper objectMapper;
 
     @Autowired
     private AmsService amsService;
@@ -67,11 +61,6 @@ public class LocalQuoteRouteBuilder extends ErrorHandlerRouteBuilder {
 
         from("direct:send-local-quote")
                 .id("send-local-quote")
-                .process(e -> {
-                    TransactionChannelRequestDTO channelRequest = objectMapper.readValue(e.getProperty(TRANSACTION_REQUEST, String.class), TransactionChannelRequestDTO.class);
-                    e.setProperty(PARTY_IDENTIFIER_FOR_EXT_ACC, channelRequest.getPayer().getPartyIdInfo().getPartyIdentifier());
-                    e.setProperty(PARTY_ID_TYPE_FOR_EXT_ACC, channelRequest.getPayer().getPartyIdInfo().getPartyIdType());
-                })
                 .to("direct:get-external-account")
                 .log(LoggingLevel.INFO, "Sending local quote request for transaction: ${exchangeProperty."
                         + TRANSACTION_ID + "}")

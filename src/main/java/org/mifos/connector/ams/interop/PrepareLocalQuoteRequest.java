@@ -17,6 +17,7 @@ import java.util.UUID;
 import static org.mifos.connector.ams.camel.config.CamelProperties.EXTERNAL_ACCOUNT_ID;
 import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSACTION_ID;
 import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSACTION_REQUEST;
+import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSACTION_ROLE;
 
 @Component
 @ConditionalOnExpression("${ams.local.enabled}")
@@ -45,7 +46,7 @@ public class PrepareLocalQuoteRequest implements Processor {
                 exchange.getProperty(EXTERNAL_ACCOUNT_ID, String.class),
                 amount,
                 channelRequest.getAmountType(),
-                TransactionRole.PAYER, // for PAYEE the quote amount is ZERO
+                TransactionRole.valueOf(exchange.getProperty(TRANSACTION_ROLE, String.class)),
                 transactionType);
 
         exchange.getIn().setBody(request);
