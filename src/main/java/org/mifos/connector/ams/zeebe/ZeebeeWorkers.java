@@ -77,6 +77,7 @@ public class ZeebeeWorkers {
                         Exchange ex = new DefaultExchange(camelContext);
                         Map<String, Object> variables = job.getVariablesAsMap();
                         zeebeVariablesToCamelProperties(variables, ex,
+                                TRANSACTION_REQUEST,
                                 TRANSACTION_ID);
 
                         TransactionChannelRequestDTO channelRequest = objectMapper.readValue((String)variables.get(TRANSACTION_REQUEST), TransactionChannelRequestDTO.class);
