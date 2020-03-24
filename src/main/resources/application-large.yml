@@ -1,0 +1,12 @@
+ams:
+  local:
+    host: http://buffalo.mifos.io:2027
+    auth:
+      host: http://buffalo.mifos.io:2021
+    tenants:
+      - name: tn01
+        user: interopUser
+        password: intop@d1
+        authtype: oauth
+        partyIdType: MSISDN
+        partyId: 27710101999

@@ -30,6 +30,16 @@
         </cxf:properties>
     </cxf:rsClient>
 
+    <cxf:rsClient id="ams.local.auth" address="{{ams.local.auth.host}}">
+        <cxf:properties>
+            <entry key="throwExceptionOnFailure" value="false"/>
+            <entry key="bindingStyle" value="Custom"/>
+            <entry key="binding" value-ref="cfxRsNotStreamingBinding"/>
+            <entry key="synchronous" value="true"/>
+            <entry key="sslContextParameters" value-ref="sslContextParameters"/>
+        </cxf:properties>
+    </cxf:rsClient>
+
     <http:conduit name="*.http-conduit">
         <http-conf:client Connection="Keep-Alive" MaxRetransmits="1"
                           AllowChunking="false" ConnectionTimeout="0" ReceiveTimeout="0" />

@@ -23,5 +23,6 @@ ams:
     interop-quotes-path: ${ams.local.base-url}/interoperation/quotes
     interop-parties-path: ${ams.local.base-url}/interoperation/parties/{idType}/{idValue}
     interop-transfers-path: ${ams.local.base-url}/interoperation/transfers
-    accounts-path: ${ams.local.base-url}/savingsaccounts
-    auth-path: ${ams.local.base-url}/authentication
+    auth:
+      host: https://localhost:8443
+      path: ${ams.local.base-url}/authentication

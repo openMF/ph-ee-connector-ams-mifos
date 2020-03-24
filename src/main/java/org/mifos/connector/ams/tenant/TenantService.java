@@ -1,25 +1,33 @@
 package org.mifos.connector.ams.tenant;
 
+import org.apache.camel.CamelContext;
+import org.apache.camel.Exchange;
+import org.apache.camel.ProducerTemplate;
+import org.apache.camel.support.DefaultExchange;
+import org.eclipse.jetty.http.HttpHeader;
 import org.mifos.connector.ams.properties.Tenant;
 import org.mifos.connector.ams.properties.TenantProperties;
-import org.apache.camel.Exchange;
-import org.apache.camel.ExchangePattern;
-import org.apache.camel.ProducerTemplate;
-import org.eclipse.jetty.http.HttpHeader;
+import org.mifos.phee.common.ams.dto.LoginFineractCnResponseDTO;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
 import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static org.mifos.connector.ams.camel.config.CamelProperties.LOGIN_PASSWORD;
+import static org.mifos.connector.ams.camel.config.CamelProperties.LOGIN_USERNAME;
+import static org.mifos.connector.ams.camel.config.CamelProperties.TENANT_ID;
+
 @Component
 @ConditionalOnExpression("${ams.local.enabled}")
 public class TenantService {
+
+    public static final String X_TENANT_IDENTIFIER_HEADER = "X-Tenant-Identifier";
 
     @Autowired
     private ProducerTemplate producerTemplate;
@@ -27,53 +35,61 @@ public class TenantService {
     @Autowired
     private TenantProperties tenantProperties;
 
+    @Autowired
+    private CamelContext camelContext;
+
+    @Value("${ams.local.version}")
+    private String amsLocalVersion;
+
     private final Map<String, CachedTenantAuth> cachedTenantAuths = new ConcurrentHashMap<>();
 
-    @PostConstruct
-    public void setup() {
-        tenantProperties.getTenants().forEach(tenant -> {
-            cachedTenantAuths.put(tenant.getName(), new CachedTenantAuth());
-        });
-    }
-
-    public Map<String, Object> getHeaders(String tenantName, boolean isAuthNeeded) {
+    public Map<String, Object> getHeaders(String tenantName) {
         Tenant tenant = tenantProperties.getTenant(tenantName);
         if (tenant == null) {
             throw new RuntimeException(String.format("Could not get headers for tenant: %s, no application configuration found!", tenantName));
         }
 
         Map<String, Object> headers = new HashMap<>();
-        if(isAuthNeeded) {
-            headers.put(HttpHeader.AUTHORIZATION.asString(), getTenantAuthData(tenant).getToken());
+        if ("1.2".equals(amsLocalVersion)) {
+            headers.put("Fineract-Platform-TenantId", tenantName);
+        } else if ("cn".equals(amsLocalVersion)) {
+            headers.put(X_TENANT_IDENTIFIER_HEADER, tenantName);
+        } else {
+            throw new RuntimeException("Unsupported Fineract version: " + amsLocalVersion);
         }
-        headers.put("Fineract-Platform-TenantId", tenantName);
+
+        headers.put(HttpHeader.AUTHORIZATION.asString(), getTenantAuthData(tenant).getToken());
 
         return headers;
     }
 
     private CachedTenantAuth getTenantAuthData(Tenant tenant) {
         CachedTenantAuth cachedTenantAuth = cachedTenantAuths.get(tenant.getName());
-        if (cachedTenantAuth.getToken() == null || isAccessTokenExpired(cachedTenantAuth.getAccessTokenExpiration())) {
+        if (cachedTenantAuth == null || isAccessTokenExpired(cachedTenantAuth.getAccessTokenExpiration())) {
             cachedTenantAuth = login(tenant);
+            cachedTenantAuths.put(tenant.getName(), cachedTenantAuth);
         }
         return cachedTenantAuth;
     }
 
     private CachedTenantAuth login(Tenant tenant) {
         String tenantAuthtype = tenant.getAuthtype();
-        if ("basic".equals(tenantAuthtype)) {
-            CachedTenantAuth cached = new CachedTenantAuth("Basic " + Base64.getEncoder()
+        if ("1.2".equals(amsLocalVersion) && "basic".equals(tenantAuthtype)) {
+            return new CachedTenantAuth("Basic " + Base64.getEncoder()
                     .encodeToString((tenant.getUser() + ":" + tenant.getPassword()).getBytes()), null);
-            cachedTenantAuths.put(tenant.getName(), cached);
-            return cached;
-        } else if ("oauth".equals(tenantAuthtype)) { // TODO implmenet oauth
-            Exchange response = producerTemplate.send(e -> {
-                e.getIn().setBody(tenant);
-                e.setPattern(ExchangePattern.InOut);
-            });
-            return null;
+        } else if ("1.2".equals(amsLocalVersion) && "oauth".equals(tenantAuthtype)) {
+            // TODO implement
+            throw new RuntimeException("Unsupported authType: " + tenantAuthtype + ", for local fsp version: " + amsLocalVersion + ", for tenant: " + tenant.getName());
+        } else if ("cn".equals(amsLocalVersion) && "oauth".equals(tenantAuthtype)) {
+            Exchange ex = new DefaultExchange(camelContext);
+            ex.setProperty(TENANT_ID, tenant.getName());
+            ex.setProperty(LOGIN_USERNAME, tenant.getUser());
+            ex.setProperty(LOGIN_PASSWORD, tenant.getPassword());
+            producerTemplate.send("direct:send-fincn-auth-request", ex);
+            LoginFineractCnResponseDTO response = ex.getIn().getBody(LoginFineractCnResponseDTO.class);
+            return new CachedTenantAuth(response.getAccessToken(), response.getAccessTokenExpiration());
         } else {
-            throw new RuntimeException("Unsupported authType for local fsp: " + tenantAuthtype + ", for tenant: " + tenant.getName());
+            throw new RuntimeException("Unsupported authType: " + tenantAuthtype + ", for local fsp version: " + amsLocalVersion + ", for tenant: " + tenant.getName());
         }
     }
 

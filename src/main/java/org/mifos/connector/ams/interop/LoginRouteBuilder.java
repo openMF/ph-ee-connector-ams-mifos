@@ -1,46 +1,37 @@
-package org.mifos.connector.ams.quote;
+package org.mifos.connector.ams.interop;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.camel.LoggingLevel;
+import org.apache.camel.component.cxf.common.message.CxfConstants;
 import org.apache.camel.model.dataformat.JsonLibrary;
 import org.mifos.connector.ams.camel.cxfrs.CxfrsUtil;
-import org.mifos.connector.ams.interop.FspLoginResponseProcessor;
-import org.mifos.connector.ams.tenant.TenantService;
-import org.mifos.phee.common.ams.dto.LoginFineractXResponseDTO;
+import org.mifos.phee.common.ams.dto.LoginFineractCnResponseDTO;
 import org.mifos.phee.common.camel.ErrorHandlerRouteBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.stereotype.Component;
 
+import java.util.Base64;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import static org.mifos.connector.ams.camel.config.CamelProperties.LOGIN_PASSWORD;
 import static org.mifos.connector.ams.camel.config.CamelProperties.LOGIN_USERNAME;
 import static org.mifos.connector.ams.camel.config.CamelProperties.TENANT_ID;
 import static org.mifos.connector.ams.camel.cxfrs.HeaderBasedInterceptor.CXF_TRACE_HEADER;
+import static org.mifos.connector.ams.tenant.TenantService.X_TENANT_IDENTIFIER_HEADER;
 
 
 @Component
 @ConditionalOnExpression("${ams.local.enabled}")
 public class LoginRouteBuilder extends ErrorHandlerRouteBuilder {
 
-    @Value("${ams.local.auth-path}")
-    private String fpsLocalAuthPath;
-
-    @Autowired
-    private TenantService tenantService;
-
-    @Autowired
-    private FspLoginResponseProcessor fspLoginResponseProcessor;
+    @Value("${ams.local.auth.path}")
+    private String amsLocalAuthPath;
 
     @Autowired
     private CxfrsUtil cxfrsUtil;
-
-    @Autowired
-    private ObjectMapper objectMapper;
 
     public LoginRouteBuilder() {
         super.configure();
@@ -48,24 +39,24 @@ public class LoginRouteBuilder extends ErrorHandlerRouteBuilder {
 
     @Override
     public void configure() {
-        // fin1.4
-        from("direct:send-auth-request")
-                .id("send-local-auth")
-                .log(LoggingLevel.INFO, "local fsp auth request")
+        from("direct:send-fincn-auth-request")
+                .id("send-fincn-auth-request")
+                .log(LoggingLevel.INFO, "local fincn auth request for tenant: ${exchangeProperty. " + TENANT_ID + "}")
                 .process(e -> {
                     Map<String, Object> headers = new HashMap<>();
                     headers.put(CXF_TRACE_HEADER, true);
                     headers.put("CamelHttpMethod", "POST");
-                    headers.put("CamelHttpPath", fpsLocalAuthPath);
-                    headers.put("Content-Type", "application/json");
-                    headers.putAll(tenantService.getHeaders(e.getProperty(TENANT_ID, String.class), false));
+                    headers.put("CamelHttpPath", amsLocalAuthPath);
+                    headers.put(X_TENANT_IDENTIFIER_HEADER, e.getProperty(TENANT_ID));
 
-                    ObjectNode authJson = objectMapper.createObjectNode();
-                    authJson.put("username", e.getProperty(LOGIN_USERNAME, String.class));
-                    authJson.put("password", e.getProperty(LOGIN_PASSWORD, String.class));
-                    cxfrsUtil.sendInOut("cxfrs:bean:ams.local", e, headers, objectMapper.writeValueAsString(authJson));
+                    Map<String, String> queryMap = new LinkedHashMap<>();
+                    queryMap.put("grant_type", "password");
+                    queryMap.put("username", e.getProperty(LOGIN_USERNAME, String.class));
+                    queryMap.put("password", Base64.getEncoder().encodeToString(e.getProperty(LOGIN_PASSWORD, String.class).getBytes()));
+                    headers.put(CxfConstants.CAMEL_CXF_RS_QUERY_MAP, queryMap);
+
+                    cxfrsUtil.sendInOut("cxfrs:bean:ams.local.auth", e, headers, null);
                 })
-                .unmarshal().json(JsonLibrary.Jackson, LoginFineractXResponseDTO.class)
-                .process(fspLoginResponseProcessor);
+                .unmarshal().json(JsonLibrary.Jackson, LoginFineractCnResponseDTO.class);
     }
 }

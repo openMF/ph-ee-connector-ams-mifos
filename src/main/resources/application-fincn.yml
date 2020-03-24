@@ -18,10 +18,12 @@ ams:
     version: cn
     keystore-path: keystore.jks
     keystore-password: openmf
-    host: https://localhost:8443
-    base-url: /fineract-provider/api/v1
-    interop-quotes-path: ${ams.local.base-url}/interoperation/quotes
-    interop-parties-path: ${ams.local.base-url}/interoperation/parties/{idType}/{idValue}
-    interop-transfers-path: ${ams.local.base-url}/interoperation/transfers
-    accounts-path: ${ams.local.base-url}/savingsaccounts
-    auth-path: ${ams.local.base-url}/authentication
+    host: http://localhost:2027
+    base-url: /interoperation/v1
+    interop-quotes-path: ${ams.local.base-url}/quotes
+    interop-parties-path: ${ams.local.base-url}/parties/{idType}/{idValue}
+    interop-transfers-path: ${ams.local.base-url}/transfers
+    auth:
+      host: http://localhost:2021
+      base-url: /identity/v1
+      path: ${ams.local.auth.base-url}/token

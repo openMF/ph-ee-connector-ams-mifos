@@ -44,7 +44,7 @@ public class AmsService {
         headers.put("CamelHttpMethod", "POST");
         headers.put("CamelHttpPath", amsInteropQuotesPath);
         headers.put("Content-Type", "application/json");
-        headers.putAll(tenantService.getHeaders(e.getProperty(TENANT_ID, String.class), true));
+        headers.putAll(tenantService.getHeaders(e.getProperty(TENANT_ID, String.class)));
         cxfrsUtil.sendInOut("cxfrs:bean:ams.local", e, headers, e.getIn().getBody());
     }
 
@@ -54,7 +54,7 @@ public class AmsService {
         headers.put("CamelHttpMethod", "GET");
         headers.put("CamelHttpPath", amsInteropPartiesPath.replace("{idType}", e.getProperty(PARTY_ID_TYPE_FOR_EXT_ACC, String.class))
                 .replace("{idValue}", e.getProperty(PARTY_IDENTIFIER_FOR_EXT_ACC, String.class)));
-        headers.putAll(tenantService.getHeaders(e.getProperty(TENANT_ID, String.class), true));
+        headers.putAll(tenantService.getHeaders(e.getProperty(TENANT_ID, String.class)));
         cxfrsUtil.sendInOut("cxfrs:bean:ams.local", e, headers, null);
     }
 
@@ -68,7 +68,7 @@ public class AmsService {
         queryMap.put("action", e.getProperty(TRANSFER_ACTION, String.class));
         headers.put(CxfConstants.CAMEL_CXF_RS_QUERY_MAP, queryMap);
         headers.put("Content-Type", "application/json");
-        headers.putAll(tenantService.getHeaders(e.getProperty(TENANT_ID, String.class), true));
+        headers.putAll(tenantService.getHeaders(e.getProperty(TENANT_ID, String.class)));
         cxfrsUtil.sendInOut("cxfrs:bean:ams.local", e, headers, e.getIn().getBody());
     }
 }
