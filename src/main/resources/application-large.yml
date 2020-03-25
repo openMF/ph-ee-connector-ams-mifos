@@ -1,6 +1,6 @@
 ams:
   local:
-    host: http://buffalo.mifos.io:2027
+    host: http://buffalo.mifos.io:2034
     auth:
       host: http://buffalo.mifos.io:2021
     tenants:
