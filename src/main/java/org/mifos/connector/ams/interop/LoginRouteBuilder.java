@@ -49,14 +49,16 @@ public class LoginRouteBuilder extends ErrorHandlerRouteBuilder {
                     headers.put("CamelHttpMethod", "POST");
                     headers.put("CamelHttpPath", amsLocalAuthPath);
                     headers.put(X_TENANT_IDENTIFIER_HEADER, e.getProperty(TENANT_ID));
+                    headers.put("Content-Type", "application/x-www-form-urlencoded");
 
-//                    Map<String, String> queryMap = new LinkedHashMap<>();
-//                    queryMap.put("grant_type", "password");
-//                    queryMap.put("username", e.getProperty(LOGIN_USERNAME, String.class));
-//                    queryMap.put("password", Base64.getEncoder().encodeToString(e.getProperty(LOGIN_PASSWORD, String.class).getBytes()));
-//                    headers.put(CxfConstants.CAMEL_CXF_RS_QUERY_MAP, queryMap);
-                    headers.put(Exchange.HTTP_QUERY,
-                            constant("grant_type=password&username="+e.getProperty(LOGIN_USERNAME, String.class)+"&password="+Base64.getEncoder().encodeToString(e.getProperty(LOGIN_PASSWORD, String.class).getBytes())));
+                    Map<String, String> queryMap = new LinkedHashMap<>();
+                    queryMap.put("grant_type", "password");
+                    queryMap.put("username", e.getProperty(LOGIN_USERNAME, String.class));
+                    queryMap.put("password", Base64.getEncoder().encodeToString(e.getProperty(LOGIN_PASSWORD, String.class).getBytes()));
+                    headers.put(CxfConstants.CAMEL_CXF_RS_QUERY_MAP, queryMap);
+//                    headers.put(Exchange.HTTP_QUERY,
+//                            constant("grant_type=password&username="+e.getProperty(LOGIN_USERNAME, String.class)+"&password="+Base64.getEncoder().encodeToString(e.getProperty(LOGIN_PASSWORD, String.class).getBytes()))
+//                    );
 
                     cxfrsUtil.sendInOut("cxfrs:bean:ams.local.auth", e, headers, null);
                 })
