@@ -174,7 +174,6 @@ public class ZeebeeWorkers {
                         String tenantId = tenantProperties.getTenant(quoteRequest.getPayee().getPartyIdInfo().getPartyIdType().name(),
                                 quoteRequest.getPayee().getPartyIdInfo().getPartyIdentifier()).getName();
 
-                        logger.info("payee-quote worker checkpoint 1");
                         TransactionChannelRequestDTO channelRequest = new TransactionChannelRequestDTO();
                         TransactionType transactionType = new TransactionType();
                         transactionType.setInitiator(TransactionRole.PAYEE);
@@ -185,7 +184,6 @@ public class ZeebeeWorkers {
                         MoneyData amount = new MoneyData(quoteRequest.getAmount().getAmount(),
                                 quoteRequest.getAmount().getCurrency());
                         channelRequest.setAmount(amount);
-                        logger.info("payee-quote worker checkpoint 2");
 
                         Exchange ex = new DefaultExchange(camelContext);
                         ex.setProperty(PARTY_IDENTIFIER_FOR_EXT_ACC, quoteRequest.getPayee().getPartyIdInfo().getPartyIdentifier());
@@ -195,9 +193,7 @@ public class ZeebeeWorkers {
                         ex.setProperty(TRANSACTION_ROLE, TransactionRole.PAYEE.name());
                         ex.setProperty(TRANSACTION_REQUEST, objectMapper.writeValueAsString(channelRequest));
                         ex.setProperty(ZEEBE_JOB_KEY, job.getKey());
-                        logger.info("payee-quote worker checkpoint 3");
                         producerTemplate.send("direct:send-local-quote", ex);
-                        logger.info("payee-quote worker checkpoint 4");
                     })
                     .open();
 
