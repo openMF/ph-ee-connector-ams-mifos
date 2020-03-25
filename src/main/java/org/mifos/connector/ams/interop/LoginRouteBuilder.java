@@ -52,7 +52,7 @@ public class LoginRouteBuilder extends ErrorHandlerRouteBuilder {
                     Map<String, String> queryMap = new LinkedHashMap<>();
                     queryMap.put("grant_type", "password");
                     queryMap.put("username", e.getProperty(LOGIN_USERNAME, String.class));
-                    queryMap.put("password", Base64.getEncoder().encodeToString(e.getProperty(LOGIN_PASSWORD, String.class).getBytes()));
+                    queryMap.put("password", "RAW("+Base64.getEncoder().encodeToString(e.getProperty(LOGIN_PASSWORD, String.class).getBytes())+")");
                     headers.put(CxfConstants.CAMEL_CXF_RS_QUERY_MAP, queryMap);
 
                     cxfrsUtil.sendInOut("cxfrs:bean:ams.local.auth", e, headers, null);
