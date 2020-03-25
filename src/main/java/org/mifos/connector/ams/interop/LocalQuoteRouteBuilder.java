@@ -6,7 +6,6 @@ import org.apache.camel.model.dataformat.JsonLibrary;
 import org.mifos.phee.common.ams.dto.PartyFspResponseDTO;
 import org.mifos.phee.common.camel.ErrorHandlerRouteBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.stereotype.Component;
 
@@ -32,25 +31,12 @@ public class LocalQuoteRouteBuilder extends ErrorHandlerRouteBuilder {
     @Autowired
     private PrepareLocalQuoteRequest prepareLocalQuoteRequest;
 
-    @Value("${ams.local.version}")
-    private String amsLocalVersion;
-
     public LocalQuoteRouteBuilder() {
         super.configure();
     }
 
     @Override
     public void configure() {
-        if ("1.2".equals(amsLocalVersion)) {
-            setupFineract12route();
-        } else if ("cn".equals(amsLocalVersion)) {
-            setupFineractCNroute();
-        } else {
-            throw new RuntimeException("Unsupported Fineract version: " + amsLocalVersion);
-        }
-    }
-
-    private void setupFineract12route() {
         from("direct:get-external-account")
                 .id("get-external-account")
                 .log(LoggingLevel.INFO, "Get externalAccount with identifierType: ${exchangeProperty." + PARTY_ID_TYPE_FOR_EXT_ACC + "} with value: ${exchangeProperty."
@@ -68,8 +54,5 @@ public class LocalQuoteRouteBuilder extends ErrorHandlerRouteBuilder {
                 .process(pojoToString)
                 .process(amsService::getLocalQuote)
                 .process(localQuoteResponseProcessor);
-    }
-
-    private void setupFineractCNroute() {
     }
 }
