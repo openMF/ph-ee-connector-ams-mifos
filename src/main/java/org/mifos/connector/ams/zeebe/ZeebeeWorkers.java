@@ -271,6 +271,21 @@ public class ZeebeeWorkers {
                     })
                     .maxJobsActive(10)
                     .open();
+
+            logger.info("## generating payee-party-lookup-{} worker", dfspid);
+            zeebeClient.newWorker()
+                    .jobType("payee-party-lookup-" + dfspid)
+                    .handler((client, job) -> {
+                        logger.info("Job '{}' started from process '{}' with key {}", job.getType(), job.getBpmnProcessId(), job.getKey());
+                        Map<String, Object> variables = job.getVariablesAsMap();
+                        variables.put("partyIdLookupResult", "SUCCESS"); // TODO move external account lookup
+
+                        client.newCompleteCommand(job.getKey())
+                                .variables(variables)
+                                .send();
+                    })
+                    .maxJobsActive(10)
+                    .open();
         }
     }
 }
