@@ -28,6 +28,8 @@ import static org.mifos.connector.ams.camel.config.CamelProperties.TENANT_ID;
 public class TenantService {
 
     public static final String X_TENANT_IDENTIFIER_HEADER = "X-Tenant-Identifier";
+    public static final String USER_HEADER = "User";
+    public static final String FINERACT_PLATFORM_TENANT_ID_HEADER = "Fineract-Platform-TenantId";
 
     @Autowired
     private ProducerTemplate producerTemplate;
@@ -51,9 +53,10 @@ public class TenantService {
 
         Map<String, Object> headers = new HashMap<>();
         if ("1.2".equals(amsLocalVersion)) {
-            headers.put("Fineract-Platform-TenantId", tenantName);
+            headers.put(FINERACT_PLATFORM_TENANT_ID_HEADER, tenantName);
         } else if ("cn".equals(amsLocalVersion)) {
             headers.put(X_TENANT_IDENTIFIER_HEADER, tenantName);
+            headers.put(USER_HEADER, tenant.getUser());
         } else {
             throw new RuntimeException("Unsupported Fineract version: " + amsLocalVersion);
         }
@@ -85,8 +88,8 @@ public class TenantService {
             ex.setProperty(TENANT_ID, tenant.getName());
             ex.setProperty(LOGIN_USERNAME, tenant.getUser());
             ex.setProperty(LOGIN_PASSWORD, tenant.getPassword());
-            producerTemplate.send("direct:send-fincn-auth-request", ex);
-            LoginFineractCnResponseDTO response = ex.getIn().getBody(LoginFineractCnResponseDTO.class);
+            producerTemplate.send("direct:fincn-oauth", ex);
+            LoginFineractCnResponseDTO response = ex.getOut().getBody(LoginFineractCnResponseDTO.class);
             return new CachedTenantAuth(response.getAccessToken(), response.getAccessTokenExpiration());
         } else {
             throw new RuntimeException("Unsupported authType: " + tenantAuthtype + ", for local fsp version: " + amsLocalVersion + ", for tenant: " + tenant.getName());
