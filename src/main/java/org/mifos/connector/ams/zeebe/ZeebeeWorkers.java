@@ -92,6 +92,7 @@ public class ZeebeeWorkers {
                                 .send();
                     }
                 })
+                .maxJobsActive(10)
                 .open();
 
         zeebeClient.newWorker()
@@ -115,6 +116,7 @@ public class ZeebeeWorkers {
                                 .send();
                     }
                 })
+                .maxJobsActive(10)
                 .open();
 
         zeebeClient.newWorker()
@@ -138,6 +140,7 @@ public class ZeebeeWorkers {
                                 .send();
                     }
                 })
+                .maxJobsActive(10)
                 .open();
 
         zeebeClient.newWorker()
@@ -160,6 +163,7 @@ public class ZeebeeWorkers {
                                 .send();
                     }
                 })
+                .maxJobsActive(10)
                 .open();
 
         for(String dfspid : dfspids) {
@@ -195,6 +199,7 @@ public class ZeebeeWorkers {
                         ex.setProperty(ZEEBE_JOB_KEY, job.getKey());
                         producerTemplate.send("direct:send-local-quote", ex);
                     })
+                    .maxJobsActive(10)
                     .open();
 
             logger.info("## generating payee-prepare-transfer-{} worker", dfspid);
@@ -229,6 +234,7 @@ public class ZeebeeWorkers {
 
                         producerTemplate.send("direct:send-transfers", ex);
                     })
+                    .maxJobsActive(10)
                     .open();
 
             logger.info("## generating payee-commit-transfer-{} worker", dfspid);
@@ -263,6 +269,7 @@ public class ZeebeeWorkers {
 
                         producerTemplate.send("direct:send-transfers", ex);
                     })
+                    .maxJobsActive(10)
                     .open();
         }
     }
