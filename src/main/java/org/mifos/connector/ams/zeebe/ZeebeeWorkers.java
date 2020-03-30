@@ -92,6 +92,7 @@ public class ZeebeeWorkers {
                                 .send();
                     }
                 })
+                .name("payer-local-quote")
                 .maxJobsActive(10)
                 .open();
 
@@ -116,6 +117,7 @@ public class ZeebeeWorkers {
                                 .send();
                     }
                 })
+                .name("block-funds")
                 .maxJobsActive(10)
                 .open();
 
@@ -140,6 +142,7 @@ public class ZeebeeWorkers {
                                 .send();
                     }
                 })
+                .name("book-funds")
                 .maxJobsActive(10)
                 .open();
 
@@ -163,6 +166,7 @@ public class ZeebeeWorkers {
                                 .send();
                     }
                 })
+                .name("release-block")
                 .maxJobsActive(10)
                 .open();
 
@@ -199,6 +203,7 @@ public class ZeebeeWorkers {
                         ex.setProperty(ZEEBE_JOB_KEY, job.getKey());
                         producerTemplate.send("direct:send-local-quote", ex);
                     })
+                    .name("payee-quote-" + dfspid)
                     .maxJobsActive(10)
                     .open();
 
@@ -234,6 +239,7 @@ public class ZeebeeWorkers {
 
                         producerTemplate.send("direct:send-transfers", ex);
                     })
+                    .name("payee-prepare-transfer-" + dfspid)
                     .maxJobsActive(10)
                     .open();
 
@@ -269,6 +275,7 @@ public class ZeebeeWorkers {
 
                         producerTemplate.send("direct:send-transfers", ex);
                     })
+                    .name("payee-commit-transfer-" + dfspid)
                     .maxJobsActive(10)
                     .open();
 
@@ -284,6 +291,7 @@ public class ZeebeeWorkers {
                                 .variables(variables)
                                 .send();
                     })
+                    .name("payee-party-lookup-" + dfspid)
                     .maxJobsActive(10)
                     .open();
         }
