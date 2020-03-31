@@ -35,6 +35,7 @@ import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSACTION_I
 import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSACTION_REQUEST;
 import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSACTION_ROLE;
 import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSFER_ACTION;
+import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSFER_CODE;
 import static org.mifos.connector.ams.camel.config.CamelProperties.ZEEBE_JOB_KEY;
 import static org.mifos.connector.ams.zeebe.ZeebeProcessStarter.zeebeVariablesToCamelProperties;
 import static org.mifos.phee.common.ams.dto.TransferActionType.CREATE;
@@ -132,7 +133,8 @@ public class ZeebeeWorkers {
                                 TRANSACTION_REQUEST,
                                 TENANT_ID,
                                 EXTERNAL_ACCOUNT_ID,
-                                LOCAL_QUOTE_RESPONSE);
+                                LOCAL_QUOTE_RESPONSE,
+                                TRANSFER_CODE);
                         ex.setProperty(TRANSFER_ACTION, CREATE.name());
                         ex.setProperty(ZEEBE_JOB_KEY, job.getKey());
                         ex.setProperty(TRANSACTION_ROLE, TransactionRole.PAYER.name());
@@ -157,9 +159,11 @@ public class ZeebeeWorkers {
                                 TRANSACTION_REQUEST,
                                 TENANT_ID,
                                 EXTERNAL_ACCOUNT_ID,
-                                LOCAL_QUOTE_RESPONSE);
+                                LOCAL_QUOTE_RESPONSE,
+                                TRANSFER_CODE);
                         ex.setProperty(TRANSFER_ACTION, RELEASE.name());
                         ex.setProperty(ZEEBE_JOB_KEY, job.getKey());
+                        ex.setProperty(TRANSACTION_ROLE, TransactionRole.PAYER.name());
                         producerTemplate.send("direct:send-transfers", ex);
                     } else {
                         zeebeClient.newCompleteCommand(job.getKey())

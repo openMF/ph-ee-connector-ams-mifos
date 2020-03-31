@@ -20,6 +20,7 @@ import static org.mifos.connector.ams.camel.config.CamelProperties.LOCAL_QUOTE_R
 import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSACTION_ID;
 import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSACTION_REQUEST;
 import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSACTION_ROLE;
+import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSFER_CODE;
 
 @Component
 @ConditionalOnExpression("${ams.local.enabled}")
@@ -39,12 +40,19 @@ public class PrepareTransferRequest implements Processor {
         transactionType.setScenario(channelRequest.getTransactionType().getScenario());
 
         FspMoneyData amount = new FspMoneyData(channelRequest.getAmount().getAmountDecimal(),
-                                               channelRequest.getAmount().getCurrency());
+                channelRequest.getAmount().getCurrency());
 
-        String transferId = UUID.randomUUID().toString();
+        String existingTransferCode = exchange.getProperty(TRANSFER_CODE, String.class);
+        String transferCode = null;
+        if (existingTransferCode != null) {
+            transferCode = existingTransferCode;
+        } else {
+            transferCode = UUID.randomUUID().toString();
+            exchange.setProperty(TRANSFER_CODE, transferCode);
+        }
 
         TransferFspRequestDTO transferRequestDTO = new TransferFspRequestDTO(exchange.getProperty(TRANSACTION_ID, String.class),
-                transferId,
+                transferCode,
                 exchange.getProperty(EXTERNAL_ACCOUNT_ID, String.class),
                 amount,
                 localQuoteResponse.getFspFee(),

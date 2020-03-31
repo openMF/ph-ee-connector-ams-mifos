@@ -14,8 +14,10 @@ import java.util.Map;
 
 import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSACTION_ID;
 import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSFER_ACTION;
+import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSFER_CODE;
 import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSFER_RESPONSE_PREFIX;
 import static org.mifos.connector.ams.camel.config.CamelProperties.ZEEBE_JOB_KEY;
+import static org.mifos.phee.common.ams.dto.TransferActionType.PREPARE;
 
 @Component
 @ConditionalOnExpression("${ams.local.enabled}")
@@ -42,7 +44,11 @@ public class TransfersResponseProcessor implements Processor {
                     .send();
         } else {
             Map<String, Object> variables = new HashMap<>();
-            variables.put(TRANSFER_RESPONSE_PREFIX + "-" + exchange.getProperty(TRANSFER_ACTION, String.class), exchange.getIn().getBody());
+            String transferAction = exchange.getProperty(TRANSFER_ACTION, String.class);
+            variables.put(TRANSFER_RESPONSE_PREFIX + "-" + transferAction, exchange.getIn().getBody());
+            if(PREPARE.name().equals(transferAction)) {
+                variables.put(TRANSFER_CODE, exchange.getProperty(TRANSFER_CODE));
+            }
 
             zeebeClient.newCompleteCommand(exchange.getProperty(ZEEBE_JOB_KEY, Long.class))
                     .variables(variables)
