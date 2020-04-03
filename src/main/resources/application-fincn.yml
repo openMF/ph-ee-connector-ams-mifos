@@ -18,11 +18,20 @@ ams:
     version: cn
     keystore-path: keystore.jks
     keystore-password: openmf
-    host: http://localhost:2027
-    base-url: /interoperation/v1
-    interop-quotes-path: ${ams.local.base-url}/quotes
-    interop-parties-path: ${ams.local.base-url}/parties/{idType}/{idValue}
-    interop-transfers-path: ${ams.local.base-url}/transfers
+    interop:
+      host: http://localhost:2034
+      base-url: /interoperation/v1
+      quotes-path: ${ams.local.interop.base-url}/quotes
+      parties-path: ${ams.local.interop.base-url}/parties/{idType}/{idValue}
+      transfers-path: ${ams.local.interop.base-url}/transfers
+    customer:
+      host: http://localhost:2024
+      base-url: /customer/v1
+      path: ${ams.local.customer.base-url}/customers/{customerIdentifier}
+    account:
+      host: http://localhost:2027
+      base-url: /deposit/v1
+      path: ${ams.local.account.base-url}/instances/{accountId}
     auth:
       host: http://localhost:2021
       base-url: /identity/v1

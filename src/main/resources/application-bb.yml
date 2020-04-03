@@ -1,6 +1,13 @@
 ams:
   local:
-    host: https://rhino.mifos.io:8443
+    interop:
+      host: https://leopard.mifos.io:8443
+    customer:
+      host: https://leopard.mifos.io:8443
+    account:
+      host: https://leopard.mifos.io:8443
+    auth:
+      host: https://leopard.mifos.io:8443
     tenants:
       - name: tn03
         user: mifos
@@ -8,9 +15,11 @@ ams:
         authtype: basic
         partyIdType: MSISDN
         partyId: 27710203999
+        fspId: in02tn03
       - name: tn04
         user: mifos
         password: password
         authtype: basic
         partyIdType: MSISDN
         partyId: 27710204999
+        fspId: in02tn04

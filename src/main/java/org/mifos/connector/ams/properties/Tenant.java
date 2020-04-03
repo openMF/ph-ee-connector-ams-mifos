@@ -2,7 +2,7 @@ package org.mifos.connector.ams.properties;
 
 public class Tenant {
 
-    private String name, user, password, authtype, partyId, partyIdType;
+    private String name, user, password, authtype, partyId, partyIdType, fspId;
 
     public Tenant() {
     }
@@ -53,5 +53,13 @@ public class Tenant {
 
     public void setPartyIdType(String partyIdType) {
         this.partyIdType = partyIdType;
+    }
+
+    public String getFspId() {
+        return fspId;
+    }
+
+    public void setFspId(String fspId) {
+        this.fspId = fspId;
     }
 }

@@ -20,7 +20,27 @@
         </cxf-core:outInterceptors>
     </cxf-core:bus>
 
-    <cxf:rsClient id="ams.local" address="{{ams.local.host}}">
+    <cxf:rsClient id="ams.local.interop" address="{{ams.local.interop.host}}">
+        <cxf:properties>
+            <entry key="throwExceptionOnFailure" value="false"/>
+            <entry key="bindingStyle" value="Custom"/>
+            <entry key="binding" value-ref="cfxRsNotStreamingBinding"/>
+            <entry key="synchronous" value="true"/>
+            <entry key="sslContextParameters" value-ref="sslContextParameters"/>
+        </cxf:properties>
+    </cxf:rsClient>
+
+    <cxf:rsClient id="ams.local.customer" address="{{ams.local.customer.host}}">
+        <cxf:properties>
+            <entry key="throwExceptionOnFailure" value="false"/>
+            <entry key="bindingStyle" value="Custom"/>
+            <entry key="binding" value-ref="cfxRsNotStreamingBinding"/>
+            <entry key="synchronous" value="true"/>
+            <entry key="sslContextParameters" value-ref="sslContextParameters"/>
+        </cxf:properties>
+    </cxf:rsClient>
+
+    <cxf:rsClient id="ams.local.account" address="{{ams.local.account.host}}">
         <cxf:properties>
             <entry key="throwExceptionOnFailure" value="false"/>
             <entry key="bindingStyle" value="Custom"/>
