@@ -7,7 +7,9 @@ import org.apache.camel.Exchange;
 import org.apache.camel.ProducerTemplate;
 import org.apache.camel.support.DefaultExchange;
 import org.mifos.connector.ams.properties.TenantProperties;
+import org.mifos.phee.common.ams.dto.QuoteFspResponseDTO;
 import org.mifos.phee.common.channel.dto.TransactionChannelRequestDTO;
+import org.mifos.phee.common.mojaloop.dto.FspMoneyData;
 import org.mifos.phee.common.mojaloop.dto.MoneyData;
 import org.mifos.phee.common.mojaloop.dto.Party;
 import org.mifos.phee.common.mojaloop.dto.PartyIdInfo;
@@ -25,6 +27,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
+import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -213,7 +216,16 @@ public class ZeebeeWorkers {
                             ex.setProperty(ZEEBE_JOB_KEY, job.getKey());
                             producerTemplate.send("direct:send-local-quote", ex);
                         } else {
-                            // TODO implement free dummy quote
+                            QuoteFspResponseDTO response = new QuoteFspResponseDTO();
+                            response.setFspFee(new FspMoneyData(BigDecimal.ZERO, "TZS"));
+                            response.setFspCommission(new FspMoneyData(BigDecimal.ZERO, "TZS"));
+
+                            Map<String, Object> variables = new HashMap<>();
+                            variables.put(LOCAL_QUOTE_RESPONSE, objectMapper.writeValueAsString(response));
+
+                            zeebeClient.newCompleteCommand(job.getKey())
+                                    .variables(variables)
+                                    .send();
                         }
                     })
                     .name("payee-quote-" + dfspid)
