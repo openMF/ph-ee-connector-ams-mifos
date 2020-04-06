@@ -32,14 +32,16 @@ public class LocalQuoteResponseProcessor implements Processor {
         Integer responseCode = exchange.getIn().getHeader(Exchange.HTTP_RESPONSE_CODE, Integer.class);
         Long jobKey = exchange.getProperty(ZEEBE_JOB_KEY, Long.class);
         if (responseCode > 202) {
-            logger.error("Invalid responseCode {} for local quote, transaction: {} Message: {}",
+            String errorMsg = String.format("Invalid responseCode %s for payee-local-quote transaction: %s Message: %s",
                     responseCode,
                     exchange.getProperty(TRANSACTION_ID),
                     exchange.getIn().getBody(String.class));
 
+            logger.error(errorMsg);
+
             zeebeClient.newThrowErrorCommand(jobKey)
-                    .errorCode("local-quote-error")
-                    .errorMessage("Local quote failed!")
+                    .errorCode(ZeebeErrorCode.PAYEE_QUOTE_ERROR)
+                    .errorMessage(errorMsg)
                     .send();
         } else {
             Map<String, Object> variables = new HashMap<>();

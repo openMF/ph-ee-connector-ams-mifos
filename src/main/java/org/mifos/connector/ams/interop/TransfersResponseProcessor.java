@@ -32,14 +32,15 @@ public class TransfersResponseProcessor implements Processor {
     public void process(Exchange exchange) {
         Integer responseCode = exchange.getIn().getHeader(Exchange.HTTP_RESPONSE_CODE, Integer.class);
         if (responseCode > 202) {
-            String errorMsg = String.format("Invalid responseCode %s for transfer, transaction: %s Message: %s",
+            String errorMsg = String.format("Invalid responseCode %s for payee-transfer, transaction: %s Message: %s",
                     responseCode,
                     exchange.getProperty(TRANSACTION_ID),
                     exchange.getIn().getBody(String.class));
+
             logger.error(errorMsg);
 
             zeebeClient.newThrowErrorCommand(exchange.getProperty(ZEEBE_JOB_KEY, Long.class))
-                    .errorCode("transfer-error")
+                    .errorCode(ZeebeErrorCode.PAYEE_TRANSFER_ERROR)
                     .errorMessage(errorMsg)
                     .send();
         } else {

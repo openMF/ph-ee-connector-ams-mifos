@@ -328,13 +328,8 @@ public class ZeebeeWorkers {
                             ex.setProperty(PARTY_ID_TYPE, partyIdType);
                             ex.setProperty(PARTY_ID, partyId);
                             ex.setProperty(TENANT_ID, existingVariables.get(TENANT_ID));
+                            ex.setProperty(ZEEBE_JOB_KEY, job.getKey());
                             producerTemplate.send("direct:get-party", ex);
-
-                            Map<String, Object> variables = new HashMap<>();
-                            variables.put(PAYEE_PARTY_RESPONSE, objectMapper.writeValueAsString(ex.getIn().getBody(Party.class)));
-                            client.newCompleteCommand(job.getKey())
-                                    .variables(variables)
-                                    .send();
                         } else {
                             Map<String, Object> variables = new HashMap<>();
                             Party party = new Party( // only return fspId from configuration
