@@ -1,13 +1,13 @@
 ams:
   local:
     interop:
-      host: https://leopard.mifos.io:8443
+      host: https://rhino.mifos.io:8443
     customer:
-      host: https://leopard.mifos.io:8443
+      host: https://rhino.mifos.io:8443
     account:
-      host: https://leopard.mifos.io:8443
+      host: https://rhino.mifos.io:8443
     auth:
-      host: https://leopard.mifos.io:8443
+      host: https://rhino.mifos.io:8443
     tenants:
       - name: tn03
         user: mifos
