@@ -17,6 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
@@ -29,6 +30,7 @@ import static org.mifos.connector.ams.camel.config.CamelProperties.ZEEBE_JOB_KEY
 import static org.mifos.phee.common.ams.dto.LegalForm.PERSON;
 
 @Component
+@ConditionalOnExpression("${ams.local.enabled}")
 public class ClientResponseProcessor implements Processor {
 
     private Logger logger = LoggerFactory.getLogger(this.getClass());

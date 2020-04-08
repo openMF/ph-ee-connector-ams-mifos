@@ -45,7 +45,7 @@ import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSACTION_R
 import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSFER_ACTION;
 import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSFER_CODE;
 import static org.mifos.connector.ams.camel.config.CamelProperties.ZEEBE_JOB_KEY;
-import static org.mifos.connector.ams.zeebe.ZeebeProcessStarter.zeebeVariablesToCamelProperties;
+import static org.mifos.connector.ams.zeebe.ZeebeUtil.zeebeVariablesToCamelProperties;
 import static org.mifos.phee.common.ams.dto.TransferActionType.CREATE;
 import static org.mifos.phee.common.ams.dto.TransferActionType.PREPARE;
 import static org.mifos.phee.common.ams.dto.TransferActionType.RELEASE;
@@ -188,10 +188,10 @@ public class ZeebeeWorkers {
                     .jobType("payee-quote-" + dfspid)
                     .handler((client, job) -> {
                         logger.info("Job '{}' started from process '{}' with key {}", job.getType(), job.getBpmnProcessId(), job.getKey());
-                        if(isAmsLocalEnabled) {
-                            Map<String, Object> variables = job.getVariablesAsMap();
+                        Map<String, Object> variables = job.getVariablesAsMap();
+                        QuoteSwitchRequestDTO quoteRequest = objectMapper.readValue((String) variables.get(QUOTE_SWITCH_REQUEST), QuoteSwitchRequestDTO.class);
 
-                            QuoteSwitchRequestDTO quoteRequest = objectMapper.readValue((String) variables.get(QUOTE_SWITCH_REQUEST), QuoteSwitchRequestDTO.class);
+                        if(isAmsLocalEnabled) {
                             String tenantId = tenantProperties.getTenant(quoteRequest.getPayee().getPartyIdInfo().getPartyIdType().name(),
                                     quoteRequest.getPayee().getPartyIdInfo().getPartyIdentifier()).getName();
 
@@ -216,15 +216,8 @@ public class ZeebeeWorkers {
                             ex.setProperty(ZEEBE_JOB_KEY, job.getKey());
                             producerTemplate.send("direct:send-local-quote", ex);
                         } else {
-                            QuoteFspResponseDTO response = new QuoteFspResponseDTO();
-                            response.setFspFee(new FspMoneyData(BigDecimal.ZERO, "TZS"));
-                            response.setFspCommission(new FspMoneyData(BigDecimal.ZERO, "TZS"));
-
-                            Map<String, Object> variables = new HashMap<>();
-                            variables.put(LOCAL_QUOTE_RESPONSE, objectMapper.writeValueAsString(response));
-
                             zeebeClient.newCompleteCommand(job.getKey())
-                                    .variables(variables)
+                                    .variables(createFreeQuote(quoteRequest.getAmount().getCurrency()))
                                     .send();
                         }
                     })
@@ -351,5 +344,15 @@ public class ZeebeeWorkers {
                     .maxJobsActive(10)
                     .open();
         }
+    }
+
+    private Map<String, Object> createFreeQuote(String currency) throws Exception {
+        QuoteFspResponseDTO response = new QuoteFspResponseDTO();
+        response.setFspFee(new FspMoneyData(BigDecimal.ZERO, currency));
+        response.setFspCommission(new FspMoneyData(BigDecimal.ZERO, currency));
+
+        Map<String, Object> variables = new HashMap<>();
+        variables.put(LOCAL_QUOTE_RESPONSE, objectMapper.writeValueAsString(response));
+        return variables;
     }
 }
