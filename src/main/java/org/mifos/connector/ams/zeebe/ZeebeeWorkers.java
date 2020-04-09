@@ -6,6 +6,7 @@ import org.apache.camel.CamelContext;
 import org.apache.camel.Exchange;
 import org.apache.camel.ProducerTemplate;
 import org.apache.camel.support.DefaultExchange;
+import org.mifos.connector.ams.properties.Tenant;
 import org.mifos.connector.ams.properties.TenantProperties;
 import org.mifos.phee.common.ams.dto.QuoteFspResponseDTO;
 import org.mifos.phee.common.channel.dto.TransactionChannelRequestDTO;
@@ -83,16 +84,25 @@ public class ZeebeeWorkers {
                 .handler((client, job) -> {
                     logger.info("Job '{}' started from process '{}' with key {}", job.getType(), job.getBpmnProcessId(), job.getKey());
                     if (isAmsLocalEnabled) {
-                        Exchange ex = new DefaultExchange(camelContext);
                         Map<String, Object> variables = job.getVariablesAsMap();
+
+                        TransactionChannelRequestDTO channelRequest = objectMapper.readValue((String)variables.get(TRANSACTION_REQUEST), TransactionChannelRequestDTO.class);
+                        String tenantId = channelRequest.getPayer().getPartyIdInfo().getTenantId();
+                        Tenant tenant = tenantProperties.getTenant(tenantId); // validate name
+                        String partyIdentifier = channelRequest.getPayer().getPartyIdInfo().getPartyIdentifier();
+                        IdentifierType partyIdType = channelRequest.getPayer().getPartyIdInfo().getPartyIdType();
+                        if(!tenant.getPartyIdType().equals(partyIdType.name()) || tenant.getPartyId().equals(partyIdentifier)) {
+                            throw new RuntimeException("Tenant with type: " + partyIdType + ", id: " + partyIdentifier + ", not configuerd!");
+                        }
+
+                        Exchange ex = new DefaultExchange(camelContext);
                         zeebeVariablesToCamelProperties(variables, ex,
                                 TRANSACTION_REQUEST,
                                 TRANSACTION_ID);
 
-                        TransactionChannelRequestDTO channelRequest = objectMapper.readValue((String)variables.get(TRANSACTION_REQUEST), TransactionChannelRequestDTO.class);
-                        ex.setProperty(PARTY_ID, channelRequest.getPayer().getPartyIdInfo().getPartyIdentifier());
-                        ex.setProperty(PARTY_ID_TYPE, channelRequest.getPayer().getPartyIdInfo().getPartyIdType());
-                        ex.setProperty(TENANT_ID, channelRequest.getPayer().getPartyIdInfo().getTenantId());
+                        ex.setProperty(TENANT_ID, tenantId);
+                        ex.setProperty(PARTY_ID, partyIdentifier);
+                        ex.setProperty(PARTY_ID_TYPE, partyIdType);
                         ex.setProperty(ZEEBE_JOB_KEY, job.getKey());
                         ex.setProperty(TRANSACTION_ROLE, TransactionRole.PAYER);
                         producerTemplate.send("direct:send-local-quote", ex);

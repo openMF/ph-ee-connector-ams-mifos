@@ -47,11 +47,8 @@ public class TenantService {
 
     public Map<String, Object> getHeaders(String tenantName) {
         Tenant tenant = tenantProperties.getTenant(tenantName);
-        if (tenant == null) {
-            throw new RuntimeException(String.format("Could not get headers for tenant: %s, no application configuration found!", tenantName));
-        }
-
         Map<String, Object> headers = new HashMap<>();
+
         if ("1.2".equals(amsLocalVersion)) {
             headers.put(FINERACT_PLATFORM_TENANT_ID_HEADER, tenantName);
         } else if ("cn".equals(amsLocalVersion)) {

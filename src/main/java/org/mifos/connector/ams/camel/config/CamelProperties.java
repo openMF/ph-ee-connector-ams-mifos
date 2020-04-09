@@ -9,7 +9,6 @@ public class CamelProperties {
     public static final String LOCAL_QUOTE_RESPONSE = "localQuoteResponse";
     public static final String LOGIN_USERNAME = "loginUsername";
     public static final String LOGIN_PASSWORD = "loginPassword";
-    public static final String ORIGIN_DATE = "originDate";
     public static final String PARTY_ID = "partyId";
     public static final String PARTY_ID_TYPE = "partyIdType";
     public static final String PAYEE_PARTY_RESPONSE = "payeePartyResponse";

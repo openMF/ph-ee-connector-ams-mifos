@@ -23,21 +23,21 @@ public class TenantProperties {
         this.tenants = tenants;
     }
 
-    public Tenant getTenant(String tenant) {
+    public Tenant getTenant(String name) {
         return getTenants().stream()
-                .filter(t -> t.getName().equals(tenant))
+                .filter(t -> t.getName().equals(name))
                 .findFirst()
-                .orElse(null);
+                .orElseThrow(() -> new RuntimeException("Tenant with name: " + name + ", not configuerd!"));
     }
 
     public Tenant getTenant(String partyIdType, String partyId) {
         if (partyIdType == null || partyId == null) {
-            return null;
+            throw new RuntimeException("Tenant with type: " + partyIdType + ", id: " + partyId + ", not configuerd!");
         }
 
         return getTenants().stream()
                 .filter(t -> t.getPartyIdType().equals(partyIdType) && t.getPartyId().equals(partyId))
                 .findFirst()
-                .orElse(null);
+                .orElseThrow(() -> new RuntimeException("Tenant with type: " + partyIdType + ", id: " + partyId + ", not configuerd!"));
     }
 }
