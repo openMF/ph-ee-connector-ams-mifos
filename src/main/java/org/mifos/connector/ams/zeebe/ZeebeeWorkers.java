@@ -91,7 +91,7 @@ public class ZeebeeWorkers {
                         Tenant tenant = tenantProperties.getTenant(tenantId); // validate name
                         String partyIdentifier = channelRequest.getPayer().getPartyIdInfo().getPartyIdentifier();
                         IdentifierType partyIdType = channelRequest.getPayer().getPartyIdInfo().getPartyIdType();
-                        if(!tenant.getPartyIdType().equals(partyIdType.name()) || tenant.getPartyId().equals(partyIdentifier)) {
+                        if(!tenant.getPartyIdType().equals(partyIdType.name()) || !tenant.getPartyId().equals(partyIdentifier)) {
                             throw new RuntimeException("Tenant with type: " + partyIdType + ", id: " + partyIdentifier + ", not configuerd!");
                         }
 
