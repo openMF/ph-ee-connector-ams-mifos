@@ -72,7 +72,7 @@ public class ClientResponseProcessor implements Processor {
             error.put("errorCode", String.valueOf(PARTY_NOT_FOUND.getCode()));
             error.put("errorDescription", errorMsg);
             errorObject.put("errorInformation", error);
-            variables.put(ERROR_INFORMATION, objectMapper.writeValueAsString(errorObject));
+            variables.put(ERROR_INFORMATION, errorObject.toString());
 
             zeebeClient.newCompleteCommand(exchange.getProperty(ZEEBE_JOB_KEY, Long.class))
                     .variables(variables)

@@ -1,11 +1,9 @@
 package org.mifos.connector.ams.interop;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.zeebe.client.ZeebeClient;
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
 import org.json.JSONObject;
-import org.mifos.phee.common.mojaloop.dto.ErrorInformation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,7 +20,6 @@ import static org.mifos.connector.ams.camel.config.CamelProperties.LOCAL_QUOTE_R
 import static org.mifos.connector.ams.camel.config.CamelProperties.TENANT_ID;
 import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSACTION_ID;
 import static org.mifos.connector.ams.camel.config.CamelProperties.ZEEBE_JOB_KEY;
-import static org.mifos.phee.common.mojaloop.type.ErrorCode.PARTY_NOT_FOUND;
 import static org.mifos.phee.common.mojaloop.type.ErrorCode.PAYEE_FSP_REJECTED_QUOTE;
 
 @Component
@@ -33,9 +30,6 @@ public class LocalQuoteResponseProcessor implements Processor {
 
     @Autowired
     private ZeebeClient zeebeClient;
-
-    @Autowired
-    private ObjectMapper objectMapper;
 
     @Override
     public void process(Exchange exchange) throws Exception {
@@ -55,7 +49,7 @@ public class LocalQuoteResponseProcessor implements Processor {
             error.put("errorCode", String.valueOf(PAYEE_FSP_REJECTED_QUOTE.getCode()));
             error.put("errorDescription", errorMsg);
             errorObject.put("errorInformation", error);
-            variables.put(ERROR_INFORMATION, objectMapper.writeValueAsString(errorObject));
+            variables.put(ERROR_INFORMATION, errorObject.toString());
             variables.put(IS_QUOTE_SUCCESS, false);
 
             zeebeClient.newCompleteCommand(jobKey)
