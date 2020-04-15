@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.zeebe.client.ZeebeClient;
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
+import org.json.JSONObject;
 import org.mifos.connector.ams.properties.TenantProperties;
 import org.mifos.phee.common.ams.dto.ClientData;
 import org.mifos.phee.common.ams.dto.Customer;
@@ -66,8 +67,12 @@ public class ClientResponseProcessor implements Processor {
             logger.error(errorMsg);
 
             Map<String, Object> variables = new HashMap<>();
-            ErrorInformation error = new ErrorInformation((short) PARTY_NOT_FOUND.getCode(), errorMsg);
-            variables.put(ERROR_INFORMATION, objectMapper.writeValueAsString(error));
+            JSONObject errorObject = new JSONObject();
+            JSONObject error = new JSONObject();
+            error.put("errorCode", String.valueOf(PARTY_NOT_FOUND.getCode()));
+            error.put("errorDescription", errorMsg);
+            errorObject.put("errorInformation", error);
+            variables.put(ERROR_INFORMATION, objectMapper.writeValueAsString(errorObject));
 
             zeebeClient.newCompleteCommand(exchange.getProperty(ZEEBE_JOB_KEY, Long.class))
                     .variables(variables)
