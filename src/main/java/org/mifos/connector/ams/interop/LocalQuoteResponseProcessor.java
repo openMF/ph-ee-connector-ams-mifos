@@ -4,6 +4,7 @@ import io.zeebe.client.ZeebeClient;
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
 import org.json.JSONObject;
+import org.mifos.phee.common.mojaloop.type.TransactionRole;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,8 +20,10 @@ import static org.mifos.connector.ams.camel.config.CamelProperties.IS_QUOTE_SUCC
 import static org.mifos.connector.ams.camel.config.CamelProperties.LOCAL_QUOTE_RESPONSE;
 import static org.mifos.connector.ams.camel.config.CamelProperties.TENANT_ID;
 import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSACTION_ID;
+import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSACTION_ROLE;
 import static org.mifos.connector.ams.camel.config.CamelProperties.ZEEBE_JOB_KEY;
 import static org.mifos.phee.common.mojaloop.type.ErrorCode.PAYEE_FSP_REJECTED_QUOTE;
+import static org.mifos.phee.common.mojaloop.type.ErrorCode.PAYER_FSP_INSUFFICIENT_LIQUIDITY;
 
 @Component
 @ConditionalOnExpression("${ams.local.enabled}")
@@ -46,7 +49,8 @@ public class LocalQuoteResponseProcessor implements Processor {
             Map<String, Object> variables = new HashMap<>();
             JSONObject errorObject = new JSONObject();
             JSONObject error = new JSONObject();
-            error.put("errorCode", String.valueOf(PAYEE_FSP_REJECTED_QUOTE.getCode()));
+            error.put("errorCode", exchange.getProperty(TRANSACTION_ROLE, String.class).equals(TransactionRole.PAYER.name()) ?
+                    String.valueOf(PAYER_FSP_INSUFFICIENT_LIQUIDITY.getCode()) : String.valueOf(PAYEE_FSP_REJECTED_QUOTE.getCode()));
             error.put("errorDescription", errorMsg);
             errorObject.put("errorInformation", error);
             variables.put(ERROR_INFORMATION, errorObject.toString());
