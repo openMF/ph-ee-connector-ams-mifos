@@ -95,11 +95,6 @@
 			<artifactId>zeebe-client-java</artifactId>
 			<version>0.23.0-alpha2</version>
 		</dependency>
-		<dependency>
-			<groupId>com.fasterxml.jackson.datatype</groupId>
-			<artifactId>jackson-datatype-jsr310</artifactId>
-			<version>2.9.3</version>
-		</dependency>
 
 		<!-- test deps -->
 		<dependency>

@@ -10,6 +10,7 @@ import org.mifos.connector.ams.properties.Tenant;
 import org.mifos.connector.ams.properties.TenantProperties;
 import org.mifos.phee.common.ams.dto.QuoteFspResponseDTO;
 import org.mifos.phee.common.channel.dto.TransactionChannelRequestDTO;
+import org.mifos.phee.common.mojaloop.dto.ErrorInformation;
 import org.mifos.phee.common.mojaloop.dto.FspMoneyData;
 import org.mifos.phee.common.mojaloop.dto.MoneyData;
 import org.mifos.phee.common.mojaloop.dto.Party;
@@ -33,7 +34,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.mifos.connector.ams.camel.config.CamelProperties.ERROR_INFORMATION;
 import static org.mifos.connector.ams.camel.config.CamelProperties.EXTERNAL_ACCOUNT_ID;
+import static org.mifos.connector.ams.camel.config.CamelProperties.IS_PAYEE_QUOTE_SUCCESS;
+import static org.mifos.connector.ams.camel.config.CamelProperties.IS_TRANSFER_PREPARE_SUCCESS;
 import static org.mifos.connector.ams.camel.config.CamelProperties.LOCAL_QUOTE_RESPONSE;
 import static org.mifos.connector.ams.camel.config.CamelProperties.PARTY_ID;
 import static org.mifos.connector.ams.camel.config.CamelProperties.PARTY_ID_TYPE;
@@ -50,6 +54,7 @@ import static org.mifos.connector.ams.zeebe.ZeebeUtil.zeebeVariablesToCamelPrope
 import static org.mifos.phee.common.ams.dto.TransferActionType.CREATE;
 import static org.mifos.phee.common.ams.dto.TransferActionType.PREPARE;
 import static org.mifos.phee.common.ams.dto.TransferActionType.RELEASE;
+import static org.mifos.phee.common.mojaloop.type.ErrorCode.SERVER_TIMED_OUT;
 
 @Component
 public class ZeebeeWorkers {
@@ -198,8 +203,8 @@ public class ZeebeeWorkers {
                     .jobType("payee-quote-" + dfspid)
                     .handler((client, job) -> {
                         logger.info("Job '{}' started from process '{}' with key {}", job.getType(), job.getBpmnProcessId(), job.getKey());
-                        Map<String, Object> variables = job.getVariablesAsMap();
-                        QuoteSwitchRequestDTO quoteRequest = objectMapper.readValue((String) variables.get(QUOTE_SWITCH_REQUEST), QuoteSwitchRequestDTO.class);
+                        Map<String, Object> existingVariables = job.getVariablesAsMap();
+                        QuoteSwitchRequestDTO quoteRequest = objectMapper.readValue((String) existingVariables.get(QUOTE_SWITCH_REQUEST), QuoteSwitchRequestDTO.class);
 
                         if(isAmsLocalEnabled) {
                             String tenantId = tenantProperties.getTenant(quoteRequest.getPayee().getPartyIdInfo().getPartyIdType().name(),
@@ -219,15 +224,17 @@ public class ZeebeeWorkers {
                             Exchange ex = new DefaultExchange(camelContext);
                             ex.setProperty(PARTY_ID, quoteRequest.getPayee().getPartyIdInfo().getPartyIdentifier());
                             ex.setProperty(PARTY_ID_TYPE, quoteRequest.getPayee().getPartyIdInfo().getPartyIdType());
-                            ex.setProperty(TRANSACTION_ID, variables.get(TRANSACTION_ID));
+                            ex.setProperty(TRANSACTION_ID, existingVariables.get(TRANSACTION_ID));
                             ex.setProperty(TENANT_ID, tenantId);
                             ex.setProperty(TRANSACTION_ROLE, TransactionRole.PAYEE.name());
                             ex.setProperty(TRANSACTION_REQUEST, objectMapper.writeValueAsString(channelRequest));
                             ex.setProperty(ZEEBE_JOB_KEY, job.getKey());
                             producerTemplate.send("direct:send-local-quote", ex);
                         } else {
+                            Map<String, Object> variables = createFreeQuote(quoteRequest.getAmount().getCurrency());
+                            variables.put(IS_PAYEE_QUOTE_SUCCESS, true);
                             zeebeClient.newCompleteCommand(job.getKey())
-                                    .variables(createFreeQuote(quoteRequest.getAmount().getCurrency()))
+                                    .variables(variables)
                                     .send();
                         }
                     })
@@ -268,7 +275,10 @@ public class ZeebeeWorkers {
 
                             producerTemplate.send("direct:send-transfers", ex);
                         } else {
+                            Map<String, Object> variables = new HashMap<>();
+                            variables.put(IS_TRANSFER_PREPARE_SUCCESS, true);
                             zeebeClient.newCompleteCommand(job.getKey())
+                                    .variables(variables)
                                     .send();
                         }
                     })
@@ -351,6 +361,23 @@ public class ZeebeeWorkers {
                         }
                     })
                     .name("payee-party-lookup-" + dfspid)
+                    .maxJobsActive(10)
+                    .open();
+
+            logger.info("## generating payee-timeout-error-{} worker", dfspid);
+            zeebeClient.newWorker()
+                    .jobType("payee-timeout-error-" + dfspid)
+                    .handler((client, job) -> {
+                        Map<String, Object> variables = new HashMap<>();
+                        QuoteSwitchRequestDTO quoteRequest = objectMapper.readValue((String) job.getVariablesAsMap().get(QUOTE_SWITCH_REQUEST), QuoteSwitchRequestDTO.class);
+                        variables.put(ERROR_INFORMATION, objectMapper.writeValueAsString(new ErrorInformation((short) SERVER_TIMED_OUT.getCode(),
+                                "Payee not received transfer request for quote " + quoteRequest.getQuoteId()))
+                        );
+                        client.newCompleteCommand(job.getKey())
+                                .variables(variables)
+                                .send();
+                    })
+                    .name("payee-timeout-error-" + dfspid)
                     .maxJobsActive(10)
                     .open();
         }

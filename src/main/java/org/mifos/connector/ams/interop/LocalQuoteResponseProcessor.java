@@ -1,8 +1,10 @@
 package org.mifos.connector.ams.interop;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.zeebe.client.ZeebeClient;
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
+import org.mifos.phee.common.mojaloop.dto.ErrorInformation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,11 +14,14 @@ import org.springframework.stereotype.Component;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.mifos.connector.ams.camel.config.CamelProperties.ERROR_INFORMATION;
 import static org.mifos.connector.ams.camel.config.CamelProperties.EXTERNAL_ACCOUNT_ID;
+import static org.mifos.connector.ams.camel.config.CamelProperties.IS_PAYEE_QUOTE_SUCCESS;
 import static org.mifos.connector.ams.camel.config.CamelProperties.LOCAL_QUOTE_RESPONSE;
 import static org.mifos.connector.ams.camel.config.CamelProperties.TENANT_ID;
 import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSACTION_ID;
 import static org.mifos.connector.ams.camel.config.CamelProperties.ZEEBE_JOB_KEY;
+import static org.mifos.phee.common.mojaloop.type.ErrorCode.PAYEE_FSP_REJECTED_QUOTE;
 
 @Component
 @ConditionalOnExpression("${ams.local.enabled}")
@@ -27,8 +32,11 @@ public class LocalQuoteResponseProcessor implements Processor {
     @Autowired
     private ZeebeClient zeebeClient;
 
+    @Autowired
+    private ObjectMapper objectMapper;
+
     @Override
-    public void process(Exchange exchange) {
+    public void process(Exchange exchange) throws Exception {
         Integer responseCode = exchange.getIn().getHeader(Exchange.HTTP_RESPONSE_CODE, Integer.class);
         Long jobKey = exchange.getProperty(ZEEBE_JOB_KEY, Long.class);
         if (responseCode > 202) {
@@ -39,15 +47,20 @@ public class LocalQuoteResponseProcessor implements Processor {
 
             logger.error(errorMsg);
 
-            zeebeClient.newThrowErrorCommand(jobKey)
-                    .errorCode(ZeebeErrorCode.PAYEE_QUOTE_ERROR)
-                    .errorMessage(errorMsg)
+            Map<String, Object> variables = new HashMap<>();
+            ErrorInformation error = new ErrorInformation((short) PAYEE_FSP_REJECTED_QUOTE.getCode(), errorMsg);
+            variables.put(ERROR_INFORMATION, objectMapper.writeValueAsString(error));
+            variables.put(IS_PAYEE_QUOTE_SUCCESS, false);
+
+            zeebeClient.newCompleteCommand(jobKey)
+                    .variables(variables)
                     .send();
         } else {
             Map<String, Object> variables = new HashMap<>();
             variables.put(LOCAL_QUOTE_RESPONSE, exchange.getIn().getBody());
             variables.put(EXTERNAL_ACCOUNT_ID, exchange.getProperty(EXTERNAL_ACCOUNT_ID));
             variables.put(TENANT_ID, exchange.getProperty(TENANT_ID));
+            variables.put(IS_PAYEE_QUOTE_SUCCESS, true);
 
             zeebeClient.newCompleteCommand(jobKey)
                     .variables(variables)

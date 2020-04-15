@@ -9,6 +9,7 @@ import org.mifos.phee.common.ams.dto.ClientData;
 import org.mifos.phee.common.ams.dto.Customer;
 import org.mifos.phee.common.ams.dto.LegalForm;
 import org.mifos.phee.common.mojaloop.dto.ComplexName;
+import org.mifos.phee.common.mojaloop.dto.ErrorInformation;
 import org.mifos.phee.common.mojaloop.dto.Party;
 import org.mifos.phee.common.mojaloop.dto.PartyIdInfo;
 import org.mifos.phee.common.mojaloop.dto.PersonalInfo;
@@ -23,11 +24,15 @@ import org.springframework.stereotype.Component;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.mifos.connector.ams.camel.config.CamelProperties.ERROR_INFORMATION;
+import static org.mifos.connector.ams.camel.config.CamelProperties.IS_PAYEE_QUOTE_SUCCESS;
 import static org.mifos.connector.ams.camel.config.CamelProperties.PARTY_ID;
 import static org.mifos.connector.ams.camel.config.CamelProperties.PARTY_ID_TYPE;
 import static org.mifos.connector.ams.camel.config.CamelProperties.PAYEE_PARTY_RESPONSE;
 import static org.mifos.connector.ams.camel.config.CamelProperties.ZEEBE_JOB_KEY;
 import static org.mifos.phee.common.ams.dto.LegalForm.PERSON;
+import static org.mifos.phee.common.mojaloop.type.ErrorCode.PARTY_NOT_FOUND;
+import static org.mifos.phee.common.mojaloop.type.ErrorCode.PAYEE_FSP_REJECTED_QUOTE;
 
 @Component
 @ConditionalOnExpression("${ams.local.enabled}")
@@ -62,9 +67,12 @@ public class ClientResponseProcessor implements Processor {
 
             logger.error(errorMsg);
 
-            zeebeClient.newThrowErrorCommand(exchange.getProperty(ZEEBE_JOB_KEY, Long.class))
-                    .errorCode(ZeebeErrorCode.PAYEE_PARTY_LOOKUP_ERROR)
-                    .errorMessage(errorMsg)
+            Map<String, Object> variables = new HashMap<>();
+            ErrorInformation error = new ErrorInformation((short) PARTY_NOT_FOUND.getCode(), errorMsg);
+            variables.put(ERROR_INFORMATION, objectMapper.writeValueAsString(error));
+
+            zeebeClient.newCompleteCommand(exchange.getProperty(ZEEBE_JOB_KEY, Long.class))
+                    .variables(variables)
                     .send();
         } else {
             Party mojaloopParty = new Party(
