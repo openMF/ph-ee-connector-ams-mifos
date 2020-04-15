@@ -16,7 +16,7 @@ import java.util.Map;
 
 import static org.mifos.connector.ams.camel.config.CamelProperties.ERROR_INFORMATION;
 import static org.mifos.connector.ams.camel.config.CamelProperties.EXTERNAL_ACCOUNT_ID;
-import static org.mifos.connector.ams.camel.config.CamelProperties.IS_PAYEE_QUOTE_SUCCESS;
+import static org.mifos.connector.ams.camel.config.CamelProperties.IS_QUOTE_SUCCESS;
 import static org.mifos.connector.ams.camel.config.CamelProperties.LOCAL_QUOTE_RESPONSE;
 import static org.mifos.connector.ams.camel.config.CamelProperties.TENANT_ID;
 import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSACTION_ID;
@@ -50,7 +50,7 @@ public class LocalQuoteResponseProcessor implements Processor {
             Map<String, Object> variables = new HashMap<>();
             ErrorInformation error = new ErrorInformation((short) PAYEE_FSP_REJECTED_QUOTE.getCode(), errorMsg);
             variables.put(ERROR_INFORMATION, objectMapper.writeValueAsString(error));
-            variables.put(IS_PAYEE_QUOTE_SUCCESS, false);
+            variables.put(IS_QUOTE_SUCCESS, false);
 
             zeebeClient.newCompleteCommand(jobKey)
                     .variables(variables)
@@ -60,7 +60,7 @@ public class LocalQuoteResponseProcessor implements Processor {
             variables.put(LOCAL_QUOTE_RESPONSE, exchange.getIn().getBody());
             variables.put(EXTERNAL_ACCOUNT_ID, exchange.getProperty(EXTERNAL_ACCOUNT_ID));
             variables.put(TENANT_ID, exchange.getProperty(TENANT_ID));
-            variables.put(IS_PAYEE_QUOTE_SUCCESS, true);
+            variables.put(IS_QUOTE_SUCCESS, true);
 
             zeebeClient.newCompleteCommand(jobKey)
                     .variables(variables)

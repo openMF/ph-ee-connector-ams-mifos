@@ -36,7 +36,7 @@ import java.util.Map;
 
 import static org.mifos.connector.ams.camel.config.CamelProperties.ERROR_INFORMATION;
 import static org.mifos.connector.ams.camel.config.CamelProperties.EXTERNAL_ACCOUNT_ID;
-import static org.mifos.connector.ams.camel.config.CamelProperties.IS_PAYEE_QUOTE_SUCCESS;
+import static org.mifos.connector.ams.camel.config.CamelProperties.IS_QUOTE_SUCCESS;
 import static org.mifos.connector.ams.camel.config.CamelProperties.IS_TRANSFER_PREPARE_SUCCESS;
 import static org.mifos.connector.ams.camel.config.CamelProperties.LOCAL_QUOTE_RESPONSE;
 import static org.mifos.connector.ams.camel.config.CamelProperties.PARTY_ID;
@@ -232,7 +232,7 @@ public class ZeebeeWorkers {
                             producerTemplate.send("direct:send-local-quote", ex);
                         } else {
                             Map<String, Object> variables = createFreeQuote(quoteRequest.getAmount().getCurrency());
-                            variables.put(IS_PAYEE_QUOTE_SUCCESS, true);
+                            variables.put(IS_QUOTE_SUCCESS, true);
                             zeebeClient.newCompleteCommand(job.getKey())
                                     .variables(variables)
                                     .send();

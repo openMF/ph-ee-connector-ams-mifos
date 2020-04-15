@@ -15,7 +15,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.mifos.connector.ams.camel.config.CamelProperties.ERROR_INFORMATION;
-import static org.mifos.connector.ams.camel.config.CamelProperties.IS_PAYEE_QUOTE_SUCCESS;
 import static org.mifos.connector.ams.camel.config.CamelProperties.IS_TRANSFER_PREPARE_SUCCESS;
 import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSACTION_ID;
 import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSFER_ACTION;
