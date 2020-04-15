@@ -6,6 +6,7 @@ import org.apache.camel.CamelContext;
 import org.apache.camel.Exchange;
 import org.apache.camel.ProducerTemplate;
 import org.apache.camel.support.DefaultExchange;
+import org.json.JSONObject;
 import org.mifos.connector.ams.properties.Tenant;
 import org.mifos.connector.ams.properties.TenantProperties;
 import org.mifos.phee.common.ams.dto.QuoteFspResponseDTO;
@@ -54,6 +55,7 @@ import static org.mifos.connector.ams.zeebe.ZeebeUtil.zeebeVariablesToCamelPrope
 import static org.mifos.phee.common.ams.dto.TransferActionType.CREATE;
 import static org.mifos.phee.common.ams.dto.TransferActionType.PREPARE;
 import static org.mifos.phee.common.ams.dto.TransferActionType.RELEASE;
+import static org.mifos.phee.common.mojaloop.type.ErrorCode.PARTY_NOT_FOUND;
 import static org.mifos.phee.common.mojaloop.type.ErrorCode.SERVER_TIMED_OUT;
 
 @Component
@@ -370,9 +372,14 @@ public class ZeebeeWorkers {
                     .handler((client, job) -> {
                         Map<String, Object> variables = new HashMap<>();
                         QuoteSwitchRequestDTO quoteRequest = objectMapper.readValue((String) job.getVariablesAsMap().get(QUOTE_SWITCH_REQUEST), QuoteSwitchRequestDTO.class);
-                        variables.put(ERROR_INFORMATION, objectMapper.writeValueAsString(new ErrorInformation((short) SERVER_TIMED_OUT.getCode(),
-                                "Payee not received transfer request for quote " + quoteRequest.getQuoteId()))
-                        );
+
+                        JSONObject errorObject = new JSONObject();
+                        JSONObject error = new JSONObject();
+                        error.put("errorCode", String.valueOf(SERVER_TIMED_OUT.getCode()));
+                        error.put("errorDescription", "Payee not received transfer request for quote " + quoteRequest.getQuoteId() + " in 60 seconds");
+                        errorObject.put("errorInformation", error);
+                        variables.put(ERROR_INFORMATION, errorObject.toString());
+
                         client.newCompleteCommand(job.getKey())
                                 .variables(variables)
                                 .send();
