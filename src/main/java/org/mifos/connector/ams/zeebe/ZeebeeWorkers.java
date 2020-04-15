@@ -186,7 +186,7 @@ public class ZeebeeWorkers {
                                 TRANSFER_CODE);
                         ex.setProperty(TRANSFER_ACTION, RELEASE.name());
                         ex.setProperty(ZEEBE_JOB_KEY, job.getKey());
-                        ex.setProperty(TRANSACTION_ROLE, TransactionRole.PAYER.name());
+                        ex.setProperty(TRANSACTION_ROLE, TransactionRole.PAYEE.name());
                         producerTemplate.send("direct:send-transfers", ex);
                     } else {
                         zeebeClient.newCompleteCommand(job.getKey())
