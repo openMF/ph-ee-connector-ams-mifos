@@ -7,8 +7,6 @@ public class CamelProperties {
     public static final String CLIENT_ID = "clientId";
     public static final String ERROR_INFORMATION = "errorInformation";
     public static final String EXTERNAL_ACCOUNT_ID = "externalAccountId";
-    public static final String IS_QUOTE_SUCCESS = "isQuoteSuccess";
-    public static final String IS_TRANSFER_PREPARE_SUCCESS = "isTransferPrepareSuccess";
     public static final String LOCAL_QUOTE_RESPONSE = "localQuoteResponse";
     public static final String LOGIN_USERNAME = "loginUsername";
     public static final String LOGIN_PASSWORD = "loginPassword";

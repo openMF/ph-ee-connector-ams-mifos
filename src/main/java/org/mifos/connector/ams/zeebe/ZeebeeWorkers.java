@@ -6,12 +6,10 @@ import org.apache.camel.CamelContext;
 import org.apache.camel.Exchange;
 import org.apache.camel.ProducerTemplate;
 import org.apache.camel.support.DefaultExchange;
-import org.json.JSONObject;
 import org.mifos.connector.ams.properties.Tenant;
 import org.mifos.connector.ams.properties.TenantProperties;
 import org.mifos.phee.common.ams.dto.QuoteFspResponseDTO;
 import org.mifos.phee.common.channel.dto.TransactionChannelRequestDTO;
-import org.mifos.phee.common.mojaloop.dto.ErrorInformation;
 import org.mifos.phee.common.mojaloop.dto.FspMoneyData;
 import org.mifos.phee.common.mojaloop.dto.MoneyData;
 import org.mifos.phee.common.mojaloop.dto.Party;
@@ -37,8 +35,6 @@ import java.util.Map;
 
 import static org.mifos.connector.ams.camel.config.CamelProperties.ERROR_INFORMATION;
 import static org.mifos.connector.ams.camel.config.CamelProperties.EXTERNAL_ACCOUNT_ID;
-import static org.mifos.connector.ams.camel.config.CamelProperties.IS_QUOTE_SUCCESS;
-import static org.mifos.connector.ams.camel.config.CamelProperties.IS_TRANSFER_PREPARE_SUCCESS;
 import static org.mifos.connector.ams.camel.config.CamelProperties.LOCAL_QUOTE_RESPONSE;
 import static org.mifos.connector.ams.camel.config.CamelProperties.PARTY_ID;
 import static org.mifos.connector.ams.camel.config.CamelProperties.PARTY_ID_TYPE;
@@ -55,7 +51,7 @@ import static org.mifos.connector.ams.zeebe.ZeebeUtil.zeebeVariablesToCamelPrope
 import static org.mifos.phee.common.ams.dto.TransferActionType.CREATE;
 import static org.mifos.phee.common.ams.dto.TransferActionType.PREPARE;
 import static org.mifos.phee.common.ams.dto.TransferActionType.RELEASE;
-import static org.mifos.phee.common.mojaloop.type.ErrorCode.PARTY_NOT_FOUND;
+import static org.mifos.phee.common.camel.ErrorHandlerRouteBuilder.createError;
 import static org.mifos.phee.common.mojaloop.type.ErrorCode.SERVER_TIMED_OUT;
 
 @Component
@@ -234,7 +230,6 @@ public class ZeebeeWorkers {
                             producerTemplate.send("direct:send-local-quote", ex);
                         } else {
                             Map<String, Object> variables = createFreeQuote(quoteRequest.getAmount().getCurrency());
-                            variables.put(IS_QUOTE_SUCCESS, true);
                             zeebeClient.newCompleteCommand(job.getKey())
                                     .variables(variables)
                                     .send();
@@ -277,10 +272,7 @@ public class ZeebeeWorkers {
 
                             producerTemplate.send("direct:send-transfers", ex);
                         } else {
-                            Map<String, Object> variables = new HashMap<>();
-                            variables.put(IS_TRANSFER_PREPARE_SUCCESS, true);
                             zeebeClient.newCompleteCommand(job.getKey())
-                                    .variables(variables)
                                     .send();
                         }
                     })
@@ -370,15 +362,11 @@ public class ZeebeeWorkers {
             zeebeClient.newWorker()
                     .jobType("payee-timeout-error-" + dfspid)
                     .handler((client, job) -> {
-                        Map<String, Object> variables = new HashMap<>();
                         QuoteSwitchRequestDTO quoteRequest = objectMapper.readValue((String) job.getVariablesAsMap().get(QUOTE_SWITCH_REQUEST), QuoteSwitchRequestDTO.class);
 
-                        JSONObject errorObject = new JSONObject();
-                        JSONObject error = new JSONObject();
-                        error.put("errorCode", String.valueOf(SERVER_TIMED_OUT.getCode()));
-                        error.put("errorDescription", "Payee not received transfer request for quote " + quoteRequest.getQuoteId() + " in 60 seconds");
-                        errorObject.put("errorInformation", error);
-                        variables.put(ERROR_INFORMATION, errorObject.toString());
+                        Map<String, Object> variables = new HashMap<>();
+                        variables.put(ERROR_INFORMATION, createError(String.valueOf(SERVER_TIMED_OUT.getCode()),
+                                "Payee not received transfer request for quote " + quoteRequest.getQuoteId() + " in 60 seconds").toString());
 
                         client.newCompleteCommand(job.getKey())
                                 .variables(variables)

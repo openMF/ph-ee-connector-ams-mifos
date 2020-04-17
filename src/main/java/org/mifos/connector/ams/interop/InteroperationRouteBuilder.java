@@ -41,7 +41,7 @@ public class InteroperationRouteBuilder extends ErrorHandlerRouteBuilder {
     private PrepareLocalQuoteRequest prepareLocalQuoteRequest;
 
     @Autowired
-    private LocalQuoteResponseProcessor localQuoteResponseProcessor;
+    private QuoteResponseProcessor quoteResponseProcessor;
 
     @Autowired
     private PrepareTransferRequest prepareTransferRequest;
@@ -74,7 +74,7 @@ public class InteroperationRouteBuilder extends ErrorHandlerRouteBuilder {
                 .process(prepareLocalQuoteRequest)
                 .process(pojoToString)
                 .process(amsService::getLocalQuote)
-                .process(localQuoteResponseProcessor);
+                .process(quoteResponseProcessor);
 
         from("direct:send-transfers")
                 .id("send-transfers")
