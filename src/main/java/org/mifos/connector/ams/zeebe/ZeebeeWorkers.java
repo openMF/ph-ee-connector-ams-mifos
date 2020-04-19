@@ -357,24 +357,6 @@ public class ZeebeeWorkers {
                     .name("payee-party-lookup-" + dfspid)
                     .maxJobsActive(10)
                     .open();
-
-            logger.info("## generating payee-timeout-error-{} worker", dfspid);
-            zeebeClient.newWorker()
-                    .jobType("payee-timeout-error-" + dfspid)
-                    .handler((client, job) -> {
-                        QuoteSwitchRequestDTO quoteRequest = objectMapper.readValue((String) job.getVariablesAsMap().get(QUOTE_SWITCH_REQUEST), QuoteSwitchRequestDTO.class);
-
-                        Map<String, Object> variables = new HashMap<>();
-                        variables.put(ERROR_INFORMATION, createError(String.valueOf(SERVER_TIMED_OUT.getCode()),
-                                "Payee not received transfer request for quote " + quoteRequest.getQuoteId() + " in 60 seconds").toString());
-
-                        client.newCompleteCommand(job.getKey())
-                                .variables(variables)
-                                .send();
-                    })
-                    .name("payee-timeout-error-" + dfspid)
-                    .maxJobsActive(10)
-                    .open();
         }
     }
 
