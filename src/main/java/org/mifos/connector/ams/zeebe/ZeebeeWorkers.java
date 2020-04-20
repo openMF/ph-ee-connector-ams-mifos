@@ -212,7 +212,7 @@ public class ZeebeeWorkers {
                             TransactionType transactionType = new TransactionType();
                             transactionType.setInitiator(TransactionRole.PAYEE);
                             transactionType.setInitiatorType(InitiatorType.CONSUMER);
-                            transactionType.setScenario(Scenario.TRANSFER);
+                            transactionType.setScenario(Scenario.DEPOSIT);
                             channelRequest.setTransactionType(transactionType);
                             channelRequest.setAmountType(AmountType.RECEIVE);
                             MoneyData amount = new MoneyData(quoteRequest.getAmount().getAmount(),
@@ -239,47 +239,6 @@ public class ZeebeeWorkers {
                     .maxJobsActive(10)
                     .open();
 
-            logger.info("## generating payee-prepare-transfer-{} worker", dfspid);
-            zeebeClient.newWorker()
-                    .jobType("payee-prepare-transfer-" + dfspid)
-                    .handler((client, job) -> {
-                        logger.info("Job '{}' started from process '{}' with key {}", job.getType(), job.getBpmnProcessId(), job.getKey());
-                        if(isAmsLocalEnabled) {
-                            Exchange ex = new DefaultExchange(camelContext);
-                            Map<String, Object> variables = job.getVariablesAsMap();
-                            zeebeVariablesToCamelProperties(variables, ex,
-                                    TRANSACTION_ID,
-                                    TENANT_ID,
-                                    EXTERNAL_ACCOUNT_ID,
-                                    LOCAL_QUOTE_RESPONSE);
-                            ex.setProperty(TRANSFER_ACTION, PREPARE.name());
-                            ex.setProperty(ZEEBE_JOB_KEY, job.getKey());
-
-                            QuoteSwitchRequestDTO quoteRequest = objectMapper.readValue((String) variables.get(QUOTE_SWITCH_REQUEST), QuoteSwitchRequestDTO.class);
-
-                            TransactionChannelRequestDTO transactionRequest = new TransactionChannelRequestDTO();
-                            TransactionType transactionType = new TransactionType();
-                            transactionType.setInitiator(TransactionRole.PAYEE);
-                            transactionType.setInitiatorType(InitiatorType.CONSUMER);
-                            transactionType.setScenario(Scenario.TRANSFER);
-                            transactionRequest.setTransactionType(transactionType);
-
-                            MoneyData amount = new MoneyData(quoteRequest.getAmount().getAmountDecimal(),
-                                    quoteRequest.getAmount().getCurrency());
-                            transactionRequest.setAmount(amount);
-                            ex.setProperty(TRANSACTION_REQUEST, objectMapper.writeValueAsString(transactionRequest));
-                            ex.setProperty(TRANSACTION_ROLE, TransactionRole.PAYEE.name());
-
-                            producerTemplate.send("direct:send-transfers", ex);
-                        } else {
-                            zeebeClient.newCompleteCommand(job.getKey())
-                                    .send();
-                        }
-                    })
-                    .name("payee-prepare-transfer-" + dfspid)
-                    .maxJobsActive(10)
-                    .open();
-
             logger.info("## generating payee-commit-transfer-{} worker", dfspid);
             zeebeClient.newWorker()
                     .jobType("payee-commit-transfer-" + dfspid)
@@ -302,7 +261,7 @@ public class ZeebeeWorkers {
                             TransactionType transactionType = new TransactionType();
                             transactionType.setInitiator(TransactionRole.PAYEE);
                             transactionType.setInitiatorType(InitiatorType.CONSUMER);
-                            transactionType.setScenario(Scenario.TRANSFER);
+                            transactionType.setScenario(Scenario.DEPOSIT);
                             transactionRequest.setTransactionType(transactionType);
 
                             MoneyData amount = new MoneyData(quoteRequest.getAmount().getAmountDecimal(),
