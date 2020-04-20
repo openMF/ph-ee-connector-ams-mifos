@@ -7,6 +7,7 @@ import org.mifos.phee.common.ams.dto.QuoteFspRequestDTO;
 import org.mifos.phee.common.channel.dto.TransactionChannelRequestDTO;
 import org.mifos.phee.common.mojaloop.dto.FspMoneyData;
 import org.mifos.phee.common.mojaloop.dto.TransactionType;
+import org.mifos.phee.common.mojaloop.type.AmountType;
 import org.mifos.phee.common.mojaloop.type.TransactionRole;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Component;
 import java.util.UUID;
 
 import static org.mifos.connector.ams.camel.config.CamelProperties.EXTERNAL_ACCOUNT_ID;
+import static org.mifos.connector.ams.camel.config.CamelProperties.QUOTE_AMOUNT_TYPE;
 import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSACTION_ID;
 import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSACTION_REQUEST;
 import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSACTION_ROLE;
@@ -45,7 +47,7 @@ public class PrepareLocalQuoteRequest implements Processor {
                 quoteId,
                 exchange.getProperty(EXTERNAL_ACCOUNT_ID, String.class),
                 amount,
-                channelRequest.getAmountType(),
+                AmountType.valueOf(exchange.getProperty(QUOTE_AMOUNT_TYPE, String.class)),
                 TransactionRole.valueOf(exchange.getProperty(TRANSACTION_ROLE, String.class)),
                 transactionType);
 

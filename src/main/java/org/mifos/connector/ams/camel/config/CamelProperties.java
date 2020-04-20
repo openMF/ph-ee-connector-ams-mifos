@@ -13,6 +13,7 @@ public class CamelProperties {
     public static final String PARTY_ID = "partyId";
     public static final String PARTY_ID_TYPE = "partyIdType";
     public static final String PAYEE_PARTY_RESPONSE = "payeePartyResponse";
+    public static final String QUOTE_AMOUNT_TYPE = "quoteAmountType";
     public static final String QUOTE_SWITCH_REQUEST = "quoteSwitchRequest";
     public static final String TENANT_ID = "tenantId";
     public static final String TRANSACTION_ID = "transactionId";

@@ -38,6 +38,7 @@ import static org.mifos.connector.ams.camel.config.CamelProperties.LOCAL_QUOTE_R
 import static org.mifos.connector.ams.camel.config.CamelProperties.PARTY_ID;
 import static org.mifos.connector.ams.camel.config.CamelProperties.PARTY_ID_TYPE;
 import static org.mifos.connector.ams.camel.config.CamelProperties.PAYEE_PARTY_RESPONSE;
+import static org.mifos.connector.ams.camel.config.CamelProperties.QUOTE_AMOUNT_TYPE;
 import static org.mifos.connector.ams.camel.config.CamelProperties.QUOTE_SWITCH_REQUEST;
 import static org.mifos.connector.ams.camel.config.CamelProperties.TENANT_ID;
 import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSACTION_ID;
@@ -101,6 +102,7 @@ public class ZeebeeWorkers {
                         ex.setProperty(TENANT_ID, tenant.getName());
                         ex.setProperty(ZEEBE_JOB_KEY, job.getKey());
                         ex.setProperty(TRANSACTION_ROLE, TransactionRole.PAYER);
+                        ex.setProperty(QUOTE_AMOUNT_TYPE, AmountType.SEND.name());
                         producerTemplate.send("direct:send-local-quote", ex);
                     } else {
                         zeebeClient.newCompleteCommand(job.getKey())
@@ -220,6 +222,7 @@ public class ZeebeeWorkers {
                             ex.setProperty(TRANSACTION_ROLE, TransactionRole.PAYEE.name());
                             ex.setProperty(TRANSACTION_REQUEST, objectMapper.writeValueAsString(channelRequest));
                             ex.setProperty(ZEEBE_JOB_KEY, job.getKey());
+                            ex.setProperty(QUOTE_AMOUNT_TYPE, quoteRequest.getAmountType().name());
                             producerTemplate.send("direct:send-local-quote", ex);
                         } else {
                             Map<String, Object> variables = createFreeQuote(quoteRequest.getAmount().getCurrency());
