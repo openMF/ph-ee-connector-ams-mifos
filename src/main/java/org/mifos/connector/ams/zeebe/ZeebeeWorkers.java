@@ -33,7 +33,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.mifos.connector.ams.camel.config.CamelProperties.ERROR_INFORMATION;
 import static org.mifos.connector.ams.camel.config.CamelProperties.EXTERNAL_ACCOUNT_ID;
 import static org.mifos.connector.ams.camel.config.CamelProperties.LOCAL_QUOTE_RESPONSE;
 import static org.mifos.connector.ams.camel.config.CamelProperties.PARTY_ID;
@@ -51,8 +50,6 @@ import static org.mifos.connector.ams.zeebe.ZeebeUtil.zeebeVariablesToCamelPrope
 import static org.mifos.phee.common.ams.dto.TransferActionType.CREATE;
 import static org.mifos.phee.common.ams.dto.TransferActionType.PREPARE;
 import static org.mifos.phee.common.ams.dto.TransferActionType.RELEASE;
-import static org.mifos.phee.common.camel.ErrorHandlerRouteBuilder.createError;
-import static org.mifos.phee.common.mojaloop.type.ErrorCode.SERVER_TIMED_OUT;
 
 @Component
 public class ZeebeeWorkers {
@@ -90,22 +87,18 @@ public class ZeebeeWorkers {
                         Map<String, Object> variables = job.getVariablesAsMap();
 
                         TransactionChannelRequestDTO channelRequest = objectMapper.readValue((String)variables.get(TRANSACTION_REQUEST), TransactionChannelRequestDTO.class);
-                        String tenantId = channelRequest.getPayer().getPartyIdInfo().getTenantId();
-                        Tenant tenant = tenantProperties.getTenant(tenantId); // validate name
+                        String partyIdType = channelRequest.getPayer().getPartyIdInfo().getPartyIdType().name();
                         String partyIdentifier = channelRequest.getPayer().getPartyIdInfo().getPartyIdentifier();
-                        IdentifierType partyIdType = channelRequest.getPayer().getPartyIdInfo().getPartyIdType();
-                        if(!tenant.getPartyIdType().equals(partyIdType.name()) || !tenant.getPartyId().equals(partyIdentifier)) {
-                            throw new RuntimeException("Tenant with type: " + partyIdType + ", id: " + partyIdentifier + ", not configuerd!");
-                        }
+                        Tenant tenant = tenantProperties.getTenant(partyIdType, partyIdentifier);
 
                         Exchange ex = new DefaultExchange(camelContext);
                         zeebeVariablesToCamelProperties(variables, ex,
                                 TRANSACTION_REQUEST,
                                 TRANSACTION_ID);
 
-                        ex.setProperty(TENANT_ID, tenantId);
-                        ex.setProperty(PARTY_ID, partyIdentifier);
                         ex.setProperty(PARTY_ID_TYPE, partyIdType);
+                        ex.setProperty(PARTY_ID, partyIdentifier);
+                        ex.setProperty(TENANT_ID, tenant.getName());
                         ex.setProperty(ZEEBE_JOB_KEY, job.getKey());
                         ex.setProperty(TRANSACTION_ROLE, TransactionRole.PAYER);
                         producerTemplate.send("direct:send-local-quote", ex);
