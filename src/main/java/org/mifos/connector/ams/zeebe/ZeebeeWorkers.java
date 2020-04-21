@@ -106,7 +106,8 @@ public class ZeebeeWorkers {
                         producerTemplate.send("direct:send-local-quote", ex);
                     } else {
                         zeebeClient.newCompleteCommand(job.getKey())
-                                .send();
+                                .send()
+                                .join();
                     }
                 })
                 .name("payer-local-quote")
@@ -131,7 +132,8 @@ public class ZeebeeWorkers {
                         producerTemplate.send("direct:send-transfers", ex);
                     } else {
                         zeebeClient.newCompleteCommand(job.getKey())
-                                .send();
+                                .send()
+                                .join();
                     }
                 })
                 .name("block-funds")
@@ -157,7 +159,8 @@ public class ZeebeeWorkers {
                         producerTemplate.send("direct:send-transfers", ex);
                     } else {
                         zeebeClient.newCompleteCommand(job.getKey())
-                                .send();
+                                .send()
+                                .join();
                     }
                 })
                 .name("book-funds")
@@ -183,7 +186,8 @@ public class ZeebeeWorkers {
                         producerTemplate.send("direct:send-transfers", ex);
                     } else {
                         zeebeClient.newCompleteCommand(job.getKey())
-                                .send();
+                                .send()
+                                .join();
                     }
                 })
                 .name("release-block")
@@ -228,7 +232,8 @@ public class ZeebeeWorkers {
                             Map<String, Object> variables = createFreeQuote(quoteRequest.getAmount().getCurrency());
                             zeebeClient.newCompleteCommand(job.getKey())
                                     .variables(variables)
-                                    .send();
+                                    .send()
+                                    .join();
                         }
                     })
                     .name("payee-quote-" + dfspid)
@@ -269,7 +274,8 @@ public class ZeebeeWorkers {
                             producerTemplate.send("direct:send-transfers", ex);
                         } else {
                             zeebeClient.newCompleteCommand(job.getKey())
-                                    .send();
+                                    .send()
+                                    .join();
                         }
                     })
                     .name("payee-commit-transfer-" + dfspid)
@@ -306,7 +312,8 @@ public class ZeebeeWorkers {
                             variables.put(PAYEE_PARTY_RESPONSE, objectMapper.writeValueAsString(party));
                             client.newCompleteCommand(job.getKey())
                                     .variables(variables)
-                                    .send();
+                                    .send()
+                                    .join();
                         }
                     })
                     .name("payee-party-lookup-" + dfspid)

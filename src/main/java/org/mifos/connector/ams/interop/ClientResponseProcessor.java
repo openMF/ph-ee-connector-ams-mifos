@@ -70,7 +70,8 @@ public class ClientResponseProcessor implements Processor {
 
             zeebeClient.newCompleteCommand(exchange.getProperty(ZEEBE_JOB_KEY, Long.class))
                     .variables(variables)
-                    .send();
+                    .send()
+                    .join();
         } else {
             Party mojaloopParty = new Party(
                     new PartyIdInfo(IdentifierType.valueOf(partyIdType),
@@ -115,7 +116,8 @@ public class ClientResponseProcessor implements Processor {
             variables.put(PAYEE_PARTY_RESPONSE, objectMapper.writeValueAsString(mojaloopParty));
             zeebeClient.newCompleteCommand(exchange.getProperty(ZEEBE_JOB_KEY, Long.class))
                     .variables(variables)
-                    .send();
+                    .send()
+                    .join();
         }
     }
 }

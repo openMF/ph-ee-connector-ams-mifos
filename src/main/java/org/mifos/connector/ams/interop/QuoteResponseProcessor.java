@@ -65,7 +65,8 @@ public class QuoteResponseProcessor implements Processor {
 
             zeebeClient.newCompleteCommand(jobKey)
                     .variables(variables)
-                    .send();
+                    .send()
+                    .join();
         } else {
             Map<String, Object> variables = new HashMap<>();
             variables.put(LOCAL_QUOTE_RESPONSE, exchange.getIn().getBody());
@@ -74,7 +75,8 @@ public class QuoteResponseProcessor implements Processor {
 
             zeebeClient.newCompleteCommand(jobKey)
                     .variables(variables)
-                    .send();
+                    .send()
+                    .join();
         }
     }
 }
