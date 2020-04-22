@@ -288,8 +288,8 @@ public class ZeebeeWorkers {
                     .handler((client, job) -> {
                         logger.info("Job '{}' started from process '{}' with key {}", job.getType(), job.getBpmnProcessId(), job.getKey());
                         Map<String, Object> existingVariables = job.getVariablesAsMap();
-                        String partyIdType = (String)existingVariables.get("partyIdType");
-                        String partyId = (String)existingVariables.get("partyId");
+                        String partyIdType = (String)existingVariables.get(PARTY_ID_TYPE);
+                        String partyId = (String)existingVariables.get(PARTY_ID);
 
                         if(isAmsLocalEnabled) {
                             Exchange ex = new DefaultExchange(camelContext);
