@@ -7,7 +7,7 @@ import org.apache.camel.support.DefaultExchange;
 import org.eclipse.jetty.http.HttpHeader;
 import org.mifos.connector.ams.properties.Tenant;
 import org.mifos.connector.ams.properties.TenantProperties;
-import org.mifos.phee.common.ams.dto.LoginFineractCnResponseDTO;
+import org.mifos.connector.common.ams.dto.LoginFineractCnResponseDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;

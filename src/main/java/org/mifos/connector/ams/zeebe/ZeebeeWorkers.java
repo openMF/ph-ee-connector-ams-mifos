@@ -8,19 +8,19 @@ import org.apache.camel.ProducerTemplate;
 import org.apache.camel.support.DefaultExchange;
 import org.mifos.connector.ams.properties.Tenant;
 import org.mifos.connector.ams.properties.TenantProperties;
-import org.mifos.phee.common.ams.dto.QuoteFspResponseDTO;
-import org.mifos.phee.common.channel.dto.TransactionChannelRequestDTO;
-import org.mifos.phee.common.mojaloop.dto.FspMoneyData;
-import org.mifos.phee.common.mojaloop.dto.MoneyData;
-import org.mifos.phee.common.mojaloop.dto.Party;
-import org.mifos.phee.common.mojaloop.dto.PartyIdInfo;
-import org.mifos.phee.common.mojaloop.dto.QuoteSwitchRequestDTO;
-import org.mifos.phee.common.mojaloop.dto.TransactionType;
-import org.mifos.phee.common.mojaloop.type.AmountType;
-import org.mifos.phee.common.mojaloop.type.IdentifierType;
-import org.mifos.phee.common.mojaloop.type.InitiatorType;
-import org.mifos.phee.common.mojaloop.type.Scenario;
-import org.mifos.phee.common.mojaloop.type.TransactionRole;
+import org.mifos.connector.common.ams.dto.QuoteFspResponseDTO;
+import org.mifos.connector.common.channel.dto.TransactionChannelRequestDTO;
+import org.mifos.connector.common.mojaloop.dto.FspMoneyData;
+import org.mifos.connector.common.mojaloop.dto.MoneyData;
+import org.mifos.connector.common.mojaloop.dto.Party;
+import org.mifos.connector.common.mojaloop.dto.PartyIdInfo;
+import org.mifos.connector.common.mojaloop.dto.QuoteSwitchRequestDTO;
+import org.mifos.connector.common.mojaloop.dto.TransactionType;
+import org.mifos.connector.common.mojaloop.type.AmountType;
+import org.mifos.connector.common.mojaloop.type.IdentifierType;
+import org.mifos.connector.common.mojaloop.type.InitiatorType;
+import org.mifos.connector.common.mojaloop.type.Scenario;
+import org.mifos.connector.common.mojaloop.type.TransactionRole;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,9 +48,9 @@ import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSFER_ACTI
 import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSFER_CODE;
 import static org.mifos.connector.ams.camel.config.CamelProperties.ZEEBE_JOB_KEY;
 import static org.mifos.connector.ams.zeebe.ZeebeUtil.zeebeVariablesToCamelProperties;
-import static org.mifos.phee.common.ams.dto.TransferActionType.CREATE;
-import static org.mifos.phee.common.ams.dto.TransferActionType.PREPARE;
-import static org.mifos.phee.common.ams.dto.TransferActionType.RELEASE;
+import static org.mifos.connector.common.ams.dto.TransferActionType.CREATE;
+import static org.mifos.connector.common.ams.dto.TransferActionType.PREPARE;
+import static org.mifos.connector.common.ams.dto.TransferActionType.RELEASE;
 
 @Component
 public class ZeebeeWorkers {

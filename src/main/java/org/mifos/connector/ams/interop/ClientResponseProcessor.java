@@ -5,14 +5,14 @@ import io.zeebe.client.ZeebeClient;
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
 import org.mifos.connector.ams.properties.TenantProperties;
-import org.mifos.phee.common.ams.dto.ClientData;
-import org.mifos.phee.common.ams.dto.Customer;
-import org.mifos.phee.common.ams.dto.LegalForm;
-import org.mifos.phee.common.mojaloop.dto.ComplexName;
-import org.mifos.phee.common.mojaloop.dto.Party;
-import org.mifos.phee.common.mojaloop.dto.PartyIdInfo;
-import org.mifos.phee.common.mojaloop.dto.PersonalInfo;
-import org.mifos.phee.common.mojaloop.type.IdentifierType;
+import org.mifos.connector.common.ams.dto.ClientData;
+import org.mifos.connector.common.ams.dto.Customer;
+import org.mifos.connector.common.ams.dto.LegalForm;
+import org.mifos.connector.common.mojaloop.dto.ComplexName;
+import org.mifos.connector.common.mojaloop.dto.Party;
+import org.mifos.connector.common.mojaloop.dto.PartyIdInfo;
+import org.mifos.connector.common.mojaloop.dto.PersonalInfo;
+import org.mifos.connector.common.mojaloop.type.IdentifierType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,9 +28,9 @@ import static org.mifos.connector.ams.camel.config.CamelProperties.PARTY_ID;
 import static org.mifos.connector.ams.camel.config.CamelProperties.PARTY_ID_TYPE;
 import static org.mifos.connector.ams.camel.config.CamelProperties.PAYEE_PARTY_RESPONSE;
 import static org.mifos.connector.ams.camel.config.CamelProperties.ZEEBE_JOB_KEY;
-import static org.mifos.phee.common.ams.dto.LegalForm.PERSON;
-import static org.mifos.phee.common.camel.ErrorHandlerRouteBuilder.createError;
-import static org.mifos.phee.common.mojaloop.type.ErrorCode.PARTY_NOT_FOUND;
+import static org.mifos.connector.common.ams.dto.LegalForm.PERSON;
+import static org.mifos.connector.common.camel.ErrorHandlerRouteBuilder.createError;
+import static org.mifos.connector.common.mojaloop.type.ErrorCode.PARTY_NOT_FOUND;
 
 @Component
 @ConditionalOnExpression("${ams.local.enabled}")

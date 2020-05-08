@@ -3,7 +3,7 @@ package org.mifos.connector.ams.interop;
 import io.zeebe.client.ZeebeClient;
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
-import org.mifos.phee.common.mojaloop.type.TransactionRole;
+import org.mifos.connector.common.mojaloop.type.TransactionRole;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,9 +22,9 @@ import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSACTION_R
 import static org.mifos.connector.ams.camel.config.CamelProperties.ZEEBE_JOB_KEY;
 import static org.mifos.connector.ams.zeebe.ZeebeExpressionVariables.LOCAL_QUOTE_FAILED;
 import static org.mifos.connector.ams.zeebe.ZeebeExpressionVariables.QUOTE_FAILED;
-import static org.mifos.phee.common.camel.ErrorHandlerRouteBuilder.createError;
-import static org.mifos.phee.common.mojaloop.type.ErrorCode.PAYEE_FSP_REJECTED_QUOTE;
-import static org.mifos.phee.common.mojaloop.type.ErrorCode.PAYER_FSP_INSUFFICIENT_LIQUIDITY;
+import static org.mifos.connector.common.camel.ErrorHandlerRouteBuilder.createError;
+import static org.mifos.connector.common.mojaloop.type.ErrorCode.PAYEE_FSP_REJECTED_QUOTE;
+import static org.mifos.connector.common.mojaloop.type.ErrorCode.PAYER_FSP_INSUFFICIENT_LIQUIDITY;
 
 @Component
 @ConditionalOnExpression("${ams.local.enabled}")

@@ -1,6 +1,6 @@
 package org.mifos.connector.ams.zeebe;
 
-import org.mifos.phee.common.ams.dto.TransferActionType;
+import org.mifos.connector.common.ams.dto.TransferActionType;
 
 import java.util.HashMap;
 import java.util.Map;
