@@ -61,8 +61,7 @@
     </cxf:rsClient>
 
     <http:conduit name="*.http-conduit">
-        <http-conf:client Connection="Keep-Alive" MaxRetransmits="1"
-                          AllowChunking="false" ConnectionTimeout="0" ReceiveTimeout="0" />
+        <http-conf:client MaxRetransmits="1" AllowChunking="false" />
         <http:tlsClientParameters disableCNCheck="true" /> <!-- testing purposes -->
     </http:conduit>
 </beans>
