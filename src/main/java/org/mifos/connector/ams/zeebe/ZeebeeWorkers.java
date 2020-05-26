@@ -33,6 +33,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.mifos.connector.ams.camel.config.CamelProperties.CHANNEL_REQUEST;
 import static org.mifos.connector.ams.camel.config.CamelProperties.EXTERNAL_ACCOUNT_ID;
 import static org.mifos.connector.ams.camel.config.CamelProperties.LOCAL_QUOTE_RESPONSE;
 import static org.mifos.connector.ams.camel.config.CamelProperties.PARTY_ID;
@@ -42,7 +43,6 @@ import static org.mifos.connector.ams.camel.config.CamelProperties.QUOTE_AMOUNT_
 import static org.mifos.connector.ams.camel.config.CamelProperties.QUOTE_SWITCH_REQUEST;
 import static org.mifos.connector.ams.camel.config.CamelProperties.TENANT_ID;
 import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSACTION_ID;
-import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSACTION_REQUEST;
 import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSACTION_ROLE;
 import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSFER_ACTION;
 import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSFER_CODE;
@@ -54,6 +54,8 @@ import static org.mifos.connector.common.ams.dto.TransferActionType.RELEASE;
 
 @Component
 public class ZeebeeWorkers {
+
+    public static final String WORKER_PARTY_LOOKUP_LOCAL = "party-lookup-local-";
 
     private Logger logger = LoggerFactory.getLogger(this.getClass());
 
@@ -78,6 +80,9 @@ public class ZeebeeWorkers {
     @Value("#{'${dfspids}'.split(',')}")
     private List<String> dfspids;
 
+    @Value("${zeebe.client.evenly-allocated-max-jobs}")
+    private int workerMaxJobs;
+
     @PostConstruct
     public void setupWorkers() {
         zeebeClient.newWorker()
@@ -87,14 +92,14 @@ public class ZeebeeWorkers {
                     if (isAmsLocalEnabled) {
                         Map<String, Object> variables = job.getVariablesAsMap();
 
-                        TransactionChannelRequestDTO channelRequest = objectMapper.readValue((String)variables.get(TRANSACTION_REQUEST), TransactionChannelRequestDTO.class);
+                        TransactionChannelRequestDTO channelRequest = objectMapper.readValue((String) variables.get(CHANNEL_REQUEST), TransactionChannelRequestDTO.class);
                         String partyIdType = channelRequest.getPayer().getPartyIdInfo().getPartyIdType().name();
                         String partyIdentifier = channelRequest.getPayer().getPartyIdInfo().getPartyIdentifier();
                         Tenant tenant = tenantProperties.getTenant(partyIdType, partyIdentifier);
 
                         Exchange ex = new DefaultExchange(camelContext);
                         zeebeVariablesToCamelProperties(variables, ex,
-                                TRANSACTION_REQUEST,
+                                CHANNEL_REQUEST,
                                 TRANSACTION_ID);
 
                         ex.setProperty(PARTY_ID_TYPE, partyIdType);
@@ -111,7 +116,7 @@ public class ZeebeeWorkers {
                     }
                 })
                 .name("payer-local-quote")
-                .maxJobsActive(10)
+                .maxJobsActive(workerMaxJobs)
                 .open();
 
         zeebeClient.newWorker()
@@ -122,7 +127,7 @@ public class ZeebeeWorkers {
                         Exchange ex = new DefaultExchange(camelContext);
                         zeebeVariablesToCamelProperties(job.getVariablesAsMap(), ex,
                                 TRANSACTION_ID,
-                                TRANSACTION_REQUEST,
+                                CHANNEL_REQUEST,
                                 TENANT_ID,
                                 EXTERNAL_ACCOUNT_ID,
                                 LOCAL_QUOTE_RESPONSE);
@@ -137,7 +142,7 @@ public class ZeebeeWorkers {
                     }
                 })
                 .name("block-funds")
-                .maxJobsActive(10)
+                .maxJobsActive(workerMaxJobs)
                 .open();
 
         zeebeClient.newWorker()
@@ -148,7 +153,7 @@ public class ZeebeeWorkers {
                         Exchange ex = new DefaultExchange(camelContext);
                         zeebeVariablesToCamelProperties(job.getVariablesAsMap(), ex,
                                 TRANSACTION_ID,
-                                TRANSACTION_REQUEST,
+                                CHANNEL_REQUEST,
                                 TENANT_ID,
                                 EXTERNAL_ACCOUNT_ID,
                                 LOCAL_QUOTE_RESPONSE,
@@ -164,7 +169,7 @@ public class ZeebeeWorkers {
                     }
                 })
                 .name("book-funds")
-                .maxJobsActive(10)
+                .maxJobsActive(workerMaxJobs)
                 .open();
 
         zeebeClient.newWorker()
@@ -175,7 +180,7 @@ public class ZeebeeWorkers {
                         Exchange ex = new DefaultExchange(camelContext);
                         zeebeVariablesToCamelProperties(job.getVariablesAsMap(), ex,
                                 TRANSACTION_ID,
-                                TRANSACTION_REQUEST,
+                                CHANNEL_REQUEST,
                                 TENANT_ID,
                                 EXTERNAL_ACCOUNT_ID,
                                 LOCAL_QUOTE_RESPONSE,
@@ -191,10 +196,10 @@ public class ZeebeeWorkers {
                     }
                 })
                 .name("release-block")
-                .maxJobsActive(10)
+                .maxJobsActive(workerMaxJobs)
                 .open();
 
-        for(String dfspid : dfspids) {
+        for (String dfspid : dfspids) {
             logger.info("## generating payee-quote-{} worker", dfspid);
             zeebeClient.newWorker()
                     .jobType("payee-quote-" + dfspid)
@@ -203,7 +208,7 @@ public class ZeebeeWorkers {
                         Map<String, Object> existingVariables = job.getVariablesAsMap();
                         QuoteSwitchRequestDTO quoteRequest = objectMapper.readValue((String) existingVariables.get(QUOTE_SWITCH_REQUEST), QuoteSwitchRequestDTO.class);
 
-                        if(isAmsLocalEnabled) {
+                        if (isAmsLocalEnabled) {
                             String tenantId = tenantProperties.getTenant(quoteRequest.getPayee().getPartyIdInfo().getPartyIdType().name(),
                                     quoteRequest.getPayee().getPartyIdInfo().getPartyIdentifier()).getName();
 
@@ -224,7 +229,7 @@ public class ZeebeeWorkers {
                             ex.setProperty(TRANSACTION_ID, existingVariables.get(TRANSACTION_ID));
                             ex.setProperty(TENANT_ID, tenantId);
                             ex.setProperty(TRANSACTION_ROLE, TransactionRole.PAYEE.name());
-                            ex.setProperty(TRANSACTION_REQUEST, objectMapper.writeValueAsString(channelRequest));
+                            ex.setProperty(CHANNEL_REQUEST, objectMapper.writeValueAsString(channelRequest));
                             ex.setProperty(ZEEBE_JOB_KEY, job.getKey());
                             ex.setProperty(QUOTE_AMOUNT_TYPE, quoteRequest.getAmountType().name());
                             producerTemplate.send("direct:send-local-quote", ex);
@@ -237,7 +242,7 @@ public class ZeebeeWorkers {
                         }
                     })
                     .name("payee-quote-" + dfspid)
-                    .maxJobsActive(10)
+                    .maxJobsActive(workerMaxJobs)
                     .open();
 
             logger.info("## generating payee-commit-transfer-{} worker", dfspid);
@@ -245,7 +250,7 @@ public class ZeebeeWorkers {
                     .jobType("payee-commit-transfer-" + dfspid)
                     .handler((client, job) -> {
                         logger.info("Job '{}' started from process '{}' with key {}", job.getType(), job.getBpmnProcessId(), job.getKey());
-                        if(isAmsLocalEnabled) {
+                        if (isAmsLocalEnabled) {
                             Exchange ex = new DefaultExchange(camelContext);
                             Map<String, Object> variables = job.getVariablesAsMap();
                             zeebeVariablesToCamelProperties(variables, ex,
@@ -268,7 +273,7 @@ public class ZeebeeWorkers {
                             MoneyData amount = new MoneyData(quoteRequest.getAmount().getAmountDecimal(),
                                     quoteRequest.getAmount().getCurrency());
                             transactionRequest.setAmount(amount);
-                            ex.setProperty(TRANSACTION_REQUEST, objectMapper.writeValueAsString(transactionRequest));
+                            ex.setProperty(CHANNEL_REQUEST, objectMapper.writeValueAsString(transactionRequest));
                             ex.setProperty(TRANSACTION_ROLE, TransactionRole.PAYEE.name());
 
                             producerTemplate.send("direct:send-transfers", ex);
@@ -279,19 +284,19 @@ public class ZeebeeWorkers {
                         }
                     })
                     .name("payee-commit-transfer-" + dfspid)
-                    .maxJobsActive(10)
+                    .maxJobsActive(workerMaxJobs)
                     .open();
 
-            logger.info("## generating payee-party-lookup-{} worker", dfspid);
+            logger.info("## generating " + WORKER_PARTY_LOOKUP_LOCAL + "{} worker", dfspid);
             zeebeClient.newWorker()
-                    .jobType("payee-party-lookup-" + dfspid)
+                    .jobType(WORKER_PARTY_LOOKUP_LOCAL + dfspid)
                     .handler((client, job) -> {
                         logger.info("Job '{}' started from process '{}' with key {}", job.getType(), job.getBpmnProcessId(), job.getKey());
                         Map<String, Object> existingVariables = job.getVariablesAsMap();
-                        String partyIdType = (String)existingVariables.get(PARTY_ID_TYPE);
-                        String partyId = (String)existingVariables.get(PARTY_ID);
+                        String partyIdType = (String) existingVariables.get(PARTY_ID_TYPE);
+                        String partyId = (String) existingVariables.get(PARTY_ID);
 
-                        if(isAmsLocalEnabled) {
+                        if (isAmsLocalEnabled) {
                             Exchange ex = new DefaultExchange(camelContext);
                             ex.setProperty(PARTY_ID_TYPE, partyIdType);
                             ex.setProperty(PARTY_ID, partyId);
@@ -316,8 +321,8 @@ public class ZeebeeWorkers {
                                     .join();
                         }
                     })
-                    .name("payee-party-lookup-" + dfspid)
-                    .maxJobsActive(10)
+                    .name(WORKER_PARTY_LOOKUP_LOCAL + dfspid)
+                    .maxJobsActive(workerMaxJobs)
                     .open();
         }
     }

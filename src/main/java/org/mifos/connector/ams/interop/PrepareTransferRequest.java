@@ -18,7 +18,7 @@ import java.util.UUID;
 import static org.mifos.connector.ams.camel.config.CamelProperties.EXTERNAL_ACCOUNT_ID;
 import static org.mifos.connector.ams.camel.config.CamelProperties.LOCAL_QUOTE_RESPONSE;
 import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSACTION_ID;
-import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSACTION_REQUEST;
+import static org.mifos.connector.ams.camel.config.CamelProperties.CHANNEL_REQUEST;
 import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSACTION_ROLE;
 import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSFER_CODE;
 
@@ -31,7 +31,7 @@ public class PrepareTransferRequest implements Processor {
 
     @Override
     public void process(Exchange exchange) throws Exception {
-        TransactionChannelRequestDTO channelRequest = objectMapper.readValue(exchange.getProperty(TRANSACTION_REQUEST, String.class), TransactionChannelRequestDTO.class);
+        TransactionChannelRequestDTO channelRequest = objectMapper.readValue(exchange.getProperty(CHANNEL_REQUEST, String.class), TransactionChannelRequestDTO.class);
         QuoteFspResponseDTO localQuoteResponse = objectMapper.readValue(exchange.getProperty(LOCAL_QUOTE_RESPONSE, String.class), QuoteFspResponseDTO.class);
 
         TransactionType transactionType = new TransactionType();

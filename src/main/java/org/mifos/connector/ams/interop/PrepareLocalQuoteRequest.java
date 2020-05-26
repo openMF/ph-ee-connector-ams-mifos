@@ -18,7 +18,7 @@ import java.util.UUID;
 import static org.mifos.connector.ams.camel.config.CamelProperties.EXTERNAL_ACCOUNT_ID;
 import static org.mifos.connector.ams.camel.config.CamelProperties.QUOTE_AMOUNT_TYPE;
 import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSACTION_ID;
-import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSACTION_REQUEST;
+import static org.mifos.connector.ams.camel.config.CamelProperties.CHANNEL_REQUEST;
 import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSACTION_ROLE;
 
 @Component
@@ -30,12 +30,7 @@ public class PrepareLocalQuoteRequest implements Processor {
 
     @Override
     public void process(Exchange exchange) throws Exception {
-        TransactionChannelRequestDTO channelRequest = objectMapper.readValue(exchange.getProperty(TRANSACTION_REQUEST, String.class), TransactionChannelRequestDTO.class);
-
-        TransactionType transactionType = new TransactionType();
-        transactionType.setInitiator(channelRequest.getTransactionType().getInitiator());
-        transactionType.setInitiatorType(channelRequest.getTransactionType().getInitiatorType());
-        transactionType.setScenario(channelRequest.getTransactionType().getScenario());
+        TransactionChannelRequestDTO channelRequest = objectMapper.readValue(exchange.getProperty(CHANNEL_REQUEST, String.class), TransactionChannelRequestDTO.class);
 
         String requestCode = UUID.randomUUID().toString();
         String quoteId = UUID.randomUUID().toString();
@@ -49,7 +44,7 @@ public class PrepareLocalQuoteRequest implements Processor {
                 amount,
                 AmountType.valueOf(exchange.getProperty(QUOTE_AMOUNT_TYPE, String.class)),
                 TransactionRole.valueOf(exchange.getProperty(TRANSACTION_ROLE, String.class)),
-                transactionType);
+                channelRequest.getTransactionType());
 
         exchange.getIn().setBody(request);
     }

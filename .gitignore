@@ -1,4 +1,5 @@
 target/
+catalina*
 
 ### STS ###
 .apt_generated

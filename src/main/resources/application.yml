@@ -9,6 +9,10 @@ camel:
 dfspids: "DFSPID"
 
 zeebe:
+  client:
+    max-execution-threads: 100
+    number-of-workers: 7
+    evenly-allocated-max-jobs: "#{${zeebe.client.max-execution-threads} / ${zeebe.client.number-of-workers}}"
   broker:
     contactpoint: "127.0.0.1:26500"
 

@@ -57,7 +57,7 @@ public class ClientResponseProcessor implements Processor {
         String partyId = exchange.getProperty(PARTY_ID, String.class);
 
         if (responseCode > 202) {
-            String errorMsg = String.format("Invalid responseCode %s for payee-party-lookup, partyIdType: %s partyId: %s Message: %s",
+            String errorMsg = String.format("Invalid responseCode %s for party-lookup-local, partyIdType: %s partyId: %s Message: %s",
                     responseCode,
                     partyIdType,
                     partyId,

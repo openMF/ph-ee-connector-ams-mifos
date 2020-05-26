@@ -17,7 +17,7 @@ public class CamelProperties {
     public static final String QUOTE_SWITCH_REQUEST = "quoteSwitchRequest";
     public static final String TENANT_ID = "tenantId";
     public static final String TRANSACTION_ID = "transactionId";
-    public static final String TRANSACTION_REQUEST = "transactionRequest";
+    public static final String CHANNEL_REQUEST = "channelRequest";
     public static final String TRANSACTION_ROLE = "transactionRole";
     public static final String TRANSFER_CODE = "transferCode";
     public static final String TRANSFER_ACTION = "transferAction";
