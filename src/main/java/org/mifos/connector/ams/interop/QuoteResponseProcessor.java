@@ -39,8 +39,8 @@ public class QuoteResponseProcessor implements Processor {
     public void process(Exchange exchange) throws Exception {
         Integer responseCode = exchange.getIn().getHeader(Exchange.HTTP_RESPONSE_CODE, Integer.class);
         Long jobKey = exchange.getProperty(ZEEBE_JOB_KEY, Long.class);
+        String tranactionRole = exchange.getProperty(TRANSACTION_ROLE, String.class);
         if (responseCode > 202) {
-            String tranactionRole = exchange.getProperty(TRANSACTION_ROLE, String.class);
             String errorMsg = String.format("Invalid responseCode %s for quote on %s side, transactionId: %s Message: %s",
                     responseCode,
                     tranactionRole,
@@ -72,6 +72,7 @@ public class QuoteResponseProcessor implements Processor {
             variables.put(LOCAL_QUOTE_RESPONSE, exchange.getIn().getBody());
             variables.put(EXTERNAL_ACCOUNT_ID, exchange.getProperty(EXTERNAL_ACCOUNT_ID));
             variables.put(TENANT_ID, exchange.getProperty(TENANT_ID));
+            variables.put(tranactionRole.equals(TransactionRole.PAYER.name()) ? LOCAL_QUOTE_FAILED : QUOTE_FAILED, false);
 
             zeebeClient.newCompleteCommand(jobKey)
                     .variables(variables)

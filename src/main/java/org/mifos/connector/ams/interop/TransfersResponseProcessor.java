@@ -65,6 +65,7 @@ public class TransfersResponseProcessor implements Processor {
             if (PREPARE.name().equals(transferAction)) {
                 variables.put(TRANSFER_CODE, exchange.getProperty(TRANSFER_CODE));
             }
+            variables.put(ACTION_FAILURE_MAP.get(transferAction), false);
 
             zeebeClient.newCompleteCommand(exchange.getProperty(ZEEBE_JOB_KEY, Long.class))
                     .variables(variables)
