@@ -14,7 +14,7 @@ zeebe:
 
 ams:
   local:
-    enabled: true
+    enabled: false
     version: 1.2
     keystore-path: keystore.jks
     keystore-password: openmf
