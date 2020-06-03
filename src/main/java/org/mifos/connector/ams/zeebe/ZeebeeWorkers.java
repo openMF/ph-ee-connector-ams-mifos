@@ -47,6 +47,8 @@ import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSACTION_R
 import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSFER_ACTION;
 import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSFER_CODE;
 import static org.mifos.connector.ams.camel.config.CamelProperties.ZEEBE_JOB_KEY;
+import static org.mifos.connector.ams.zeebe.ZeebeExpressionVariables.LOCAL_QUOTE_FAILED;
+import static org.mifos.connector.ams.zeebe.ZeebeExpressionVariables.QUOTE_FAILED;
 import static org.mifos.connector.ams.zeebe.ZeebeUtil.zeebeVariablesToCamelProperties;
 import static org.mifos.connector.common.ams.dto.TransferActionType.CREATE;
 import static org.mifos.connector.common.ams.dto.TransferActionType.PREPARE;
@@ -56,6 +58,9 @@ import static org.mifos.connector.common.ams.dto.TransferActionType.RELEASE;
 public class ZeebeeWorkers {
 
     public static final String WORKER_PARTY_LOOKUP_LOCAL = "party-lookup-local-";
+    public static final String WORKER_PAYEE_COMMIT_TRANSFER = "payee-commit-transfer-";
+    public static final String WORKER_PAYEE_QUOTE = "payee-quote-";
+    public static final String WORKER_PAYER_LOCAL_QUOTE = "payer-local-quote-";
 
     private Logger logger = LoggerFactory.getLogger(this.getClass());
 
@@ -85,40 +90,6 @@ public class ZeebeeWorkers {
 
     @PostConstruct
     public void setupWorkers() {
-        zeebeClient.newWorker()
-                .jobType("payer-local-quote")
-                .handler((client, job) -> {
-                    logger.info("Job '{}' started from process '{}' with key {}", job.getType(), job.getBpmnProcessId(), job.getKey());
-                    if (isAmsLocalEnabled) {
-                        Map<String, Object> variables = job.getVariablesAsMap();
-
-                        TransactionChannelRequestDTO channelRequest = objectMapper.readValue((String) variables.get(CHANNEL_REQUEST), TransactionChannelRequestDTO.class);
-                        String partyIdType = channelRequest.getPayer().getPartyIdInfo().getPartyIdType().name();
-                        String partyIdentifier = channelRequest.getPayer().getPartyIdInfo().getPartyIdentifier();
-                        Tenant tenant = tenantProperties.getTenant(partyIdType, partyIdentifier);
-
-                        Exchange ex = new DefaultExchange(camelContext);
-                        zeebeVariablesToCamelProperties(variables, ex,
-                                CHANNEL_REQUEST,
-                                TRANSACTION_ID);
-
-                        ex.setProperty(PARTY_ID_TYPE, partyIdType);
-                        ex.setProperty(PARTY_ID, partyIdentifier);
-                        ex.setProperty(TENANT_ID, tenant.getName());
-                        ex.setProperty(ZEEBE_JOB_KEY, job.getKey());
-                        ex.setProperty(TRANSACTION_ROLE, TransactionRole.PAYER);
-                        ex.setProperty(QUOTE_AMOUNT_TYPE, AmountType.SEND.name());
-                        producerTemplate.send("direct:send-local-quote", ex);
-                    } else {
-                        zeebeClient.newCompleteCommand(job.getKey())
-                                .send()
-                                .join();
-                    }
-                })
-                .name("payer-local-quote")
-                .maxJobsActive(workerMaxJobs)
-                .open();
-
         zeebeClient.newWorker()
                 .jobType("block-funds")
                 .handler((client, job) -> {
@@ -200,9 +171,46 @@ public class ZeebeeWorkers {
                 .open();
 
         for (String dfspid : dfspids) {
-            logger.info("## generating payee-quote-{} worker", dfspid);
+            logger.info("## generating " + WORKER_PAYER_LOCAL_QUOTE + "{} worker", dfspid);
             zeebeClient.newWorker()
-                    .jobType("payee-quote-" + dfspid)
+                    .jobType(WORKER_PAYER_LOCAL_QUOTE + dfspid)
+                    .handler((client, job) -> {
+                        logger.info("Job '{}' started from process '{}' with key {}", job.getType(), job.getBpmnProcessId(), job.getKey());
+                        if (isAmsLocalEnabled) {
+                            Map<String, Object> variables = job.getVariablesAsMap();
+                            TransactionChannelRequestDTO channelRequest = objectMapper.readValue((String) variables.get(CHANNEL_REQUEST), TransactionChannelRequestDTO.class);
+                            String partyIdType = channelRequest.getPayer().getPartyIdInfo().getPartyIdType().name();
+                            String partyIdentifier = channelRequest.getPayer().getPartyIdInfo().getPartyIdentifier();
+                            Tenant tenant = tenantProperties.getTenant(partyIdType, partyIdentifier);
+
+                            Exchange ex = new DefaultExchange(camelContext);
+                            zeebeVariablesToCamelProperties(variables, ex,
+                                    CHANNEL_REQUEST,
+                                    TRANSACTION_ID);
+
+                            ex.setProperty(PARTY_ID_TYPE, partyIdType);
+                            ex.setProperty(PARTY_ID, partyIdentifier);
+                            ex.setProperty(TENANT_ID, tenant.getName());
+                            ex.setProperty(ZEEBE_JOB_KEY, job.getKey());
+                            ex.setProperty(TRANSACTION_ROLE, TransactionRole.PAYER);
+                            ex.setProperty(QUOTE_AMOUNT_TYPE, AmountType.SEND.name());
+                            producerTemplate.send("direct:send-local-quote", ex);
+                        } else {
+                            Map<String, Object> variables = new HashMap<>();
+                            variables.put(LOCAL_QUOTE_FAILED, false);
+                            zeebeClient.newCompleteCommand(job.getKey())
+                                    .variables(variables)
+                                    .send()
+                                    .join();
+                        }
+                    })
+                    .name(WORKER_PAYER_LOCAL_QUOTE + dfspid)
+                    .maxJobsActive(workerMaxJobs)
+                    .open();
+
+            logger.info("## generating " + WORKER_PAYEE_QUOTE + "{} worker", dfspid);
+            zeebeClient.newWorker()
+                    .jobType(WORKER_PAYEE_QUOTE + dfspid)
                     .handler((client, job) -> {
                         logger.info("Job '{}' started from process '{}' with key {}", job.getType(), job.getBpmnProcessId(), job.getKey());
                         Map<String, Object> existingVariables = job.getVariablesAsMap();
@@ -235,19 +243,20 @@ public class ZeebeeWorkers {
                             producerTemplate.send("direct:send-local-quote", ex);
                         } else {
                             Map<String, Object> variables = createFreeQuote(quoteRequest.getAmount().getCurrency());
+                            variables.put(QUOTE_FAILED, false);
                             zeebeClient.newCompleteCommand(job.getKey())
                                     .variables(variables)
                                     .send()
                                     .join();
                         }
                     })
-                    .name("payee-quote-" + dfspid)
+                    .name(WORKER_PAYEE_QUOTE + dfspid)
                     .maxJobsActive(workerMaxJobs)
                     .open();
 
-            logger.info("## generating payee-commit-transfer-{} worker", dfspid);
+            logger.info("## generating " + WORKER_PAYEE_COMMIT_TRANSFER + "{} worker", dfspid);
             zeebeClient.newWorker()
-                    .jobType("payee-commit-transfer-" + dfspid)
+                    .jobType(WORKER_PAYEE_COMMIT_TRANSFER + dfspid)
                     .handler((client, job) -> {
                         logger.info("Job '{}' started from process '{}' with key {}", job.getType(), job.getBpmnProcessId(), job.getKey());
                         if (isAmsLocalEnabled) {
@@ -283,7 +292,7 @@ public class ZeebeeWorkers {
                                     .join();
                         }
                     })
-                    .name("payee-commit-transfer-" + dfspid)
+                    .name(WORKER_PAYEE_COMMIT_TRANSFER + dfspid)
                     .maxJobsActive(workerMaxJobs)
                     .open();
 
