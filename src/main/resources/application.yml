@@ -18,4 +18,5 @@ zeebe:
 
 ams:
   local:
+    server-cert-check: false
     enabled: false

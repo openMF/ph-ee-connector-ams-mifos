@@ -37,11 +37,14 @@ public class SSLConfig {
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private String keystorePassword;
     private File keyStoreFile;
+    private boolean checkServerCert;
 
     public SSLConfig(@Value("${ams.local.keystore-path}") String keystorePath,
-                     @Value("${ams.local.keystore-password}") String keystorePassword) throws IOException {
+                     @Value("${ams.local.keystore-password}") String keystorePassword,
+                     @Value("${ams.local.server-cert-check}") boolean checkServerCert) {
         this.keystorePassword = keystorePassword;
         keyStoreFile = new FileSystemResource(keystorePath).getFile();
+        this.checkServerCert = checkServerCert;
     }
 
     public SSLContextParameters provideSSLContextParameters() {
@@ -73,7 +76,7 @@ public class SSLConfig {
                 .filter(X509TrustManager.class::isInstance)
                 .map(X509TrustManager.class::cast)
                 .collect(Collectors.toList());
-        return new CompositeX509TrustManager(trustManagers);
+        return new CompositeX509TrustManager(trustManagers, checkServerCert);
     }
 
     private X509TrustManager[] tryToGetJavaTrustManager() {

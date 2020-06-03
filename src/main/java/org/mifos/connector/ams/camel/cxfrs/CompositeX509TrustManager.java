@@ -12,9 +12,11 @@ import java.util.stream.Stream;
 public class CompositeX509TrustManager implements X509TrustManager {
 
     private final List<X509TrustManager> trustManagers;
+    private boolean checkServerCert;
 
-    public CompositeX509TrustManager(List<X509TrustManager> trustManagers) {
+    public CompositeX509TrustManager(List<X509TrustManager> trustManagers, boolean checkServerCert) {
         this.trustManagers = Collections.unmodifiableList(new ArrayList<>(trustManagers));
+        this.checkServerCert = checkServerCert;
     }
 
     @Override
@@ -27,20 +29,22 @@ public class CompositeX509TrustManager implements X509TrustManager {
                 // maybe someone else will trust them
             }
         }
-        throw new CertificateException("None of the TrustManagers trust this certificate chain");
+        throw new CertificateException("None of the TrustManagers trust the clients certificate chain!");
     }
 
     @Override
     public void checkServerTrusted(X509Certificate[] chain, String authType) throws CertificateException {
-        for (X509TrustManager trustManager : trustManagers) {
-            try {
-                trustManager.checkServerTrusted(chain, authType);
-                return; // someone trusts them. success!
-            } catch (CertificateException e) {
-                // maybe someone else will trust them
+        if(checkServerCert) {
+            for (X509TrustManager trustManager : trustManagers) {
+                try {
+                    trustManager.checkServerTrusted(chain, authType);
+                    return; // someone trusts them. success!
+                } catch (CertificateException e) {
+                    // maybe someone else will trust them
+                }
             }
+            throw new CertificateException("None of the TrustManagers trust the servers certificate chain!");
         }
-        throw new CertificateException("None of the TrustManagers trust this certificate chain");
     }
 
     @Override
