@@ -29,15 +29,4 @@ public class TenantProperties {
                 .findFirst()
                 .orElseThrow(() -> new RuntimeException("Tenant with name: " + name + ", not configuerd!"));
     }
-
-    public Tenant getTenant(String partyIdType, String partyId) {
-        if (partyIdType == null || partyId == null) {
-            throw new RuntimeException("Tenant with type: " + partyIdType + ", id: " + partyId + ", not configuerd!");
-        }
-
-        return getTenants().stream()
-                .filter(t -> t.getPartyIdType().equals(partyIdType) && t.getPartyId().equals(partyId))
-                .findFirst()
-                .orElseThrow(() -> new RuntimeException("Tenant with type: " + partyIdType + ", id: " + partyId + ", not configuerd!"));
-    }
 }

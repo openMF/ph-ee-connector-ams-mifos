@@ -13,13 +13,9 @@ ams:
         user: mifos
         password: password
         authtype: basic
-        partyIdType: MSISDN
-        partyId: 27710203999
         fspId: in02tn03
       - name: tn04
         user: mifos
         password: password
         authtype: basic
-        partyIdType: MSISDN
-        partyId: 27710204999
         fspId: in02tn04

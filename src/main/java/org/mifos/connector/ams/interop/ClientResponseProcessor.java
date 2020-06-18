@@ -27,6 +27,7 @@ import static org.mifos.connector.ams.camel.config.CamelProperties.ERROR_INFORMA
 import static org.mifos.connector.ams.camel.config.CamelProperties.PARTY_ID;
 import static org.mifos.connector.ams.camel.config.CamelProperties.PARTY_ID_TYPE;
 import static org.mifos.connector.ams.camel.config.CamelProperties.PAYEE_PARTY_RESPONSE;
+import static org.mifos.connector.ams.camel.config.CamelProperties.TENANT_ID;
 import static org.mifos.connector.ams.camel.config.CamelProperties.ZEEBE_JOB_KEY;
 import static org.mifos.connector.common.ams.dto.LegalForm.PERSON;
 import static org.mifos.connector.common.camel.ErrorHandlerRouteBuilder.createError;
@@ -77,7 +78,7 @@ public class ClientResponseProcessor implements Processor {
                     new PartyIdInfo(IdentifierType.valueOf(partyIdType),
                             partyId,
                             null,
-                            tenantProperties.getTenant(partyIdType, partyId).getFspId()),
+                            tenantProperties.getTenant(exchange.getProperty(TENANT_ID, String.class)).getFspId()),
                     null,
                     null,
                     null);

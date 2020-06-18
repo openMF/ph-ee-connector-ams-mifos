@@ -177,20 +177,17 @@ public class ZeebeeWorkers {
                     .handler((client, job) -> {
                         logger.info("Job '{}' started from process '{}' with key {}", job.getType(), job.getBpmnProcessId(), job.getKey());
                         if (isAmsLocalEnabled) {
-                            Map<String, Object> variables = job.getVariablesAsMap();
-                            TransactionChannelRequestDTO channelRequest = objectMapper.readValue((String) variables.get(CHANNEL_REQUEST), TransactionChannelRequestDTO.class);
-                            String partyIdType = channelRequest.getPayer().getPartyIdInfo().getPartyIdType().name();
-                            String partyIdentifier = channelRequest.getPayer().getPartyIdInfo().getPartyIdentifier();
-                            Tenant tenant = tenantProperties.getTenant(partyIdType, partyIdentifier);
+                            Map<String, Object> existingVariables = job.getVariablesAsMap();
+                            TransactionChannelRequestDTO channelRequest = objectMapper.readValue((String) existingVariables.get(CHANNEL_REQUEST), TransactionChannelRequestDTO.class);
 
                             Exchange ex = new DefaultExchange(camelContext);
-                            zeebeVariablesToCamelProperties(variables, ex,
+                            zeebeVariablesToCamelProperties(existingVariables, ex,
                                     CHANNEL_REQUEST,
                                     TRANSACTION_ID);
 
-                            ex.setProperty(PARTY_ID_TYPE, partyIdType);
-                            ex.setProperty(PARTY_ID, partyIdentifier);
-                            ex.setProperty(TENANT_ID, tenant.getName());
+                            ex.setProperty(PARTY_ID_TYPE, channelRequest.getPayer().getPartyIdInfo().getPartyIdType().name());
+                            ex.setProperty(PARTY_ID, channelRequest.getPayer().getPartyIdInfo().getPartyIdentifier());
+                            ex.setProperty(TENANT_ID, existingVariables.get(TENANT_ID));
                             ex.setProperty(ZEEBE_JOB_KEY, job.getKey());
                             ex.setProperty(TRANSACTION_ROLE, TransactionRole.PAYER);
                             ex.setProperty(QUOTE_AMOUNT_TYPE, AmountType.SEND.name());
@@ -217,9 +214,6 @@ public class ZeebeeWorkers {
                         QuoteSwitchRequestDTO quoteRequest = objectMapper.readValue((String) existingVariables.get(QUOTE_SWITCH_REQUEST), QuoteSwitchRequestDTO.class);
 
                         if (isAmsLocalEnabled) {
-                            String tenantId = tenantProperties.getTenant(quoteRequest.getPayee().getPartyIdInfo().getPartyIdType().name(),
-                                    quoteRequest.getPayee().getPartyIdInfo().getPartyIdentifier()).getName();
-
                             TransactionChannelRequestDTO channelRequest = new TransactionChannelRequestDTO();
                             TransactionType transactionType = new TransactionType();
                             transactionType.setInitiator(TransactionRole.PAYEE);
@@ -235,7 +229,7 @@ public class ZeebeeWorkers {
                             ex.setProperty(PARTY_ID, quoteRequest.getPayee().getPartyIdInfo().getPartyIdentifier());
                             ex.setProperty(PARTY_ID_TYPE, quoteRequest.getPayee().getPartyIdInfo().getPartyIdType());
                             ex.setProperty(TRANSACTION_ID, existingVariables.get(TRANSACTION_ID));
-                            ex.setProperty(TENANT_ID, tenantId);
+                            ex.setProperty(TENANT_ID, existingVariables.get(TENANT_ID));
                             ex.setProperty(TRANSACTION_ROLE, TransactionRole.PAYEE.name());
                             ex.setProperty(CHANNEL_REQUEST, objectMapper.writeValueAsString(channelRequest));
                             ex.setProperty(ZEEBE_JOB_KEY, job.getKey());
@@ -305,11 +299,12 @@ public class ZeebeeWorkers {
                         String partyIdType = (String) existingVariables.get(PARTY_ID_TYPE);
                         String partyId = (String) existingVariables.get(PARTY_ID);
 
+                        String tenantId = (String) existingVariables.get(TENANT_ID);
                         if (isAmsLocalEnabled) {
                             Exchange ex = new DefaultExchange(camelContext);
                             ex.setProperty(PARTY_ID_TYPE, partyIdType);
                             ex.setProperty(PARTY_ID, partyId);
-                            ex.setProperty(TENANT_ID, existingVariables.get(TENANT_ID));
+                            ex.setProperty(TENANT_ID, tenantId);
                             ex.setProperty(ZEEBE_JOB_KEY, job.getKey());
                             producerTemplate.send("direct:get-party", ex);
                         } else {
@@ -318,7 +313,7 @@ public class ZeebeeWorkers {
                                     new PartyIdInfo(IdentifierType.valueOf(partyIdType),
                                             partyId,
                                             null,
-                                            tenantProperties.getTenant(partyIdType, partyId).getFspId()),
+                                            tenantProperties.getTenant(tenantId).getFspId()),
                                     null,
                                     null,
                                     null);

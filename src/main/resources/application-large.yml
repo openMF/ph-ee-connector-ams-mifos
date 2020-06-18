@@ -13,6 +13,4 @@ ams:
         user: interopUser
         password: intop@d1
         authtype: oauth
-        partyIdType: MSISDN
-        partyId: 27710101999
         fspId: in01tn01
