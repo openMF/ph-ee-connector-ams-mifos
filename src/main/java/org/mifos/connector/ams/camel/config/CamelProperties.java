@@ -5,23 +5,13 @@ public class CamelProperties {
     private CamelProperties() {}
 
     public static final String CLIENT_ID = "clientId";
-    public static final String ERROR_INFORMATION = "errorInformation";
-    public static final String EXTERNAL_ACCOUNT_ID = "externalAccountId";
-    public static final String LOCAL_QUOTE_RESPONSE = "localQuoteResponse";
+    public static final String CONTINUE_PROCESSING = "continueProcessing";
+    public static final String EXISTING_EXTERNAL_ACCOUNT_ID = "existingExternalAccountId";
     public static final String LOGIN_USERNAME = "loginUsername";
     public static final String LOGIN_PASSWORD = "loginPassword";
-    public static final String PARTY_ID = "partyId";
-    public static final String PARTY_ID_TYPE = "partyIdType";
-    public static final String PAYEE_PARTY_RESPONSE = "payeePartyResponse";
     public static final String QUOTE_AMOUNT_TYPE = "quoteAmountType";
-    public static final String QUOTE_SWITCH_REQUEST = "quoteSwitchRequest";
-    public static final String TENANT_ID = "tenantId";
-    public static final String TRANSACTION_ID = "transactionId";
-    public static final String CHANNEL_REQUEST = "channelRequest";
     public static final String TRANSACTION_ROLE = "transactionRole";
-    public static final String TRANSFER_CODE = "transferCode";
     public static final String TRANSFER_ACTION = "transferAction";
-    public static final String TRANSFER_RESPONSE_PREFIX = "transferResponse";
     public static final String ZEEBE_JOB_KEY = "zeebeJobKey";
 
 }

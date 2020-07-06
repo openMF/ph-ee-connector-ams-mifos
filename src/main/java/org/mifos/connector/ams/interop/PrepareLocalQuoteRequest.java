@@ -6,7 +6,6 @@ import org.apache.camel.Processor;
 import org.mifos.connector.common.ams.dto.QuoteFspRequestDTO;
 import org.mifos.connector.common.channel.dto.TransactionChannelRequestDTO;
 import org.mifos.connector.common.mojaloop.dto.FspMoneyData;
-import org.mifos.connector.common.mojaloop.dto.TransactionType;
 import org.mifos.connector.common.mojaloop.type.AmountType;
 import org.mifos.connector.common.mojaloop.type.TransactionRole;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,11 +14,11 @@ import org.springframework.stereotype.Component;
 
 import java.util.UUID;
 
-import static org.mifos.connector.ams.camel.config.CamelProperties.EXTERNAL_ACCOUNT_ID;
 import static org.mifos.connector.ams.camel.config.CamelProperties.QUOTE_AMOUNT_TYPE;
-import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSACTION_ID;
-import static org.mifos.connector.ams.camel.config.CamelProperties.CHANNEL_REQUEST;
 import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSACTION_ROLE;
+import static org.mifos.connector.ams.zeebe.ZeebeVariables.CHANNEL_REQUEST;
+import static org.mifos.connector.ams.zeebe.ZeebeVariables.EXTERNAL_ACCOUNT_ID;
+import static org.mifos.connector.ams.zeebe.ZeebeVariables.TRANSACTION_ID;
 
 @Component
 @ConditionalOnExpression("${ams.local.enabled}")

@@ -14,9 +14,11 @@ import java.util.Map;
 import static org.apache.camel.Exchange.HTTP_METHOD;
 import static org.apache.camel.Exchange.HTTP_PATH;
 import static org.mifos.connector.ams.camel.config.CamelProperties.CLIENT_ID;
-import static org.mifos.connector.ams.camel.config.CamelProperties.EXTERNAL_ACCOUNT_ID;
-import static org.mifos.connector.ams.camel.config.CamelProperties.TENANT_ID;
 import static org.mifos.connector.ams.camel.cxfrs.HeaderBasedInterceptor.CXF_TRACE_HEADER;
+import static org.mifos.connector.ams.zeebe.ZeebeVariables.EXTERNAL_ACCOUNT_ID;
+import static org.mifos.connector.ams.zeebe.ZeebeVariables.PARTY_ID;
+import static org.mifos.connector.ams.zeebe.ZeebeVariables.PARTY_ID_TYPE;
+import static org.mifos.connector.ams.zeebe.ZeebeVariables.TENANT_ID;
 
 @Component
 @ConditionalOnExpression("${ams.local.enabled} && '${ams.local.version}'.equals('1.2')")
@@ -27,6 +29,12 @@ public class AmsFinXService extends AmsCommonService implements AmsService {
 
     @Value("${ams.local.customer.path}")
     private String amsClientsPath;
+
+    @Value("${ams.local.account.savingsaccounts-path}")
+    private String amsSavingsAccountsPath;
+
+    @Value("${ams.local.interop.parties-path}")
+    private String amsInteropPartiesPath;
 
     @Autowired
     private TenantService tenantService;
@@ -43,6 +51,15 @@ public class AmsFinXService extends AmsCommonService implements AmsService {
         cxfrsUtil.sendInOut("cxfrs:bean:ams.local.interop", e, headers, null);
     }
 
+    public void getSavingsAccounts(Exchange e) {
+        Map<String, Object> headers = new HashMap<>();
+        headers.put(CXF_TRACE_HEADER, true);
+        headers.put(HTTP_METHOD, "GET");
+        headers.put(HTTP_PATH, amsSavingsAccountsPath);
+        headers.putAll(tenantService.getHeaders(e.getProperty(TENANT_ID, String.class)));
+        cxfrsUtil.sendInOut("cxfrs:bean:ams.local.account", e, headers, null);
+    }
+
     public void getClient(Exchange e) {
         Map<String, Object> headers = new HashMap<>();
         headers.put(CXF_TRACE_HEADER, true);
@@ -50,6 +67,30 @@ public class AmsFinXService extends AmsCommonService implements AmsService {
         headers.put(HTTP_PATH, amsClientsPath.replace("{clientId}", e.getProperty(CLIENT_ID, String.class)));
         headers.putAll(tenantService.getHeaders(e.getProperty(TENANT_ID, String.class)));
         cxfrsUtil.sendInOut("cxfrs:bean:ams.local.customer", e, headers, null);
+    }
+
+    @Override
+    public void registerInteropIdentifier(Exchange e) {
+        Map<String, Object> headers = new HashMap<>();
+        headers.put(CXF_TRACE_HEADER, true);
+        headers.put(HTTP_METHOD, "POST");
+        headers.put(HTTP_PATH, amsInteropPartiesPath.replace("{idType}", e.getProperty(PARTY_ID_TYPE, String.class))
+                .replace("{idValue}", e.getProperty(PARTY_ID, String.class)));
+        headers.put("Content-Type", "application/json");
+        headers.putAll(tenantService.getHeaders(e.getProperty(TENANT_ID, String.class)));
+        cxfrsUtil.sendInOut("cxfrs:bean:ams.local.interop", e, headers, e.getIn().getBody());
+    }
+
+    @Override
+    public void removeInteropIdentifier(Exchange e) {
+        Map<String, Object> headers = new HashMap<>();
+        headers.put(CXF_TRACE_HEADER, true);
+        headers.put(HTTP_METHOD, "DELETE");
+        headers.put(HTTP_PATH, amsInteropPartiesPath.replace("{idType}", e.getProperty(PARTY_ID_TYPE, String.class))
+                .replace("{idValue}", e.getProperty(PARTY_ID, String.class)));
+        headers.putAll(tenantService.getHeaders(e.getProperty(TENANT_ID, String.class)));
+        e.getIn().setBody(null);
+        cxfrsUtil.sendInOut("cxfrs:bean:ams.local.interop", e, headers, null);
     }
 
     public void login(Exchange e) {

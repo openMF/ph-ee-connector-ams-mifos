@@ -15,12 +15,12 @@ import org.springframework.stereotype.Component;
 
 import java.util.UUID;
 
-import static org.mifos.connector.ams.camel.config.CamelProperties.EXTERNAL_ACCOUNT_ID;
-import static org.mifos.connector.ams.camel.config.CamelProperties.LOCAL_QUOTE_RESPONSE;
-import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSACTION_ID;
-import static org.mifos.connector.ams.camel.config.CamelProperties.CHANNEL_REQUEST;
 import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSACTION_ROLE;
-import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSFER_CODE;
+import static org.mifos.connector.ams.zeebe.ZeebeVariables.CHANNEL_REQUEST;
+import static org.mifos.connector.ams.zeebe.ZeebeVariables.EXTERNAL_ACCOUNT_ID;
+import static org.mifos.connector.ams.zeebe.ZeebeVariables.LOCAL_QUOTE_RESPONSE;
+import static org.mifos.connector.ams.zeebe.ZeebeVariables.TRANSACTION_ID;
+import static org.mifos.connector.ams.zeebe.ZeebeVariables.TRANSFER_CODE;
 
 @Component
 @ConditionalOnExpression("${ams.local.enabled}")

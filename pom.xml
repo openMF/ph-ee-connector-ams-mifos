@@ -21,7 +21,7 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
-		<camel.version>3.0.0</camel.version>
+		<camel.version>3.4.0</camel.version>
 		<cxf.version>3.2.5</cxf.version>
 	</properties>
 

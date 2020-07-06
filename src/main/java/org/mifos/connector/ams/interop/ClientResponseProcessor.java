@@ -23,12 +23,12 @@ import org.springframework.stereotype.Component;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.mifos.connector.ams.camel.config.CamelProperties.ERROR_INFORMATION;
-import static org.mifos.connector.ams.camel.config.CamelProperties.PARTY_ID;
-import static org.mifos.connector.ams.camel.config.CamelProperties.PARTY_ID_TYPE;
-import static org.mifos.connector.ams.camel.config.CamelProperties.PAYEE_PARTY_RESPONSE;
-import static org.mifos.connector.ams.camel.config.CamelProperties.TENANT_ID;
 import static org.mifos.connector.ams.camel.config.CamelProperties.ZEEBE_JOB_KEY;
+import static org.mifos.connector.ams.zeebe.ZeebeVariables.ERROR_INFORMATION;
+import static org.mifos.connector.ams.zeebe.ZeebeVariables.PARTY_ID;
+import static org.mifos.connector.ams.zeebe.ZeebeVariables.PARTY_ID_TYPE;
+import static org.mifos.connector.ams.zeebe.ZeebeVariables.PAYEE_PARTY_RESPONSE;
+import static org.mifos.connector.ams.zeebe.ZeebeVariables.TENANT_ID;
 import static org.mifos.connector.common.ams.dto.LegalForm.PERSON;
 import static org.mifos.connector.common.camel.ErrorHandlerRouteBuilder.createError;
 import static org.mifos.connector.common.mojaloop.type.ErrorCode.PARTY_NOT_FOUND;

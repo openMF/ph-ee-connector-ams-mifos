@@ -8,11 +8,17 @@ public interface AmsService {
 
     void getExternalAccount(Exchange e);
 
+    void registerInteropIdentifier(Exchange e);
+
+    void removeInteropIdentifier(Exchange e);
+
     void sendTransfer(Exchange e);
 
     void login(Exchange e);
 
     void getSavingsAccount(Exchange e);
+
+    void getSavingsAccounts(Exchange e);
 
     void getClient(Exchange e);
 

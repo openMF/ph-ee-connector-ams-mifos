@@ -31,5 +31,7 @@ ams:
       path: ${ams.local.customer.base-url}/clients/{clientId}
     account:
       host: https://localhost:8443
+      base-url: /fineract-provider/api/v1
+      savingsaccounts-path: ${ams.local.account.base-url}/savingsaccounts
     auth:
       host: https://localhost:8443

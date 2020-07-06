@@ -6,7 +6,6 @@ import org.apache.camel.CamelContext;
 import org.apache.camel.Exchange;
 import org.apache.camel.ProducerTemplate;
 import org.apache.camel.support.DefaultExchange;
-import org.mifos.connector.ams.properties.Tenant;
 import org.mifos.connector.ams.properties.TenantProperties;
 import org.mifos.connector.common.ams.dto.QuoteFspResponseDTO;
 import org.mifos.connector.common.channel.dto.TransactionChannelRequestDTO;
@@ -33,23 +32,25 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.mifos.connector.ams.camel.config.CamelProperties.CHANNEL_REQUEST;
-import static org.mifos.connector.ams.camel.config.CamelProperties.EXTERNAL_ACCOUNT_ID;
-import static org.mifos.connector.ams.camel.config.CamelProperties.LOCAL_QUOTE_RESPONSE;
-import static org.mifos.connector.ams.camel.config.CamelProperties.PARTY_ID;
-import static org.mifos.connector.ams.camel.config.CamelProperties.PARTY_ID_TYPE;
-import static org.mifos.connector.ams.camel.config.CamelProperties.PAYEE_PARTY_RESPONSE;
 import static org.mifos.connector.ams.camel.config.CamelProperties.QUOTE_AMOUNT_TYPE;
-import static org.mifos.connector.ams.camel.config.CamelProperties.QUOTE_SWITCH_REQUEST;
-import static org.mifos.connector.ams.camel.config.CamelProperties.TENANT_ID;
-import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSACTION_ID;
 import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSACTION_ROLE;
 import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSFER_ACTION;
-import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSFER_CODE;
 import static org.mifos.connector.ams.camel.config.CamelProperties.ZEEBE_JOB_KEY;
-import static org.mifos.connector.ams.zeebe.ZeebeExpressionVariables.LOCAL_QUOTE_FAILED;
-import static org.mifos.connector.ams.zeebe.ZeebeExpressionVariables.QUOTE_FAILED;
 import static org.mifos.connector.ams.zeebe.ZeebeUtil.zeebeVariablesToCamelProperties;
+import static org.mifos.connector.ams.zeebe.ZeebeVariables.ACCOUNT;
+import static org.mifos.connector.ams.zeebe.ZeebeVariables.ACCOUNT_CURRENCY;
+import static org.mifos.connector.ams.zeebe.ZeebeVariables.CHANNEL_REQUEST;
+import static org.mifos.connector.ams.zeebe.ZeebeVariables.EXTERNAL_ACCOUNT_ID;
+import static org.mifos.connector.ams.zeebe.ZeebeVariables.LOCAL_QUOTE_FAILED;
+import static org.mifos.connector.ams.zeebe.ZeebeVariables.LOCAL_QUOTE_RESPONSE;
+import static org.mifos.connector.ams.zeebe.ZeebeVariables.PARTY_ID;
+import static org.mifos.connector.ams.zeebe.ZeebeVariables.PARTY_ID_TYPE;
+import static org.mifos.connector.ams.zeebe.ZeebeVariables.PAYEE_PARTY_RESPONSE;
+import static org.mifos.connector.ams.zeebe.ZeebeVariables.QUOTE_FAILED;
+import static org.mifos.connector.ams.zeebe.ZeebeVariables.QUOTE_SWITCH_REQUEST;
+import static org.mifos.connector.ams.zeebe.ZeebeVariables.TENANT_ID;
+import static org.mifos.connector.ams.zeebe.ZeebeVariables.TRANSACTION_ID;
+import static org.mifos.connector.ams.zeebe.ZeebeVariables.TRANSFER_CODE;
 import static org.mifos.connector.common.ams.dto.TransferActionType.CREATE;
 import static org.mifos.connector.common.ams.dto.TransferActionType.PREPARE;
 import static org.mifos.connector.common.ams.dto.TransferActionType.RELEASE;
@@ -61,6 +62,7 @@ public class ZeebeeWorkers {
     public static final String WORKER_PAYEE_COMMIT_TRANSFER = "payee-commit-transfer-";
     public static final String WORKER_PAYEE_QUOTE = "payee-quote-";
     public static final String WORKER_PAYER_LOCAL_QUOTE = "payer-local-quote-";
+    public static final String WORKER_INTEROP_PARTY_REGISTRATION = "interop-party-registration-";
 
     private Logger logger = LoggerFactory.getLogger(this.getClass());
 
@@ -326,6 +328,34 @@ public class ZeebeeWorkers {
                         }
                     })
                     .name(WORKER_PARTY_LOOKUP_LOCAL + dfspid)
+                    .maxJobsActive(workerMaxJobs)
+                    .open();
+
+            logger.info("## generating " + WORKER_INTEROP_PARTY_REGISTRATION + "{} worker", dfspid);
+            zeebeClient.newWorker()
+                    .jobType(WORKER_INTEROP_PARTY_REGISTRATION + dfspid)
+                    .handler((client, job) -> {
+                        logger.info("Job '{}' started from process '{}' with key {}", job.getType(), job.getBpmnProcessId(), job.getKey());
+                        Map<String, Object> existingVariables = job.getVariablesAsMap();
+
+                        if (isAmsLocalEnabled) {
+                            Exchange ex = new DefaultExchange(camelContext);
+                            ex.setProperty(PARTY_ID_TYPE, existingVariables.get(PARTY_ID_TYPE));
+                            ex.setProperty(PARTY_ID, existingVariables.get(PARTY_ID));
+                            ex.setProperty(ACCOUNT, existingVariables.get(ACCOUNT));
+                            ex.setProperty(TENANT_ID, existingVariables.get(TENANT_ID));
+                            ex.setProperty(ZEEBE_JOB_KEY, job.getKey());
+                            producerTemplate.send("direct:register-party", ex);
+                        } else {
+                            Map<String, Object> variables = new HashMap<>();
+                            variables.put(ACCOUNT_CURRENCY, "TZS");
+                            client.newCompleteCommand(job.getKey())
+                                    .variables(variables)
+                                    .send()
+                                    .join();
+                        }
+                    })
+                    .name(WORKER_INTEROP_PARTY_REGISTRATION + dfspid)
                     .maxJobsActive(workerMaxJobs)
                     .open();
         }

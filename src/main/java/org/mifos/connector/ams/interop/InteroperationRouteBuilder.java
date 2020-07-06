@@ -3,6 +3,7 @@ package org.mifos.connector.ams.interop;
 import org.apache.camel.LoggingLevel;
 import org.apache.camel.Processor;
 import org.apache.camel.model.dataformat.JsonLibrary;
+import org.json.JSONObject;
 import org.mifos.connector.common.ams.dto.ClientData;
 import org.mifos.connector.common.ams.dto.Customer;
 import org.mifos.connector.common.ams.dto.InteropAccountDTO;
@@ -15,13 +16,21 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.stereotype.Component;
 
+import static java.util.Spliterator.ORDERED;
+import static java.util.Spliterators.spliteratorUnknownSize;
+import static java.util.stream.StreamSupport.stream;
 import static org.mifos.connector.ams.camel.config.CamelProperties.CLIENT_ID;
-import static org.mifos.connector.ams.camel.config.CamelProperties.EXTERNAL_ACCOUNT_ID;
-import static org.mifos.connector.ams.camel.config.CamelProperties.PARTY_ID;
-import static org.mifos.connector.ams.camel.config.CamelProperties.PARTY_ID_TYPE;
-import static org.mifos.connector.ams.camel.config.CamelProperties.TENANT_ID;
-import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSACTION_ID;
+import static org.mifos.connector.ams.camel.config.CamelProperties.CONTINUE_PROCESSING;
+import static org.mifos.connector.ams.camel.config.CamelProperties.EXISTING_EXTERNAL_ACCOUNT_ID;
 import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSFER_ACTION;
+import static org.mifos.connector.ams.zeebe.ZeebeVariables.ACCOUNT;
+import static org.mifos.connector.ams.zeebe.ZeebeVariables.ACCOUNT_CURRENCY;
+import static org.mifos.connector.ams.zeebe.ZeebeVariables.ACCOUNT_ID;
+import static org.mifos.connector.ams.zeebe.ZeebeVariables.EXTERNAL_ACCOUNT_ID;
+import static org.mifos.connector.ams.zeebe.ZeebeVariables.PARTY_ID;
+import static org.mifos.connector.ams.zeebe.ZeebeVariables.PARTY_ID_TYPE;
+import static org.mifos.connector.ams.zeebe.ZeebeVariables.TENANT_ID;
+import static org.mifos.connector.ams.zeebe.ZeebeVariables.TRANSACTION_ID;
 
 
 @Component
@@ -51,6 +60,9 @@ public class InteroperationRouteBuilder extends ErrorHandlerRouteBuilder {
 
     @Autowired
     private ClientResponseProcessor clientResponseProcessor;
+
+    @Autowired
+    private InteropResponseProcessor interopResponseProcessor;
 
     public InteroperationRouteBuilder() {
         super.configure();
@@ -87,13 +99,14 @@ public class InteroperationRouteBuilder extends ErrorHandlerRouteBuilder {
 
         from("direct:fincn-oauth")
                 .id("fincn-oauth")
-                .log(LoggingLevel.INFO, "Fineract CN oauth request for tenant: ${exchangeProperty. " + TENANT_ID + "}")
+                .log(LoggingLevel.INFO, "Fineract CN oauth request for tenant: ${exchangeProperty." + TENANT_ID + "}")
                 .process(amsService::login)
                 .unmarshal().json(JsonLibrary.Jackson, LoginFineractCnResponseDTO.class);
 
+        // @formatter:off
         from("direct:get-party")
                 .id("get-party")
-                .log(LoggingLevel.INFO, "Get party information for identifierType: ${exchangeProperty. " + PARTY_ID_TYPE + "} with value: ${exchangeProperty. " + PARTY_ID + "}")
+                .log(LoggingLevel.INFO, "Get party information for identifierType: ${exchangeProperty." + PARTY_ID_TYPE + "} with value: ${exchangeProperty." + PARTY_ID + "}")
                 .to("direct:get-external-account")
                 .process(amsService::getSavingsAccount)
                 .choice()
@@ -111,5 +124,55 @@ public class InteroperationRouteBuilder extends ErrorHandlerRouteBuilder {
                     .endChoice()
                 .end()
                 .process(clientResponseProcessor);
+        // @formatter:on
+
+        // @formatter:off
+        from("direct:register-party")
+                .id("register-party")
+                .log(LoggingLevel.INFO, "Register party with type: ${exchangeProperty." + PARTY_ID_TYPE + "} identifier: ${exchangeProperty." + PARTY_ID + "} account ${exchangeProperty." + ACCOUNT + "}")
+                .process(amsService::getSavingsAccounts)
+                .process(e -> {
+                    JSONObject account = stream(spliteratorUnknownSize(
+                            new JSONObject(e.getIn().getBody(String.class)).getJSONArray("pageItems").iterator(),
+                            ORDERED), false)
+                            .filter(sa -> e.getProperty(ACCOUNT, String.class).equals(((JSONObject)sa).getString("accountNo")))
+                            .findFirst()
+                            .map(sa -> ((JSONObject)sa))
+                            .orElseThrow(() -> new RuntimeException("Could not find account with number: " + e.getProperty(ACCOUNT)));
+                    e.setProperty(ACCOUNT_ID, account.getString("accountNo"));
+                    e.setProperty(ACCOUNT_CURRENCY, account.getJSONObject("currency").getString("code"));
+                    e.setProperty(EXISTING_EXTERNAL_ACCOUNT_ID, account.getString("externalId"));
+                })
+                .to("direct:get-external-account")
+                .choice()
+                    .when(e -> e.getProperty(EXTERNAL_ACCOUNT_ID) == null) // identifier not registered to any account
+                        .to("direct:add-interop-identifier-to-account")
+                    .endChoice()
+                    .when(e -> { // identifier registered to other account
+                        String interopQueriedId = e.getProperty(EXTERNAL_ACCOUNT_ID, String.class);
+                        return interopQueriedId != null && !interopQueriedId.equals(e.getProperty(EXISTING_EXTERNAL_ACCOUNT_ID, String.class));
+                    })
+                        .setProperty(CONTINUE_PROCESSING, constant(true))
+                        .to("direct:remove-interop-identifier-from-account")
+                        .setProperty(CONTINUE_PROCESSING, constant(false))
+                        .to("direct:add-interop-identifier-to-account")
+                    .endChoice()
+                .end();
+        // @formatter:on
+
+        from("direct:add-interop-identifier-to-account")
+                .id("add-interop-identifier-to-account")
+                .process(e -> {
+                    JSONObject request = new JSONObject();
+                    request.put("accountId", e.getProperty(EXISTING_EXTERNAL_ACCOUNT_ID));
+                    e.getIn().setBody(request.toString());
+                })
+                .process(amsService::registerInteropIdentifier)
+                .process(interopResponseProcessor);
+
+        from("direct:remove-interop-identifier-from-account")
+                .id("remove-interop-identifier-from-account")
+                .process(amsService::removeInteropIdentifier)
+                .process(interopResponseProcessor);
     }
 }

@@ -21,7 +21,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import static org.mifos.connector.ams.camel.config.CamelProperties.LOGIN_PASSWORD;
 import static org.mifos.connector.ams.camel.config.CamelProperties.LOGIN_USERNAME;
-import static org.mifos.connector.ams.camel.config.CamelProperties.TENANT_ID;
+import static org.mifos.connector.ams.zeebe.ZeebeVariables.TENANT_ID;
 
 @Component
 @ConditionalOnExpression("${ams.local.enabled}")
