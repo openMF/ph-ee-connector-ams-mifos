@@ -51,10 +51,7 @@ public class InteropResponseProcessor implements Processor {
                     exchange.getIn().getBody(String.class));
 
             logger.error(errorMsg);
-
             variables.put(ERROR_INFORMATION, createError(String.valueOf(INTERNAL_SERVER_ERROR.getCode()), errorMsg).toString());
-        } else {
-            variables.put(ACCOUNT_CURRENCY, exchange.getProperty(ACCOUNT_CURRENCY));
         }
 
         if(!exchange.getProperty(CONTINUE_PROCESSING, Boolean.class) || isRequestFailed) {
@@ -62,6 +59,7 @@ public class InteropResponseProcessor implements Processor {
                     .variables(variables)
                     .send()
                     .join();
+            exchange.setRouteStop(true);
         }
     }
 }
