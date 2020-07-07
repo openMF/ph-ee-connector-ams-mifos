@@ -157,6 +157,9 @@ public class InteroperationRouteBuilder extends ErrorHandlerRouteBuilder {
                         .setProperty(CONTINUE_PROCESSING, constant(false))
                         .to("direct:add-interop-identifier-to-account")
                     .endChoice()
+                    .otherwise()
+                        .process(interopResponseProcessor)
+                    .endChoice()
                 .end();
         // @formatter:on
 
