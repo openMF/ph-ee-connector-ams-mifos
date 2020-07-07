@@ -57,13 +57,14 @@ public class InteropResponseProcessor implements Processor {
             variables.put(INTEROP_REGISTRATION_FAILED, true);
         }
 
-        if (!exchange.getProperty(CONTINUE_PROCESSING, Boolean.class) || isRequestFailed) {
+        Boolean continueProcessing = exchange.getProperty(CONTINUE_PROCESSING, Boolean.class);
+        if (continueProcessing == null || !continueProcessing || isRequestFailed) {
             variables.put(ACCOUNT_CURRENCY, exchange.getProperty(ACCOUNT_CURRENCY, String.class));
             zeebeClient.newCompleteCommand(exchange.getProperty(ZEEBE_JOB_KEY, Long.class))
                     .variables(variables)
                     .send()
                     .join();
-            if(isRequestFailed) {
+            if (isRequestFailed) {
                 exchange.setRouteStop(true);
             }
         }
