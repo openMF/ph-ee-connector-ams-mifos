@@ -15,6 +15,7 @@ import java.util.Map;
 
 import static org.mifos.connector.ams.camel.config.CamelProperties.CONTINUE_PROCESSING;
 import static org.mifos.connector.ams.camel.config.CamelProperties.ZEEBE_JOB_KEY;
+import static org.mifos.connector.ams.zeebe.ZeebeVariables.ACCOUNT_CURRENCY;
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.ERROR_INFORMATION;
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.INTEROP_REGISTRATION_FAILED;
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.PARTY_ID;
@@ -57,6 +58,7 @@ public class InteropResponseProcessor implements Processor {
         }
 
         if (!exchange.getProperty(CONTINUE_PROCESSING, Boolean.class) || isRequestFailed) {
+            variables.put(ACCOUNT_CURRENCY, exchange.getProperty(ACCOUNT_CURRENCY, String.class));
             zeebeClient.newCompleteCommand(exchange.getProperty(ZEEBE_JOB_KEY, Long.class))
                     .variables(variables)
                     .send()
