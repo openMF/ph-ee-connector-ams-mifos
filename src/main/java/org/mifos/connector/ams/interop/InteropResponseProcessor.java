@@ -15,8 +15,8 @@ import java.util.Map;
 
 import static org.mifos.connector.ams.camel.config.CamelProperties.CONTINUE_PROCESSING;
 import static org.mifos.connector.ams.camel.config.CamelProperties.ZEEBE_JOB_KEY;
-import static org.mifos.connector.ams.zeebe.ZeebeVariables.ACCOUNT_CURRENCY;
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.ERROR_INFORMATION;
+import static org.mifos.connector.ams.zeebe.ZeebeVariables.INTEROP_REGISTRATION_FAILED;
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.PARTY_ID;
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.PARTY_ID_TYPE;
 import static org.mifos.connector.common.camel.ErrorHandlerRouteBuilder.createError;
@@ -41,6 +41,7 @@ public class InteropResponseProcessor implements Processor {
         String partyId = exchange.getProperty(PARTY_ID, String.class);
 
         Map<String, Object> variables = new HashMap<>();
+        variables.put(INTEROP_REGISTRATION_FAILED, false);
         boolean isRequestFailed = false;
         if (responseCode > 202) {
             isRequestFailed = true;
@@ -52,14 +53,17 @@ public class InteropResponseProcessor implements Processor {
 
             logger.error(errorMsg);
             variables.put(ERROR_INFORMATION, createError(String.valueOf(INTERNAL_SERVER_ERROR.getCode()), errorMsg).toString());
+            variables.put(INTEROP_REGISTRATION_FAILED, true);
         }
 
-        if(!exchange.getProperty(CONTINUE_PROCESSING, Boolean.class) || isRequestFailed) {
+        if (!exchange.getProperty(CONTINUE_PROCESSING, Boolean.class) || isRequestFailed) {
             zeebeClient.newCompleteCommand(exchange.getProperty(ZEEBE_JOB_KEY, Long.class))
                     .variables(variables)
                     .send()
                     .join();
-            exchange.setRouteStop(true);
+            if(isRequestFailed) {
+                exchange.setRouteStop(true);
+            }
         }
     }
 }

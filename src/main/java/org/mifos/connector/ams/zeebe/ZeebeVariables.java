@@ -15,6 +15,7 @@ public class ZeebeVariables {
     public static final String CHANNEL_REQUEST = "channelRequest";
     public static final String ERROR_INFORMATION = "errorInformation";
     public static final String EXTERNAL_ACCOUNT_ID = "externalAccountId";
+    public static final String INTEROP_REGISTRATION_FAILED = "interopRegistrationFailed";
     public static final String LOCAL_QUOTE_FAILED = "localQuoteFailed";
     public static final String LOCAL_QUOTE_RESPONSE = "localQuoteResponse";
     public static final String PARTY_ID = "partyId";
