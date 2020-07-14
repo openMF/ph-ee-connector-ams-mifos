@@ -6,6 +6,7 @@ import org.apache.camel.Processor;
 import org.mifos.connector.common.ams.dto.QuoteFspResponseDTO;
 import org.mifos.connector.common.ams.dto.TransferFspRequestDTO;
 import org.mifos.connector.common.channel.dto.TransactionChannelRequestDTO;
+import org.mifos.connector.common.mojaloop.dto.Extension;
 import org.mifos.connector.common.mojaloop.dto.FspMoneyData;
 import org.mifos.connector.common.mojaloop.dto.TransactionType;
 import org.mifos.connector.common.mojaloop.type.TransactionRole;
@@ -13,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.UUID;
 
 import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSACTION_ROLE;
@@ -51,6 +53,13 @@ public class PrepareTransferRequest implements Processor {
             exchange.setProperty(TRANSFER_CODE, transferCode);
         }
 
+        List<Extension> extensionList = channelRequest.getExtensionList();
+        String note = extensionList == null ? "" : extensionList.stream()
+                .filter(e -> "comment".equals(e.getKey()))
+                .findFirst()
+                .map(Extension::getValue)
+                .orElse("");
+
         TransferFspRequestDTO transferRequestDTO = new TransferFspRequestDTO(exchange.getProperty(TRANSACTION_ID, String.class),
                 transferCode,
                 exchange.getProperty(EXTERNAL_ACCOUNT_ID, String.class),
@@ -59,7 +68,7 @@ public class PrepareTransferRequest implements Processor {
                 localQuoteResponse.getFspCommission(),
                 TransactionRole.valueOf(exchange.getProperty(TRANSACTION_ROLE, String.class)),
                 transactionType,
-                "");
+                note);
 
         exchange.getIn().setBody(transferRequestDTO);
     }
