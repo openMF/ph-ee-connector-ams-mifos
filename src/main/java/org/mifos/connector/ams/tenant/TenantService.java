@@ -4,7 +4,6 @@ import org.apache.camel.CamelContext;
 import org.apache.camel.Exchange;
 import org.apache.camel.ProducerTemplate;
 import org.apache.camel.support.DefaultExchange;
-import org.eclipse.jetty.http.HttpHeader;
 import org.mifos.connector.ams.properties.Tenant;
 import org.mifos.connector.ams.properties.TenantProperties;
 import org.mifos.connector.common.ams.dto.LoginFineractCnResponseDTO;
@@ -13,6 +12,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.stereotype.Component;
 
+import javax.ws.rs.core.HttpHeaders;
 import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
@@ -58,7 +58,7 @@ public class TenantService {
             throw new RuntimeException("Unsupported Fineract version: " + amsLocalVersion);
         }
 
-        headers.put(HttpHeader.AUTHORIZATION.asString(), getTenantAuthData(tenant).getToken());
+        headers.put(HttpHeaders.AUTHORIZATION, getTenantAuthData(tenant).getToken());
 
         return headers;
     }
