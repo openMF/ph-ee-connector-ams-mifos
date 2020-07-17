@@ -2,10 +2,12 @@ package org.mifos.connector.ams.zeebe;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.zeebe.client.ZeebeClient;
+import io.zeebe.client.api.response.ActivatedJob;
 import org.apache.camel.CamelContext;
 import org.apache.camel.Exchange;
 import org.apache.camel.ProducerTemplate;
 import org.apache.camel.support.DefaultExchange;
+import org.json.JSONObject;
 import org.mifos.connector.ams.properties.TenantProperties;
 import org.mifos.connector.common.ams.dto.QuoteFspResponseDTO;
 import org.mifos.connector.common.channel.dto.TransactionChannelRequestDTO;
@@ -95,7 +97,7 @@ public class ZeebeeWorkers {
         zeebeClient.newWorker()
                 .jobType("block-funds")
                 .handler((client, job) -> {
-                    logger.info("Job '{}' started from process '{}' with key {}", job.getType(), job.getBpmnProcessId(), job.getKey());
+                    logWorkerDetails(job);
                     if (isAmsLocalEnabled) {
                         Exchange ex = new DefaultExchange(camelContext);
                         zeebeVariablesToCamelProperties(job.getVariablesAsMap(), ex,
@@ -121,7 +123,7 @@ public class ZeebeeWorkers {
         zeebeClient.newWorker()
                 .jobType("book-funds")
                 .handler((client, job) -> {
-                    logger.info("Job '{}' started from process '{}' with key {}", job.getType(), job.getBpmnProcessId(), job.getKey());
+                    logWorkerDetails(job);
                     if (isAmsLocalEnabled) {
                         Exchange ex = new DefaultExchange(camelContext);
                         zeebeVariablesToCamelProperties(job.getVariablesAsMap(), ex,
@@ -148,7 +150,7 @@ public class ZeebeeWorkers {
         zeebeClient.newWorker()
                 .jobType("release-block")
                 .handler((client, job) -> {
-                    logger.info("Job '{}' started from process '{}' with key {}", job.getType(), job.getBpmnProcessId(), job.getKey());
+                    logWorkerDetails(job);
                     if (isAmsLocalEnabled) {
                         Exchange ex = new DefaultExchange(camelContext);
                         zeebeVariablesToCamelProperties(job.getVariablesAsMap(), ex,
@@ -177,7 +179,7 @@ public class ZeebeeWorkers {
             zeebeClient.newWorker()
                     .jobType(WORKER_PAYER_LOCAL_QUOTE + dfspid)
                     .handler((client, job) -> {
-                        logger.info("Job '{}' started from process '{}' with key {}", job.getType(), job.getBpmnProcessId(), job.getKey());
+                        logWorkerDetails(job);
                         if (isAmsLocalEnabled) {
                             Map<String, Object> existingVariables = job.getVariablesAsMap();
                             TransactionChannelRequestDTO channelRequest = objectMapper.readValue((String) existingVariables.get(CHANNEL_REQUEST), TransactionChannelRequestDTO.class);
@@ -211,7 +213,7 @@ public class ZeebeeWorkers {
             zeebeClient.newWorker()
                     .jobType(WORKER_PAYEE_QUOTE + dfspid)
                     .handler((client, job) -> {
-                        logger.info("Job '{}' started from process '{}' with key {}", job.getType(), job.getBpmnProcessId(), job.getKey());
+                        logWorkerDetails(job);
                         Map<String, Object> existingVariables = job.getVariablesAsMap();
                         QuoteSwitchRequestDTO quoteRequest = objectMapper.readValue((String) existingVariables.get(QUOTE_SWITCH_REQUEST), QuoteSwitchRequestDTO.class);
 
@@ -254,7 +256,7 @@ public class ZeebeeWorkers {
             zeebeClient.newWorker()
                     .jobType(WORKER_PAYEE_COMMIT_TRANSFER + dfspid)
                     .handler((client, job) -> {
-                        logger.info("Job '{}' started from process '{}' with key {}", job.getType(), job.getBpmnProcessId(), job.getKey());
+                        logWorkerDetails(job);
                         if (isAmsLocalEnabled) {
                             Exchange ex = new DefaultExchange(camelContext);
                             Map<String, Object> variables = job.getVariablesAsMap();
@@ -296,7 +298,7 @@ public class ZeebeeWorkers {
             zeebeClient.newWorker()
                     .jobType(WORKER_PARTY_LOOKUP_LOCAL + dfspid)
                     .handler((client, job) -> {
-                        logger.info("Job '{}' started from process '{}' with key {}", job.getType(), job.getBpmnProcessId(), job.getKey());
+                        logWorkerDetails(job);
                         Map<String, Object> existingVariables = job.getVariablesAsMap();
                         String partyIdType = (String) existingVariables.get(PARTY_ID_TYPE);
                         String partyId = (String) existingVariables.get(PARTY_ID);
@@ -335,7 +337,7 @@ public class ZeebeeWorkers {
             zeebeClient.newWorker()
                     .jobType(WORKER_INTEROP_PARTY_REGISTRATION + dfspid)
                     .handler((client, job) -> {
-                        logger.info("Job '{}' started from process '{}' with key {}", job.getType(), job.getBpmnProcessId(), job.getKey());
+                        logWorkerDetails(job);
                         Map<String, Object> existingVariables = job.getVariablesAsMap();
 
                         if (isAmsLocalEnabled) {
@@ -359,6 +361,19 @@ public class ZeebeeWorkers {
                     .maxJobsActive(workerMaxJobs)
                     .open();
         }
+    }
+
+    private void logWorkerDetails(ActivatedJob job) {
+        JSONObject jsonJob = new JSONObject();
+        jsonJob.put("bpmnProcessId", job.getBpmnProcessId());
+        jsonJob.put("elementInstanceKey", job.getElementInstanceKey());
+        jsonJob.put("jobKey", job.getKey());
+        jsonJob.put("jobType", job.getType());
+        jsonJob.put("workflowElementId", job.getElementId());
+        jsonJob.put("workflowDefinitionVersion", job.getWorkflowDefinitionVersion());
+        jsonJob.put("workflowKey", job.getWorkflowKey());
+        jsonJob.put("workflowInstanceKey", job.getWorkflowInstanceKey());
+        logger.info("Job started: {}", jsonJob.toString(4));
     }
 
     private Map<String, Object> createFreeQuote(String currency) throws Exception {
