@@ -1,5 +1,6 @@
 package org.mifos.connector.ams.properties;
 
+import org.mifos.connector.ams.tenant.TenantNotExistException;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
@@ -27,6 +28,6 @@ public class TenantProperties {
         return getTenants().stream()
                 .filter(t -> t.getName().equals(name))
                 .findFirst()
-                .orElseThrow(() -> new RuntimeException("Tenant with name: " + name + ", not configuerd!"));
+                .orElseThrow(() -> new TenantNotExistException("Tenant with name: " + name + ", not configuerd!"));
     }
 }

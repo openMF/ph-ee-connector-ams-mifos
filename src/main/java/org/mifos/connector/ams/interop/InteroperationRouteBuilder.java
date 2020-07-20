@@ -1,9 +1,11 @@
 package org.mifos.connector.ams.interop;
 
+import org.apache.camel.Exchange;
 import org.apache.camel.LoggingLevel;
 import org.apache.camel.Processor;
 import org.apache.camel.model.dataformat.JsonLibrary;
 import org.json.JSONObject;
+import org.mifos.connector.ams.tenant.TenantNotExistException;
 import org.mifos.connector.common.ams.dto.ClientData;
 import org.mifos.connector.common.ams.dto.Customer;
 import org.mifos.connector.common.ams.dto.InteropAccountDTO;
@@ -70,6 +72,17 @@ public class InteroperationRouteBuilder extends ErrorHandlerRouteBuilder {
 
     @Override
     public void configure() {
+        onException(TenantNotExistException.class)
+                .process(e -> {
+                    e.getIn().setHeader(Exchange.HTTP_RESPONSE_CODE, 404);
+                    Exception exception = e.getException();
+                    if (exception != null) {
+                        e.getIn().setBody(exception.getMessage());
+                    }
+                })
+                .process(clientResponseProcessor)
+                .stop();
+
         from("direct:get-external-account")
                 .id("get-external-account")
                 .log(LoggingLevel.INFO, "Get externalAccount with identifierType: ${exchangeProperty." + PARTY_ID_TYPE + "} with value: ${exchangeProperty."
