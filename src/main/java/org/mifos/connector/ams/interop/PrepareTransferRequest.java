@@ -34,7 +34,10 @@ public class PrepareTransferRequest implements Processor {
     @Override
     public void process(Exchange exchange) throws Exception {
         TransactionChannelRequestDTO channelRequest = objectMapper.readValue(exchange.getProperty(CHANNEL_REQUEST, String.class), TransactionChannelRequestDTO.class);
-        QuoteFspResponseDTO localQuoteResponse = objectMapper.readValue(exchange.getProperty(LOCAL_QUOTE_RESPONSE, String.class), QuoteFspResponseDTO.class);
+        QuoteFspResponseDTO localQuoteResponse = null;
+        if (exchange.getProperty(LOCAL_QUOTE_RESPONSE, String.class) != null) {
+            localQuoteResponse = objectMapper.readValue(exchange.getProperty(LOCAL_QUOTE_RESPONSE, String.class), QuoteFspResponseDTO.class);
+        }
 
         TransactionType transactionType = new TransactionType();
         transactionType.setInitiator(channelRequest.getTransactionType().getInitiator());
@@ -60,15 +63,25 @@ public class PrepareTransferRequest implements Processor {
                 .map(Extension::getValue)
                 .orElse("");
 
-        TransferFspRequestDTO transferRequestDTO = new TransferFspRequestDTO(exchange.getProperty(TRANSACTION_ID, String.class),
-                transferCode,
-                exchange.getProperty(EXTERNAL_ACCOUNT_ID, String.class),
-                amount,
-                localQuoteResponse.getFspFee(),
-                localQuoteResponse.getFspCommission(),
-                TransactionRole.valueOf(exchange.getProperty(TRANSACTION_ROLE, String.class)),
-                transactionType,
-                note);
+        TransferFspRequestDTO transferRequestDTO = null;
+
+        if (localQuoteResponse != null) {
+            transferRequestDTO = new TransferFspRequestDTO(exchange.getProperty(TRANSACTION_ID, String.class),
+                    transferCode,
+                    exchange.getProperty(EXTERNAL_ACCOUNT_ID, String.class),
+                    amount,
+                    localQuoteResponse.getFspFee(),
+                    localQuoteResponse.getFspCommission(),
+                    TransactionRole.valueOf(exchange.getProperty(TRANSACTION_ROLE, String.class)),
+                    transactionType,
+                    note);
+        } else {
+            transferRequestDTO = new TransferFspRequestDTO(exchange.getProperty(TRANSACTION_ID, String.class),
+                    transferCode,
+                    exchange.getProperty(EXTERNAL_ACCOUNT_ID, String.class),
+                    amount,
+                    TransactionRole.valueOf(exchange.getProperty(TRANSACTION_ROLE, String.class)));
+        }
 
         exchange.getIn().setBody(transferRequestDTO);
     }
