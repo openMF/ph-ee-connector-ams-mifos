@@ -104,8 +104,11 @@ public class ZeebeeWorkers {
                                 TRANSACTION_ID,
                                 CHANNEL_REQUEST,
                                 TENANT_ID,
-                                EXTERNAL_ACCOUNT_ID,
                                 LOCAL_QUOTE_RESPONSE);
+
+                        TransactionChannelRequestDTO channelRequest = objectMapper.readValue(ex.getProperty(CHANNEL_REQUEST, String.class), TransactionChannelRequestDTO.class);
+                        ex.setProperty(PARTY_ID_TYPE, channelRequest.getPayer().getPartyIdInfo().getPartyIdType().name());
+                        ex.setProperty(PARTY_ID, channelRequest.getPayer().getPartyIdInfo().getPartyIdentifier());
                         ex.setProperty(TRANSFER_ACTION, PREPARE.name());
                         ex.setProperty(ZEEBE_JOB_KEY, job.getKey());
                         ex.setProperty(TRANSACTION_ROLE, TransactionRole.PAYER.name());
@@ -130,9 +133,12 @@ public class ZeebeeWorkers {
                                 TRANSACTION_ID,
                                 CHANNEL_REQUEST,
                                 TENANT_ID,
-                                EXTERNAL_ACCOUNT_ID,
                                 LOCAL_QUOTE_RESPONSE,
                                 TRANSFER_CODE);
+
+                        TransactionChannelRequestDTO channelRequest = objectMapper.readValue(ex.getProperty(CHANNEL_REQUEST, String.class), TransactionChannelRequestDTO.class);
+                        ex.setProperty(PARTY_ID_TYPE, channelRequest.getPayer().getPartyIdInfo().getPartyIdType().name());
+                        ex.setProperty(PARTY_ID, channelRequest.getPayer().getPartyIdInfo().getPartyIdentifier());
                         ex.setProperty(TRANSFER_ACTION, CREATE.name());
                         ex.setProperty(ZEEBE_JOB_KEY, job.getKey());
                         ex.setProperty(TRANSACTION_ROLE, TransactionRole.PAYER.name());
@@ -157,9 +163,12 @@ public class ZeebeeWorkers {
                                 TRANSACTION_ID,
                                 CHANNEL_REQUEST,
                                 TENANT_ID,
-                                EXTERNAL_ACCOUNT_ID,
                                 LOCAL_QUOTE_RESPONSE,
                                 TRANSFER_CODE);
+
+                        TransactionChannelRequestDTO channelRequest = objectMapper.readValue(ex.getProperty(CHANNEL_REQUEST, String.class), TransactionChannelRequestDTO.class);
+                        ex.setProperty(PARTY_ID_TYPE, channelRequest.getPayer().getPartyIdInfo().getPartyIdType().name());
+                        ex.setProperty(PARTY_ID, channelRequest.getPayer().getPartyIdInfo().getPartyIdentifier());
                         ex.setProperty(TRANSFER_ACTION, RELEASE.name());
                         ex.setProperty(ZEEBE_JOB_KEY, job.getKey());
                         ex.setProperty(TRANSACTION_ROLE, TransactionRole.PAYEE.name());
