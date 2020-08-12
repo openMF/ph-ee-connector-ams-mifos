@@ -291,7 +291,10 @@ public class ZeebeeWorkers {
 
                             producerTemplate.send("direct:send-transfers", ex);
                         } else {
+                            Map<String, Object> variables = new HashMap<>();
+                            variables.put("transferCreateFailed", false);
                             zeebeClient.newCompleteCommand(job.getKey())
+                                    .variables(variables)
                                     .send()
                                     .join();
                         }
