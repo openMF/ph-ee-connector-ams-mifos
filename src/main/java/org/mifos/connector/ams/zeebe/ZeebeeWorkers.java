@@ -111,7 +111,10 @@ public class ZeebeeWorkers {
                         ex.setProperty(TRANSACTION_ROLE, TransactionRole.PAYER.name());
                         producerTemplate.send("direct:send-transfers", ex);
                     } else {
+                        Map<String, Object> variables = new HashMap<>();
+                        variables.put("transferPrepareFailed", false);
                         zeebeClient.newCompleteCommand(job.getKey())
+                                .variables(variables)
                                 .send()
                                 .join();
                     }
@@ -138,7 +141,10 @@ public class ZeebeeWorkers {
                         ex.setProperty(TRANSACTION_ROLE, TransactionRole.PAYER.name());
                         producerTemplate.send("direct:send-transfers", ex);
                     } else {
+                        Map<String, Object> variables = new HashMap<>();
+                        variables.put("transferCreateFailed", false);
                         zeebeClient.newCompleteCommand(job.getKey())
+                                .variables(variables)
                                 .send()
                                 .join();
                     }
