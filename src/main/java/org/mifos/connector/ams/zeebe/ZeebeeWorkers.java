@@ -170,8 +170,11 @@ public class ZeebeeWorkers {
                         ex.setProperty(ZEEBE_JOB_KEY, job.getKey());
                         ex.setProperty(TRANSACTION_ROLE, TransactionRole.PAYEE.name());
                         producerTemplate.send("direct:send-transfers", ex);
-                    } else {
+                    } else {  
+                        Map<String, Object> variables = new HashMap<>();
+                        variables.put("transferReleaseFailed", false);
                         zeebeClient.newCompleteCommand(job.getKey())
+                                .variables(variables)
                                 .send()
                                 .join();
                     }
