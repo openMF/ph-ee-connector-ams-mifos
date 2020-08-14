@@ -32,7 +32,7 @@ public class QuoteResponseProcessor implements Processor {
 
     private Logger logger = LoggerFactory.getLogger(this.getClass());
 
-    @Autowired
+    @Autowired(required = false)
     private ZeebeClient zeebeClient;
 
     @Override

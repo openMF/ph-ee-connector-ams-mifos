@@ -6,7 +6,9 @@ public class CamelProperties {
 
     public static final String CLIENT_ID = "clientId";
     public static final String CONTINUE_PROCESSING = "continueProcessing";
+    public static final String DEFINITON_ID = "definitonId";
     public static final String EXISTING_EXTERNAL_ACCOUNT_ID = "existingExternalAccountId";
+    public static final String INTEROP_ACCOUNT_TO_REGISTER = "interopAccountId";
     public static final String LOGIN_USERNAME = "loginUsername";
     public static final String LOGIN_PASSWORD = "loginPassword";
     public static final String QUOTE_AMOUNT_TYPE = "quoteAmountType";

@@ -18,6 +18,8 @@ public interface AmsService {
 
     void getSavingsAccount(Exchange e);
 
+    void getSavingsAccountDefiniton(Exchange e);
+
     void getSavingsAccounts(Exchange e);
 
     void getClient(Exchange e);

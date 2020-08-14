@@ -2,10 +2,12 @@ package org.mifos.connector.ams.zeebe;
 
 import io.zeebe.client.ZeebeClient;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
+@ConditionalOnExpression("${zeebe.enabled:true}")
 public class ZeebeClientConfiguration {
 
     @Value("${zeebe.broker.contactpoint}")
