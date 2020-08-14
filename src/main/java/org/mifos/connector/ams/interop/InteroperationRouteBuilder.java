@@ -240,28 +240,5 @@ public class InteroperationRouteBuilder extends ErrorHandlerRouteBuilder {
                 .id("remove-interop-identifier-from-account")
                 .process(amsService::removeInteropIdentifier)
                 .process(interopPartyResponseProcessor);
-        // @formatter:off
-        /*from("direct:get-party")
-                .id("get-account-name")
-                .log(LoggingLevel.INFO, "Get party information for identifierType: ${exchangeProperty." + PARTY_ID_TYPE + "} with value: ${exchangeProperty." + PARTY_ID + "}")
-                .to("direct:get-external-account")
-                .process(amsService::getSavingsAccount)
-                .choice()
-                .when(e -> "1.2".equals(amsVersion))
-                .unmarshal().json(JsonLibrary.Jackson, InteropAccountDTO.class)
-                .process(e -> e.setProperty(CLIENT_ID, e.getIn().getBody(InteropAccountDTO.class).getClientId()))
-                .process(amsService::getClient)
-                .unmarshal().json(JsonLibrary.Jackson, ClientData.class)
-                .endChoice()
-                .otherwise() // cn
-                .unmarshal().json(JsonLibrary.Jackson, ProductInstance.class)
-                .process(e -> e.setProperty(CLIENT_ID, e.getIn().getBody(ProductInstance.class).getCustomerIdentifier()))
-                .process(amsService::getClient)
-                .unmarshal().json(JsonLibrary.Jackson, Customer.class)
-                .endChoice()
-                .end()
-                .process(clientResponseProcessor);
-
-         */
     }
 }

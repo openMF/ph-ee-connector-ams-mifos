@@ -75,7 +75,6 @@ public class AmsFinCNService extends AmsCommonService implements AmsService {
         cxfrsUtil.sendInOut("cxfrs:bean:ams.local.customer", e, headers, null);
     }
 
-
     public void getClientByMobileNo(Exchange e) {
         Map<String, Object> headers = new HashMap<>();
         headers.put(CXF_TRACE_HEADER, true);
@@ -84,6 +83,7 @@ public class AmsFinCNService extends AmsCommonService implements AmsService {
         headers.putAll(tenantService.getHeaders(e.getProperty(TENANT_ID, String.class)));
         cxfrsUtil.sendInOut("cxfrs:bean:ams.local.customer", e, headers, null);
     }
+
 
     public void login(Exchange e) {
         Map<String, Object> headers = new HashMap<>();
