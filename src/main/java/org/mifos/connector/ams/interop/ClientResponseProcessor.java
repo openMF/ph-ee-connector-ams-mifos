@@ -48,7 +48,7 @@ public class ClientResponseProcessor implements Processor {
     @Autowired
     private ObjectMapper objectMapper;
 
-    @Autowired
+    @Autowired(required = false)
     private ZeebeClient zeebeClient;
 
     @Override

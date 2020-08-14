@@ -31,7 +31,8 @@ ams:
     account:
       host: http://localhost:2027
       base-url: /deposit/v1
-      path: ${ams.local.account.base-url}/instances/{accountId}
+      instances-path: ${ams.local.account.base-url}/instances/{accountId}
+      definitons-path: ${ams.local.account.base-url}/definitions/{definitionId}
     auth:
       host: http://localhost:2021
       base-url: /identity/v1

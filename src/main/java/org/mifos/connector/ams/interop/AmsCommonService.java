@@ -73,4 +73,27 @@ public class AmsCommonService {
         headers.putAll(tenantService.getHeaders(e.getProperty(TENANT_ID, String.class)));
         cxfrsUtil.sendInOut("cxfrs:bean:ams.local.interop", e, headers, e.getIn().getBody());
     }
+
+    public void registerInteropIdentifier(Exchange e) {
+        Map<String, Object> headers = new HashMap<>();
+        headers.put(CXF_TRACE_HEADER, true);
+        headers.put(HTTP_METHOD, "POST");
+        headers.put(HTTP_PATH, amsInteropPartiesPath.replace("{idType}", e.getProperty(PARTY_ID_TYPE, String.class))
+                .replace("{idValue}", e.getProperty(PARTY_ID, String.class)));
+        headers.put("Content-Type", "application/json");
+        headers.putAll(tenantService.getHeaders(e.getProperty(TENANT_ID, String.class)));
+        cxfrsUtil.sendInOut("cxfrs:bean:ams.local.interop", e, headers, e.getIn().getBody());
+    }
+
+    public void removeInteropIdentifier(Exchange e) {
+        Map<String, Object> headers = new HashMap<>();
+        headers.put(CXF_TRACE_HEADER, true);
+        headers.put(HTTP_METHOD, "DELETE");
+        headers.put(HTTP_PATH, amsInteropPartiesPath.replace("{idType}", e.getProperty(PARTY_ID_TYPE, String.class))
+                .replace("{idValue}", e.getProperty(PARTY_ID, String.class)));
+        headers.put("Content-Type", "application/json");
+        headers.putAll(tenantService.getHeaders(e.getProperty(TENANT_ID, String.class)));
+        e.getIn().setBody(null);
+        cxfrsUtil.sendInOut("cxfrs:bean:ams.local.interop", e, headers, null);
+    }
 }
