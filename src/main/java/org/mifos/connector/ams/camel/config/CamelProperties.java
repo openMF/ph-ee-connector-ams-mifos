@@ -5,6 +5,7 @@ public class CamelProperties {
     private CamelProperties() {}
 
     public static final String CLIENT_ID = "clientId";
+    public static final String IDENTIFIER_ID = "identifierId";
     public static final String CONTINUE_PROCESSING = "continueProcessing";
     public static final String DEFINITON_ID = "definitonId";
     public static final String EXISTING_EXTERNAL_ACCOUNT_ID = "existingExternalAccountId";

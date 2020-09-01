@@ -24,4 +24,6 @@ public interface AmsService {
 
     void getClient(Exchange e);
 
+    void getClientByMobileNo(Exchange e);
+
 }
