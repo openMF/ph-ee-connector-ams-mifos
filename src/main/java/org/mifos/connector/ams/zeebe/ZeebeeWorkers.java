@@ -241,7 +241,7 @@ public class ZeebeeWorkers {
                         .handler((client, job) -> {
                             logWorkerDetails(job);
                             Map<String, Object> existingVariables = job.getVariablesAsMap();
-                            QuoteSwitchRequestDTO quoteRequest = objectMapper.readValue((String) existingVariables.get(QUOTE_SWITCH_REQUEST), QuoteSwitchRequestDTO.class);
+                            QuoteSwitchRequestDTO quoteRequest = objectMapper.readValue(String.valueOf(existingVariables.get(QUOTE_SWITCH_REQUEST)), QuoteSwitchRequestDTO.class);
 
                             if (isAmsLocalEnabled) {
                                 TransactionChannelRequestDTO channelRequest = new TransactionChannelRequestDTO();

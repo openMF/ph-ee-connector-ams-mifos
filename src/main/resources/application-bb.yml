@@ -1,13 +1,13 @@
 ams:
   local:
     interop:
-      host: https://158.85.0.60/
+      host: https://localhost:8443
     customer:
-      host: https://158.85.0.60/
+      host: https://localhost:8443
     account:
-      host: https://158.85.0.60/
+      host: https://localhost:8443
     auth:
-      host: https://158.85.0.60/
+      host: https://localhost:8443
     tenants:
       - name: ibank-usa
         user: mifos

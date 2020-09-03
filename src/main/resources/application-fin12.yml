@@ -1,5 +1,5 @@
 camel:
-  server-port: 5000
+  server-port: 6000
   springboot:
     main-run-controller: true
   dataformat:
@@ -10,7 +10,7 @@ dfspids: "DFSPID"
 
 zeebe:
   broker:
-    contactpoint: "zeebe-cluster-gateway/gateway:26500"
+    contactpoint: "localhost:26500"
 
 ams:
   local:
@@ -19,19 +19,19 @@ ams:
     keystore-path: keystore.jks
     keystore-password: openmf
     interop:
-      host: https://158.85.0.60
+      host: https://localhost:8443
       base-url: /fineract-provider/api/v1
       quotes-path: ${ams.local.interop.base-url}/interoperation/quotes
       parties-path: ${ams.local.interop.base-url}/interoperation/parties/{idType}/{idValue}
       transfers-path: ${ams.local.interop.base-url}/interoperation/transfers
       accounts-path: ${ams.local.interop.base-url}/interoperation/accounts/{externalAccountId}
     customer:
-      host: https://158.85.0.60
+      host: https://localhost:8443
       base-url: /fineract-provider/api/v1
       path: ${ams.local.customer.base-url}/clients/{clientId}
     account:
-      host: https://158.85.0.60
+      host: https://localhost:8443
       base-url: /fineract-provider/api/v1
       savingsaccounts-path: ${ams.local.account.base-url}/savingsaccounts
     auth:
-      host: https://158.85.0.60
+      host: https://localhost:8443
