@@ -41,24 +41,6 @@ public class AmsCommonService {
     @Autowired
     private CxfrsUtil cxfrsUtil;
 
-    @Autowired
-    public AmsCommonService(){
-        //test ip connection
-        try {
-            InetAddress intet = InetAddress.getByName("158.85.0.60");
-            if (intet.isReachable(5000)) {
-                System.out.println("***************************");
-                System.out.println("AMS Host is reachable");
-            } else{
-                System.out.println("***************************");
-                System.out.println("Sorry ! We can't reach to AMS host");
-            }
-        }catch (Exception e){
-            System.out.println("***************************");
-            System.out.println("Not Able to connect to Ip : Exception");
-        }
-    }
-
     public void getLocalQuote(Exchange e) {
         Map<String, Object> headers = new HashMap<>();
         headers.put(CXF_TRACE_HEADER, true);

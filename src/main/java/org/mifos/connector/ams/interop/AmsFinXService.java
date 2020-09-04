@@ -16,8 +16,7 @@ import static org.apache.camel.Exchange.HTTP_PATH;
 import static org.mifos.connector.ams.camel.config.CamelProperties.CLIENT_ID;
 import static org.mifos.connector.ams.camel.config.CamelProperties.IDENTIFIER_ID;
 import static org.mifos.connector.ams.camel.cxfrs.HeaderBasedInterceptor.CXF_TRACE_HEADER;
-import static org.mifos.connector.ams.zeebe.ZeebeVariables.EXTERNAL_ACCOUNT_ID;
-import static org.mifos.connector.ams.zeebe.ZeebeVariables.TENANT_ID;
+import static org.mifos.connector.ams.zeebe.ZeebeVariables.*;
 
 @Component
 @ConditionalOnExpression("${ams.local.enabled} && '${ams.local.version}'.equals('1.2')")
@@ -59,6 +58,16 @@ public class AmsFinXService extends AmsCommonService implements AmsService {
         headers.putAll(tenantService.getHeaders(e.getProperty(TENANT_ID, String.class)));
         cxfrsUtil.sendInOut("cxfrs:bean:ams.local.account", e, headers, null);
     }
+
+    public void getSavingsAccountsTransactions(Exchange e) {
+        Map<String, Object> headers = new HashMap<>();
+        headers.put(CXF_TRACE_HEADER, true);
+        headers.put(HTTP_METHOD, "GET");
+        headers.put(HTTP_PATH, amsSavingsAccountsPath+"/"+e.getProperty(ACCOUNT_ID, String.class)+"?associations=transactions");
+        headers.putAll(tenantService.getHeaders(e.getProperty(TENANT_ID, String.class)));
+        cxfrsUtil.sendInOut("cxfrs:bean:ams.local.account", e, headers, null);
+    }
+
 
     public void getClient(Exchange e) {
         Map<String, Object> headers = new HashMap<>();

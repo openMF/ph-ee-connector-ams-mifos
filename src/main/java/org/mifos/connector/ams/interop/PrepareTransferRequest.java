@@ -14,6 +14,7 @@ import org.mifos.connector.common.mojaloop.type.TransactionRole;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
 import java.util.UUID;
 
@@ -35,6 +36,7 @@ public class PrepareTransferRequest implements Processor {
     public void process(Exchange exchange) throws Exception {
         TransactionChannelRequestDTO channelRequest = objectMapper.readValue(exchange.getProperty(CHANNEL_REQUEST, String.class), TransactionChannelRequestDTO.class);
         QuoteFspResponseDTO localQuoteResponse = null;
+
         if (exchange.getProperty(LOCAL_QUOTE_RESPONSE, String.class) != null) {
             localQuoteResponse = objectMapper.readValue(exchange.getProperty(LOCAL_QUOTE_RESPONSE, String.class), QuoteFspResponseDTO.class);
         }
@@ -82,7 +84,7 @@ public class PrepareTransferRequest implements Processor {
                     amount,
                     TransactionRole.valueOf(exchange.getProperty(TRANSACTION_ROLE, String.class)));
         }
-
+        
         exchange.getIn().setBody(transferRequestDTO);
     }
 }
