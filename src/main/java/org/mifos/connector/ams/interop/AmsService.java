@@ -26,4 +26,6 @@ public interface AmsService {
 
     void getClientByMobileNo(Exchange e);
 
+    void getSavingsAccountsTransactions(Exchange e) ;
+
 }

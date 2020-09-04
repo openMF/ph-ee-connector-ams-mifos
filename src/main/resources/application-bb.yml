@@ -13,9 +13,9 @@ ams:
         user: mifos
         password: password
         authtype: basic
-        fspId: in02ibank-usa
+        fspId: ibank-ibank-usa
       - name: ibank-india
         user: mifos
         password: password
         authtype: basic
-        fspId: in02ibank-india
+        fspId: ibank-ibank-india

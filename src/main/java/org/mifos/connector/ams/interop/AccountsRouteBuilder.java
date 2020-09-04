@@ -3,14 +3,14 @@ package org.mifos.connector.ams.interop;
 import org.apache.camel.LoggingLevel;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.model.dataformat.JsonLibrary;
+import org.json.JSONArray;
 import org.json.JSONObject;
-import org.mifos.connector.common.ams.dto.ClientData;
-import org.mifos.connector.common.ams.dto.Customer;
-import org.mifos.connector.common.ams.dto.InteropAccountDTO;
-import org.mifos.connector.common.ams.dto.ProductInstance;
+import org.mifos.connector.common.ams.dto.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+
+import java.util.List;
 
 import static org.mifos.connector.ams.camel.config.CamelProperties.CLIENT_ID;
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.*;
@@ -84,7 +84,7 @@ public class AccountsRouteBuilder extends RouteBuilder {
                     .endChoice()
                     .otherwise() // cn
                         .unmarshal().json(JsonLibrary.Jackson, ProductInstance.class)
-                        .process(e -> e.setProperty(CLIENT_ID, e.getIn().getBody(ProductInstance.class).getCustomerIdentifier()))
+                            .process(e -> e.setProperty(CLIENT_ID, e.getIn().getBody(ProductInstance.class).getCustomerIdentifier()))
                         .process(amsService::getClient)
                         .unmarshal().json(JsonLibrary.Jackson, Customer.class)
                         .process(e ->{
@@ -130,14 +130,29 @@ public class AccountsRouteBuilder extends RouteBuilder {
                     e.getIn().setBody(response.toString());
                 });
         from("rest:GET:/ams/accounts/{IdentifierType}/{IdentifierId}/transactions")
-                .id("account-management-get-transactions")
-                .log(LoggingLevel.INFO, "## account-management-get-transactions")
+                .id("ams-connector-account-management-get-transactions")
+                .log(LoggingLevel.INFO, "## ams-connector-account-management-get-transactions")
                 .process(e -> {
                     String IdentifierType = e.getIn().getHeader("IdentifierType", String.class);
                     String IdentifierId = e.getIn().getHeader("IdentifierId", String.class);
                     String tenantId = e.getIn().getHeader("Platform-TenantId", String.class);
+                    e.setProperty(PARTY_ID_TYPE, IdentifierType);
+                    e.setProperty(PARTY_ID,IdentifierId);
+                    e.setProperty(TENANT_ID, tenantId);
                 })
-                .setBody(constant(null));
+                .log(LoggingLevel.INFO, "##ams-connector-account-management-status-check: ${exchangeProperty." + PARTY_ID_TYPE + "} with value: ${exchangeProperty." + PARTY_ID + "}")
+                .to("direct:get-external-account")
+                .process(amsService::getSavingsAccountsTransactions)
+                .process(e->{
+                    e.getIn().setBody(e.getIn().getBody());
+                });
+                /*.
+                .unmarshal().json(JsonLibrary.Jackson, List.class)
+                .process(e -> {
+                    List<InteropTransactionData> transactions = e.getIn().getBody(List.class);
+                    JSONArray response =
+                    e.getIn().setBody(response.toString());
+                });*/
         from("rest:GET:/ams/accounts/{IdentifierType}/{IdentifierId}/statemententries")
                 .id("account-management-get-statemententries")
                 .log(LoggingLevel.INFO, "## account-management-get-statemententries")

@@ -84,7 +84,7 @@ public class PrepareTransferRequest implements Processor {
                     amount,
                     TransactionRole.valueOf(exchange.getProperty(TRANSACTION_ROLE, String.class)));
         }
-        
+
         exchange.getIn().setBody(transferRequestDTO);
     }
 }

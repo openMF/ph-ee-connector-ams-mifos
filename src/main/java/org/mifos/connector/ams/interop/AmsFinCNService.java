@@ -101,4 +101,9 @@ public class AmsFinCNService extends AmsCommonService implements AmsService {
 
         cxfrsUtil.sendInOut("cxfrs:bean:ams.local.auth", e, headers, null);
     }
+
+    public void getSavingsAccountsTransactions(Exchange e) {
+        //need this to be filled
+
+    }
 }
