@@ -416,7 +416,8 @@ public class ZeebeeWorkers {
 
                             ex.setProperty(CHANNEL_REQUEST, objectMapper.writeValueAsString(transactionRequest));
                             ex.setProperty(TRANSACTION_ROLE, TransactionRole.PAYEE.name());
-
+                            ex.setProperty(PARTY_ID_TYPE, variables.get(PARTY_ID_TYPE));
+                            ex.setProperty(PARTY_ID, variables.get(PARTY_ID));
                             producerTemplate.send("direct:send-transfers", ex);
                         } else {
                             Map<String, Object> variables = new HashMap<>();
