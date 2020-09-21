@@ -120,7 +120,7 @@ public class ZeebeeWorkers {
                             zeebeClient.newCompleteCommand(job.getKey())
                                     .variables(variables)
                                     .send()
-                                    .join();
+                                    ;
                         }
                     })
                     .name("block-funds")
@@ -150,7 +150,7 @@ public class ZeebeeWorkers {
                             zeebeClient.newCompleteCommand(job.getKey())
                                     .variables(variables)
                                     .send()
-                                    .join();
+                                    ;
                         }
                     })
                     .name("book-funds")
@@ -180,7 +180,7 @@ public class ZeebeeWorkers {
                             zeebeClient.newCompleteCommand(job.getKey())
                                     .variables(variables)
                                     .send()
-                                    .join();
+                                    ;
                         }
                     })
                     .name("release-block")
@@ -215,7 +215,7 @@ public class ZeebeeWorkers {
                                 zeebeClient.newCompleteCommand(job.getKey())
                                         .variables(variables)
                                         .send()
-                                        .join();
+                                        ;
                             }
                         })
                         .name(WORKER_PAYER_LOCAL_QUOTE + dfspid)
@@ -258,7 +258,7 @@ public class ZeebeeWorkers {
                                 zeebeClient.newCompleteCommand(job.getKey())
                                         .variables(variables)
                                         .send()
-                                        .join();
+                                        ;
                             }
                         })
                         .name(WORKER_PAYEE_QUOTE + dfspid)
@@ -303,7 +303,7 @@ public class ZeebeeWorkers {
                                 zeebeClient.newCompleteCommand(job.getKey())
                                         .variables(variables)
                                         .send()
-                                        .join();
+                                        ;
                             }
                         })
                         .name(WORKER_PAYEE_COMMIT_TRANSFER + dfspid)
@@ -342,7 +342,7 @@ public class ZeebeeWorkers {
                                 client.newCompleteCommand(job.getKey())
                                         .variables(variables)
                                         .send()
-                                        .join();
+                                        ;
                             }
                         })
                         .name(WORKER_PARTY_LOOKUP_LOCAL + dfspid)
@@ -370,7 +370,7 @@ public class ZeebeeWorkers {
                                 client.newCompleteCommand(job.getKey())
                                         .variables(variables)
                                         .send()
-                                        .join();
+                                        ;
                             }
                         })
                         .name(WORKER_INTEROP_PARTY_REGISTRATION + dfspid)

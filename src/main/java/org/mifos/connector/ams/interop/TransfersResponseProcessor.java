@@ -58,7 +58,7 @@ public class TransfersResponseProcessor implements Processor {
             zeebeClient.newCompleteCommand(exchange.getProperty(ZEEBE_JOB_KEY, Long.class))
                     .variables(variables)
                     .send()
-                    .join();
+                    ;
         } else {
             Map<String, Object> variables = new HashMap<>();
             variables.put(TRANSFER_RESPONSE_PREFIX + "-" + transferAction, exchange.getIn().getBody());
@@ -70,7 +70,7 @@ public class TransfersResponseProcessor implements Processor {
             zeebeClient.newCompleteCommand(exchange.getProperty(ZEEBE_JOB_KEY, Long.class))
                     .variables(variables)
                     .send()
-                    .join();
+                    ;
         }
     }
 }

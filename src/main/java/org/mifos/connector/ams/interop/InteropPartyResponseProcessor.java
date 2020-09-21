@@ -63,7 +63,7 @@ public class InteropPartyResponseProcessor implements Processor {
             zeebeClient.newCompleteCommand(e.getProperty(ZEEBE_JOB_KEY, Long.class))
                     .variables(variables)
                     .send()
-                    .join();
+                    ;
             if (isRequestFailed) {
                 e.setRouteStop(true);
             }
