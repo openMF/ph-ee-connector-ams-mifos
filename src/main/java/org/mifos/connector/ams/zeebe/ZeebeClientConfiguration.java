@@ -6,6 +6,8 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.time.Duration;
+
 @Configuration
 @ConditionalOnExpression("${zeebe.enabled:true}")
 public class ZeebeClientConfiguration {
@@ -21,7 +23,9 @@ public class ZeebeClientConfiguration {
         return ZeebeClient.newClientBuilder()
                 .brokerContactPoint(zeebeBrokerContactpoint)
                 .usePlaintext()
-                .numJobWorkerExecutionThreads(zeebeClientMaxThreads)
+                .defaultJobPollInterval(Duration.ofMillis(10))
+                .defaultJobWorkerMaxJobsActive(512)
+//                .numJobWorkerExecutionThreads(zeebeClientMaxThreads)
                 .build();
     }
 }
