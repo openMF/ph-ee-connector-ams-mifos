@@ -126,6 +126,7 @@ public class InteroperationRouteBuilder extends ErrorHandlerRouteBuilder {
                 .id("get-party")
                 .log(LoggingLevel.INFO, "Get party information for identifierType: ${exchangeProperty." + PARTY_ID_TYPE + "} with value: ${exchangeProperty." + PARTY_ID + "}")
                 .to("direct:get-external-account")
+                .process(e -> e.setProperty(ACCOUNT_ID, e.getProperty(EXTERNAL_ACCOUNT_ID)))
                 .process(amsService::getSavingsAccount)
                 .choice()
                     .when(e -> "1.2".equals(amsVersion))
