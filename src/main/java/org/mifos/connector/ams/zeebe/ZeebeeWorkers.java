@@ -289,13 +289,9 @@ public class ZeebeeWorkers {
                                 transactionType.setInitiatorType(InitiatorType.CONSUMER);
                                 transactionType.setScenario(Scenario.DEPOSIT);
                                 transactionRequest.setTransactionType(transactionType);
-
-                                MoneyData amount = new MoneyData(quoteRequest.getAmount().getAmountDecimal(),
-                                        quoteRequest.getAmount().getCurrency());
-                                transactionRequest.setAmount(amount);
+                                transactionRequest.setAmount(quoteRequest.getAmount());
                                 ex.setProperty(CHANNEL_REQUEST, objectMapper.writeValueAsString(transactionRequest));
                                 ex.setProperty(TRANSACTION_ROLE, TransactionRole.PAYEE.name());
-
                                 producerTemplate.send("direct:send-transfers", ex);
                             } else {
                                 Map<String, Object> variables = new HashMap<>();
