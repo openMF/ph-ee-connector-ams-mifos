@@ -50,6 +50,7 @@ import static org.mifos.connector.ams.zeebe.ZeebeVariables.PARTY_ID_TYPE;
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.PAYEE_PARTY_RESPONSE;
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.QUOTE_FAILED;
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.QUOTE_SWITCH_REQUEST;
+import static org.mifos.connector.ams.zeebe.ZeebeVariables.QUOTE_SWITCH_REQUEST_AMOUNT;
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.TENANT_ID;
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.TRANSACTION_ID;
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.TRANSFER_CODE;
@@ -281,7 +282,7 @@ public class ZeebeeWorkers {
                                 ex.setProperty(TRANSFER_ACTION, CREATE.name());
                                 ex.setProperty(ZEEBE_JOB_KEY, job.getKey());
 
-                                QuoteSwitchRequestDTO quoteRequest = objectMapper.readValue((String) variables.get(QUOTE_SWITCH_REQUEST), QuoteSwitchRequestDTO.class);
+                                MoneyData amount = objectMapper.readValue((String) variables.get(QUOTE_SWITCH_REQUEST_AMOUNT), MoneyData.class);
 
                                 TransactionChannelRequestDTO transactionRequest = new TransactionChannelRequestDTO();
                                 TransactionType transactionType = new TransactionType();
@@ -289,7 +290,7 @@ public class ZeebeeWorkers {
                                 transactionType.setInitiatorType(InitiatorType.CONSUMER);
                                 transactionType.setScenario(Scenario.DEPOSIT);
                                 transactionRequest.setTransactionType(transactionType);
-                                transactionRequest.setAmount(quoteRequest.getAmount());
+                                transactionRequest.setAmount(amount);
                                 ex.setProperty(CHANNEL_REQUEST, objectMapper.writeValueAsString(transactionRequest));
                                 ex.setProperty(TRANSACTION_ROLE, TransactionRole.PAYEE.name());
                                 producerTemplate.send("direct:send-transfers", ex);
