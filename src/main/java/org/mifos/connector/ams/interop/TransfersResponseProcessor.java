@@ -20,6 +20,7 @@ import static org.mifos.connector.ams.zeebe.ZeebeVariables.ACTION_FAILURE_MAP;
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.ERROR_INFORMATION;
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.TRANSACTION_ID;
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.TRANSFER_CODE;
+import static org.mifos.connector.ams.zeebe.ZeebeVariables.TRANSFER_CREATE_FAILED;
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.TRANSFER_PREPARE_FAILED;
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.TRANSFER_RESPONSE_PREFIX;
 import static org.mifos.connector.common.ams.dto.TransferActionType.PREPARE;
@@ -42,7 +43,7 @@ public class TransfersResponseProcessor implements Processor {
         String transferAction = exchange.getProperty(TRANSFER_ACTION, String.class);
 
         Map<String, Object> variables = new HashMap<>();
-        variables.put(TRANSFER_PREPARE_FAILED, responseCode > 202);
+        variables.put(TRANSFER_CREATE_FAILED, responseCode > 202);
 
         if (responseCode > 202) {
             String transactionRole = exchange.getProperty(TRANSACTION_ROLE, String.class);
