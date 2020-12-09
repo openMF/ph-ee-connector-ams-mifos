@@ -54,6 +54,7 @@ import static org.mifos.connector.ams.zeebe.ZeebeVariables.QUOTE_SWITCH_REQUEST_
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.TENANT_ID;
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.TRANSACTION_ID;
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.TRANSFER_CODE;
+import static org.mifos.connector.ams.zeebe.ZeebeVariables.TRANSFER_PREPARE_FAILED;
 import static org.mifos.connector.common.ams.dto.TransferActionType.CREATE;
 import static org.mifos.connector.common.ams.dto.TransferActionType.PREPARE;
 import static org.mifos.connector.common.ams.dto.TransferActionType.RELEASE;
@@ -117,11 +118,10 @@ public class ZeebeeWorkers {
                             producerTemplate.send("direct:send-transfers", ex);
                         } else {
                             Map<String, Object> variables = new HashMap<>();
-                            variables.put("transferPrepareFailed", false);
+                            variables.put(TRANSFER_PREPARE_FAILED, false);
                             zeebeClient.newCompleteCommand(job.getKey())
                                     .variables(variables)
-                                    .send()
-                                    ;
+                                    .send();
                         }
                     })
                     .name("block-funds")
@@ -151,7 +151,7 @@ public class ZeebeeWorkers {
                             zeebeClient.newCompleteCommand(job.getKey())
                                     .variables(variables)
                                     .send()
-                                    ;
+                            ;
                         }
                     })
                     .name("book-funds")
@@ -181,7 +181,7 @@ public class ZeebeeWorkers {
                             zeebeClient.newCompleteCommand(job.getKey())
                                     .variables(variables)
                                     .send()
-                                    ;
+                            ;
                         }
                     })
                     .name("release-block")
@@ -216,7 +216,7 @@ public class ZeebeeWorkers {
                                 zeebeClient.newCompleteCommand(job.getKey())
                                         .variables(variables)
                                         .send()
-                                        ;
+                                ;
                             }
                         })
                         .name(WORKER_PAYER_LOCAL_QUOTE + dfspid)
@@ -259,7 +259,7 @@ public class ZeebeeWorkers {
                                 zeebeClient.newCompleteCommand(job.getKey())
                                         .variables(variables)
                                         .send()
-                                        ;
+                                ;
                             }
                         })
                         .name(WORKER_PAYEE_QUOTE + dfspid)
@@ -300,7 +300,7 @@ public class ZeebeeWorkers {
                                 zeebeClient.newCompleteCommand(job.getKey())
                                         .variables(variables)
                                         .send()
-                                        ;
+                                ;
                             }
                         })
                         .name(WORKER_PAYEE_COMMIT_TRANSFER + dfspid)
@@ -339,7 +339,7 @@ public class ZeebeeWorkers {
                                 client.newCompleteCommand(job.getKey())
                                         .variables(variables)
                                         .send()
-                                        ;
+                                ;
                             }
                         })
                         .name(WORKER_PARTY_LOOKUP_LOCAL + dfspid)
@@ -367,7 +367,7 @@ public class ZeebeeWorkers {
                                 client.newCompleteCommand(job.getKey())
                                         .variables(variables)
                                         .send()
-                                        ;
+                                ;
                             }
                         })
                         .name(WORKER_INTEROP_PARTY_REGISTRATION + dfspid)

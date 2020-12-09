@@ -71,6 +71,7 @@ public class InteroperationRouteBuilder extends ErrorHandlerRouteBuilder {
     @Autowired
     private InteropPartyResponseProcessor interopPartyResponseProcessor;
 
+
     public InteroperationRouteBuilder() {
         super.configure();
     }
