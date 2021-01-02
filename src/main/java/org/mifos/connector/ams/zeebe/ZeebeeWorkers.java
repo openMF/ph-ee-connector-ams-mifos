@@ -109,7 +109,6 @@ public class ZeebeeWorkers {
                                 TRANSACTION_ID,
                                 CHANNEL_REQUEST,
                                 TENANT_ID,
-                                EXTERNAL_ACCOUNT_ID,
                                 LOCAL_QUOTE_RESPONSE);
 
                         TransactionChannelRequestDTO channelRequest = objectMapper.readValue(ex.getProperty(CHANNEL_REQUEST, String.class), TransactionChannelRequestDTO.class);
@@ -142,7 +141,6 @@ public class ZeebeeWorkers {
                                 TRANSACTION_ID,
                                 CHANNEL_REQUEST,
                                 TENANT_ID,
-                                EXTERNAL_ACCOUNT_ID,
                                 LOCAL_QUOTE_RESPONSE,
                                 TRANSFER_CODE);
 
@@ -176,7 +174,6 @@ public class ZeebeeWorkers {
                                 TRANSACTION_ID,
                                 CHANNEL_REQUEST,
                                 TENANT_ID,
-                                EXTERNAL_ACCOUNT_ID,
                                 LOCAL_QUOTE_RESPONSE,
                                 TRANSFER_CODE);
 
