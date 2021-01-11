@@ -29,6 +29,7 @@ ams:
       host: https://localhost:8443
       base-url: /fineract-provider/api/v1
       path: ${ams.local.customer.base-url}/clients/{clientId}
+      image: ${ams.local.customer.base-url}/clients/{clientId}/images
     account:
       host: https://localhost:8443
       base-url: /fineract-provider/api/v1

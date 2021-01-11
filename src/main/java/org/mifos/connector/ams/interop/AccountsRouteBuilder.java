@@ -65,6 +65,8 @@ public class AccountsRouteBuilder extends RouteBuilder {
                     .when(e -> "1.2".equals(amsVersion))
                         .unmarshal().json(JsonLibrary.Jackson, InteropAccountDTO.class)
                         .process(e -> e.setProperty(CLIENT_ID, e.getIn().getBody(InteropAccountDTO.class).getClientId()))
+                        .process(amsService::getClientImage)
+                        .process(e -> e.setProperty("client_image", e.getIn().getBody(String.class)))
                         .process(amsService::getClient)
                         .unmarshal().json(JsonLibrary.Jackson, ClientData.class)
                         .process(e ->{
@@ -79,6 +81,7 @@ public class AccountsRouteBuilder extends RouteBuilder {
                             name.put("nativeName", customer.getDisplayName());
                             response.put("name", name);
                             response.put("lei", "");
+                            response.put("image", e.getProperty("client_image"));
                             e.getIn().setBody(response.toString());
                         })
                     .endChoice()

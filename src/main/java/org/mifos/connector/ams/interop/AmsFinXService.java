@@ -28,6 +28,9 @@ public class AmsFinXService extends AmsCommonService implements AmsService {
     @Value("${ams.local.customer.path}")
     private String amsClientsPath;
 
+    @Value("${ams.local.customer.image}")
+    private String amsImagePath;
+
     @Value("${ams.local.account.savingsaccounts-path}")
     private String amsSavingsAccountsPath;
 
@@ -76,6 +79,15 @@ public class AmsFinXService extends AmsCommonService implements AmsService {
         headers.put(HTTP_PATH, amsClientsPath.replace("{clientId}", e.getProperty(CLIENT_ID, String.class)));
         headers.putAll(tenantService.getHeaders(e.getProperty(TENANT_ID, String.class)));
         cxfrsUtil.sendInOut("cxfrs:bean:ams.local.customer", e, headers, null);
+    }
+
+    public void getClientImage(Exchange e){
+        Map<String, Object> headers = new HashMap<>();
+        headers.put(CXF_TRACE_HEADER, true);
+        headers.put(HTTP_METHOD, "GET");
+        headers.put(HTTP_PATH, amsImagePath.replace("{clientId}", e.getProperty(CLIENT_ID, String.class)));
+        headers.putAll(tenantService.getHeaders(e.getProperty(TENANT_ID, String.class)));
+        cxfrsUtil.sendInOut("cxfrs:bean:ams.local.customer.image", e, headers, null);
     }
 
     public void getClientByMobileNo(Exchange e) {

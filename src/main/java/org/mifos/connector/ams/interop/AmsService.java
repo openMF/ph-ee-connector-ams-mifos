@@ -28,4 +28,6 @@ public interface AmsService {
 
     void getSavingsAccountsTransactions(Exchange e) ;
 
+    default void getClientImage(Exchange e){}
+
 }
