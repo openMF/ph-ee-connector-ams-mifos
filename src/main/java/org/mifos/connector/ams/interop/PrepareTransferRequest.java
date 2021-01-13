@@ -38,9 +38,9 @@ public class PrepareTransferRequest implements Processor {
     @Override
     public void process(Exchange exchange) throws Exception {
         TransactionType transactionType = new TransactionType();
-        transactionType.setInitiator(zeebeVariable(exchange, "initiator", TransactionRole.class));
-        transactionType.setInitiatorType(zeebeVariable(exchange, "initiatorType", InitiatorType.class));
-        transactionType.setScenario(zeebeVariable(exchange, "scenario", Scenario.class));
+        transactionType.setInitiator(TransactionRole.valueOf(zeebeVariable(exchange, "initiator", String.class)));
+        transactionType.setInitiatorType(InitiatorType.valueOf(zeebeVariable(exchange, "initiatorType", String.class)));
+        transactionType.setScenario(Scenario.valueOf(zeebeVariable(exchange, "scenario", String.class)));
 
         String note = zeebeVariable(exchange, "note", String.class);
         FspMoneyData amount = zeebeVariable(exchange, "amount", FspMoneyData.class);
@@ -48,7 +48,7 @@ public class PrepareTransferRequest implements Processor {
         FspMoneyData fspCommission = zeebeVariable(exchange, "fspCommission", FspMoneyData.class);
 
         String existingTransferCode = exchange.getProperty(TRANSFER_CODE, String.class);
-        String transferCode = null;
+        String transferCode;
         if (existingTransferCode != null) {
             transferCode = existingTransferCode;
         } else {
