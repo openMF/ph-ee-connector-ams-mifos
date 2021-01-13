@@ -282,7 +282,8 @@ public class ZeebeeWorkers {
                                 ex.setProperty(TRANSFER_ACTION, CREATE.name());
                                 ex.setProperty(ZEEBE_JOB_KEY, job.getKey());
 
-                                MoneyData amount = objectMapper.readValue((String) variables.get(QUOTE_SWITCH_REQUEST_AMOUNT), MoneyData.class);
+                                FspMoneyData amountData = (FspMoneyData) variables.get("amount");
+                                MoneyData amount = new MoneyData(amountData.getAmount(), amountData.getCurrency());
 
                                 TransactionChannelRequestDTO transactionRequest = new TransactionChannelRequestDTO();
                                 TransactionType transactionType = new TransactionType();
