@@ -38,6 +38,7 @@ import static org.mifos.connector.ams.camel.config.CamelProperties.QUOTE_AMOUNT_
 import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSACTION_ROLE;
 import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSFER_ACTION;
 import static org.mifos.connector.ams.camel.config.CamelProperties.ZEEBE_JOB_KEY;
+import static org.mifos.connector.ams.zeebe.ZeebeUtil.zeebeVariable;
 import static org.mifos.connector.ams.zeebe.ZeebeUtil.zeebeVariablesToCamelProperties;
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.ACCOUNT;
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.ACCOUNT_CURRENCY;
@@ -272,17 +273,17 @@ public class ZeebeeWorkers {
                         .handler((client, job) -> {
                             logWorkerDetails(job);
                             if (isAmsLocalEnabled) {
-                                Exchange ex = new DefaultExchange(camelContext);
+                                Exchange exchange = new DefaultExchange(camelContext);
                                 Map<String, Object> variables = job.getVariablesAsMap();
-                                zeebeVariablesToCamelProperties(variables, ex,
+                                zeebeVariablesToCamelProperties(variables, exchange,
                                         TRANSACTION_ID,
                                         TENANT_ID,
                                         EXTERNAL_ACCOUNT_ID,
                                         LOCAL_QUOTE_RESPONSE);
-                                ex.setProperty(TRANSFER_ACTION, CREATE.name());
-                                ex.setProperty(ZEEBE_JOB_KEY, job.getKey());
+                                exchange.setProperty(TRANSFER_ACTION, CREATE.name());
+                                exchange.setProperty(ZEEBE_JOB_KEY, job.getKey());
 
-                                FspMoneyData amountData = (FspMoneyData) variables.get("amount");
+                                FspMoneyData amountData = zeebeVariable(exchange, "amount", FspMoneyData.class);
                                 MoneyData amount = new MoneyData(amountData.getAmount(), amountData.getCurrency());
 
                                 TransactionChannelRequestDTO transactionRequest = new TransactionChannelRequestDTO();
@@ -292,9 +293,9 @@ public class ZeebeeWorkers {
                                 transactionType.setScenario(Scenario.DEPOSIT);
                                 transactionRequest.setTransactionType(transactionType);
                                 transactionRequest.setAmount(amount);
-                                ex.setProperty(CHANNEL_REQUEST, objectMapper.writeValueAsString(transactionRequest));
-                                ex.setProperty(TRANSACTION_ROLE, TransactionRole.PAYEE.name());
-                                producerTemplate.send("direct:send-transfers", ex);
+                                exchange.setProperty(CHANNEL_REQUEST, objectMapper.writeValueAsString(transactionRequest));
+                                exchange.setProperty(TRANSACTION_ROLE, TransactionRole.PAYEE.name());
+                                producerTemplate.send("direct:send-transfers", exchange);
                             } else {
                                 Map<String, Object> variables = new HashMap<>();
                                 variables.put("transferCreateFailed", false);
