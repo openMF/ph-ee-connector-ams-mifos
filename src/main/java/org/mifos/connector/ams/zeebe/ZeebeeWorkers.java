@@ -295,6 +295,8 @@ public class ZeebeeWorkers {
                                 transactionRequest.setAmount(amount);
                                 exchange.setProperty(CHANNEL_REQUEST, objectMapper.writeValueAsString(transactionRequest));
                                 exchange.setProperty(TRANSACTION_ROLE, TransactionRole.PAYEE.name());
+
+                                logger.info("####### transaction request {}", objectMapper.writeValueAsString(transactionRequest));
                                 producerTemplate.send("direct:send-transfers", exchange);
                             } else {
                                 Map<String, Object> variables = new HashMap<>();

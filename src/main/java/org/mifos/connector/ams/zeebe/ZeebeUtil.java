@@ -31,7 +31,7 @@ public class ZeebeUtil {
     }
 
     public static <T> T zeebeVariable(Exchange exchange, String name, Class<T> clazz) throws Exception {
-        String content = (String) zeebeVariablesFrom(exchange).get(name);
-        return content == null ? null : objectMapper.readValue(content, clazz);
+        Object content = zeebeVariablesFrom(exchange).get(name);
+        return content == null ? null : objectMapper.readValue(content.toString(), clazz);
     }
 }
