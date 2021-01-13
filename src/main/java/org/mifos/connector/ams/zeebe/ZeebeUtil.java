@@ -2,9 +2,11 @@ package org.mifos.connector.ams.zeebe;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.camel.Exchange;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 
@@ -32,6 +34,9 @@ public class ZeebeUtil {
 
     public static <T> T zeebeVariable(Exchange exchange, String name, Class<T> clazz) throws Exception {
         Object content = zeebeVariablesFrom(exchange).get(name);
-        return content == null ? null : objectMapper.readValue(content.toString(), clazz);
+        if (content instanceof Map){
+            return objectMapper.readValue(objectMapper.writeValueAsString(content), clazz);
+        }
+        return (T) content;
     }
 }
