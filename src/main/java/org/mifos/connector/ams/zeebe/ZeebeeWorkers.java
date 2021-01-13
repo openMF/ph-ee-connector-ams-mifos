@@ -391,12 +391,17 @@ public class ZeebeeWorkers {
     }
 
     private Map<String, Object> createFreeQuote(String currency) throws Exception {
+        FspMoneyData fspFee = new FspMoneyData(BigDecimal.ZERO, currency);
+        FspMoneyData fspCommission = new FspMoneyData(BigDecimal.ZERO, currency);
+
         QuoteFspResponseDTO response = new QuoteFspResponseDTO();
-        response.setFspFee(new FspMoneyData(BigDecimal.ZERO, currency));
-        response.setFspCommission(new FspMoneyData(BigDecimal.ZERO, currency));
+        response.setFspFee(fspFee);
+        response.setFspCommission(fspCommission);
 
         Map<String, Object> variables = new HashMap<>();
         variables.put(LOCAL_QUOTE_RESPONSE, objectMapper.writeValueAsString(response));
+        variables.put("fspFee", fspFee);
+        variables.put("fspCommission", fspCommission);
         return variables;
     }
 }

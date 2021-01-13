@@ -12,6 +12,8 @@ public class ZeebeUtil {
     private static Logger logger = LoggerFactory.getLogger(ZeebeUtil.class);
 
     public static void zeebeVariablesToCamelProperties(Map<String, Object> variables, Exchange exchange, String... names) {
+        exchange.setProperty("zeebeVariables", variables);
+
         for (String name : names) {
             Object value = variables.get(name);
             if (value == null) {
@@ -20,5 +22,13 @@ public class ZeebeUtil {
                 exchange.setProperty(name, value);
             }
         }
+    }
+
+    public static Map<String, Object> zeebeVariablesFrom(Exchange exchange) {
+        return exchange.getProperty("zeebeVariables", Map.class);
+    }
+
+    public static <T> T zeebeVariable(Exchange exchange, String name, Class<T> clazz) {
+        return (T) zeebeVariablesFrom(exchange).get(name);
     }
 }
