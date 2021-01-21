@@ -1,5 +1,6 @@
 package org.mifos.connector.ams.interop;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.zeebe.client.ZeebeClient;
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
@@ -36,6 +37,9 @@ public class QuoteResponseProcessor implements Processor {
     @Autowired(required = false)
     private ZeebeClient zeebeClient;
 
+    @Autowired
+    private ObjectMapper objectMapper;
+
     @Override
     public void process(Exchange exchange) throws Exception {
         Integer responseCode = exchange.getIn().getHeader(Exchange.HTTP_RESPONSE_CODE, Integer.class);
@@ -69,7 +73,7 @@ public class QuoteResponseProcessor implements Processor {
                     .send();
         } else {
             Map<String, Object> variables = new HashMap<>();
-            QuoteFspResponseDTO quoteResponse = exchange.getIn().getBody(QuoteFspResponseDTO.class);
+            QuoteFspResponseDTO quoteResponse = objectMapper.readValue(exchange.getIn().getBody(String.class), QuoteFspResponseDTO.class);
             variables.put(LOCAL_QUOTE_RESPONSE, quoteResponse);
             variables.put("fspFee", quoteResponse.getFspFee());
             variables.put("fspCommission", quoteResponse.getFspCommission());
