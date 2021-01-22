@@ -42,6 +42,7 @@ import static org.mifos.connector.ams.zeebe.ZeebeUtil.zeebeVariable;
 import static org.mifos.connector.ams.zeebe.ZeebeUtil.zeebeVariablesToCamelProperties;
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.ACCOUNT;
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.ACCOUNT_CURRENCY;
+import static org.mifos.connector.ams.zeebe.ZeebeVariables.BOOK_TRANSACTION_ID;
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.CHANNEL_REQUEST;
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.EXTERNAL_ACCOUNT_ID;
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.LOCAL_QUOTE_FAILED;
@@ -276,6 +277,7 @@ public class ZeebeeWorkers {
                                 Exchange exchange = new DefaultExchange(camelContext);
                                 Map<String, Object> variables = job.getVariablesAsMap();
                                 zeebeVariablesToCamelProperties(variables, exchange,
+                                        BOOK_TRANSACTION_ID,
                                         TRANSACTION_ID,
                                         TENANT_ID,
                                         EXTERNAL_ACCOUNT_ID,

@@ -23,6 +23,7 @@ import java.util.UUID;
 
 import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSACTION_ROLE;
 import static org.mifos.connector.ams.zeebe.ZeebeUtil.zeebeVariable;
+import static org.mifos.connector.ams.zeebe.ZeebeVariables.BOOK_TRANSACTION_ID;
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.EXTERNAL_ACCOUNT_ID;
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.TRANSACTION_ID;
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.TRANSFER_CODE;
@@ -56,7 +57,12 @@ public class PrepareTransferRequest implements Processor {
             exchange.setProperty(TRANSFER_CODE, transferCode);
         }
 
-        TransferFspRequestDTO transferRequestDTO = new TransferFspRequestDTO(exchange.getProperty(TRANSACTION_ID, String.class),
+        String transactionCode = exchange.getProperty(BOOK_TRANSACTION_ID, String.class) != null ?
+                exchange.getProperty(BOOK_TRANSACTION_ID, String.class) : exchange.getProperty(TRANSACTION_ID, String.class);
+        logger.debug("using transaction code {}", transactionCode);
+
+        TransferFspRequestDTO transferRequestDTO = new TransferFspRequestDTO(
+                transactionCode,
                 transferCode,
                 exchange.getProperty(EXTERNAL_ACCOUNT_ID, String.class),
                 amount,
