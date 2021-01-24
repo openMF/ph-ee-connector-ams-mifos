@@ -74,7 +74,7 @@ public class QuoteResponseProcessor implements Processor {
         } else {
             Map<String, Object> variables = new HashMap<>();
             QuoteFspResponseDTO quoteResponse = objectMapper.readValue(exchange.getIn().getBody(String.class), QuoteFspResponseDTO.class);
-            variables.put(LOCAL_QUOTE_RESPONSE, quoteResponse);
+            variables.put(LOCAL_QUOTE_RESPONSE, objectMapper.writeValueAsString(quoteResponse));
             variables.put("fspFee", quoteResponse.getFspFee());
             variables.put("fspCommission", quoteResponse.getFspCommission());
             variables.put(EXTERNAL_ACCOUNT_ID, exchange.getProperty(EXTERNAL_ACCOUNT_ID));
