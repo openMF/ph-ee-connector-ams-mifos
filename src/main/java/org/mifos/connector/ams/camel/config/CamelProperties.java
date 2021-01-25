@@ -16,5 +16,6 @@ public class CamelProperties {
     public static final String TRANSACTION_ROLE = "transactionRole";
     public static final String TRANSFER_ACTION = "transferAction";
     public static final String ZEEBE_JOB_KEY = "zeebeJobKey";
+    public static final String PROCESS_TYPE = "processType";
 
 }
