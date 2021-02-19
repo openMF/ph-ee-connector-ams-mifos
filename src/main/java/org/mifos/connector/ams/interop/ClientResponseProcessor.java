@@ -7,6 +7,7 @@ import org.apache.camel.Processor;
 import org.mifos.connector.ams.properties.TenantProperties;
 import org.mifos.connector.common.ams.dto.ClientData;
 import org.mifos.connector.common.ams.dto.Customer;
+import org.mifos.connector.common.ams.dto.EnumOptionData;
 import org.mifos.connector.common.ams.dto.LegalForm;
 import org.mifos.connector.common.mojaloop.dto.ComplexName;
 import org.mifos.connector.common.mojaloop.dto.Party;
@@ -85,13 +86,16 @@ public class ClientResponseProcessor implements Processor {
 
             if ("1.2".equals(amsVersion)) {
                 ClientData client = exchange.getIn().getBody(ClientData.class);
-                if (PERSON.equals(LegalForm.fromValue(client.getId().intValue()))) {
+                EnumOptionData legalForm = client.getLegalForm();
+                if (legalForm == null || PERSON.equals(LegalForm.valueOf(legalForm.getValue()))) {
                     PersonalInfo pi = new PersonalInfo();
                     pi.setDateOfBirth(client.getDateOfBirth() != null ? client.getDateOfBirth().toString() : null);
                     ComplexName cn = new ComplexName();
                     cn.setFirstName(client.getFirstname());
                     cn.setLastName(client.getLastname());
-                    cn.setMiddleName(client.getMiddlename());
+                    if(client.getMiddlename() != null && client.getMiddlename().length() > 1) {
+                        cn.setMiddleName(client.getMiddlename());
+                    }
                     pi.setComplexName(cn);
                     mojaloopParty.setPersonalInfo(pi);
                 } else { // entity
