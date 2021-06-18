@@ -40,6 +40,7 @@ public class TransfersResponseProcessor implements Processor {
         Integer responseCode = exchange.getIn().getHeader(Exchange.HTTP_RESPONSE_CODE, Integer.class);
         String transferAction = exchange.getProperty(TRANSFER_ACTION, String.class);
         if (responseCode > 202) {
+
             String transactionRole = exchange.getProperty(TRANSACTION_ROLE, String.class);
             String errorMsg = String.format("Invalid responseCode %s for transfer on %s side, transactionId: %s Message: %s",
                     responseCode,

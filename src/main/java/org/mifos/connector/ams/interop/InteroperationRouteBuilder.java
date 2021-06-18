@@ -133,7 +133,7 @@ public class InteroperationRouteBuilder extends ErrorHandlerRouteBuilder {
                 .process(pojoToString)
                 .process(amsService::sendTransfer)
                 .choice()
-                .when(exchange -> exchange.getProperty(PROCESS_TYPE).equals("api"))
+                .when(exchange -> exchange.getProperty(PROCESS_TYPE)!=null && exchange.getProperty(PROCESS_TYPE).equals("api"))
                     .process(exchange -> {
                         int statusCode = exchange.getIn().getHeader(Exchange.HTTP_RESPONSE_CODE, Integer.class);
                         if (statusCode > 202) {
