@@ -17,19 +17,23 @@ import java.util.Map;
 import static org.apache.camel.Exchange.HTTP_METHOD;
 import static org.apache.camel.Exchange.HTTP_PATH;
 import static org.mifos.connector.ams.camel.config.CamelProperties.CLIENT_ID;
+import static org.mifos.connector.ams.camel.config.CamelProperties.DEFINITON_ID;
 import static org.mifos.connector.ams.camel.config.CamelProperties.LOGIN_PASSWORD;
 import static org.mifos.connector.ams.camel.config.CamelProperties.LOGIN_USERNAME;
 import static org.mifos.connector.ams.camel.cxfrs.HeaderBasedInterceptor.CXF_TRACE_HEADER;
 import static org.mifos.connector.ams.tenant.TenantService.X_TENANT_IDENTIFIER_HEADER;
-import static org.mifos.connector.ams.zeebe.ZeebeVariables.EXTERNAL_ACCOUNT_ID;
+import static org.mifos.connector.ams.zeebe.ZeebeVariables.ACCOUNT_ID;
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.TENANT_ID;
 
 @Component
 @ConditionalOnExpression("${ams.local.enabled} && '${ams.local.version}'.equals('cn')")
 public class AmsFinCNService extends AmsCommonService implements AmsService {
 
-    @Value("${ams.local.account.path}")
-    private String amsLocalAccountPath;
+    @Value("${ams.local.account.instances-path}")
+    private String amsAccountInstancesPath;
+
+    @Value("${ams.local.account.definitons-path}")
+    private String amsAccountDefinitionsPath;
 
     @Value("${ams.local.customer.path}")
     private String amsLocalCustomerPath;
@@ -47,13 +51,22 @@ public class AmsFinCNService extends AmsCommonService implements AmsService {
         Map<String, Object> headers = new HashMap<>();
         headers.put(CXF_TRACE_HEADER, true);
         headers.put(HTTP_METHOD, "GET");
-        headers.put(HTTP_PATH, amsLocalAccountPath.replace("{accountId}", e.getProperty(EXTERNAL_ACCOUNT_ID, String.class)));
+        headers.put(HTTP_PATH, amsAccountInstancesPath.replace("{accountId}", e.getProperty(ACCOUNT_ID, String.class)));
+        headers.putAll(tenantService.getHeaders(e.getProperty(TENANT_ID, String.class)));
+        cxfrsUtil.sendInOut("cxfrs:bean:ams.local.account", e, headers, null);
+    }
+
+    public void getSavingsAccountDefiniton(Exchange e) {
+        Map<String, Object> headers = new HashMap<>();
+        headers.put(CXF_TRACE_HEADER, true);
+        headers.put(HTTP_METHOD, "GET");
+        headers.put(HTTP_PATH, amsAccountDefinitionsPath.replace("{definitionId}", e.getProperty(DEFINITON_ID, String.class)));
         headers.putAll(tenantService.getHeaders(e.getProperty(TENANT_ID, String.class)));
         cxfrsUtil.sendInOut("cxfrs:bean:ams.local.account", e, headers, null);
     }
 
     public void getSavingsAccounts(Exchange e) {
-
+        throw new RuntimeException("getSavingsAccounts not implemented for FineractCN");
     }
 
     public void getClient(Exchange e) {
@@ -63,16 +76,6 @@ public class AmsFinCNService extends AmsCommonService implements AmsService {
         headers.put(HTTP_PATH, amsLocalCustomerPath.replace("{customerIdentifier}", e.getProperty(CLIENT_ID, String.class)));
         headers.putAll(tenantService.getHeaders(e.getProperty(TENANT_ID, String.class)));
         cxfrsUtil.sendInOut("cxfrs:bean:ams.local.customer", e, headers, null);
-    }
-
-    @Override
-    public void registerInteropIdentifier(Exchange e) {
-
-    }
-
-    @Override
-    public void removeInteropIdentifier(Exchange e) {
-
     }
 
     public void login(Exchange e) {

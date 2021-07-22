@@ -1,8 +1,10 @@
 package org.mifos.connector.ams.interop;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.zeebe.client.ZeebeClient;
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
+import org.mifos.connector.common.ams.dto.QuoteFspResponseDTO;
 import org.mifos.connector.common.mojaloop.type.TransactionRole;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,18 +34,21 @@ public class QuoteResponseProcessor implements Processor {
 
     private Logger logger = LoggerFactory.getLogger(this.getClass());
 
-    @Autowired
+    @Autowired(required = false)
     private ZeebeClient zeebeClient;
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @Override
     public void process(Exchange exchange) throws Exception {
         Integer responseCode = exchange.getIn().getHeader(Exchange.HTTP_RESPONSE_CODE, Integer.class);
         Long jobKey = exchange.getProperty(ZEEBE_JOB_KEY, Long.class);
-        String tranactionRole = exchange.getProperty(TRANSACTION_ROLE, String.class);
+        String transactionRole = exchange.getProperty(TRANSACTION_ROLE, String.class);
         if (responseCode > 202) {
             String errorMsg = String.format("Invalid responseCode %s for quote on %s side, transactionId: %s Message: %s",
                     responseCode,
-                    tranactionRole,
+                    transactionRole,
                     exchange.getProperty(TRANSACTION_ID),
                     exchange.getIn().getBody(String.class));
 
@@ -51,7 +56,7 @@ public class QuoteResponseProcessor implements Processor {
 
             final String errorCode;
             final String errorKey;
-            if(tranactionRole.equals(TransactionRole.PAYER.name())) {
+            if (transactionRole.equals(TransactionRole.PAYER.name())) {
                 errorCode = String.valueOf(PAYER_FSP_INSUFFICIENT_LIQUIDITY.getCode());
                 errorKey = LOCAL_QUOTE_FAILED;
             } else { // payee
@@ -65,19 +70,20 @@ public class QuoteResponseProcessor implements Processor {
 
             zeebeClient.newCompleteCommand(jobKey)
                     .variables(variables)
-                    .send()
-                    .join();
+                    .send();
         } else {
             Map<String, Object> variables = new HashMap<>();
-            variables.put(LOCAL_QUOTE_RESPONSE, exchange.getIn().getBody());
+            QuoteFspResponseDTO quoteResponse = objectMapper.readValue(exchange.getIn().getBody(String.class), QuoteFspResponseDTO.class);
+            variables.put(LOCAL_QUOTE_RESPONSE, objectMapper.writeValueAsString(quoteResponse));
+            variables.put("fspFee", quoteResponse.getFspFee());
+            variables.put("fspCommission", quoteResponse.getFspCommission());
             variables.put(EXTERNAL_ACCOUNT_ID, exchange.getProperty(EXTERNAL_ACCOUNT_ID));
             variables.put(TENANT_ID, exchange.getProperty(TENANT_ID));
-            variables.put(tranactionRole.equals(TransactionRole.PAYER.name()) ? LOCAL_QUOTE_FAILED : QUOTE_FAILED, false);
+            variables.put(transactionRole.equals(TransactionRole.PAYER.name()) ? LOCAL_QUOTE_FAILED : QUOTE_FAILED, false);
 
             zeebeClient.newCompleteCommand(jobKey)
                     .variables(variables)
-                    .send()
-                    .join();
+                    .send();
         }
     }
 }
