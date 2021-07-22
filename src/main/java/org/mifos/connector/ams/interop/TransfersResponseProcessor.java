@@ -20,6 +20,8 @@ import static org.mifos.connector.ams.zeebe.ZeebeVariables.ACTION_FAILURE_MAP;
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.ERROR_INFORMATION;
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.TRANSACTION_ID;
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.TRANSFER_CODE;
+import static org.mifos.connector.ams.zeebe.ZeebeVariables.TRANSFER_CREATE_FAILED;
+import static org.mifos.connector.ams.zeebe.ZeebeVariables.TRANSFER_PREPARE_FAILED;
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.TRANSFER_RESPONSE_PREFIX;
 import static org.mifos.connector.common.ams.dto.TransferActionType.PREPARE;
 import static org.mifos.connector.common.camel.ErrorHandlerRouteBuilder.createError;
@@ -39,6 +41,10 @@ public class TransfersResponseProcessor implements Processor {
     public void process(Exchange exchange) {
         Integer responseCode = exchange.getIn().getHeader(Exchange.HTTP_RESPONSE_CODE, Integer.class);
         String transferAction = exchange.getProperty(TRANSFER_ACTION, String.class);
+
+        Map<String, Object> variables = new HashMap<>();
+        variables.put(TRANSFER_CREATE_FAILED, responseCode > 202);
+
         if (responseCode > 202) {
 
             String transactionRole = exchange.getProperty(TRANSACTION_ROLE, String.class);
@@ -50,28 +56,21 @@ public class TransfersResponseProcessor implements Processor {
 
             logger.error(errorMsg);
 
-            Map<String, Object> variables = new HashMap<>();
             String errorCode = transactionRole.equals(TransactionRole.PAYER.name()) ?
                     String.valueOf(PAYER_REJECTED_TRANSACTION_REQUEST.getCode()) : String.valueOf(PAYEE_FSP_REJECTED_TRANSACTION.getCode());
             variables.put(ERROR_INFORMATION, createError(errorCode, errorMsg).toString());
             variables.put(ACTION_FAILURE_MAP.get(transferAction), true);
 
-            zeebeClient.newCompleteCommand(exchange.getProperty(ZEEBE_JOB_KEY, Long.class))
-                    .variables(variables)
-                    .send()
-                    .join();
         } else {
-            Map<String, Object> variables = new HashMap<>();
             variables.put(TRANSFER_RESPONSE_PREFIX + "-" + transferAction, exchange.getIn().getBody());
             if (PREPARE.name().equals(transferAction)) {
                 variables.put(TRANSFER_CODE, exchange.getProperty(TRANSFER_CODE));
             }
             variables.put(ACTION_FAILURE_MAP.get(transferAction), false);
-
-            zeebeClient.newCompleteCommand(exchange.getProperty(ZEEBE_JOB_KEY, Long.class))
-                    .variables(variables)
-                    .send()
-                    .join();
         }
+
+        zeebeClient.newCompleteCommand(exchange.getProperty(ZEEBE_JOB_KEY, Long.class))
+                .variables(variables)
+                .send();
     }
 }

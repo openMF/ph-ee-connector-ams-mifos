@@ -38,9 +38,11 @@ import static org.mifos.connector.ams.camel.config.CamelProperties.QUOTE_AMOUNT_
 import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSACTION_ROLE;
 import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSFER_ACTION;
 import static org.mifos.connector.ams.camel.config.CamelProperties.ZEEBE_JOB_KEY;
+import static org.mifos.connector.ams.zeebe.ZeebeUtil.zeebeVariable;
 import static org.mifos.connector.ams.zeebe.ZeebeUtil.zeebeVariablesToCamelProperties;
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.ACCOUNT;
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.ACCOUNT_CURRENCY;
+import static org.mifos.connector.ams.zeebe.ZeebeVariables.BOOK_TRANSACTION_ID;
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.CHANNEL_REQUEST;
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.EXTERNAL_ACCOUNT_ID;
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.LOCAL_QUOTE_FAILED;
@@ -50,9 +52,11 @@ import static org.mifos.connector.ams.zeebe.ZeebeVariables.PARTY_ID_TYPE;
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.PAYEE_PARTY_RESPONSE;
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.QUOTE_FAILED;
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.QUOTE_SWITCH_REQUEST;
+import static org.mifos.connector.ams.zeebe.ZeebeVariables.QUOTE_SWITCH_REQUEST_AMOUNT;
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.TENANT_ID;
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.TRANSACTION_ID;
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.TRANSFER_CODE;
+import static org.mifos.connector.ams.zeebe.ZeebeVariables.TRANSFER_PREPARE_FAILED;
 import static org.mifos.connector.common.ams.dto.TransferActionType.CREATE;
 import static org.mifos.connector.common.ams.dto.TransferActionType.PREPARE;
 import static org.mifos.connector.common.ams.dto.TransferActionType.RELEASE;
@@ -100,105 +104,104 @@ public class ZeebeeWorkers {
     public void setupWorkers() {
         if (isZeebeEnabled) {
             zeebeClient.newWorker()
-                .jobType("block-funds")
-                .handler((client, job) -> {
-                    logWorkerDetails(job);
-                    if (isAmsLocalEnabled) {
-                        Exchange ex = new DefaultExchange(camelContext);
-                        zeebeVariablesToCamelProperties(job.getVariablesAsMap(), ex,
-                                TRANSACTION_ID,
-                                CHANNEL_REQUEST,
-                                TENANT_ID,
-                                LOCAL_QUOTE_RESPONSE);
+                    .jobType("block-funds")
+                    .handler((client, job) -> {
+                        logWorkerDetails(job);
+                        if (isAmsLocalEnabled) {
+                            Exchange ex = new DefaultExchange(camelContext);
+                            zeebeVariablesToCamelProperties(job.getVariablesAsMap(), ex,
+                                    TRANSACTION_ID,
+                                    CHANNEL_REQUEST,
+                                    TENANT_ID,
+                                    EXTERNAL_ACCOUNT_ID,
+                                    LOCAL_QUOTE_RESPONSE);
+                            TransactionChannelRequestDTO channelRequest = objectMapper.readValue(ex.getProperty(CHANNEL_REQUEST, String.class), TransactionChannelRequestDTO.class);
+                            ex.setProperty(PARTY_ID_TYPE, channelRequest.getPayer().getPartyIdInfo().getPartyIdType().name());
+                            ex.setProperty(PARTY_ID, channelRequest.getPayer().getPartyIdInfo().getPartyIdentifier());
+                            ex.setProperty(TRANSFER_ACTION, PREPARE.name());
+                            ex.setProperty(ZEEBE_JOB_KEY, job.getKey());
+                            ex.setProperty(TRANSACTION_ROLE, TransactionRole.PAYER.name());
+                            producerTemplate.send("direct:send-transfers", ex);
+                        } else {
+                            Map<String, Object> variables = new HashMap<>();
+                            variables.put(TRANSFER_PREPARE_FAILED, false);
+                            zeebeClient.newCompleteCommand(job.getKey())
+                                    .variables(variables)
+                                    .send();
+                        }
+                    })
+                    .name("block-funds")
+                    .maxJobsActive(workerMaxJobs)
+                    .open();
 
-                        TransactionChannelRequestDTO channelRequest = objectMapper.readValue(ex.getProperty(CHANNEL_REQUEST, String.class), TransactionChannelRequestDTO.class);
-                        ex.setProperty(PARTY_ID_TYPE, channelRequest.getPayer().getPartyIdInfo().getPartyIdType().name());
-                        ex.setProperty(PARTY_ID, channelRequest.getPayer().getPartyIdInfo().getPartyIdentifier());
-                        ex.setProperty(TRANSFER_ACTION, PREPARE.name());
-                        ex.setProperty(ZEEBE_JOB_KEY, job.getKey());
-                        ex.setProperty(TRANSACTION_ROLE, TransactionRole.PAYER.name());
-                        producerTemplate.send("direct:send-transfers", ex);
-                    } else {
-                        Map<String, Object> variables = new HashMap<>();
-                        variables.put("transferPrepareFailed", false);
-                        zeebeClient.newCompleteCommand(job.getKey())
-                                .variables(variables)
-                                .send()
-                                .join();
-                    }
-                })
-                .name("block-funds")
-                .maxJobsActive(workerMaxJobs)
-                .open();
+            zeebeClient.newWorker()
+                    .jobType("book-funds")
+                    .handler((client, job) -> {
+                        logWorkerDetails(job);
+                        if (isAmsLocalEnabled) {
+                            Exchange ex = new DefaultExchange(camelContext);
+                            zeebeVariablesToCamelProperties(job.getVariablesAsMap(), ex,
+                                    TRANSACTION_ID,
+                                    CHANNEL_REQUEST,
+                                    TENANT_ID,
+                                    EXTERNAL_ACCOUNT_ID,
+                                    LOCAL_QUOTE_RESPONSE,
+                                    TRANSFER_CODE);
+                            TransactionChannelRequestDTO channelRequest = objectMapper.readValue(ex.getProperty(CHANNEL_REQUEST, String.class), TransactionChannelRequestDTO.class);
+                            ex.setProperty(PARTY_ID_TYPE, channelRequest.getPayer().getPartyIdInfo().getPartyIdType().name());
+                            ex.setProperty(PARTY_ID, channelRequest.getPayer().getPartyIdInfo().getPartyIdentifier());
+                            ex.setProperty(TRANSFER_ACTION, CREATE.name());
+                            ex.setProperty(ZEEBE_JOB_KEY, job.getKey());
+                            ex.setProperty(TRANSACTION_ROLE, TransactionRole.PAYER.name());
+                            producerTemplate.send("direct:send-transfers", ex);
+                        } else {
+                            Map<String, Object> variables = new HashMap<>();
+                            variables.put("transferCreateFailed", false);
+                            zeebeClient.newCompleteCommand(job.getKey())
+                                    .variables(variables)
+                                    .send()
+                            ;
+                        }
+                    })
+                    .name("book-funds")
+                    .maxJobsActive(workerMaxJobs)
+                    .open();
 
-        zeebeClient.newWorker()
-                .jobType("book-funds")
-                .handler((client, job) -> {
-                    logWorkerDetails(job);
-                    if (isAmsLocalEnabled) {
-                        Exchange ex = new DefaultExchange(camelContext);
-                        zeebeVariablesToCamelProperties(job.getVariablesAsMap(), ex,
-                                TRANSACTION_ID,
-                                CHANNEL_REQUEST,
-                                TENANT_ID,
-                                LOCAL_QUOTE_RESPONSE,
-                                TRANSFER_CODE);
+            zeebeClient.newWorker()
+                    .jobType("release-block")
+                    .handler((client, job) -> {
+                        logWorkerDetails(job);
+                        if (isAmsLocalEnabled) {
+                            Exchange ex = new DefaultExchange(camelContext);
+                            zeebeVariablesToCamelProperties(job.getVariablesAsMap(), ex,
+                                    TRANSACTION_ID,
+                                    CHANNEL_REQUEST,
+                                    TENANT_ID,
+                                    EXTERNAL_ACCOUNT_ID,
+                                    LOCAL_QUOTE_RESPONSE,
+                                    TRANSFER_CODE);
+                            TransactionChannelRequestDTO channelRequest = objectMapper.readValue(ex.getProperty(CHANNEL_REQUEST, String.class), TransactionChannelRequestDTO.class);
+                            ex.setProperty(PARTY_ID_TYPE, channelRequest.getPayer().getPartyIdInfo().getPartyIdType().name());
+                            ex.setProperty(PARTY_ID, channelRequest.getPayer().getPartyIdInfo().getPartyIdentifier());
+                            ex.setProperty(TRANSFER_ACTION, RELEASE.name());
+                            ex.setProperty(ZEEBE_JOB_KEY, job.getKey());
+                            ex.setProperty(TRANSACTION_ROLE, TransactionRole.PAYEE.name());
+                            producerTemplate.send("direct:send-transfers", ex);
+                        } else {
+                            Map<String, Object> variables = new HashMap<>();
+                            variables.put("transferReleaseFailed", false);
+                            zeebeClient.newCompleteCommand(job.getKey())
+                                    .variables(variables)
+                                    .send()
+                            ;
+                        }
+                    })
+                    .name("release-block")
+                    .maxJobsActive(workerMaxJobs)
+                    .open();
 
-                        TransactionChannelRequestDTO channelRequest = objectMapper.readValue(ex.getProperty(CHANNEL_REQUEST, String.class), TransactionChannelRequestDTO.class);
-                        ex.setProperty(PARTY_ID_TYPE, channelRequest.getPayer().getPartyIdInfo().getPartyIdType().name());
-                        ex.setProperty(PARTY_ID, channelRequest.getPayer().getPartyIdInfo().getPartyIdentifier());
-                        ex.setProperty(TRANSFER_ACTION, CREATE.name());
-                        ex.setProperty(ZEEBE_JOB_KEY, job.getKey());
-                        ex.setProperty(TRANSACTION_ROLE, TransactionRole.PAYER.name());
-                        producerTemplate.send("direct:send-transfers", ex);
-                    } else {
-                        Map<String, Object> variables = new HashMap<>();
-                        variables.put("transferCreateFailed", false);
-                        zeebeClient.newCompleteCommand(job.getKey())
-                                .variables(variables)
-                                .send()
-                                .join();
-                    }
-                })
-                .name("book-funds")
-                .maxJobsActive(workerMaxJobs)
-                .open();
-
-        zeebeClient.newWorker()
-                .jobType("release-block")
-                .handler((client, job) -> {
-                    logWorkerDetails(job);
-                    if (isAmsLocalEnabled) {
-                        Exchange ex = new DefaultExchange(camelContext);
-                        zeebeVariablesToCamelProperties(job.getVariablesAsMap(), ex,
-                                TRANSACTION_ID,
-                                CHANNEL_REQUEST,
-                                TENANT_ID,
-                                LOCAL_QUOTE_RESPONSE,
-                                TRANSFER_CODE);
-
-                        TransactionChannelRequestDTO channelRequest = objectMapper.readValue(ex.getProperty(CHANNEL_REQUEST, String.class), TransactionChannelRequestDTO.class);
-                        ex.setProperty(PARTY_ID_TYPE, channelRequest.getPayer().getPartyIdInfo().getPartyIdType().name());
-                        ex.setProperty(PARTY_ID, channelRequest.getPayer().getPartyIdInfo().getPartyIdentifier());
-                        ex.setProperty(TRANSFER_ACTION, RELEASE.name());
-                        ex.setProperty(ZEEBE_JOB_KEY, job.getKey());
-                        ex.setProperty(TRANSACTION_ROLE, TransactionRole.PAYEE.name());
-                        producerTemplate.send("direct:send-transfers", ex);
-                    } else {  
-                        Map<String, Object> variables = new HashMap<>();
-                        variables.put("transferReleaseFailed", false);
-                        zeebeClient.newCompleteCommand(job.getKey())
-                                .variables(variables)
-                                .send()
-                                .join();
-                    }
-                })
-                .name("release-block")
-                .maxJobsActive(workerMaxJobs)
-                .open();
-
-        for (String dfspid : dfspids) {
-            logger.info("## generating " + WORKER_PAYER_LOCAL_QUOTE + "{} worker", dfspid);
+            for (String dfspid : dfspids) {
+                logger.info("## generating " + WORKER_PAYER_LOCAL_QUOTE + "{} worker", dfspid);
                 zeebeClient.newWorker()
                         .jobType(WORKER_PAYER_LOCAL_QUOTE + dfspid)
                         .handler((client, job) -> {
@@ -225,7 +228,7 @@ public class ZeebeeWorkers {
                                 zeebeClient.newCompleteCommand(job.getKey())
                                         .variables(variables)
                                         .send()
-                                        .join();
+                                ;
                             }
                         })
                         .name(WORKER_PAYER_LOCAL_QUOTE + dfspid)
@@ -238,7 +241,7 @@ public class ZeebeeWorkers {
                         .handler((client, job) -> {
                             logWorkerDetails(job);
                             Map<String, Object> existingVariables = job.getVariablesAsMap();
-                            QuoteSwitchRequestDTO quoteRequest = objectMapper.readValue(String.valueOf(existingVariables.get(QUOTE_SWITCH_REQUEST)), QuoteSwitchRequestDTO.class);
+                            QuoteSwitchRequestDTO quoteRequest = objectMapper.readValue((String) existingVariables.get(QUOTE_SWITCH_REQUEST), QuoteSwitchRequestDTO.class);
 
                             if (isAmsLocalEnabled) {
                                 TransactionChannelRequestDTO channelRequest = new TransactionChannelRequestDTO();
@@ -268,7 +271,7 @@ public class ZeebeeWorkers {
                                 zeebeClient.newCompleteCommand(job.getKey())
                                         .variables(variables)
                                         .send()
-                                        .join();
+                                ;
                             }
                         })
                         .name(WORKER_PAYEE_QUOTE + dfspid)
@@ -281,17 +284,19 @@ public class ZeebeeWorkers {
                         .handler((client, job) -> {
                             logWorkerDetails(job);
                             if (isAmsLocalEnabled) {
-                                Exchange ex = new DefaultExchange(camelContext);
+                                Exchange exchange = new DefaultExchange(camelContext);
                                 Map<String, Object> variables = job.getVariablesAsMap();
-                                zeebeVariablesToCamelProperties(variables, ex,
+                                zeebeVariablesToCamelProperties(variables, exchange,
+                                        BOOK_TRANSACTION_ID,
                                         TRANSACTION_ID,
                                         TENANT_ID,
                                         EXTERNAL_ACCOUNT_ID,
                                         LOCAL_QUOTE_RESPONSE);
-                                ex.setProperty(TRANSFER_ACTION, CREATE.name());
-                                ex.setProperty(ZEEBE_JOB_KEY, job.getKey());
+                                exchange.setProperty(TRANSFER_ACTION, CREATE.name());
+                                exchange.setProperty(ZEEBE_JOB_KEY, job.getKey());
 
-                                QuoteSwitchRequestDTO quoteRequest = objectMapper.readValue((String) variables.get(QUOTE_SWITCH_REQUEST), QuoteSwitchRequestDTO.class);
+                                FspMoneyData amountData = zeebeVariable(exchange, "amount", FspMoneyData.class);
+                                MoneyData amount = new MoneyData(amountData.getAmount(), amountData.getCurrency());
 
                                 TransactionChannelRequestDTO transactionRequest = new TransactionChannelRequestDTO();
                                 TransactionType transactionType = new TransactionType();
@@ -299,21 +304,19 @@ public class ZeebeeWorkers {
                                 transactionType.setInitiatorType(InitiatorType.CONSUMER);
                                 transactionType.setScenario(Scenario.DEPOSIT);
                                 transactionRequest.setTransactionType(transactionType);
-
-                                MoneyData amount = new MoneyData(quoteRequest.getAmount().getAmountDecimal(),
-                                        quoteRequest.getAmount().getCurrency());
                                 transactionRequest.setAmount(amount);
-                                ex.setProperty(CHANNEL_REQUEST, objectMapper.writeValueAsString(transactionRequest));
-                                ex.setProperty(TRANSACTION_ROLE, TransactionRole.PAYEE.name());
+                                exchange.setProperty(CHANNEL_REQUEST, objectMapper.writeValueAsString(transactionRequest));
+                                exchange.setProperty(TRANSACTION_ROLE, TransactionRole.PAYEE.name());
 
-                                producerTemplate.send("direct:send-transfers", ex);
+                                logger.info("####### transaction request {}", objectMapper.writeValueAsString(transactionRequest));
+                                producerTemplate.send("direct:send-transfers", exchange);
                             } else {
                                 Map<String, Object> variables = new HashMap<>();
                                 variables.put("transferCreateFailed", false);
                                 zeebeClient.newCompleteCommand(job.getKey())
                                         .variables(variables)
                                         .send()
-                                        .join();
+                                ;
                             }
                         })
                         .name(WORKER_PAYEE_COMMIT_TRANSFER + dfspid)
@@ -352,7 +355,7 @@ public class ZeebeeWorkers {
                                 client.newCompleteCommand(job.getKey())
                                         .variables(variables)
                                         .send()
-                                        .join();
+                                ;
                             }
                         })
                         .name(WORKER_PARTY_LOOKUP_LOCAL + dfspid)
@@ -380,54 +383,12 @@ public class ZeebeeWorkers {
                                 client.newCompleteCommand(job.getKey())
                                         .variables(variables)
                                         .send()
-                                        .join();
+                                ;
                             }
                         })
                         .name(WORKER_INTEROP_PARTY_REGISTRATION + dfspid)
                         .maxJobsActive(workerMaxJobs)
                         .open();
-
-
-            logger.info("## generating " + WORKER_PAYEE_DEPOSIT_TRANSFER + "{} worker", dfspid);
-            zeebeClient.newWorker()
-                    .jobType(WORKER_PAYEE_DEPOSIT_TRANSFER + dfspid)
-                    .handler((client, job) -> {
-                        logWorkerDetails(job);
-                        if (isAmsLocalEnabled) {
-                            Exchange ex = new DefaultExchange(camelContext);
-                            Map<String, Object> variables = job.getVariablesAsMap();
-                            zeebeVariablesToCamelProperties(variables, ex,
-                                    TRANSACTION_ID,
-                                    TENANT_ID,
-                                    EXTERNAL_ACCOUNT_ID,
-                                    CHANNEL_REQUEST);
-                            ex.setProperty(TRANSFER_ACTION, CREATE.name());
-                            ex.setProperty(ZEEBE_JOB_KEY, job.getKey());
-
-                            TransactionChannelRequestDTO transactionRequest = objectMapper.readValue((String) variables.get(CHANNEL_REQUEST), TransactionChannelRequestDTO.class);
-                            TransactionType transactionType = new TransactionType();
-                            transactionType.setInitiator(TransactionRole.PAYEE);
-                            transactionType.setInitiatorType(InitiatorType.CONSUMER);
-                            transactionType.setScenario(Scenario.DEPOSIT);
-                            transactionRequest.setTransactionType(transactionType);
-
-                            ex.setProperty(CHANNEL_REQUEST, objectMapper.writeValueAsString(transactionRequest));
-                            ex.setProperty(TRANSACTION_ROLE, TransactionRole.PAYEE.name());
-                            ex.setProperty(PARTY_ID_TYPE, variables.get(PARTY_ID_TYPE));
-                            ex.setProperty(PARTY_ID, variables.get(PARTY_ID));
-                            producerTemplate.send("direct:send-transfers", ex);
-                        } else {
-                            Map<String, Object> variables = new HashMap<>();
-                            variables.put("transferCreateFailed", false);
-                            zeebeClient.newCompleteCommand(job.getKey())
-                                    .variables(variables)
-                                    .send()
-                                    .join();
-                        }
-                    })
-                    .name(WORKER_PAYEE_DEPOSIT_TRANSFER + dfspid)
-                    .maxJobsActive(workerMaxJobs)
-                    .open();
             }
         }
     }
@@ -446,12 +407,17 @@ public class ZeebeeWorkers {
     }
 
     private Map<String, Object> createFreeQuote(String currency) throws Exception {
+        FspMoneyData fspFee = new FspMoneyData(BigDecimal.ZERO, currency);
+        FspMoneyData fspCommission = new FspMoneyData(BigDecimal.ZERO, currency);
+
         QuoteFspResponseDTO response = new QuoteFspResponseDTO();
-        response.setFspFee(new FspMoneyData(BigDecimal.ZERO, currency));
-        response.setFspCommission(new FspMoneyData(BigDecimal.ZERO, currency));
+        response.setFspFee(fspFee);
+        response.setFspCommission(fspCommission);
 
         Map<String, Object> variables = new HashMap<>();
         variables.put(LOCAL_QUOTE_RESPONSE, objectMapper.writeValueAsString(response));
+        variables.put("fspFee", fspFee);
+        variables.put("fspCommission", fspCommission);
         return variables;
     }
 }
