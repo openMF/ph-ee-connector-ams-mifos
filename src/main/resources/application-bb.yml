@@ -1,21 +1,21 @@
 ams:
   local:
     interop:
-      host: https://localhost:8443
+      host: https://rhino.mifos.io:8443
     customer:
-      host: https://localhost:8443
+      host: https://rhino.mifos.io:8443
     account:
-      host: https://localhost:8443
+      host: https://rhino.mifos.io:8443
     auth:
-      host: https://localhost:8443
+      host: https://rhino.mifos.io:8443
     tenants:
-      - name: ibank-usa
+      - name: tn03
         user: mifos
         password: password
         authtype: basic
-        fspId: ibank-ibank-usa
-      - name: ibank-india
+        fspId: in02tn03
+      - name: tn04
         user: mifos
         password: password
         authtype: basic
-        fspId: ibank-ibank-india
+        fspId: in02tn04

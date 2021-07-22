@@ -16,7 +16,7 @@ zeebe:
 #    number-of-workers: 8
 #    evenly-allocated-max-jobs: "#{${zeebe.client.max-execution-threads} / ${zeebe.client.number-of-workers}}"
   broker:
-    contactpoint: "zeebe-cluster-gateway/gateway:26500"
+    contactpoint: "127.0.0.1:26500"
 
 ams:
   local:
