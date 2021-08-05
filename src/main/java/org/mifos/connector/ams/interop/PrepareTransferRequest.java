@@ -61,7 +61,10 @@ public class PrepareTransferRequest implements Processor {
                 exchange.getProperty(BOOK_TRANSACTION_ID, String.class) : exchange.getProperty(TRANSACTION_ID, String.class);
         logger.debug("using transaction code {}", transactionCode);
 
-        TransferFspRequestDTO transferRequestDTO = new TransferFspRequestDTO(
+        TransferFspRequestDTO transferRequestDTO = null;
+
+        if (fspFee != null || fspCommission != null) {
+            transferRequestDTO = new TransferFspRequestDTO(
                 transactionCode,
                 transferCode,
                 exchange.getProperty(EXTERNAL_ACCOUNT_ID, String.class),
@@ -71,6 +74,14 @@ public class PrepareTransferRequest implements Processor {
                 TransactionRole.valueOf(exchange.getProperty(TRANSACTION_ROLE, String.class)),
                 transactionType,
                 note);
+        } else {
+            transferRequestDTO = new TransferFspRequestDTO(
+                transactionCode,
+                transferCode,
+                exchange.getProperty(EXTERNAL_ACCOUNT_ID, String.class),
+                amount,
+                TransactionRole.valueOf(exchange.getProperty(TRANSACTION_ROLE, String.class)));
+        }
 
         logger.debug("prepared transferRequestDTO: {}", objectMapper.writeValueAsString(transferRequestDTO));
         exchange.getIn().setBody(transferRequestDTO);

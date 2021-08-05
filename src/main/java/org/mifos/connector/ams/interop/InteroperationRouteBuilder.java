@@ -111,6 +111,7 @@ public class InteroperationRouteBuilder extends ErrorHandlerRouteBuilder {
                 .id("send-transfers")
                 .log(LoggingLevel.INFO, "Sending transfer with action: ${exchangeProperty." + TRANSFER_ACTION + "} " +
                         " for transaction: ${exchangeProperty." + TRANSACTION_ID + "}")
+                .to("direct:get-external-account")
                 .process(prepareTransferRequest)
                 .process(pojoToString)
                 .process(amsService::sendTransfer)
