@@ -24,4 +24,10 @@ public interface AmsService {
 
     void getClient(Exchange e);
 
+    void getClientByMobileNo(Exchange e);
+
+    void getSavingsAccountsTransactions(Exchange e) ;
+
+    default void getClientImage(Exchange e){}
+
 }

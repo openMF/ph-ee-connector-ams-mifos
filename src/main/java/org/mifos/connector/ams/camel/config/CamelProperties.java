@@ -5,6 +5,7 @@ public class CamelProperties {
     private CamelProperties() {}
 
     public static final String CLIENT_ID = "clientId";
+    public static final String IDENTIFIER_ID = "identifierId";
     public static final String CONTINUE_PROCESSING = "continueProcessing";
     public static final String DEFINITON_ID = "definitonId";
     public static final String EXISTING_EXTERNAL_ACCOUNT_ID = "existingExternalAccountId";
@@ -15,5 +16,6 @@ public class CamelProperties {
     public static final String TRANSACTION_ROLE = "transactionRole";
     public static final String TRANSFER_ACTION = "transferAction";
     public static final String ZEEBE_JOB_KEY = "zeebeJobKey";
+    public static final String PROCESS_TYPE = "processType";
 
 }

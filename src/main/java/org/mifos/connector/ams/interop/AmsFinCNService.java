@@ -16,10 +16,7 @@ import java.util.Map;
 
 import static org.apache.camel.Exchange.HTTP_METHOD;
 import static org.apache.camel.Exchange.HTTP_PATH;
-import static org.mifos.connector.ams.camel.config.CamelProperties.CLIENT_ID;
-import static org.mifos.connector.ams.camel.config.CamelProperties.DEFINITON_ID;
-import static org.mifos.connector.ams.camel.config.CamelProperties.LOGIN_PASSWORD;
-import static org.mifos.connector.ams.camel.config.CamelProperties.LOGIN_USERNAME;
+import static org.mifos.connector.ams.camel.config.CamelProperties.*;
 import static org.mifos.connector.ams.camel.cxfrs.HeaderBasedInterceptor.CXF_TRACE_HEADER;
 import static org.mifos.connector.ams.tenant.TenantService.X_TENANT_IDENTIFIER_HEADER;
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.ACCOUNT_ID;
@@ -78,6 +75,16 @@ public class AmsFinCNService extends AmsCommonService implements AmsService {
         cxfrsUtil.sendInOut("cxfrs:bean:ams.local.customer", e, headers, null);
     }
 
+    public void getClientByMobileNo(Exchange e) {
+        Map<String, Object> headers = new HashMap<>();
+        headers.put(CXF_TRACE_HEADER, true);
+        headers.put(HTTP_METHOD, "GET");
+        headers.put(HTTP_PATH, amsLocalCustomerPath.replace("{customerIdentifier}", e.getProperty(IDENTIFIER_ID, String.class)));
+        headers.putAll(tenantService.getHeaders(e.getProperty(TENANT_ID, String.class)));
+        cxfrsUtil.sendInOut("cxfrs:bean:ams.local.customer", e, headers, null);
+    }
+
+
     public void login(Exchange e) {
         Map<String, Object> headers = new HashMap<>();
         headers.put(CXF_TRACE_HEADER, true);
@@ -93,5 +100,10 @@ public class AmsFinCNService extends AmsCommonService implements AmsService {
         headers.put(CxfConstants.CAMEL_CXF_RS_QUERY_MAP, queryMap);
 
         cxfrsUtil.sendInOut("cxfrs:bean:ams.local.auth", e, headers, null);
+    }
+
+    public void getSavingsAccountsTransactions(Exchange e) {
+        //need this to be filled
+
     }
 }

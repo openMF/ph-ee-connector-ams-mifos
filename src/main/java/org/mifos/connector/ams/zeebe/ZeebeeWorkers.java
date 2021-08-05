@@ -69,6 +69,7 @@ public class ZeebeeWorkers {
     public static final String WORKER_PAYEE_QUOTE = "payee-quote-";
     public static final String WORKER_PAYER_LOCAL_QUOTE = "payer-local-quote-";
     public static final String WORKER_INTEROP_PARTY_REGISTRATION = "interop-party-registration-";
+    public static final String WORKER_PAYEE_DEPOSIT_TRANSFER = "payee-deposit-transfer-";
 
     private Logger logger = LoggerFactory.getLogger(this.getClass());
 

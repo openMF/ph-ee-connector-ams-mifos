@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.stereotype.Component;
 
+import java.net.InetAddress;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
