@@ -1,8 +1,8 @@
 package org.mifos.connector.ams.zeebe;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.zeebe.client.ZeebeClient;
-import io.zeebe.client.api.response.ActivatedJob;
+import io.camunda.zeebe.client.ZeebeClient;
+import io.camunda.zeebe.client.api.response.ActivatedJob;
 import org.apache.camel.CamelContext;
 import org.apache.camel.Exchange;
 import org.apache.camel.ProducerTemplate;
@@ -400,9 +400,9 @@ public class ZeebeeWorkers {
         jsonJob.put("jobKey", job.getKey());
         jsonJob.put("jobType", job.getType());
         jsonJob.put("workflowElementId", job.getElementId());
-        jsonJob.put("workflowDefinitionVersion", job.getWorkflowDefinitionVersion());
-        jsonJob.put("workflowKey", job.getWorkflowKey());
-        jsonJob.put("workflowInstanceKey", job.getWorkflowInstanceKey());
+        jsonJob.put("workflowDefinitionVersion", job.getProcessDefinitionVersion());
+        jsonJob.put("workflowKey", job.getProcessDefinitionKey());
+        jsonJob.put("workflowInstanceKey", job.getProcessInstanceKey());
         logger.info("Job started: {}", jsonJob.toString(4));
     }
 

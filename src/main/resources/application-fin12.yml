@@ -10,7 +10,7 @@ dfspids: "DFSPID"
 
 zeebe:
   broker:
-    contactpoint: "ph-ee-zeebe:26500"
+    contactpoint: "127.0.0.1:26500"
 
 ams:
   local:
