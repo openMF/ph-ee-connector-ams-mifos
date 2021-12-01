@@ -3,6 +3,7 @@ package org.mifos.connector.ams.interop;
 import io.camunda.zeebe.client.ZeebeClient;
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
+import org.json.JSONObject;
 import org.mifos.connector.common.mojaloop.type.TransactionRole;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,9 +57,11 @@ public class TransfersResponseProcessor implements Processor {
 
             logger.error(errorMsg);
 
+            JSONObject errorJson = new JSONObject(exchange.getIn().getBody(String.class));
+
             String errorCode = transactionRole.equals(TransactionRole.PAYER.name()) ?
                     String.valueOf(PAYER_REJECTED_TRANSACTION_REQUEST.getCode()) : String.valueOf(PAYEE_FSP_REJECTED_TRANSACTION.getCode());
-            variables.put(ERROR_INFORMATION, createError(errorCode, errorMsg).toString());
+            variables.put(ERROR_INFORMATION, errorJson.toString());
             variables.put(ACTION_FAILURE_MAP.get(transferAction), true);
 
         } else {

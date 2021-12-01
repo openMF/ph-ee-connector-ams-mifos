@@ -1,6 +1,7 @@
 package org.mifos.connector.ams.interop;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.zeebe.client.ZeebeClient;
 import org.apache.camel.Exchange;
 import org.apache.camel.LoggingLevel;
 import org.apache.camel.Processor;
@@ -27,29 +28,16 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.stereotype.Component;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
 import static java.util.Spliterator.ORDERED;
 import static java.util.Spliterators.spliteratorUnknownSize;
 import static java.util.stream.StreamSupport.stream;
-import static org.mifos.connector.ams.camel.config.CamelProperties.CLIENT_ID;
-import static org.mifos.connector.ams.camel.config.CamelProperties.CONTINUE_PROCESSING;
-import static org.mifos.connector.ams.camel.config.CamelProperties.DEFINITON_ID;
-import static org.mifos.connector.ams.camel.config.CamelProperties.EXISTING_EXTERNAL_ACCOUNT_ID;
-import static org.mifos.connector.ams.camel.config.CamelProperties.INTEROP_ACCOUNT_TO_REGISTER;
-import static org.mifos.connector.ams.camel.config.CamelProperties.PROCESS_TYPE;
-import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSACTION_ROLE;
-import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSFER_ACTION;
-import static org.mifos.connector.ams.zeebe.ZeebeVariables.ACCOUNT;
-import static org.mifos.connector.ams.zeebe.ZeebeVariables.ACCOUNT_CURRENCY;
-import static org.mifos.connector.ams.zeebe.ZeebeVariables.ACCOUNT_ID;
-import static org.mifos.connector.ams.zeebe.ZeebeVariables.CHANNEL_REQUEST;
-import static org.mifos.connector.ams.zeebe.ZeebeVariables.EXTERNAL_ACCOUNT_ID;
-import static org.mifos.connector.ams.zeebe.ZeebeVariables.PARTY_ID;
-import static org.mifos.connector.ams.zeebe.ZeebeVariables.PARTY_ID_TYPE;
-import static org.mifos.connector.ams.zeebe.ZeebeVariables.TENANT_ID;
-import static org.mifos.connector.ams.zeebe.ZeebeVariables.TRANSACTION_ID;
+import static org.mifos.connector.ams.camel.config.CamelProperties.*;
+import static org.mifos.connector.ams.zeebe.ZeebeVariables.*;
 import static org.mifos.connector.common.ams.dto.TransferActionType.CREATE;
 
 
@@ -86,6 +74,9 @@ public class InteroperationRouteBuilder extends ErrorHandlerRouteBuilder {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Autowired
+    private ZeebeClient zeebeClient;
 
     private Logger logger = LoggerFactory.getLogger(this.getClass());
 
@@ -142,6 +133,14 @@ public class InteroperationRouteBuilder extends ErrorHandlerRouteBuilder {
                                     exchange.getProperty(TRANSFER_ACTION, String.class),
                                     exchange.getProperty(TRANSACTION_ID),
                                     exchange.getIn().getBody(String.class));
+
+                            JSONObject errorJson = new JSONObject(exchange.getIn().getBody(String.class));
+                            Map<String, Object> variables = new HashMap<>();
+                            variables.put(ERROR_INFORMATION, errorJson.toString());
+
+                            zeebeClient.newCompleteCommand(exchange.getProperty(ZEEBE_JOB_KEY, Long.class))
+                                    .variables(variables)
+                                    .send();
 
                             logger.error(errorMsg);
                         } else {
