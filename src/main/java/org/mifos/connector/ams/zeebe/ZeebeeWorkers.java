@@ -9,6 +9,7 @@ import org.apache.camel.ProducerTemplate;
 import org.apache.camel.support.DefaultExchange;
 import org.json.JSONObject;
 import org.mifos.connector.ams.properties.TenantProperties;
+import org.mifos.connector.ams.zeebe.workers.accountlookup.AmsWorker;
 import org.mifos.connector.common.ams.dto.QuoteFspResponseDTO;
 import org.mifos.connector.common.channel.dto.TransactionChannelRequestDTO;
 import org.mifos.connector.common.mojaloop.dto.FspMoneyData;
@@ -70,6 +71,7 @@ public class ZeebeeWorkers {
     public static final String WORKER_PAYER_LOCAL_QUOTE = "payer-local-quote-";
     public static final String WORKER_INTEROP_PARTY_REGISTRATION = "interop-party-registration-";
     public static final String WORKER_PAYEE_DEPOSIT_TRANSFER = "payee-deposit-transfer-";
+    public static final String WORKER_PARTY_ACCOUNT_LOOKUP = "party-account-lookup-";
 
     private Logger logger = LoggerFactory.getLogger(this.getClass());
 
@@ -87,6 +89,9 @@ public class ZeebeeWorkers {
 
     @Autowired
     private TenantProperties tenantProperties;
+
+    @Autowired
+    private AmsWorker amsWorker;
 
     @Value("${ams.local.enabled:false}")
     private boolean isAmsLocalEnabled;
