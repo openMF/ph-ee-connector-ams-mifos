@@ -1,4 +1,4 @@
-package org.mifos.connector.ams.zeebe.workers.accountlookup;
+package org.mifos.connector.ams.zeebe.workers;
 
 import org.springframework.stereotype.Component;
 // import org.springframework.web.bind.annotation.GetMapping;

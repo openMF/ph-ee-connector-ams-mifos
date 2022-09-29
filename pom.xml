@@ -104,6 +104,36 @@
             <version>1.7</version>
         </dependency>
         <dependency>
+            <groupId>org.apache.fineract</groupId>
+            <artifactId>fineract-client</artifactId>
+            <version>0.0.0-7ee0d49b-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+        	<groupId>com.squareup.retrofit2</groupId>
+        	<artifactId>retrofit</artifactId>
+        	<version>2.9.0</version>
+        </dependency>
+        <dependency>
+        	<groupId>com.squareup.retrofit2</groupId>
+        	<artifactId>adapter-java8</artifactId>
+        	<version>2.9.0</version>
+        </dependency>
+        <dependency>
+        	<groupId>com.squareup.retrofit2</groupId>
+        	<artifactId>adapter-rxjava2</artifactId>
+        	<version>2.9.0</version>
+        </dependency>
+        <dependency>
+        	<groupId>com.squareup.retrofit2</groupId>
+        	<artifactId>converter-scalars</artifactId>
+        	<version>2.9.0</version>
+        </dependency>
+        <dependency>
+        	<groupId>com.squareup.retrofit2</groupId>
+        	<artifactId>converter-gson</artifactId>
+        	<version>2.9.0</version>
+        </dependency>
+        <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <version>2.7.3</version>
