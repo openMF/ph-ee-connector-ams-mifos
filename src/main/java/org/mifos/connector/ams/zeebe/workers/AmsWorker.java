@@ -2,7 +2,6 @@ package org.mifos.connector.ams.zeebe.workers;
 
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
 
 import com.google.common.base.Optional;
@@ -24,9 +23,6 @@ import io.camunda.zeebe.client.api.worker.JobHandler;
 public class AmsWorker implements JobHandler {
 	
 	Logger logger = LoggerFactory.getLogger(AmsWorker.class);
-
-    @Autowired
-    private AmsDataTableQueryApi dataTableQueryApi;
     
     @Autowired
     private FineractClient fineractClient;
@@ -36,10 +32,6 @@ public class AmsWorker implements JobHandler {
     private static final String[] ACCEPTED_CURRENCIES = new String[] { "HUF" };
 
     public AmsWorker() {
-    }
-
-    public AmsWorker(AmsDataTableQueryApi dataTableQueryApi) {
-        this.dataTableQueryApi = dataTableQueryApi;
     }
 
     @Override
@@ -53,10 +45,10 @@ public class AmsWorker implements JobHandler {
 
         if (ibanValidator.isValid(iban)) {
 
-            dataTableQueryApi.queryDataTable((String) variables.get("datatable"),
-                    (String) variables.get("columnFilter"),
-                    (String) variables.get("valueFilter"),
-                    (String) variables.get("resultColumns"));
+//            fineractClient.datatablesApiResource.queryDataTable((String) variables.get("datatable"),
+//                    (String) variables.get("columnFilter"),
+//                    (String) variables.get("valueFilter"),
+//                    (String) variables.get("resultColumns"));
             
             Long accountFiatCurrencyId = 1L;
             Long accountECurrencyId = 2L;
