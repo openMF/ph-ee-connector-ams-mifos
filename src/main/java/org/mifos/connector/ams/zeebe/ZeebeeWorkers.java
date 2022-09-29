@@ -204,6 +204,13 @@ public class ZeebeeWorkers {
                     .name("release-block")
                     .maxJobsActive(workerMaxJobs)
                     .open();
+            
+            zeebeClient.newWorker()
+            		.jobType("ams-worker")
+            		.handler(amsWorker)
+            		.name("ams-worker")
+            		.maxJobsActive(workerMaxJobs)
+            		.open();
 
             for (String dfspid : dfspids) {
                 logger.info("## generating " + WORKER_PAYER_LOCAL_QUOTE + "{} worker", dfspid);
