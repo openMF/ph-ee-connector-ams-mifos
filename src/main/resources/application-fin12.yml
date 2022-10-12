@@ -10,7 +10,7 @@ dfspids: "DFSPID"
 
 zeebe:
   broker:
-    contactpoint: "127.0.0.1:26500"
+    contactpoint: "camunda8-zeebe-gateway.camunda-perf:26500"
 
 ams:
   local:

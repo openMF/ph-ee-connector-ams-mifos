@@ -3,5 +3,4 @@ EXPOSE 5000
 
 COPY target/*.jar .
 COPY keystore.jks .
-CMD java -jar *.jar
-
+CMD java -jar -Dspring.profiles.active=fin12 *.jar 

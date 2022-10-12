@@ -8,6 +8,13 @@ camel:
 
 dfspids: "DFSPID"
 
+fineract:
+  api-url: localhost:8443
+  datatable-query-api: "/datatables/account_mapping/"
+  column-filter: "iban"
+  result-columns: "fiat_currency_account_id,ecurrency_account_id"
+  
+
 zeebe:
   client:
     max-execution-threads: 1000
@@ -16,7 +23,7 @@ zeebe:
 #    number-of-workers: 8
 #    evenly-allocated-max-jobs: "#{${zeebe.client.max-execution-threads} / ${zeebe.client.number-of-workers}}"
   broker:
-    contactpoint: "127.0.0.1:26500"
+    contactpoint: "zeebe-zeebe-gateway:26500"
 
 ams:
   local:

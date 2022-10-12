@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
         - name: ph-ee-connector-ams-mifos
-          image: public.ecr.aws/m5g5f1j0/ph-ee-connector-ams-mifos:latest
+          image: 296716421908.dkr.ecr.eu-central-1.amazonaws.com/phee/connector-ams-mifos:latest
           ports:
               - containerPort: 8080
                 name: http
