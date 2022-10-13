@@ -1,27 +1,16 @@
 package org.mifos.connector.ams.zeebe.workers;
 
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 import org.apache.commons.validator.routines.IBANValidator;
 import org.apache.fineract.client.models.GetSavingsAccountsAccountIdResponse;
-import org.apache.fineract.client.services.SavingsAccountApi;
-import org.apache.fineract.client.util.FineractClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.web.util.UriComponentsBuilder;
 
 import io.camunda.zeebe.client.api.response.ActivatedJob;
 import io.camunda.zeebe.client.api.worker.JobClient;
