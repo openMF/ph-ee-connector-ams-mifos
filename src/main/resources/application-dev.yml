@@ -1,0 +1,38 @@
+camel:
+  server-port: 5000
+  springboot:
+    main-run-controller: true
+  dataformat:
+    json-jackson:
+      auto-discover-object-mapper: true
+
+dfspids: "DFSPID"
+
+zeebe:
+  broker:
+    contactpoint: "camunda8-zeebe-gateway.camunda-perf:26500"
+
+ams:
+  local:
+    enabled: true
+    version: 1.2
+    keystore-path: keystore.jks
+    keystore-password: openmf
+    interop:
+      host: https://localhost:8443
+      base-url: /fineract-provider/api/v1
+      quotes-path: ${ams.local.interop.base-url}/interoperation/quotes
+      parties-path: ${ams.local.interop.base-url}/interoperation/parties/{idType}/{idValue}
+      transfers-path: ${ams.local.interop.base-url}/interoperation/transfers
+      accounts-path: ${ams.local.interop.base-url}/interoperation/accounts/{externalAccountId}
+    customer:
+      host: https://localhost:8443
+      base-url: /fineract-provider/api/v1
+      path: ${ams.local.customer.base-url}/clients/{clientId}
+      image: ${ams.local.customer.base-url}/clients/{clientId}/images
+    account:
+      host: https://localhost:8443
+      base-url: /fineract-provider/api/v1
+      savingsaccounts-path: ${ams.local.account.base-url}/savingsaccounts
+    auth:
+      host: https://localhost:8443

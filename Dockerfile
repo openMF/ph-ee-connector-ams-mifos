@@ -1,6 +1,7 @@
-FROM openjdk:17-oracle
+FROM openjdk:17-bullseye
 EXPOSE 5000
+WORKDIR /app
 
-COPY target/*.jar .
-COPY keystore.jks .
-CMD java -jar -Dspring.profiles.active=fin12 *.jar 
+COPY keystore.jks /app/
+COPY target/*.jar /app/
+CMD java -jar *.jar 
