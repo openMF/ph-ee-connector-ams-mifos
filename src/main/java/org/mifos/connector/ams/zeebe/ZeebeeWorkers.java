@@ -34,10 +34,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.mifos.connector.ams.camel.config.CamelProperties.QUOTE_AMOUNT_TYPE;
-import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSACTION_ROLE;
-import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSFER_ACTION;
-import static org.mifos.connector.ams.camel.config.CamelProperties.ZEEBE_JOB_KEY;
+import static org.mifos.connector.ams.camel.config.CamelProperties.*;
 import static org.mifos.connector.ams.zeebe.ZeebeUtil.zeebeVariable;
 import static org.mifos.connector.ams.zeebe.ZeebeUtil.zeebeVariablesToCamelProperties;
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.ACCOUNT;
@@ -112,16 +109,24 @@ public class ZeebeeWorkers {
                             zeebeVariablesToCamelProperties(job.getVariablesAsMap(), ex,
                                     TRANSACTION_ID,
                                     CHANNEL_REQUEST,
-                                    TENANT_ID,
                                     EXTERNAL_ACCOUNT_ID,
-                                    LOCAL_QUOTE_RESPONSE);
+                                    TENANT_ID,
+                                    LOCAL_QUOTE_RESPONSE, PROCESS_TYPE
+                            );
                             TransactionChannelRequestDTO channelRequest = objectMapper.readValue(ex.getProperty(CHANNEL_REQUEST, String.class), TransactionChannelRequestDTO.class);
                             ex.setProperty(PARTY_ID_TYPE, channelRequest.getPayer().getPartyIdInfo().getPartyIdType().name());
                             ex.setProperty(PARTY_ID, channelRequest.getPayer().getPartyIdInfo().getPartyIdentifier());
                             ex.setProperty(TRANSFER_ACTION, PREPARE.name());
                             ex.setProperty(ZEEBE_JOB_KEY, job.getKey());
                             ex.setProperty(TRANSACTION_ROLE, TransactionRole.PAYER.name());
+                            ex.setProperty("payeeTenantId", job.getVariablesAsMap().get("payeeTenantId"));
+                            logger.info("Payee Id before block funds {}",job.getVariablesAsMap().get("payeeTenantId"));
+                            if((ex.getProperty(TENANT_ID).toString().equalsIgnoreCase("gorilla")))
+                                ex.setProperty(TENANT_ID,"ibank-usa");
+                           else
+                                ex.setProperty(TENANT_ID,"ibank-india");
                             producerTemplate.send("direct:send-transfers", ex);
+                            logger.info("Zeebe variable {}", job.getVariablesAsMap());
                         } else {
                             Map<String, Object> variables = new HashMap<>();
                             variables.put(TRANSFER_PREPARE_FAILED, false);
@@ -153,6 +158,12 @@ public class ZeebeeWorkers {
                             ex.setProperty(TRANSFER_ACTION, CREATE.name());
                             ex.setProperty(ZEEBE_JOB_KEY, job.getKey());
                             ex.setProperty(TRANSACTION_ROLE, TransactionRole.PAYER.name());
+                            ex.setProperty("payeeTenantId", job.getVariablesAsMap().get("payeeTenantId"));
+                            ex.setProperty("processType", "api");
+                            if((ex.getProperty(TENANT_ID).toString().equalsIgnoreCase("gorilla")))
+                                ex.setProperty(TENANT_ID,"ibank-usa");
+                            else
+                                ex.setProperty(TENANT_ID,"ibank-india");
                             producerTemplate.send("direct:send-transfers", ex);
                         } else {
                             Map<String, Object> variables = new HashMap<>();
@@ -186,6 +197,11 @@ public class ZeebeeWorkers {
                             ex.setProperty(TRANSFER_ACTION, RELEASE.name());
                             ex.setProperty(ZEEBE_JOB_KEY, job.getKey());
                             ex.setProperty(TRANSACTION_ROLE, TransactionRole.PAYEE.name());
+                            ex.setProperty("payeeTenantId", job.getVariablesAsMap().get("payeeTenantId"));
+                            if((ex.getProperty(TENANT_ID).toString().equalsIgnoreCase("gorilla")))
+                                ex.setProperty(TENANT_ID,"ibank-usa");
+                            else
+                                ex.setProperty(TENANT_ID,"ibank-india");
                             producerTemplate.send("direct:send-transfers", ex);
                         } else {
                             Map<String, Object> variables = new HashMap<>();
@@ -201,6 +217,7 @@ public class ZeebeeWorkers {
                     .open();
 
             for (String dfspid : dfspids) {
+                logger.info("DFSPID {}", dfspid);
                 logger.info("## generating " + WORKER_PAYER_LOCAL_QUOTE + "{} worker", dfspid);
                 zeebeClient.newWorker()
                         .jobType(WORKER_PAYER_LOCAL_QUOTE + dfspid)
@@ -217,7 +234,6 @@ public class ZeebeeWorkers {
 
                                 ex.setProperty(PARTY_ID_TYPE, channelRequest.getPayer().getPartyIdInfo().getPartyIdType().name());
                                 ex.setProperty(PARTY_ID, channelRequest.getPayer().getPartyIdInfo().getPartyIdentifier());
-                                ex.setProperty(TENANT_ID, existingVariables.get(TENANT_ID));
                                 ex.setProperty(ZEEBE_JOB_KEY, job.getKey());
                                 ex.setProperty(TRANSACTION_ROLE, TransactionRole.PAYER);
                                 ex.setProperty(QUOTE_AMOUNT_TYPE, AmountType.SEND.name());
@@ -331,14 +347,18 @@ public class ZeebeeWorkers {
                             Map<String, Object> existingVariables = job.getVariablesAsMap();
                             String partyIdType = (String) existingVariables.get(PARTY_ID_TYPE);
                             String partyId = (String) existingVariables.get(PARTY_ID);
-
-                            String tenantId = (String) existingVariables.get(TENANT_ID);
+                            String tenantId = (String) existingVariables.get("payeeTenantId");
                             if (isAmsLocalEnabled) {
                                 Exchange ex = new DefaultExchange(camelContext);
                                 ex.setProperty(PARTY_ID_TYPE, partyIdType);
                                 ex.setProperty(PARTY_ID, partyId);
-                                ex.setProperty(TENANT_ID, tenantId);
                                 ex.setProperty(ZEEBE_JOB_KEY, job.getKey());
+                                ex.setProperty("payeeTenantId",existingVariables.get("payeeTenantId"));
+                                if(((String) existingVariables.get("payeeTenantId")).equalsIgnoreCase("gorilla"))
+                                    ex.setProperty(TENANT_ID, "ibank-usa");
+                                else
+                                    ex.setProperty(TENANT_ID, "ibank-india");
+
                                 producerTemplate.send("direct:get-party", ex);
                             } else {
                                 Map<String, Object> variables = new HashMap<>();
@@ -352,6 +372,7 @@ public class ZeebeeWorkers {
                                         null);
 
                                 variables.put(PAYEE_PARTY_RESPONSE, objectMapper.writeValueAsString(party));
+                                variables.put("payeeTenantId",existingVariables.get("payeeTenantId"));
                                 client.newCompleteCommand(job.getKey())
                                         .variables(variables)
                                         .send()
@@ -389,9 +410,74 @@ public class ZeebeeWorkers {
                         .name(WORKER_INTEROP_PARTY_REGISTRATION + dfspid)
                         .maxJobsActive(workerMaxJobs)
                         .open();
+
+                logger.info("## generating " + WORKER_PAYEE_DEPOSIT_TRANSFER + "{} worker", dfspid);
+                zeebeClient.newWorker()
+                        .jobType(WORKER_PAYEE_DEPOSIT_TRANSFER + dfspid)
+                        .handler((client, job) -> {
+                            logWorkerDetails(job);
+                            Map<String, Object> existingVariables = job.getVariablesAsMap();
+                            logger.info("Exisiting variables {}", existingVariables);
+
+
+                            String tenantId = "lion";
+                            if (isAmsLocalEnabled) {
+                                Exchange ex = new DefaultExchange(camelContext);
+                                Map<String, Object> variables = job.getVariablesAsMap();
+                                zeebeVariablesToCamelProperties(variables, ex,
+                                        TRANSACTION_ID,
+                                        TENANT_ID,
+                                        EXTERNAL_ACCOUNT_ID,
+                                        CHANNEL_REQUEST);
+                                ex.setProperty(TRANSFER_ACTION, CREATE.name());
+                                ex.setProperty("payeeTenantId",existingVariables.get("payeeTenantId"));
+                                if(tenantId.equalsIgnoreCase("gorilla"))
+                                    ex.setProperty(TENANT_ID, "ibank-usa");
+                                else
+                                    ex.setProperty(TENANT_ID, "ibank-india");
+                                ex.setProperty(ZEEBE_JOB_KEY, job.getKey());
+
+                                TransactionChannelRequestDTO transactionRequest = objectMapper.readValue((String) variables.get(CHANNEL_REQUEST), TransactionChannelRequestDTO.class);
+                                TransactionType transactionType = new TransactionType();
+                                transactionType.setInitiator(TransactionRole.PAYEE);
+                                transactionType.setInitiatorType(InitiatorType.CONSUMER);
+                                transactionType.setScenario(Scenario.DEPOSIT);
+                                transactionRequest.setTransactionType(transactionType);
+                                variables.put("initiator", transactionType.getInitiator().name());
+                                variables.put("initiatorType", transactionType.getInitiatorType().name());
+                                variables.put("scenario", transactionType.getScenario().name());
+                                variables.put("amount", new FspMoneyData(transactionRequest.getAmount().getAmountDecimal(),
+                                        transactionRequest.getAmount().getCurrency()));
+                                variables.put("processType", "api");
+
+                                String partyIdType = transactionRequest.getPayee().getPartyIdInfo().getPartyIdType().name();
+                                String partyId = transactionRequest.getPayee().getPartyIdInfo().getPartyIdentifier();
+                                ex.setProperty(PARTY_ID_TYPE, partyIdType);
+                                ex.setProperty(PARTY_ID, partyId);
+                                logger.info("PartyIdType: {}, PartyId: {}", partyIdType, partyId);
+
+                                ex.setProperty(CHANNEL_REQUEST, objectMapper.writeValueAsString(transactionRequest));
+                                ex.setProperty(TRANSACTION_ROLE, TransactionRole.PAYEE.name());
+                                producerTemplate.send("direct:send-transfers", ex);
+                                variables.put("transferCreateFailed", false);
+                                variables.put("payeeTenantId",existingVariables.get("payeeTenantId"));
+                                zeebeClient.newCompleteCommand(job.getKey())
+                                        .variables(variables)
+                                        .send();
+                            } else {
+                                Map<String, Object> variables = new HashMap<>();
+                                variables.put("transferCreateFailed", false);
+                                zeebeClient.newCompleteCommand(job.getKey())
+                                        .variables(variables)
+                                        .send();
+                            }
+                        })
+                        .name(WORKER_PAYEE_DEPOSIT_TRANSFER + dfspid)
+                        .maxJobsActive(workerMaxJobs)
+                        .open();
             }
         }
-    }
+        }
 
     private void logWorkerDetails(ActivatedJob job) {
         JSONObject jsonJob = new JSONObject();

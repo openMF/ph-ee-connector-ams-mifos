@@ -39,10 +39,16 @@ public class PrepareTransferRequest implements Processor {
 
     @Override
     public void process(Exchange exchange) throws Exception {
+        String initiator = zeebeVariable(exchange, "initiator", String.class);
+        String initiatorType = zeebeVariable(exchange, "initiatorType", String.class);
+        String scenario = zeebeVariable(exchange, "scenario", String.class);
+
+        logger.info("Preparing transfer request for initiator: {}, initiatorType: {}, scenario: {}", initiator, initiatorType, scenario);
+
         TransactionType transactionType = new TransactionType();
-        transactionType.setInitiator(TransactionRole.valueOf(zeebeVariable(exchange, "initiator", String.class)));
-        transactionType.setInitiatorType(InitiatorType.valueOf(zeebeVariable(exchange, "initiatorType", String.class)));
-        transactionType.setScenario(Scenario.valueOf(zeebeVariable(exchange, "scenario", String.class)));
+        transactionType.setInitiator(TransactionRole.valueOf(initiator));
+        transactionType.setInitiatorType(InitiatorType.valueOf(initiatorType));
+        transactionType.setScenario(Scenario.valueOf(scenario));
 
         String note = zeebeVariable(exchange, "note", String.class);
         FspMoneyData amount = zeebeVariable(exchange, "amount", FspMoneyData.class);
@@ -52,8 +58,10 @@ public class PrepareTransferRequest implements Processor {
         String existingTransferCode = exchange.getProperty(TRANSFER_CODE, String.class);
         String transferCode;
         if (existingTransferCode != null) {
+            logger.info("Existing code not null");
             transferCode = existingTransferCode;
         } else {
+            logger.info("Existing code null");
             transferCode = UUID.randomUUID().toString();
             exchange.setProperty(TRANSFER_CODE, transferCode);
         }
