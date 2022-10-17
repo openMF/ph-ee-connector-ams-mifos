@@ -9,12 +9,12 @@ ams:
     auth:
       host: https://rhino.mifos.io:8443
     tenants:
-      - name: tn03
+      - name: "ibank-usa"
         user: mifos
         password: password
         authtype: basic
         fspId: in02tn03
-      - name: tn04
+      - name: "ibank-india"
         user: mifos
         password: password
         authtype: basic

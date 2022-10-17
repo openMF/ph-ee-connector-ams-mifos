@@ -102,6 +102,7 @@ public class InteroperationRouteBuilder extends ErrorHandlerRouteBuilder {
                 .log(LoggingLevel.INFO, "Get externalAccount with identifierType: ${exchangeProperty." + PARTY_ID_TYPE + "} with value: ${exchangeProperty."
                         + PARTY_ID + "}")
                 .process(amsService::getExternalAccount)
+                .log("Test 1: ${body}")
                 .unmarshal().json(JsonLibrary.Jackson, PartyFspResponseDTO.class)
                 .process(e -> e.setProperty(EXTERNAL_ACCOUNT_ID, e.getIn().getBody(PartyFspResponseDTO.class).getAccountId()));
 
@@ -123,6 +124,7 @@ public class InteroperationRouteBuilder extends ErrorHandlerRouteBuilder {
                 .process(prepareTransferRequest)
                 .process(pojoToString)
                 .process(amsService::sendTransfer)
+                .log("Process type: ${exchangeProperty." + PROCESS_TYPE + "}")
                 .choice()
                 .when(exchange -> exchange.getProperty(PROCESS_TYPE)!=null && exchange.getProperty(PROCESS_TYPE).equals("api"))
                     .process(exchange -> {
@@ -144,8 +146,18 @@ public class InteroperationRouteBuilder extends ErrorHandlerRouteBuilder {
 
                             logger.error(errorMsg);
                         } else {
+                            Map<String, Object> variables = new HashMap<>();
+                            JSONObject responseJson = new JSONObject(exchange.getIn().getBody(String.class));
+                            variables.put(TRANSFER_PREPARE_FAILED,false);
+                            variables.put(TRANSFER_CREATE_FAILED,false);
+                            variables.put("payeeTenantId", exchange.getProperty("payeeTenantId"));
+                            variables.put(TRANSFER_CODE,responseJson.getString("transferCode"));
                             logger.info("API call successful. Response Body: " + exchange.getIn().getBody(String.class));
+                            zeebeClient.newCompleteCommand(exchange.getProperty(ZEEBE_JOB_KEY, Long.class))
+                                    .variables(variables)
+                                    .send();
                         }
+                        logger.info("End of process in send-transfers");
                     })
                 .otherwise()
                     .process(transfersResponseProcessor)

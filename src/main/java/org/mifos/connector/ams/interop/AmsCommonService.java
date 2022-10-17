@@ -4,6 +4,8 @@ import org.apache.camel.Exchange;
 import org.apache.camel.component.cxf.common.message.CxfConstants;
 import org.mifos.connector.ams.camel.cxfrs.CxfrsUtil;
 import org.mifos.connector.ams.tenant.TenantService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
@@ -41,6 +43,8 @@ public class AmsCommonService {
     @Autowired
     private CxfrsUtil cxfrsUtil;
 
+    private Logger logger = LoggerFactory.getLogger(this.getClass());
+
     public void getLocalQuote(Exchange e) {
         Map<String, Object> headers = new HashMap<>();
         headers.put(CXF_TRACE_HEADER, true);
@@ -66,7 +70,7 @@ public class AmsCommonService {
         headers.put(CXF_TRACE_HEADER, true);
         headers.put(HTTP_METHOD, "POST");
         headers.put(HTTP_PATH, amsInteropTransfersPath);
-
+        logger.info("Send Transfer Body: {}", e.getIn().getBody());
         Map<String, String> queryMap = new LinkedHashMap<>();
         queryMap.put("action", e.getProperty(TRANSFER_ACTION, String.class));
         headers.put(CxfConstants.CAMEL_CXF_RS_QUERY_MAP, queryMap);

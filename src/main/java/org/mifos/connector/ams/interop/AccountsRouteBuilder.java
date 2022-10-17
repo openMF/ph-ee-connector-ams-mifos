@@ -9,7 +9,6 @@ import org.mifos.connector.common.ams.dto.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-
 import java.util.List;
 
 import static org.mifos.connector.ams.camel.config.CamelProperties.CLIENT_ID;

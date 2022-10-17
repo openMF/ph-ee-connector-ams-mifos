@@ -75,5 +75,6 @@ public class TransfersResponseProcessor implements Processor {
         zeebeClient.newCompleteCommand(exchange.getProperty(ZEEBE_JOB_KEY, Long.class))
                 .variables(variables)
                 .send();
+        logger.info("Completed job with key: {}", exchange.getProperty(ZEEBE_JOB_KEY, Long.class));
     }
 }
