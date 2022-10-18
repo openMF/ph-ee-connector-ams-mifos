@@ -8,9 +8,15 @@ camel:
 
 dfspids: "DFSPID"
 
+fineract:
+  api-url: fineract.binx-dev:8443
+  datatable-query-api: "/datatables/account_mapping/"
+  column-filter: "iban"
+  result-columns: "fiat_currency_account_id,ecurrency_account_id"
+
 zeebe:
   broker:
-    contactpoint: "camunda8-zeebe-gateway.camunda-perf:26500"
+    contactpoint: "camunda8-zeebe-gateway.binx-dev:26500"
 
 ams:
   local:
