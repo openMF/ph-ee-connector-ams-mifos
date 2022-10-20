@@ -66,12 +66,12 @@ public class IncomingMoneyWorker implements JobHandler {
 				locale);
 		HttpEntity<DepositBody> entity = new HttpEntity<>(body, headers);
 
-		String _urlTemplate = UriComponentsBuilder.fromHttpUrl(fineractApiUrl)
+		/*String _urlTemplate = UriComponentsBuilder.fromHttpUrl(fineractApiUrl)
 				.path(incomingMoneyApi)
 				.path(String.format("%s", paymentTypeId))
 				.path("transactions")
 				.encode()
-				.toUriString();
+				.toUriString();*/
 		
 		String urlTemplate = Strings.join(Arrays.asList(
 				fineractApiUrl,
