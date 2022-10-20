@@ -1,6 +1,5 @@
 package org.mifos.connector.ams.zeebe.workers.bookamount;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
@@ -50,7 +49,7 @@ public class IncomingMoneyWorker implements JobHandler {
 		Map<String, Object> variables = activatedJob.getVariablesAsMap();
 		
 		String transactionDate = LocalDate.now().format(PATTERN);
-		BigDecimal amount = (BigDecimal) variables.get("amount");
+		Object amount = variables.get("amount");
 		Integer paymentTypeId = (Integer) variables.get("fiatCurrencyAccountAmsId");
 		
 		HttpHeaders headers = new HttpHeaders();
