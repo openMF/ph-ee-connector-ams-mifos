@@ -2,9 +2,11 @@ package org.mifos.connector.ams.zeebe.workers.bookamount;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.logging.log4j.util.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -64,12 +66,18 @@ public class IncomingMoneyWorker implements JobHandler {
 				locale);
 		HttpEntity<DepositBody> entity = new HttpEntity<>(body, headers);
 
-		String urlTemplate = UriComponentsBuilder.fromHttpUrl(fineractApiUrl)
+		String _urlTemplate = UriComponentsBuilder.fromHttpUrl(fineractApiUrl)
 				.path(incomingMoneyApi)
 				.path(String.format("%s", paymentTypeId))
 				.path("transactions")
 				.encode()
 				.toUriString();
+		
+		String urlTemplate = Strings.join(Arrays.asList(
+				fineractApiUrl,
+				incomingMoneyApi,
+				String.format("%s", paymentTypeId),
+				"transactions"), '/');
 		
 		Map<String, Object> params = new HashMap<>();
 		params.put("command", "deposit");
