@@ -66,6 +66,8 @@ public class AmsWorker implements JobHandler {
         AccountAmsStatus status = AccountAmsStatus.READY_TO_RECEIVE_MONEY;
         GetSavingsAccountsAccountIdResponse fiatCurrency = null;
         GetSavingsAccountsAccountIdResponse eCurrency = null;
+        
+        logger.error(">>>>>>>>>>>>>>>>>> AmsWorker::handle: the type of amount is " + variables.get("amount").getClass().getName());
 
         String iban = (String) variables.get("valueFilter");
         
