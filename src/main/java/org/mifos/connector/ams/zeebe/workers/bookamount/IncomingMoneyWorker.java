@@ -66,7 +66,7 @@ public class IncomingMoneyWorker implements JobHandler {
 
 		String urlTemplate = UriComponentsBuilder.fromHttpUrl(fineractApiUrl)
 				.path(incomingMoneyApi)
-				.path("" + paymentTypeId)
+				.path(String.format("%s", paymentTypeId))
 				.path("transactions")
 				.encode()
 				.toUriString();

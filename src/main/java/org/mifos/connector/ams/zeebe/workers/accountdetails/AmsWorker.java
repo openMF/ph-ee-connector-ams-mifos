@@ -82,9 +82,6 @@ public class AmsWorker implements JobHandler {
 			  
 			  String urlTemplate = UriComponentsBuilder.fromHttpUrl(fineractApiUrl)
 					  .path(datatableQueryApi)
-					  // .queryParam("columnFilter", columnFilter) 
-					  // .queryParam("valueFilter", iban) 
-					  // .queryParam("resultColumns", resultColumns) 
 					  .encode() 
 					  .toUriString();
 			  
