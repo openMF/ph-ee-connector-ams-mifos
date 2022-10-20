@@ -1,4 +1,4 @@
-package org.mifos.connector.ams.zeebe.workers;
+package org.mifos.connector.ams.zeebe.workers.accountdetails;
 
 import java.io.IOException;
 import java.util.Arrays;
