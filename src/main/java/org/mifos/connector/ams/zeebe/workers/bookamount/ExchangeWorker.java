@@ -14,12 +14,12 @@ import io.camunda.zeebe.client.api.response.ActivatedJob;
 import io.camunda.zeebe.client.api.worker.JobClient;
 
 @Component
-public class IncomingMoneyWorker extends AbstractMoneyInWorker {
-	
-	Logger logger = LoggerFactory.getLogger(IncomingMoneyWorker.class);
+public class ExchangeWorker extends AbstractMoneyInWorker {
+
+	Logger logger = LoggerFactory.getLogger(ExchangeWorker.class);
 	
 	private static final DateTimeFormatter PATTERN = DateTimeFormatter.ofPattern(FORMAT);
-
+	
 	@Override
 	public void handle(JobClient jobClient, ActivatedJob activatedJob) throws Exception {
 		Map<String, Object> variables = activatedJob.getVariablesAsMap();
@@ -28,13 +28,28 @@ public class IncomingMoneyWorker extends AbstractMoneyInWorker {
 		Object amount = variables.get("amount");
 		
 		Integer fiatCurrencyAccountAmsId = (Integer) variables.get("fiatCurrencyAccountAmsId");
+		Integer eCurrencyAccountAmsId = (Integer) variables.get("eCurrencyAccountAmsId");
 		
-		ResponseEntity<Object> responseObject = exchange(transactionDate, amount, fiatCurrencyAccountAmsId, "deposit");
+		ResponseEntity<Object> responseObject = exchange(transactionDate, amount, fiatCurrencyAccountAmsId, "withdrawal");
 		
 		if (HttpStatus.OK.equals(responseObject.getStatusCode())) {
 			jobClient.newCompleteCommand(activatedJob.getKey()).variables(variables).send();
 		} else {
 			jobClient.newFailCommand(activatedJob.getKey()).retries(3).send();
+		}
+		
+		responseObject = exchange(transactionDate, amount, eCurrencyAccountAmsId, "deposit");
+		
+		if (HttpStatus.OK.equals(responseObject.getStatusCode())) {
+			jobClient.newCompleteCommand(activatedJob.getKey()).variables(variables).send();
+		} else {
+			jobClient.newFailCommand(activatedJob.getKey()).retries(3).send().join();
+			
+			responseObject = exchange(transactionDate, amount, fiatCurrencyAccountAmsId, "deposit");
+			
+			if (!HttpStatus.OK.equals(responseObject.getStatusCode())) {
+				logger.error("Failed to rollback exchange transaction");
+			}
 		}
 	}
 }

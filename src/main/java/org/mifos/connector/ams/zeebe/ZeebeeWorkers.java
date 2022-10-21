@@ -42,6 +42,7 @@ import org.apache.camel.support.DefaultExchange;
 import org.json.JSONObject;
 import org.mifos.connector.ams.properties.TenantProperties;
 import org.mifos.connector.ams.zeebe.workers.accountdetails.AmsWorker;
+import org.mifos.connector.ams.zeebe.workers.bookamount.ExchangeWorker;
 import org.mifos.connector.ams.zeebe.workers.bookamount.IncomingMoneyWorker;
 import org.mifos.connector.common.ams.dto.QuoteFspResponseDTO;
 import org.mifos.connector.common.channel.dto.TransactionChannelRequestDTO;
@@ -98,6 +99,9 @@ public class ZeebeeWorkers {
     
     @Autowired
     private IncomingMoneyWorker incomingMoneyWorker;
+    
+    @Autowired
+    private ExchangeWorker exchangeWorker;
 
     @Value("${ams.local.enabled:false}")
     private boolean isAmsLocalEnabled;
@@ -224,6 +228,13 @@ public class ZeebeeWorkers {
             		.name("BookCreditedAmountToFiatCurrencyAccount")
             		.maxJobsActive(workerMaxJobs)
             		.open();
+            
+            zeebeClient.newWorker()
+    		.jobType("exchangeToECurrency")
+    		.handler(exchangeWorker)
+    		.name("ExchangeToECurrency")
+    		.maxJobsActive(workerMaxJobs)
+    		.open();
 
             for (String dfspid : dfspids) {
                 logger.info("## generating " + WORKER_PAYER_LOCAL_QUOTE + "{} worker", dfspid);
