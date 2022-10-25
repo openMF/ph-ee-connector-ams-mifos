@@ -12,7 +12,7 @@ import org.springframework.http.ResponseEntity;
 import io.camunda.zeebe.client.api.response.ActivatedJob;
 import io.camunda.zeebe.client.api.worker.JobClient;
 
-public class IncomingMoneyWorker extends AbstractMoneyInWorker {
+public class IncomingMoneyWorker extends AbstractMoneyInOutWorker {
 	
 	Logger logger = LoggerFactory.getLogger(IncomingMoneyWorker.class);
 	

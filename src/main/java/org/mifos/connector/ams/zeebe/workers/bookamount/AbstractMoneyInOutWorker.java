@@ -14,7 +14,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 import io.camunda.zeebe.client.api.worker.JobHandler;
 
 @InheritingComponent
-public abstract class AbstractMoneyInWorker implements JobHandler {
+public abstract class AbstractMoneyInOutWorker implements JobHandler {
 	
 	@Autowired
 	protected RestTemplate restTemplate;

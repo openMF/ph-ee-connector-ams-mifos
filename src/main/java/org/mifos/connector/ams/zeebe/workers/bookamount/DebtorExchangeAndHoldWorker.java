@@ -15,7 +15,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 import io.camunda.zeebe.client.api.response.ActivatedJob;
 import io.camunda.zeebe.client.api.worker.JobClient;
 
-public class DebtorExchangeAndHoldWorker extends AbstractMoneyInWorker {
+public class DebtorExchangeAndHoldWorker extends AbstractMoneyInOutWorker {
 	
 	Logger logger = LoggerFactory.getLogger(DebtorExchangeAndHoldWorker.class);
 	
