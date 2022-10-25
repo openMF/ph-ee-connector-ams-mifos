@@ -14,9 +14,9 @@ import io.camunda.zeebe.client.api.response.ActivatedJob;
 import io.camunda.zeebe.client.api.worker.JobClient;
 
 @Component
-public class ExchangeWorker extends AbstractMoneyInWorker {
+public class CreditorExchangeWorker extends AbstractMoneyInWorker {
 
-	Logger logger = LoggerFactory.getLogger(ExchangeWorker.class);
+	Logger logger = LoggerFactory.getLogger(CreditorExchangeWorker.class);
 	
 	private static final DateTimeFormatter PATTERN = DateTimeFormatter.ofPattern(FORMAT);
 	
@@ -35,7 +35,7 @@ public class ExchangeWorker extends AbstractMoneyInWorker {
 		if (HttpStatus.OK.equals(responseObject.getStatusCode())) {
 			jobClient.newCompleteCommand(activatedJob.getKey()).variables(variables).send();
 		} else {
-			jobClient.newFailCommand(activatedJob.getKey()).retries(3).send();
+			jobClient.newFailCommand(activatedJob.getKey()).retries(0).send();
 		}
 		
 		responseObject = exchange(transactionDate, amount, eCurrencyAccountAmsId, "deposit");
@@ -43,13 +43,7 @@ public class ExchangeWorker extends AbstractMoneyInWorker {
 		if (HttpStatus.OK.equals(responseObject.getStatusCode())) {
 			jobClient.newCompleteCommand(activatedJob.getKey()).variables(variables).send();
 		} else {
-			jobClient.newFailCommand(activatedJob.getKey()).retries(3).send().join();
-			
-			responseObject = exchange(transactionDate, amount, fiatCurrencyAccountAmsId, "deposit");
-			
-			if (!HttpStatus.OK.equals(responseObject.getStatusCode())) {
-				logger.error("Failed to rollback exchange transaction");
-			}
+			jobClient.newFailCommand(activatedJob.getKey()).retries(0).send().join();
 		}
 	}
 }

@@ -41,8 +41,8 @@ import org.apache.camel.ProducerTemplate;
 import org.apache.camel.support.DefaultExchange;
 import org.json.JSONObject;
 import org.mifos.connector.ams.properties.TenantProperties;
-import org.mifos.connector.ams.zeebe.workers.accountdetails.AmsWorker;
-import org.mifos.connector.ams.zeebe.workers.bookamount.ExchangeWorker;
+import org.mifos.connector.ams.zeebe.workers.accountdetails.AmsCreditorWorker;
+import org.mifos.connector.ams.zeebe.workers.bookamount.CreditorExchangeWorker;
 import org.mifos.connector.ams.zeebe.workers.bookamount.IncomingMoneyWorker;
 import org.mifos.connector.common.ams.dto.QuoteFspResponseDTO;
 import org.mifos.connector.common.channel.dto.TransactionChannelRequestDTO;
@@ -95,13 +95,13 @@ public class ZeebeeWorkers {
     private TenantProperties tenantProperties;
 
     @Autowired
-    private AmsWorker amsWorker;
+    private AmsCreditorWorker amsWorker;
     
     @Autowired
     private IncomingMoneyWorker incomingMoneyWorker;
     
     @Autowired
-    private ExchangeWorker exchangeWorker;
+    private CreditorExchangeWorker exchangeWorker;
 
     @Value("${ams.local.enabled:false}")
     private boolean isAmsLocalEnabled;
