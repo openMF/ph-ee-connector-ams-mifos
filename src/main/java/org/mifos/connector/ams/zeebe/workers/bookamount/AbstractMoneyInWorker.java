@@ -13,28 +13,40 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import io.camunda.zeebe.client.api.worker.JobHandler;
 
+@InheritingComponent
 public abstract class AbstractMoneyInWorker implements JobHandler {
 	
 	@Autowired
-	private RestTemplate restTemplate;
+	protected RestTemplate restTemplate;
 	
 	@Autowired
-	private HttpHeaders httpHeaders;
+	protected HttpHeaders httpHeaders;
 	
 	@Value("${fineract.api-url}")
-	private String fineractApiUrl;
+	protected String fineractApiUrl;
 
 	@Value("${fineract.incoming-money-api}")
-	private String incomingMoneyApi;
+	protected String incomingMoneyApi;
 	
 	@Value("${fineract.locale}")
-	private String locale;
+	protected String locale;
 
 	Logger logger = LoggerFactory.getLogger(IncomingMoneyWorker.class);
 	
 	protected static final String FORMAT = "yyyyMMdd";
-
-	protected ResponseEntity<Object> exchange(String transactionDate, Object amount, Integer currencyAccountAmsId, String command) {
+	
+	protected ResponseEntity<Object> hold(String transactionDate, Object amount, Integer currencyAccountAmsId) {
+		var body = new HoldAmountBody(
+				transactionDate,
+				amount,
+				"Transfer out - on Hold - pending checks",
+				locale,
+				FORMAT
+				);
+		return doExchange(body, transactionDate, amount, currencyAccountAmsId, "holdAmount");
+	}
+	
+	protected ResponseEntity<Object> deposit(String transactionDate, Object amount, Integer currencyAccountAmsId) {
 		var body = new TransactionBody(
 				transactionDate,
 				amount,
@@ -42,8 +54,23 @@ public abstract class AbstractMoneyInWorker implements JobHandler {
 				"",
 				FORMAT,
 				locale);
-		var entity = new HttpEntity<>(body, httpHeaders);
+		return doExchange(body, transactionDate, amount, currencyAccountAmsId, "deposit");
+	}
 
+	protected ResponseEntity<Object> withdraw(String transactionDate, Object amount, Integer currencyAccountAmsId) {
+		var body = new TransactionBody(
+				transactionDate,
+				amount,
+				currencyAccountAmsId,
+				"",
+				FORMAT,
+				locale);
+		return doExchange(body, transactionDate, amount, currencyAccountAmsId, "withdrawal");
+	}
+	
+	private <T> ResponseEntity<Object> doExchange(T body, String transactionDate, Object amount, Integer currencyAccountAmsId, String command) {
+		var entity = new HttpEntity<>(body, httpHeaders);
+		
 		var urlTemplate = UriComponentsBuilder.fromHttpUrl(fineractApiUrl)
 				.path(incomingMoneyApi)
 				.path(String.format("%s", currencyAccountAmsId))

@@ -8,12 +8,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Component;
 
 import io.camunda.zeebe.client.api.response.ActivatedJob;
 import io.camunda.zeebe.client.api.worker.JobClient;
 
-@Component
 public class IncomingMoneyWorker extends AbstractMoneyInWorker {
 	
 	Logger logger = LoggerFactory.getLogger(IncomingMoneyWorker.class);
@@ -29,7 +27,7 @@ public class IncomingMoneyWorker extends AbstractMoneyInWorker {
 		
 		Integer fiatCurrencyAccountAmsId = (Integer) variables.get("fiatCurrencyAccountAmsId");
 		
-		ResponseEntity<Object> responseObject = exchange(transactionDate, amount, fiatCurrencyAccountAmsId, "deposit");
+		ResponseEntity<Object> responseObject = deposit(transactionDate, amount, fiatCurrencyAccountAmsId);
 		
 		if (HttpStatus.OK.equals(responseObject.getStatusCode())) {
 			jobClient.newCompleteCommand(activatedJob.getKey()).variables(variables).send();
