@@ -49,7 +49,7 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 		var body = new TransactionBody(
 				transactionDate,
 				amount,
-				currencyAccountAmsId,
+				1,
 				"",
 				FORMAT,
 				locale);
@@ -60,7 +60,7 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 		var body = new TransactionBody(
 				transactionDate,
 				amount,
-				currencyAccountAmsId,
+				1,
 				"",
 				FORMAT,
 				locale);
