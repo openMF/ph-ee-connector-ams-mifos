@@ -8,10 +8,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Component;
 
 import io.camunda.zeebe.client.api.response.ActivatedJob;
 import io.camunda.zeebe.client.api.worker.JobClient;
 
+@Component
 public class CreditorExchangeWorker extends AbstractMoneyInOutWorker {
 
 	Logger logger = LoggerFactory.getLogger(CreditorExchangeWorker.class);

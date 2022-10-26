@@ -10,11 +10,13 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Component;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import io.camunda.zeebe.client.api.response.ActivatedJob;
 import io.camunda.zeebe.client.api.worker.JobClient;
 
+@Component
 public class DebtorExchangeAndHoldWorker extends AbstractMoneyInOutWorker {
 	
 	Logger logger = LoggerFactory.getLogger(DebtorExchangeAndHoldWorker.class);
