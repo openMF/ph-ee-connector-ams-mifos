@@ -78,8 +78,6 @@ public class DebtorExchangeAndHoldWorker extends AbstractMoneyInOutWorker {
 		var entity = new HttpEntity<>(entry, httpHeaders);
 		
 		var urlTemplate = UriComponentsBuilder.fromHttpUrl(fineractApiUrl)
-				.path(incomingMoneyApi)
-				.path(String.format("%s", fiatCurrencyAccountAmsId))
 				.path("/journalentries")
 				.encode()
 				.toUriString();

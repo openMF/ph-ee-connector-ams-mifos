@@ -22,13 +22,23 @@ public class AmsDebtorWorker extends AbstractAmsWorker {
 	}
 
 	public void handle(JobClient jobClient, ActivatedJob activatedJob) throws Exception {
+		logger.info(">>>>>>>>>>>>>>>>>>> AMS debtor worker started <<<<<<<<<<<<<<<<<");
 		var variables = activatedJob.getVariablesAsMap();
 
-		AmsDataTableQueryResponse responseItem = lookupAccount((String) variables.get("debtorIban"))[0];
+		String debtorIban = (String) variables.get("debtorIban");
+		logger.info(">>>>>>>>>>>>>>>>>>> looking up debtor iban {} <<<<<<<<<<<<<<<<<<", debtorIban);
 		
-		variables.put("eCurrencyAccountAmsId", responseItem.ecurrency_account_id());
-		variables.put("fiatCurrencyAccountAmsId", responseItem.fiat_currency_account_id());
+		AmsDataTableQueryResponse[] lookupAccount = lookupAccount(debtorIban);
 		
-		jobClient.newCompleteCommand(activatedJob.getKey()).variables(variables).send();
+		if (lookupAccount.length == 0) {
+			logger.error("####################  No entry found for iban {} !!!  #########################", debtorIban);
+			jobClient.newFailCommand(activatedJob.getKey()).retries(0).send();
+		} else {
+			AmsDataTableQueryResponse responseItem = lookupAccount[0];
+		
+			variables.put("eCurrencyAccountAmsId", responseItem.ecurrency_account_id());
+			variables.put("fiatCurrencyAccountAmsId", responseItem.fiat_currency_account_id());
+			jobClient.newCompleteCommand(activatedJob.getKey()).variables(variables).send();
+		}
 	}
 }
