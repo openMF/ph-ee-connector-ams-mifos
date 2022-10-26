@@ -35,10 +35,10 @@ public class AmsCreditorWorker extends AbstractAmsWorker {
 
 		AmsDataTableQueryResponse[] response = lookupAccount((String) variables.get("creditorIban"));
 		
-		if (response.length == 0) {
-			variables.put("eCurrencyAccountAmsId", "");
-			variables.put("fiatCurrencyAccountAmsId", "");
-		} else {
+		variables.put("eCurrencyAccountAmsId", "");
+		variables.put("fiatCurrencyAccountAmsId", "");
+		
+		if (response.length != 0) {
 			var responseItem = response[0];
 			Long accountFiatCurrencyId = responseItem.fiat_currency_account_id();
 			Long accountECurrencyId = responseItem.ecurrency_account_id();
