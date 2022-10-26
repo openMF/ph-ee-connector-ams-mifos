@@ -42,7 +42,9 @@ import org.apache.camel.support.DefaultExchange;
 import org.json.JSONObject;
 import org.mifos.connector.ams.properties.TenantProperties;
 import org.mifos.connector.ams.zeebe.workers.accountdetails.AmsCreditorWorker;
+import org.mifos.connector.ams.zeebe.workers.accountdetails.AmsDebtorWorker;
 import org.mifos.connector.ams.zeebe.workers.bookamount.CreditorExchangeWorker;
+import org.mifos.connector.ams.zeebe.workers.bookamount.DebtorExchangeAndHoldWorker;
 import org.mifos.connector.ams.zeebe.workers.bookamount.IncomingMoneyWorker;
 import org.mifos.connector.common.ams.dto.QuoteFspResponseDTO;
 import org.mifos.connector.common.channel.dto.TransactionChannelRequestDTO;
@@ -102,6 +104,12 @@ public class ZeebeeWorkers {
     
     @Autowired
     private CreditorExchangeWorker exchangeWorker;
+    
+    @Autowired
+    private AmsDebtorWorker amsDebtorWorker;
+    
+    @Autowired
+    private DebtorExchangeAndHoldWorker debtorExchangeAndHoldWorker;
 
     @Value("${ams.local.enabled:false}")
     private boolean isAmsLocalEnabled;
@@ -235,7 +243,21 @@ public class ZeebeeWorkers {
     		.name("ExchangeToECurrency")
     		.maxJobsActive(workerMaxJobs)
     		.open();
-
+            
+            zeebeClient.newWorker()
+    		.jobType("getAccountIdsFromAms")
+    		.handler(amsDebtorWorker)
+    		.name("GetAccountIdsFromAms")
+    		.maxJobsActive(workerMaxJobs)
+    		.open();
+            
+            zeebeClient.newWorker()
+    		.jobType("exchangeToFiatAndHoldInAms")
+    		.handler(debtorExchangeAndHoldWorker)
+    		.name("ExchangeToFiatAndHoldInAms")
+    		.maxJobsActive(workerMaxJobs)
+    		.open();
+            
             for (String dfspid : dfspids) {
                 logger.info("## generating " + WORKER_PAYER_LOCAL_QUOTE + "{} worker", dfspid);
                 zeebeClient.newWorker()

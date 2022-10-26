@@ -3,11 +3,13 @@ package org.mifos.connector.ams.zeebe.workers.accountdetails;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
+import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
 import io.camunda.zeebe.client.api.response.ActivatedJob;
 import io.camunda.zeebe.client.api.worker.JobClient;
 
+@Component
 public class AmsDebtorWorker extends AbstractAmsWorker {
 
 	Logger logger = LoggerFactory.getLogger(AmsDebtorWorker.class);
