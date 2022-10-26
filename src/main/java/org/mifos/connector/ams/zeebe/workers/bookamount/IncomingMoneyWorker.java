@@ -29,12 +29,16 @@ public class IncomingMoneyWorker extends AbstractMoneyInOutWorker {
 		
 		Integer fiatCurrencyAccountAmsId = (Integer) variables.get("fiatCurrencyAccountAmsId");
 		
-		ResponseEntity<Object> responseObject = deposit(transactionDate, amount, fiatCurrencyAccountAmsId);
+		try {
+			ResponseEntity<Object> responseObject = deposit(transactionDate, amount, fiatCurrencyAccountAmsId);
 		
-		if (HttpStatus.OK.equals(responseObject.getStatusCode())) {
-			jobClient.newCompleteCommand(activatedJob.getKey()).variables(variables).send();
-		} else {
-			jobClient.newFailCommand(activatedJob.getKey()).retries(3).send();
+			if (HttpStatus.OK.equals(responseObject.getStatusCode())) {
+				jobClient.newCompleteCommand(activatedJob.getKey()).variables(variables).send();
+			} else {
+				jobClient.newThrowErrorCommand(activatedJob.getKey()).errorCode("Error_ToBeHandledManually").send();
+			}
+		} catch (Exception e) {
+			jobClient.newThrowErrorCommand(activatedJob.getKey()).errorCode("Error_ToBeHandledManually").send();
 		}
 	}
 }

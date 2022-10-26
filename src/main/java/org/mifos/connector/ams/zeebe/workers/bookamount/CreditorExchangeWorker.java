@@ -30,20 +30,24 @@ public class CreditorExchangeWorker extends AbstractMoneyInOutWorker {
 		Integer fiatCurrencyAccountAmsId = (Integer) variables.get("fiatCurrencyAccountAmsId");
 		Integer eCurrencyAccountAmsId = (Integer) variables.get("eCurrencyAccountAmsId");
 		
-		ResponseEntity<Object> responseObject = withdraw(transactionDate, amount, fiatCurrencyAccountAmsId);
+		try {
+			ResponseEntity<Object> responseObject = withdraw(transactionDate, amount, fiatCurrencyAccountAmsId);
 		
-		if (!HttpStatus.OK.equals(responseObject.getStatusCode())) {
-			jobClient.newFailCommand(activatedJob.getKey()).retries(0).send();
-			return;
+			if (!HttpStatus.OK.equals(responseObject.getStatusCode())) {
+				jobClient.newFailCommand(activatedJob.getKey()).retries(0).send();
+				return;
+			}
+		
+			responseObject = deposit(transactionDate, amount, eCurrencyAccountAmsId);
+		
+			if (!HttpStatus.OK.equals(responseObject.getStatusCode())) {
+				jobClient.newFailCommand(activatedJob.getKey()).retries(0).send().join();
+				return;
+			}
+		
+			jobClient.newCompleteCommand(activatedJob.getKey()).variables(variables).send();
+		} catch (Exception e) {
+			jobClient.newThrowErrorCommand(activatedJob.getKey()).errorCode("Error_ToBeHandledManually").send();
 		}
-		
-		responseObject = deposit(transactionDate, amount, eCurrencyAccountAmsId);
-		
-		if (!HttpStatus.OK.equals(responseObject.getStatusCode())) {
-			jobClient.newFailCommand(activatedJob.getKey()).retries(0).send().join();
-			return;
-		}
-		
-		jobClient.newCompleteCommand(activatedJob.getKey()).variables(variables).send();
 	}
 }

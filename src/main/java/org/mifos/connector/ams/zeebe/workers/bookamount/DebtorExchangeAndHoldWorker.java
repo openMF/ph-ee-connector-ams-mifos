@@ -2,6 +2,7 @@ package org.mifos.connector.ams.zeebe.workers.bookamount;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.slf4j.Logger;
@@ -24,6 +25,7 @@ public class DebtorExchangeAndHoldWorker extends AbstractMoneyInOutWorker {
 	private static final DateTimeFormatter PATTERN = DateTimeFormatter.ofPattern(FORMAT);
 
 	@Override
+	@SuppressWarnings("unchecked")
 	public void handle(JobClient jobClient, ActivatedJob activatedJob) throws Exception {
 		Map<String, Object> variables = activatedJob.getVariablesAsMap();
 		
@@ -33,32 +35,37 @@ public class DebtorExchangeAndHoldWorker extends AbstractMoneyInOutWorker {
 		Integer eCurrencyAccountAmsId = (Integer) variables.get("eCurrencyAccountAmsId");
 		Integer fiatCurrencyAccountAmsId = (Integer) variables.get("fiatCurrencyAccountAmsId");
 		
-		ResponseEntity<Object> responseObject = withdraw(transactionDate, amount, eCurrencyAccountAmsId);
+		try {
 		
-		if (!HttpStatus.OK.equals(responseObject.getStatusCode())) {
-			jobClient.newFailCommand(activatedJob.getKey()).retries(0).send();
-			return;
-		}
+			ResponseEntity<Object> responseObject = withdraw(transactionDate, amount, eCurrencyAccountAmsId);
 		
-		responseObject = deposit(transactionDate, amount, fiatCurrencyAccountAmsId);
+			if (!HttpStatus.OK.equals(responseObject.getStatusCode())) {
+				jobClient.newFailCommand(activatedJob.getKey()).retries(0).send();
+				return;
+			}
 		
-		if (!HttpStatus.OK.equals(responseObject.getStatusCode())) {
-			jobClient.newFailCommand(activatedJob.getKey()).retries(0).send().join();
-			return;
-		}
+			responseObject = deposit(transactionDate, amount, fiatCurrencyAccountAmsId);
 		
-		responseObject = hold(transactionDate, amount, fiatCurrencyAccountAmsId);
+			if (!HttpStatus.OK.equals(responseObject.getStatusCode())) {
+				jobClient.newFailCommand(activatedJob.getKey()).retries(0).send().join();
+				return;
+			}
 		
-		if (!HttpStatus.OK.equals(responseObject.getStatusCode())) {
-			jobClient.newFailCommand(activatedJob.getKey()).retries(0).send().join();
-			return;
-		}
+			responseObject = hold(transactionDate, amount, fiatCurrencyAccountAmsId);
 		
-		// TODO: create journal entry
-		AccountIdAmountPair[] debits = new AccountIdAmountPair[] { new AccountIdAmountPair(10, amount) };
-		AccountIdAmountPair[] credits = new AccountIdAmountPair[] { new AccountIdAmountPair(14, amount) };
+			if (!HttpStatus.OK.equals(responseObject.getStatusCode())) {
+				jobClient.newFailCommand(activatedJob.getKey()).retries(0).send().join();
+				return;
+			}
 		
-		JournalEntry entry = new JournalEntry(
+			LinkedHashMap<String, Object> holdBody = ((LinkedHashMap<String, Object>) responseObject.getBody());
+			Integer resourceId = (Integer) holdBody.get("resourceId");
+			variables.put("holdAmountId", resourceId);
+		
+			AccountIdAmountPair[] debits = new AccountIdAmountPair[] { new AccountIdAmountPair(10, amount) };
+			AccountIdAmountPair[] credits = new AccountIdAmountPair[] { new AccountIdAmountPair(14, amount) };
+		
+			JournalEntry entry = new JournalEntry(
 				"1",
 				(String) variables.get("currency"),
 				debits,
@@ -75,21 +82,24 @@ public class DebtorExchangeAndHoldWorker extends AbstractMoneyInOutWorker {
 				locale,
 				FORMAT
 				);
-		var entity = new HttpEntity<>(entry, httpHeaders);
+			var entity = new HttpEntity<>(entry, httpHeaders);
 		
-		var urlTemplate = UriComponentsBuilder.fromHttpUrl(fineractApiUrl)
+			var urlTemplate = UriComponentsBuilder.fromHttpUrl(fineractApiUrl)
 				.path("/journalentries")
 				.encode()
 				.toUriString();
 		
-		responseObject = restTemplate.exchange(urlTemplate, HttpMethod.POST, entity, Object.class);
+			responseObject = restTemplate.exchange(urlTemplate, HttpMethod.POST, entity, Object.class);
 		
-		if (!HttpStatus.OK.equals(responseObject.getStatusCode())) {
-			jobClient.newFailCommand(activatedJob.getKey()).retries(0).send().join();
-			return;
+			if (!HttpStatus.OK.equals(responseObject.getStatusCode())) {
+				jobClient.newFailCommand(activatedJob.getKey()).retries(0).send().join();
+				return;
+			}
+		
+			jobClient.newCompleteCommand(activatedJob.getKey()).variables(variables).send();
+		} catch (Exception e) {
+			jobClient.newThrowErrorCommand(activatedJob.getKey()).errorCode("Error_InsufficientFunds").send();
 		}
-		
-		jobClient.newCompleteCommand(activatedJob.getKey()).variables(variables).send();
 	}
 
 }
