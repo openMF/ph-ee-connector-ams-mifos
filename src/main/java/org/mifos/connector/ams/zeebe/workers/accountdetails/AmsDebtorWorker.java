@@ -22,7 +22,7 @@ public class AmsDebtorWorker extends AbstractAmsWorker {
 	public void handle(JobClient jobClient, ActivatedJob activatedJob) throws Exception {
 		var variables = activatedJob.getVariablesAsMap();
 
-		AmsDataTableQueryResponse responseItem = lookupAccount((String) variables.get("creditorIban"))[0];
+		AmsDataTableQueryResponse responseItem = lookupAccount((String) variables.get("debtorIban"))[0];
 		
 		variables.put("eCurrencyAccountAmsId", responseItem.ecurrency_account_id());
 		variables.put("fiatCurrencyAccountAmsId", responseItem.fiat_currency_account_id());
