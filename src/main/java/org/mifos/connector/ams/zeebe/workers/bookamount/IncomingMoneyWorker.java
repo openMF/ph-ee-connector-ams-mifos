@@ -48,6 +48,8 @@ public class IncomingMoneyWorker extends AbstractMoneyInOutWorker {
 		} catch (Exception e) {
 			logger.error("Worker to book incoming money in AMS has failed, dispatching user task to handle fiat deposit");
 			jobClient.newThrowErrorCommand(activatedJob.getKey()).errorCode("Error_ToBeHandledManually").send();
+		} finally {
+			MDC.remove("bicAndEndToEndId");
 		}
 	}
 }
