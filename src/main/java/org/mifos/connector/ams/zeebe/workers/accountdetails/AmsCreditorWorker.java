@@ -71,6 +71,7 @@ public class AmsCreditorWorker extends AbstractAmsWorker {
 		
 		logger.info("AMS creditor worker for creditor IBAN {} finished with status {}", creditorIban, status);
 
+		MDC.remove("bicAndEndToEndId");
 		jobClient.newCompleteCommand(activatedJob.getKey()).variables(variables).send();
 	}
 
