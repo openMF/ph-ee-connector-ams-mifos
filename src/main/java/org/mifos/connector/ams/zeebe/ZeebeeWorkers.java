@@ -110,7 +110,7 @@ public class ZeebeeWorkers {
     
     @Autowired
     private DebtorExchangeAndHoldWorker debtorExchangeAndHoldWorker;
-
+    
     @Value("${ams.local.enabled:false}")
     private boolean isAmsLocalEnabled;
 

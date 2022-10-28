@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
 
+import org.jboss.logging.MDC;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -23,6 +24,11 @@ public class CreditorExchangeWorker extends AbstractMoneyInOutWorker {
 	@Override
 	public void handle(JobClient jobClient, ActivatedJob activatedJob) throws Exception {
 		Map<String, Object> variables = activatedJob.getVariablesAsMap();
+		
+		String bicAndEndToEndId = (String) variables.get("bicAndEndToEndId");
+		MDC.put("bicAndEndToEndId", bicAndEndToEndId);
+		
+		logger.info("Exchange to e-currency worker has started");
 		
 		String transactionDate = LocalDate.now().format(PATTERN);
 		Object amount = variables.get("amount");
@@ -45,8 +51,10 @@ public class CreditorExchangeWorker extends AbstractMoneyInOutWorker {
 				return;
 			}
 		
+			logger.info("Exchange to e-currency worker has finished successfully");
 			jobClient.newCompleteCommand(activatedJob.getKey()).variables(variables).send();
 		} catch (Exception e) {
+			logger.error("Exchange to e-currency worker has failed, dispatching user task to handle exchange");
 			jobClient.newThrowErrorCommand(activatedJob.getKey()).errorCode("Error_ToBeHandledManually").send();
 		}
 	}

@@ -1,6 +1,7 @@
 package org.mifos.connector.ams.zeebe.workers.accountdetails;
 
 import org.apache.fineract.client.models.GetSavingsAccountsAccountIdResponse;
+import org.jboss.logging.MDC;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -30,10 +31,16 @@ public class AmsCreditorWorker extends AbstractAmsWorker {
 	@Override
 	public void handle(JobClient jobClient, ActivatedJob activatedJob) {
 		var variables = activatedJob.getVariablesAsMap();
+		String bicAndEndToEndId = (String) variables.get("bicAndEndToEndId");
+		MDC.put("bicAndEndToEndId", bicAndEndToEndId);
+		String creditorIban = (String) variables.get("creditorIban");
+		
+		logger.info("Started AMS creditor worker for creditor IBAN {}", creditorIban);
+		
 		AccountAmsStatus status = AccountAmsStatus.NOT_READY_TO_RECEIVE_MONEY;
 		String currency = (String) variables.get("currency");
 
-		AmsDataTableQueryResponse[] response = lookupAccount((String) variables.get("creditorIban"));
+		AmsDataTableQueryResponse[] response = lookupAccount(creditorIban);
 		
 		variables.put("eCurrencyAccountAmsId", "");
 		variables.put("fiatCurrencyAccountAmsId", "");
@@ -61,6 +68,8 @@ public class AmsCreditorWorker extends AbstractAmsWorker {
 		}
 
 		variables.put("accountAmsStatus", status.name());
+		
+		logger.info("AMS creditor worker for creditor IBAN {} finished with status {}", creditorIban, status);
 
 		jobClient.newCompleteCommand(activatedJob.getKey()).variables(variables).send();
 	}

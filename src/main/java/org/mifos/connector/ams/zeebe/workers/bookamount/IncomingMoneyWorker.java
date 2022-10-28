@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
 
+import org.jboss.logging.MDC;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -24,6 +25,11 @@ public class IncomingMoneyWorker extends AbstractMoneyInOutWorker {
 	public void handle(JobClient jobClient, ActivatedJob activatedJob) throws Exception {
 		Map<String, Object> variables = activatedJob.getVariablesAsMap();
 		
+		String bicAndEndToEndId = (String) variables.get("bicAndEndToEndId");
+		MDC.put("bicAndEndToEndId", bicAndEndToEndId);
+		
+		logger.info("Worker to book incoming money in AMS has started");
+		
 		String transactionDate = LocalDate.now().format(PATTERN);
 		Object amount = variables.get("amount");
 		
@@ -33,11 +39,14 @@ public class IncomingMoneyWorker extends AbstractMoneyInOutWorker {
 			ResponseEntity<Object> responseObject = deposit(transactionDate, amount, fiatCurrencyAccountAmsId);
 		
 			if (HttpStatus.OK.equals(responseObject.getStatusCode())) {
+				logger.info("Worker to book incoming money in AMS has finished successfully");
 				jobClient.newCompleteCommand(activatedJob.getKey()).variables(variables).send();
 			} else {
+				logger.error("Worker to book incoming money in AMS has failed, dispatching user task to handle fiat deposit");
 				jobClient.newThrowErrorCommand(activatedJob.getKey()).errorCode("Error_ToBeHandledManually").send();
 			}
 		} catch (Exception e) {
+			logger.error("Worker to book incoming money in AMS has failed, dispatching user task to handle fiat deposit");
 			jobClient.newThrowErrorCommand(activatedJob.getKey()).errorCode("Error_ToBeHandledManually").send();
 		}
 	}
