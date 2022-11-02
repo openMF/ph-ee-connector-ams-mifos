@@ -78,7 +78,7 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 				.encode()
 				.toUriString();
 		
-		logger.info(">> Sending {} to {}", body, urlTemplate);
+		logger.info(">> Sending {} to {} with headers {}", body, urlTemplate, httpHeaders);
 		
 		ResponseEntity<Object> response = restTemplate.exchange(urlTemplate, HttpMethod.POST, entity, Object.class);
 		
