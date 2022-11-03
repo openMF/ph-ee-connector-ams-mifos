@@ -23,19 +23,22 @@ public class IncomingMoneyWorker extends AbstractMoneyInOutWorker {
 
 	@Override
 	public void handle(JobClient jobClient, ActivatedJob activatedJob) throws Exception {
-		Map<String, Object> variables = activatedJob.getVariablesAsMap();
-		
-		String bicAndEndToEndId = (String) variables.get("bicAndEndToEndId");
-		MDC.put("bicAndEndToEndId", bicAndEndToEndId);
-		
-		logger.info("Worker to book incoming money in AMS has started");
-		
-		String transactionDate = LocalDate.now().format(PATTERN);
-		Object amount = variables.get("amount");
-		
-		Integer fiatCurrencyAccountAmsId = (Integer) variables.get("fiatCurrencyAccountAmsId");
-		
 		try {
+			Map<String, Object> variables = activatedJob.getVariablesAsMap();
+		
+			logger.info("Incoming money worker started with variables");
+			variables.keySet().forEach(logger::info);
+		
+			String bicAndEndToEndId = (String) variables.get("bicAndEndToEndId");
+			MDC.put("bicAndEndToEndId", bicAndEndToEndId);
+		
+			logger.info("Worker to book incoming money in AMS has started");
+		
+			String transactionDate = LocalDate.now().format(PATTERN);
+			Object amount = variables.get("amount");
+		
+			Integer fiatCurrencyAccountAmsId = (Integer) variables.get("fiatCurrencyAccountAmsId");
+		
 			ResponseEntity<Object> responseObject = deposit(transactionDate, amount, fiatCurrencyAccountAmsId);
 		
 			if (HttpStatus.OK.equals(responseObject.getStatusCode())) {

@@ -23,20 +23,20 @@ public class CreditorExchangeWorker extends AbstractMoneyInOutWorker {
 	
 	@Override
 	public void handle(JobClient jobClient, ActivatedJob activatedJob) throws Exception {
-		Map<String, Object> variables = activatedJob.getVariablesAsMap();
-		
-		String bicAndEndToEndId = (String) variables.get("bicAndEndToEndId");
-		MDC.put("bicAndEndToEndId", bicAndEndToEndId);
-		
-		logger.info("Exchange to e-currency worker has started");
-		
-		String transactionDate = LocalDate.now().format(PATTERN);
-		Object amount = variables.get("amount");
-		
-		Integer fiatCurrencyAccountAmsId = (Integer) variables.get("fiatCurrencyAccountAmsId");
-		Integer eCurrencyAccountAmsId = (Integer) variables.get("eCurrencyAccountAmsId");
-		
 		try {
+			Map<String, Object> variables = activatedJob.getVariablesAsMap();
+		
+			String bicAndEndToEndId = (String) variables.get("bicAndEndToEndId");
+			MDC.put("bicAndEndToEndId", bicAndEndToEndId);
+		
+			logger.info("Exchange to e-currency worker has started");
+		
+			String transactionDate = LocalDate.now().format(PATTERN);
+			Object amount = variables.get("amount");
+		
+			Integer fiatCurrencyAccountAmsId = (Integer) variables.get("fiatCurrencyAccountAmsId");
+			Integer eCurrencyAccountAmsId = (Integer) variables.get("eCurrencyAccountAmsId");
+		
 			ResponseEntity<Object> responseObject = withdraw(transactionDate, amount, fiatCurrencyAccountAmsId);
 		
 			if (!HttpStatus.OK.equals(responseObject.getStatusCode())) {
