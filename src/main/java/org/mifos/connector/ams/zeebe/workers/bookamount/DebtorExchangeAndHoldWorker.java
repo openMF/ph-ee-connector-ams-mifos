@@ -92,12 +92,14 @@ public class DebtorExchangeAndHoldWorker extends AbstractMoneyInOutWorker {
 			responseObject = restTemplate.exchange(urlTemplate, HttpMethod.POST, entity, Object.class);
 		
 			if (!HttpStatus.OK.equals(responseObject.getStatusCode())) {
+				logger.error("Debtor exchange and hold worker fails with status code {}", responseObject.getStatusCodeValue());
 				jobClient.newFailCommand(activatedJob.getKey()).retries(0).send().join();
 				return;
 			}
 		
 			jobClient.newCompleteCommand(activatedJob.getKey()).variables(variables).send();
 		} catch (Exception e) {
+			logger.error(e.getMessage(), e);
 			jobClient.newThrowErrorCommand(activatedJob.getKey()).errorCode("Error_InsufficientFunds").send();
 		}
 	}
