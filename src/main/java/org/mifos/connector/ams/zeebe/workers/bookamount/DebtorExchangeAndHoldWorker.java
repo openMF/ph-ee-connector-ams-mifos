@@ -27,11 +27,12 @@ public class DebtorExchangeAndHoldWorker extends AbstractMoneyInOutWorker {
 	@Override
 	@SuppressWarnings("unchecked")
 	public void handle(JobClient jobClient, ActivatedJob activatedJob) throws Exception {
+		logger.error("Debtor exchange worker starting");
 		try {
 			Map<String, Object> variables = activatedJob.getVariablesAsMap();
 			
-			logger.info("Debtor exchange worker incoming variables:");
-			variables.entrySet().forEach(e -> logger.info("{}: {}", e.getKey(), e.getValue()));
+			logger.error("Debtor exchange worker incoming variables:");
+			variables.entrySet().forEach(e -> logger.error("{}: {}", e.getKey(), e.getValue()));
 		
 			String transactionDate = LocalDate.now().format(PATTERN);
 			Object amount = variables.get("amount");
