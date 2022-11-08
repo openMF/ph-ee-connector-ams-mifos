@@ -27,15 +27,18 @@ public class DebtorExchangeAndHoldWorker extends AbstractMoneyInOutWorker {
 	@Override
 	@SuppressWarnings("unchecked")
 	public void handle(JobClient jobClient, ActivatedJob activatedJob) throws Exception {
-		Map<String, Object> variables = activatedJob.getVariablesAsMap();
-		
-		String transactionDate = LocalDate.now().format(PATTERN);
-		Object amount = variables.get("amount");
-		
-		Integer eCurrencyAccountAmsId = (Integer) variables.get("eCurrencyAccountAmsId");
-		Integer fiatCurrencyAccountAmsId = (Integer) variables.get("fiatCurrencyAccountAmsId");
-		
 		try {
+			Map<String, Object> variables = activatedJob.getVariablesAsMap();
+			
+			logger.info("Debtor exchange worker incoming variables:");
+			variables.entrySet().forEach(e -> logger.info("{}: {}", e.getKey(), e.getValue()));
+		
+			String transactionDate = LocalDate.now().format(PATTERN);
+			Object amount = variables.get("amount");
+		
+			Integer eCurrencyAccountAmsId = (Integer) variables.get("eCurrencyAccountAmsId");
+			Integer fiatCurrencyAccountAmsId = (Integer) variables.get("fiatCurrencyAccountAmsId");
+		
 		
 			ResponseEntity<Object> responseObject = withdraw(transactionDate, amount, eCurrencyAccountAmsId);
 		
