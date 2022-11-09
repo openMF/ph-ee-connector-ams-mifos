@@ -30,11 +30,6 @@ public class BookDebitOnFiatAccountWorker extends AbstractMoneyInOutWorker {
 		
 		ResponseEntity<Object> responseObject = release(fiatCurrencyAccountAmsId, holdAmountId);
 		
-		if (!HttpStatus.OK.equals(responseObject.getStatusCode())) {
-			jobClient.newFailCommand(activatedJob.getKey()).retries(0).send();
-			return;
-		}
-		
 		
 		Object amount = variables.get("amount");
 		AccountIdAmountPair[] debits = new AccountIdAmountPair[] { new AccountIdAmountPair(fiatCurrencyAccountAmsId, amount) };
