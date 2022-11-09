@@ -64,6 +64,7 @@ public class DebtorExchangeAndHoldWorker extends AbstractMoneyInOutWorker {
 		
 			LinkedHashMap<String, Object> holdBody = ((LinkedHashMap<String, Object>) responseObject.getBody());
 			Integer resourceId = (Integer) holdBody.get("resourceId");
+			logger.info("{} put on hold with holdAmountId {}", amount, resourceId);
 			variables.put("holdAmountId", resourceId);
 		
 			AccountIdAmountPair[] debits = new AccountIdAmountPair[] { new AccountIdAmountPair(10, amount) };
