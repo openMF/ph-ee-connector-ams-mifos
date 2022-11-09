@@ -36,6 +36,27 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 	
 	protected static final String FORMAT = "yyyyMMdd";
 	
+	protected ResponseEntity<Object> release(Integer currencyAccountAmsId, Integer holdAmountId) {
+		var entity = new HttpEntity<>(null, httpHeaders);
+		
+		var urlTemplate = UriComponentsBuilder.fromHttpUrl(fineractApiUrl)
+				.path(incomingMoneyApi)
+				.path(String.format("%s", currencyAccountAmsId))
+				.path("/transactions")
+				.path(String.format("/%s", holdAmountId))
+				.queryParam("command", "releaseAmount")
+				.encode()
+				.toUriString();
+		
+		logger.info(">> Sending {} to {} with headers {}", null, urlTemplate, httpHeaders);
+		
+		ResponseEntity<Object> response = restTemplate.exchange(urlTemplate, HttpMethod.POST, entity, Object.class);
+		
+		logger.info("<< Received HTTP {}", response.getStatusCode());
+		
+		return response;
+	}
+	
 	protected ResponseEntity<Object> hold(String transactionDate, Object amount, Integer currencyAccountAmsId) {
 		var body = new HoldAmountBody(
 				transactionDate,
@@ -44,7 +65,7 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 				locale,
 				FORMAT
 				);
-		return doExchange(body, transactionDate, amount, currencyAccountAmsId, "holdAmount");
+		return doExchange(body, currencyAccountAmsId, "holdAmount");
 	}
 	
 	protected ResponseEntity<Object> deposit(String transactionDate, Object amount, Integer currencyAccountAmsId) {
@@ -55,7 +76,7 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 				"",
 				FORMAT,
 				locale);
-		return doExchange(body, transactionDate, amount, currencyAccountAmsId, "deposit");
+		return doExchange(body, currencyAccountAmsId, "deposit");
 	}
 
 	protected ResponseEntity<Object> withdraw(String transactionDate, Object amount, Integer currencyAccountAmsId) {
@@ -66,10 +87,10 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 				"",
 				FORMAT,
 				locale);
-		return doExchange(body, transactionDate, amount, currencyAccountAmsId, "withdrawal");
+		return doExchange(body, currencyAccountAmsId, "withdrawal");
 	}
 	
-	private <T> ResponseEntity<Object> doExchange(T body, String transactionDate, Object amount, Integer currencyAccountAmsId, String command) {
+	private <T> ResponseEntity<Object> doExchange(T body, Integer currencyAccountAmsId, String command) {
 		var entity = new HttpEntity<>(body, httpHeaders);
 		
 		var urlTemplate = UriComponentsBuilder.fromHttpUrl(fineractApiUrl)

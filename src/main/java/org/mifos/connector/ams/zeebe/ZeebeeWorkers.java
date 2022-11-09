@@ -33,8 +33,6 @@ import java.util.Map;
 
 import javax.annotation.PostConstruct;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import org.apache.camel.CamelContext;
 import org.apache.camel.Exchange;
 import org.apache.camel.ProducerTemplate;
@@ -43,6 +41,7 @@ import org.json.JSONObject;
 import org.mifos.connector.ams.properties.TenantProperties;
 import org.mifos.connector.ams.zeebe.workers.accountdetails.AmsCreditorWorker;
 import org.mifos.connector.ams.zeebe.workers.accountdetails.AmsDebtorWorker;
+import org.mifos.connector.ams.zeebe.workers.bookamount.BookDebitOnFiatAccountWorker;
 import org.mifos.connector.ams.zeebe.workers.bookamount.CreditorExchangeWorker;
 import org.mifos.connector.ams.zeebe.workers.bookamount.DebtorExchangeAndHoldWorker;
 import org.mifos.connector.ams.zeebe.workers.bookamount.IncomingMoneyWorker;
@@ -64,6 +63,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.camunda.zeebe.client.ZeebeClient;
 import io.camunda.zeebe.client.api.response.ActivatedJob;
@@ -110,6 +111,9 @@ public class ZeebeeWorkers {
     
     @Autowired
     private DebtorExchangeAndHoldWorker debtorExchangeAndHoldWorker;
+    
+    @Autowired
+    private BookDebitOnFiatAccountWorker bookDebitOnFiatAccountWorker;
     
     @Value("${ams.local.enabled:false}")
     private boolean isAmsLocalEnabled;
@@ -255,6 +259,15 @@ public class ZeebeeWorkers {
     		.jobType("exchangeToFiatAndHoldInAms")
     		.handler(debtorExchangeAndHoldWorker)
     		.name("ExchangeToFiatAndHoldInAms")
+    		.maxJobsActive(workerMaxJobs)
+    		.open();
+            
+            
+            
+            zeebeClient.newWorker()
+    		.jobType("bookOnFiatAccountinAms")
+    		.handler(bookDebitOnFiatAccountWorker)
+    		.name("BookOnFiatAccountInAms")
     		.maxJobsActive(workerMaxJobs)
     		.open();
             
