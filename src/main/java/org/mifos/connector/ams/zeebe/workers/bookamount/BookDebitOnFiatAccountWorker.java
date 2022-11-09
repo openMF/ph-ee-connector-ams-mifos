@@ -41,7 +41,7 @@ public class BookDebitOnFiatAccountWorker extends AbstractMoneyInOutWorker {
 		}
 		
 		
-		BigDecimal amount = new BigDecimal(variables.get("amount").toString());
+		Object amount = variables.get("amount");
 		AccountIdAmountPair[] debits = new AccountIdAmountPair[] { new AccountIdAmountPair(fiatCurrencyAccountAmsId, amount) };
 		AccountIdAmountPair[] credits = new AccountIdAmountPair[] { new AccountIdAmountPair(holdAmountId, amount) };
 		
