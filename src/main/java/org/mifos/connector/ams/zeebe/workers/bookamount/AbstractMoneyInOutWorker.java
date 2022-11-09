@@ -32,7 +32,7 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 	@Value("${fineract.locale}")
 	protected String locale;
 
-	Logger logger = LoggerFactory.getLogger(getClass());
+	protected Logger logger = LoggerFactory.getLogger(getClass());
 	
 	protected static final String FORMAT = "yyyyMMdd";
 	

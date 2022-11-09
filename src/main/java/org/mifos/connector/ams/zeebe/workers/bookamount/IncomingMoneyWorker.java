@@ -5,8 +5,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.Map;
 
 import org.jboss.logging.MDC;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
@@ -16,8 +14,6 @@ import io.camunda.zeebe.client.api.worker.JobClient;
 
 @Component
 public class IncomingMoneyWorker extends AbstractMoneyInOutWorker {
-	
-	Logger logger = LoggerFactory.getLogger(IncomingMoneyWorker.class);
 	
 	private static final DateTimeFormatter PATTERN = DateTimeFormatter.ofPattern(FORMAT);
 

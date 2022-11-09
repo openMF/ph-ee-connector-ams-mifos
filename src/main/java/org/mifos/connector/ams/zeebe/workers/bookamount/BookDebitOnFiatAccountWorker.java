@@ -1,12 +1,9 @@
 package org.mifos.connector.ams.zeebe.workers.bookamount;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
@@ -19,8 +16,6 @@ import io.camunda.zeebe.client.api.worker.JobClient;
 
 @Component
 public class BookDebitOnFiatAccountWorker extends AbstractMoneyInOutWorker {
-	
-	Logger logger = LoggerFactory.getLogger(DebtorExchangeAndHoldWorker.class);
 	
 	private static final DateTimeFormatter PATTERN = DateTimeFormatter.ofPattern(FORMAT);
 
