@@ -45,6 +45,7 @@ import org.mifos.connector.ams.zeebe.workers.bookamount.BookDebitOnFiatAccountWo
 import org.mifos.connector.ams.zeebe.workers.bookamount.CreditorExchangeWorker;
 import org.mifos.connector.ams.zeebe.workers.bookamount.DebtorExchangeAndHoldWorker;
 import org.mifos.connector.ams.zeebe.workers.bookamount.IncomingMoneyWorker;
+import org.mifos.connector.ams.zeebe.workers.bookamount.RevertDebitOnFiatAccountWorker;
 import org.mifos.connector.common.ams.dto.QuoteFspResponseDTO;
 import org.mifos.connector.common.channel.dto.TransactionChannelRequestDTO;
 import org.mifos.connector.common.mojaloop.dto.FspMoneyData;
@@ -114,6 +115,9 @@ public class ZeebeeWorkers {
     
     @Autowired
     private BookDebitOnFiatAccountWorker bookDebitOnFiatAccountWorker;
+    
+    @Autowired
+    private RevertDebitOnFiatAccountWorker revertDebitOnFiatAccountWorker;
     
     @Value("${ams.local.enabled:false}")
     private boolean isAmsLocalEnabled;
@@ -268,6 +272,15 @@ public class ZeebeeWorkers {
     		.jobType("bookOnFiatAccountinAms")
     		.handler(bookDebitOnFiatAccountWorker)
     		.name("BookOnFiatAccountInAms")
+    		.maxJobsActive(workerMaxJobs)
+    		.open();
+            
+            
+            
+            zeebeClient.newWorker()
+    		.jobType("revertInAms")
+    		.handler(revertDebitOnFiatAccountWorker)
+    		.name("RevertInAms")
     		.maxJobsActive(workerMaxJobs)
     		.open();
             
