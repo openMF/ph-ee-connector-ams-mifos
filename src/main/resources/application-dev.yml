@@ -15,6 +15,11 @@ fineract:
   result-columns: "fiat_currency_account_id,ecurrency_account_id"
   incoming-money-api: "/savingsaccounts/"
   locale: "en"
+  paymentType:
+    paymentTypeExchangeFiatCurrencyId: 5
+    paymentTypeIssuingECurrencyId: 7
+    paymentTypeExchangeECurrencyId: 8
+    paymentTypeExchangeToFiatCurrencyId: 6
 
 zeebe:
   broker:

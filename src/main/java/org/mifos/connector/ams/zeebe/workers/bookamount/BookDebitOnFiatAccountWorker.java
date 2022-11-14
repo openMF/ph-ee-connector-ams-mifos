@@ -68,7 +68,7 @@ public class BookDebitOnFiatAccountWorker extends AbstractMoneyInOutWorker {
 			}
 			
 			
-			responseObject = withdraw(LocalDate.now().format(PATTERN), amount, fiatCurrencyAccountAmsId);
+			responseObject = withdraw(LocalDate.now().format(PATTERN), amount, fiatCurrencyAccountAmsId, 1);
 			
 			if (!HttpStatus.OK.equals(responseObject.getStatusCode())) {
 				logger.error("Debtor exchange and hold worker fails with status code {}", responseObject.getStatusCodeValue());

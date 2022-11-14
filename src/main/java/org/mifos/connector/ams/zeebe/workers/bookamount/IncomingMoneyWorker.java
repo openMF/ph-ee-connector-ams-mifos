@@ -35,7 +35,7 @@ public class IncomingMoneyWorker extends AbstractMoneyInOutWorker {
 		
 			Integer fiatCurrencyAccountAmsId = (Integer) variables.get("fiatCurrencyAccountAmsId");
 		
-			ResponseEntity<Object> responseObject = deposit(transactionDate, amount, fiatCurrencyAccountAmsId);
+			ResponseEntity<Object> responseObject = deposit(transactionDate, amount, fiatCurrencyAccountAmsId, 1);
 		
 			if (HttpStatus.OK.equals(responseObject.getStatusCode())) {
 				logger.info("Worker to book incoming money in AMS has finished successfully");

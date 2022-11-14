@@ -68,22 +68,22 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 		return doExchange(body, currencyAccountAmsId, "holdAmount");
 	}
 	
-	protected ResponseEntity<Object> deposit(String transactionDate, Object amount, Integer currencyAccountAmsId) {
+	protected ResponseEntity<Object> deposit(String transactionDate, Object amount, Integer currencyAccountAmsId, Integer paymentTypeId) {
 		var body = new TransactionBody(
 				transactionDate,
 				amount,
-				1,
+				paymentTypeId,
 				"",
 				FORMAT,
 				locale);
 		return doExchange(body, currencyAccountAmsId, "deposit");
 	}
 
-	protected ResponseEntity<Object> withdraw(String transactionDate, Object amount, Integer currencyAccountAmsId) {
+	protected ResponseEntity<Object> withdraw(String transactionDate, Object amount, Integer currencyAccountAmsId, Integer paymentTypeId) {
 		var body = new TransactionBody(
 				transactionDate,
 				amount,
-				1,
+				paymentTypeId,
 				"",
 				FORMAT,
 				locale);

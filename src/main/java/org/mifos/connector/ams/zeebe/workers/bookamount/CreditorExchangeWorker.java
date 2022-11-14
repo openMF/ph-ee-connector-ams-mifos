@@ -5,6 +5,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Map;
 
 import org.jboss.logging.MDC;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
@@ -14,6 +15,12 @@ import io.camunda.zeebe.client.api.worker.JobClient;
 
 @Component
 public class CreditorExchangeWorker extends AbstractMoneyInOutWorker {
+	
+	@Value("${fineract.paymentType.paymentTypeExchangeFiatCurrencyId}")
+	private Integer paymentTypeExchangeFiatCurrencyId;
+	
+	@Value("${fineract.paymentType.paymentTypeIssuingECurrencyId}")
+	private Integer paymentTypeIssuingECurrencyId;
 
 	private static final DateTimeFormatter PATTERN = DateTimeFormatter.ofPattern(FORMAT);
 	
@@ -33,14 +40,14 @@ public class CreditorExchangeWorker extends AbstractMoneyInOutWorker {
 			Integer fiatCurrencyAccountAmsId = (Integer) variables.get("fiatCurrencyAccountAmsId");
 			Integer eCurrencyAccountAmsId = (Integer) variables.get("eCurrencyAccountAmsId");
 		
-			ResponseEntity<Object> responseObject = withdraw(transactionDate, amount, fiatCurrencyAccountAmsId);
+			ResponseEntity<Object> responseObject = withdraw(transactionDate, amount, fiatCurrencyAccountAmsId, paymentTypeExchangeFiatCurrencyId);
 		
 			if (!HttpStatus.OK.equals(responseObject.getStatusCode())) {
 				jobClient.newFailCommand(activatedJob.getKey()).retries(0).send();
 				return;
 			}
 		
-			responseObject = deposit(transactionDate, amount, eCurrencyAccountAmsId);
+			responseObject = deposit(transactionDate, amount, eCurrencyAccountAmsId, paymentTypeIssuingECurrencyId);
 		
 			if (!HttpStatus.OK.equals(responseObject.getStatusCode())) {
 				jobClient.newFailCommand(activatedJob.getKey()).retries(0).send().join();

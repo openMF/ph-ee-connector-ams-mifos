@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
@@ -13,6 +14,12 @@ import io.camunda.zeebe.client.api.worker.JobClient;
 
 @Component
 public class RevertDebitOnFiatAccountWorker extends AbstractMoneyInOutWorker {
+	
+	@Value("${fineract.paymentType.paymentTypeExchangeFiatCurrencyId}")
+	private Integer paymentTypeExchangeFiatCurrencyId;
+	
+	@Value("${fineract.paymentType.paymentTypeIssuingECurrencyId}")
+	private Integer paymentTypeIssuingECurrencyId;
 	
 	private static final DateTimeFormatter PATTERN = DateTimeFormatter.ofPattern(FORMAT);
 
@@ -26,8 +33,14 @@ public class RevertDebitOnFiatAccountWorker extends AbstractMoneyInOutWorker {
 		
 		ResponseEntity<Object> responseObject = release(fiatCurrencyAccountAmsId, holdAmountId);
 		
+		if (!HttpStatus.OK.equals(responseObject.getStatusCode())) {
+			logger.error("Debtor exchange and hold worker fails with status code {}", responseObject.getStatusCodeValue());
+			jobClient.newFailCommand(activatedJob.getKey()).retries(0).send().join();
+			return;
+		}
+		
 		Object amount = variables.get("amount");
-		responseObject = withdraw(LocalDate.now().format(PATTERN), amount, fiatCurrencyAccountAmsId);
+		responseObject = withdraw(LocalDate.now().format(PATTERN), amount, fiatCurrencyAccountAmsId, paymentTypeExchangeFiatCurrencyId);
 		
 		if (!HttpStatus.OK.equals(responseObject.getStatusCode())) {
 			logger.error("Debtor exchange and hold worker fails with status code {}", responseObject.getStatusCodeValue());
@@ -36,7 +49,7 @@ public class RevertDebitOnFiatAccountWorker extends AbstractMoneyInOutWorker {
 		}
 		
 		Integer eCurrencyAccountAmsId = (Integer) variables.get("eCurrencyAccountAmsId");
-		responseObject = deposit(LocalDate.now().format(PATTERN), amount, eCurrencyAccountAmsId);
+		responseObject = deposit(LocalDate.now().format(PATTERN), amount, eCurrencyAccountAmsId, paymentTypeIssuingECurrencyId);
 		
 		if (!HttpStatus.OK.equals(responseObject.getStatusCode())) {
 			logger.error("Debtor exchange and hold worker fails with status code {}", responseObject.getStatusCodeValue());
