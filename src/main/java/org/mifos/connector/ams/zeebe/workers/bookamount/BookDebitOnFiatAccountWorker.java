@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
@@ -16,6 +17,12 @@ import io.camunda.zeebe.client.api.worker.JobClient;
 
 @Component
 public class BookDebitOnFiatAccountWorker extends AbstractMoneyInOutWorker {
+	
+	@Value("${fineract.generalLedger.glLiabilityAmountOnHoldId}")
+	private Integer glLiabilityAmountOnHoldId;
+	
+	@Value("${fineract.generalLedger.glLiabilityToCustomersInFiatCurrencyId}")
+	private Integer glLiabilityToCustomersInFiatCurrencyId;
 	
 	private static final DateTimeFormatter PATTERN = DateTimeFormatter.ofPattern(FORMAT);
 
@@ -32,8 +39,8 @@ public class BookDebitOnFiatAccountWorker extends AbstractMoneyInOutWorker {
 		
 		
 		Object amount = variables.get("amount");
-		AccountIdAmountPair[] debits = new AccountIdAmountPair[] { new AccountIdAmountPair(10, amount) };
-		AccountIdAmountPair[] credits = new AccountIdAmountPair[] { new AccountIdAmountPair(14, amount) };
+		AccountIdAmountPair[] debits = new AccountIdAmountPair[] { new AccountIdAmountPair(glLiabilityAmountOnHoldId, amount) };
+		AccountIdAmountPair[] credits = new AccountIdAmountPair[] { new AccountIdAmountPair(glLiabilityToCustomersInFiatCurrencyId, amount) };
 		
 		JournalEntry entry = new JournalEntry(
 				"1",

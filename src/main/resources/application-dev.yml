@@ -20,6 +20,9 @@ fineract:
     paymentTypeIssuingECurrencyId: 7
     paymentTypeExchangeECurrencyId: 8
     paymentTypeExchangeToFiatCurrencyId: 6
+  generalLedger:
+    glLiabilityToCustomersInFiatCurrencyId: 10
+    glLiabilityAmountOnHoldId: 14
 
 zeebe:
   broker:

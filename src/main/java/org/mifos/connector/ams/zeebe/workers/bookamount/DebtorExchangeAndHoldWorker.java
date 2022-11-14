@@ -25,6 +25,12 @@ public class DebtorExchangeAndHoldWorker extends AbstractMoneyInOutWorker {
 	@Value("${fineract.paymentType.paymentTypeExchangeToFiatCurrencyId}")
 	private Integer paymentTypeExchangeToFiatCurrencyId;
 	
+	@Value("${fineract.generalLedger.glLiabilityToCustomersInFiatCurrencyId}")
+	private Integer glLiabilityToCustomersInFiatCurrencyId;
+	
+	@Value("${fineract.generalLedger.glLiabilityAmountOnHoldId}")
+	private Integer glLiabilityAmountOnHoldId;
+	
 	private static final DateTimeFormatter PATTERN = DateTimeFormatter.ofPattern(FORMAT);
 
 	@Override
@@ -70,8 +76,8 @@ public class DebtorExchangeAndHoldWorker extends AbstractMoneyInOutWorker {
 			logger.info("{} put on hold with holdAmountId {}", amount, resourceId);
 			variables.put("holdAmountId", resourceId);
 		
-			AccountIdAmountPair[] debits = new AccountIdAmountPair[] { new AccountIdAmountPair(10, amount) };
-			AccountIdAmountPair[] credits = new AccountIdAmountPair[] { new AccountIdAmountPair(14, amount) };
+			AccountIdAmountPair[] debits = new AccountIdAmountPair[] { new AccountIdAmountPair(glLiabilityToCustomersInFiatCurrencyId, amount) };
+			AccountIdAmountPair[] credits = new AccountIdAmountPair[] { new AccountIdAmountPair(glLiabilityAmountOnHoldId, amount) };
 		
 			JournalEntry entry = new JournalEntry(
 				"1",
