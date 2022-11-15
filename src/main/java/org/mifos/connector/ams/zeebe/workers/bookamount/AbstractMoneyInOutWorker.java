@@ -128,5 +128,7 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 			
 			attemptCount++;
 		}
+		
+		throw new RuntimeException("An unknow error has occurred");
 	}
 }
