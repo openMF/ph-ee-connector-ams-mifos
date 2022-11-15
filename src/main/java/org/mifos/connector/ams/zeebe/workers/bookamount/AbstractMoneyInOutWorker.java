@@ -105,10 +105,12 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 		logger.info(">> Sending {} to {} with headers {}", body, urlTemplate, httpHeaders);
 		
 		int attemptCount = 1;
-		while (true) {
+		boolean shouldTry = true;
+		while (shouldTry) {
 			try {
 				ResponseEntity<Object> response = restTemplate.exchange(urlTemplate, HttpMethod.POST, entity, Object.class);
 				logger.info("<< Received HTTP {}", response.getStatusCode());
+				shouldTry = false;
 				return response;
 			} catch (HttpClientErrorException e) {
 				if (e.getMessage() != null && e.getMessage().contains("OptimisticLockException")) {
