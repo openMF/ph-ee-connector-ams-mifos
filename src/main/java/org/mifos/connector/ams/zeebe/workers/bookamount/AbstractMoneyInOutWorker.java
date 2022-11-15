@@ -9,7 +9,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -104,31 +103,10 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 		
 		logger.info(">> Sending {} to {} with headers {}", body, urlTemplate, httpHeaders);
 		
-		int attemptCount = 1;
-		boolean shouldTry = true;
-		while (shouldTry) {
-			try {
-				ResponseEntity<Object> response = restTemplate.exchange(urlTemplate, HttpMethod.POST, entity, Object.class);
-				logger.info("<< Received HTTP {}", response.getStatusCode());
-				shouldTry = false;
-				return response;
-			} catch (HttpClientErrorException e) {
-				if (e.getMessage() != null && e.getMessage().contains("OptimisticLockException")) {
-					logger.warn("Optimistic lock exception caught, retrying in {} second(s)", attemptCount);
-					try {
-						Thread.sleep(1000L * attemptCount);
-					} catch (InterruptedException ie) {
-						logger.error(ie.getMessage(), ie);
-					}
-				} else {
-					logger.error(e.getMessage(), e);
-					throw e;
-				}
-			}
-			
-			attemptCount++;
-		}
+		ResponseEntity<Object> response = restTemplate.exchange(urlTemplate, HttpMethod.POST, entity, Object.class);
 		
-		throw new RuntimeException("An unknow error has occurred");
+		logger.info("<< Received HTTP {}", response.getStatusCode());
+		
+		return response;
 	}
 }
