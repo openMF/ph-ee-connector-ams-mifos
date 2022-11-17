@@ -1,8 +1,10 @@
 package org.mifos.connector.ams.zeebe.workers.bookamount;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
@@ -37,6 +39,7 @@ public class BookDebitOnFiatAccountWorker extends AbstractMoneyInOutWorker {
 		
 		ResponseEntity<Object> responseObject = release(fiatCurrencyAccountAmsId, holdAmountId);
 		
+		LocalDateTime interbankSettlementDate = (LocalDateTime) variables.get("interbankSettlementDate");
 		
 		Object amount = variables.get("amount");
 		AccountIdAmountPair[] debits = new AccountIdAmountPair[] { new AccountIdAmountPair(glLiabilityAmountOnHoldId, amount) };
@@ -75,7 +78,7 @@ public class BookDebitOnFiatAccountWorker extends AbstractMoneyInOutWorker {
 			}
 			
 			
-			responseObject = withdraw(LocalDate.now().format(PATTERN), amount, fiatCurrencyAccountAmsId, 1);
+			responseObject = withdraw(Optional.ofNullable(interbankSettlementDate).orElse(LocalDateTime.now()).format(PATTERN), amount, fiatCurrencyAccountAmsId, 1);
 			
 			if (!HttpStatus.OK.equals(responseObject.getStatusCode())) {
 				logger.error("Debtor exchange and hold worker fails with status code {}", responseObject.getStatusCodeValue());

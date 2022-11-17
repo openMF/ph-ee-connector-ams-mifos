@@ -1,8 +1,9 @@
 package org.mifos.connector.ams.zeebe.workers.bookamount;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
+import java.util.Optional;
 
 import org.jboss.logging.MDC;
 import org.springframework.http.HttpStatus;
@@ -29,8 +30,10 @@ public class IncomingMoneyWorker extends AbstractMoneyInOutWorker {
 			MDC.put("bicAndEndToEndId", bicAndEndToEndId);
 		
 			logger.info("Worker to book incoming money in AMS has started");
-		
-			String transactionDate = LocalDate.now().format(PATTERN);
+			
+			String transactionDate = Optional.ofNullable((LocalDateTime) variables.get("interbankSettlementDate"))
+					.orElse(LocalDateTime.now())
+					.format(PATTERN);
 			Object amount = variables.get("amount");
 		
 			Integer fiatCurrencyAccountAmsId = (Integer) variables.get("fiatCurrencyAccountAmsId");

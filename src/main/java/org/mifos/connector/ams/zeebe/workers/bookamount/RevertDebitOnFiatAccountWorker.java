@@ -1,8 +1,10 @@
 package org.mifos.connector.ams.zeebe.workers.bookamount;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
@@ -86,9 +88,12 @@ public class RevertDebitOnFiatAccountWorker extends AbstractMoneyInOutWorker {
 			jobClient.newFailCommand(activatedJob.getKey()).retries(0).send().join();
 			return;
 		}
-
+		
+		String transactionDate = Optional.ofNullable((LocalDateTime) variables.get("interbankSettlementDate"))
+				.orElse(LocalDateTime.now())
+				.format(PATTERN);
 			
-		responseObject = withdraw(LocalDate.now().format(PATTERN), amount, fiatCurrencyAccountAmsId, paymentTypeExchangeFiatCurrencyId);
+		responseObject = withdraw(transactionDate, amount, fiatCurrencyAccountAmsId, paymentTypeExchangeFiatCurrencyId);
 		
 		if (!HttpStatus.OK.equals(responseObject.getStatusCode())) {
 			logger.error(ERROR_MESSAGE_PATTERN, responseObject.getStatusCodeValue());
@@ -97,7 +102,7 @@ public class RevertDebitOnFiatAccountWorker extends AbstractMoneyInOutWorker {
 		}
 		
 		Integer eCurrencyAccountAmsId = (Integer) variables.get("eCurrencyAccountAmsId");
-		responseObject = deposit(LocalDate.now().format(PATTERN), amount, eCurrencyAccountAmsId, paymentTypeIssuingECurrencyId);
+		responseObject = deposit(transactionDate, amount, eCurrencyAccountAmsId, paymentTypeIssuingECurrencyId);
 		
 		if (!HttpStatus.OK.equals(responseObject.getStatusCode())) {
 			logger.error(ERROR_MESSAGE_PATTERN, responseObject.getStatusCodeValue());

@@ -1,6 +1,6 @@
 package org.mifos.connector.ams.zeebe.workers.bookamount;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
 
@@ -33,8 +33,10 @@ public class CreditorExchangeWorker extends AbstractMoneyInOutWorker {
 			MDC.put("bicAndEndToEndId", bicAndEndToEndId);
 		
 			logger.info("Exchange to e-currency worker has started");
+			
+			LocalDateTime interbankSettlementDate = (LocalDateTime) variables.get("interbankSettlementDate");
 		
-			String transactionDate = LocalDate.now().format(PATTERN);
+			String transactionDate = interbankSettlementDate.format(PATTERN);
 			Object amount = variables.get("amount");
 		
 			Integer fiatCurrencyAccountAmsId = (Integer) variables.get("fiatCurrencyAccountAmsId");
