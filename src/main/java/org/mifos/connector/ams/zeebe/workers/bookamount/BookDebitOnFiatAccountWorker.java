@@ -6,8 +6,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.Map;
 import java.util.Optional;
 
-import javax.xml.datatype.XMLGregorianCalendar;
-
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
@@ -41,7 +39,7 @@ public class BookDebitOnFiatAccountWorker extends AbstractMoneyInOutWorker {
 		
 		ResponseEntity<Object> responseObject = release(fiatCurrencyAccountAmsId, holdAmountId);
 		
-		LocalDateTime interbankSettlementDate = ((XMLGregorianCalendar) variables.get("interbankSettlementDate")).toGregorianCalendar().toZonedDateTime().toLocalDateTime();
+		String interbankSettlementDate = (String) variables.get("interbankSettlementDate");
 		
 		Object amount = variables.get("amount");
 		AccountIdAmountPair[] debits = new AccountIdAmountPair[] { new AccountIdAmountPair(glLiabilityAmountOnHoldId, amount) };
@@ -80,7 +78,7 @@ public class BookDebitOnFiatAccountWorker extends AbstractMoneyInOutWorker {
 			}
 			
 			
-			responseObject = withdraw(Optional.ofNullable(interbankSettlementDate).orElse(LocalDateTime.now()).format(PATTERN), amount, fiatCurrencyAccountAmsId, 1);
+			responseObject = withdraw(Optional.ofNullable(interbankSettlementDate).orElse(LocalDateTime.now().format(PATTERN)), amount, fiatCurrencyAccountAmsId, 1);
 			
 			if (!HttpStatus.OK.equals(responseObject.getStatusCode())) {
 				logger.error("Debtor exchange and hold worker fails with status code {}", responseObject.getStatusCodeValue());

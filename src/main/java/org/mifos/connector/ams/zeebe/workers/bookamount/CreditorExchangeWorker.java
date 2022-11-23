@@ -1,10 +1,6 @@
 package org.mifos.connector.ams.zeebe.workers.bookamount;
 
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.Map;
-
-import javax.xml.datatype.XMLGregorianCalendar;
 
 import org.jboss.logging.MDC;
 import org.springframework.beans.factory.annotation.Value;
@@ -24,8 +20,6 @@ public class CreditorExchangeWorker extends AbstractMoneyInOutWorker {
 	@Value("${fineract.paymentType.paymentTypeIssuingECurrencyId}")
 	private Integer paymentTypeIssuingECurrencyId;
 
-	private static final DateTimeFormatter PATTERN = DateTimeFormatter.ofPattern(FORMAT);
-	
 	@Override
 	public void handle(JobClient jobClient, ActivatedJob activatedJob) throws Exception {
 		try {
@@ -36,9 +30,7 @@ public class CreditorExchangeWorker extends AbstractMoneyInOutWorker {
 		
 			logger.info("Exchange to e-currency worker has started");
 			
-			LocalDateTime interbankSettlementDate = ((XMLGregorianCalendar) variables.get("interbankSettlementDate")).toGregorianCalendar().toZonedDateTime().toLocalDateTime();
-		
-			String transactionDate = interbankSettlementDate.format(PATTERN);
+			String transactionDate = (String) variables.get("interbankSettlementDate");
 			Object amount = variables.get("amount");
 		
 			Integer fiatCurrencyAccountAmsId = (Integer) variables.get("fiatCurrencyAccountAmsId");

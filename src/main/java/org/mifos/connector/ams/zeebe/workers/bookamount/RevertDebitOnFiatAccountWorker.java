@@ -6,8 +6,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.Map;
 import java.util.Optional;
 
-import javax.xml.datatype.XMLGregorianCalendar;
-
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
@@ -91,10 +89,9 @@ public class RevertDebitOnFiatAccountWorker extends AbstractMoneyInOutWorker {
 			return;
 		}
 		
-		LocalDateTime interbankSettlementDate = ((XMLGregorianCalendar) variables.get("interbankSettlementDate")).toGregorianCalendar().toZonedDateTime().toLocalDateTime();
+		String interbankSettlementDate = (String) variables.get("interbankSettlementDate");
 		String transactionDate = Optional.ofNullable(interbankSettlementDate)
-				.orElse(LocalDateTime.now())
-				.format(PATTERN);
+				.orElse(LocalDateTime.now().format(PATTERN));
 			
 		responseObject = withdraw(transactionDate, amount, fiatCurrencyAccountAmsId, paymentTypeExchangeFiatCurrencyId);
 		
