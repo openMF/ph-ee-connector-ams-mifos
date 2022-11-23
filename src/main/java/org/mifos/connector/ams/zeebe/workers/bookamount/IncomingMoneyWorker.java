@@ -5,6 +5,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.Map;
 import java.util.Optional;
 
+import javax.xml.datatype.XMLGregorianCalendar;
+
 import org.jboss.logging.MDC;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -31,7 +33,8 @@ public class IncomingMoneyWorker extends AbstractMoneyInOutWorker {
 		
 			logger.info("Worker to book incoming money in AMS has started");
 			
-			String transactionDate = Optional.ofNullable((LocalDateTime) variables.get("interbankSettlementDate"))
+			LocalDateTime interbankSettlementDate = ((XMLGregorianCalendar) variables.get("interbankSettlementDate")).toGregorianCalendar().toZonedDateTime().toLocalDateTime();
+			String transactionDate = Optional.ofNullable(interbankSettlementDate)
 					.orElse(LocalDateTime.now())
 					.format(PATTERN);
 			Object amount = variables.get("amount");

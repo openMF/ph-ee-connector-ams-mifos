@@ -4,6 +4,8 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
 
+import javax.xml.datatype.XMLGregorianCalendar;
+
 import org.jboss.logging.MDC;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -34,7 +36,7 @@ public class CreditorExchangeWorker extends AbstractMoneyInOutWorker {
 		
 			logger.info("Exchange to e-currency worker has started");
 			
-			LocalDateTime interbankSettlementDate = (LocalDateTime) variables.get("interbankSettlementDate");
+			LocalDateTime interbankSettlementDate = ((XMLGregorianCalendar) variables.get("interbankSettlementDate")).toGregorianCalendar().toZonedDateTime().toLocalDateTime();
 		
 			String transactionDate = interbankSettlementDate.format(PATTERN);
 			Object amount = variables.get("amount");

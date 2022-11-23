@@ -6,6 +6,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.Map;
 import java.util.Optional;
 
+import javax.xml.datatype.XMLGregorianCalendar;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
@@ -39,7 +41,7 @@ public class BookDebitOnFiatAccountWorker extends AbstractMoneyInOutWorker {
 		
 		ResponseEntity<Object> responseObject = release(fiatCurrencyAccountAmsId, holdAmountId);
 		
-		LocalDateTime interbankSettlementDate = (LocalDateTime) variables.get("interbankSettlementDate");
+		LocalDateTime interbankSettlementDate = ((XMLGregorianCalendar) variables.get("interbankSettlementDate")).toGregorianCalendar().toZonedDateTime().toLocalDateTime();
 		
 		Object amount = variables.get("amount");
 		AccountIdAmountPair[] debits = new AccountIdAmountPair[] { new AccountIdAmountPair(glLiabilityAmountOnHoldId, amount) };
