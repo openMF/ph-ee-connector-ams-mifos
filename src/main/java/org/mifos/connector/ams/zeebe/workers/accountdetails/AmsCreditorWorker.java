@@ -30,6 +30,7 @@ public class AmsCreditorWorker extends AbstractAmsWorker {
 
 	@Override
 	public void handle(JobClient jobClient, ActivatedJob activatedJob) {
+		try {
 		var variables = activatedJob.getVariablesAsMap();
 		String bicAndEndToEndId = (String) variables.get("bicAndEndToEndId");
 		MDC.put("bicAndEndToEndId", bicAndEndToEndId);
@@ -73,6 +74,9 @@ public class AmsCreditorWorker extends AbstractAmsWorker {
 
 		MDC.remove("bicAndEndToEndId");
 		jobClient.newCompleteCommand(activatedJob.getKey()).variables(variables).send();
+		} catch (Throwable t) {
+			logger.error(t.getMessage(), t);
+		}
 	}
 
 	private GetSavingsAccountsAccountIdResponse retrieveCurrencyIdAndStatus(Long accountCurrencyId) {
