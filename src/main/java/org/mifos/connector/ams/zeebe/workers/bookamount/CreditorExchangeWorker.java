@@ -59,7 +59,7 @@ public class CreditorExchangeWorker extends AbstractMoneyInOutWorker {
 			logger.info("Exchange to e-currency worker has finished successfully");
 			jobClient.newCompleteCommand(activatedJob.getKey()).variables(variables).send();
 		} catch (Exception e) {
-			logger.error("Exchange to e-currency worker has failed, dispatching user task to handle exchange");
+			logger.error("Exchange to e-currency worker has failed, dispatching user task to handle exchange", e);
 			jobClient.newThrowErrorCommand(activatedJob.getKey()).errorCode("Error_ToBeHandledManually").send();
 		} finally {
 			MDC.remove("bicAndEndToEndId");
