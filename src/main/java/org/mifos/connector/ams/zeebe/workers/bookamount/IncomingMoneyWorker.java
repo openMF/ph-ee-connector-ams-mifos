@@ -31,8 +31,10 @@ public class IncomingMoneyWorker extends AbstractMoneyInOutWorker {
 		
 			logger.info("Worker to book incoming money in AMS has started");
 			
-			String interbankSettlementDate = (String) variables.get("interbankSettlementDate");
+			Object interbankSettlementDate = variables.get("interbankSettlementDate");
+			logger.info("Received {} as interbank settlement date", interbankSettlementDate);
 			String transactionDate = Optional.ofNullable(interbankSettlementDate)
+					.map(Object::toString)
 					.orElse(LocalDateTime.now().format(PATTERN));
 			Object amount = variables.get("amount");
 		
