@@ -14,7 +14,7 @@ import io.camunda.zeebe.client.api.response.ActivatedJob;
 import io.camunda.zeebe.client.api.worker.JobClient;
 
 @Component
-public class IncomingMoneyWorker extends AbstractMoneyInOutWorker {
+public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyInOutWorker {
 	
 	private static final DateTimeFormatter PATTERN = DateTimeFormatter.ofPattern(FORMAT);
 
@@ -46,11 +46,11 @@ public class IncomingMoneyWorker extends AbstractMoneyInOutWorker {
 				jobClient.newCompleteCommand(activatedJob.getKey()).variables(variables).send();
 			} else {
 				logger.error("Worker to book incoming money in AMS has failed, dispatching user task to handle fiat deposit");
-				jobClient.newThrowErrorCommand(activatedJob.getKey()).errorCode("Error_ToBeHandledManually").send();
+				jobClient.newThrowErrorCommand(activatedJob.getKey()).errorCode("Error_ManualErrorHandlingOfBookingCreditedAmountToConversionAccount").send();
 			}
 		} catch (Exception e) {
 			logger.error("Worker to book incoming money in AMS has failed, dispatching user task to handle fiat deposit", e);
-			jobClient.newThrowErrorCommand(activatedJob.getKey()).errorCode("Error_ToBeHandledManually").send();
+			jobClient.newThrowErrorCommand(activatedJob.getKey()).errorCode("Error_ManualErrorHandlingOfBookingCreditedAmountToConversionAccount").send();
 		} finally {
 			MDC.remove("bicAndEndToEndId");
 		}

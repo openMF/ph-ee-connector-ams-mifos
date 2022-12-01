@@ -12,7 +12,7 @@ import io.camunda.zeebe.client.api.response.ActivatedJob;
 import io.camunda.zeebe.client.api.worker.JobClient;
 
 @Component
-public class CreditorExchangeWorker extends AbstractMoneyInOutWorker {
+public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 	
 	@Value("${fineract.paymentType.paymentTypeExchangeFiatCurrencyId}")
 	private Integer paymentTypeExchangeFiatCurrencyId;
@@ -54,7 +54,7 @@ public class CreditorExchangeWorker extends AbstractMoneyInOutWorker {
 			jobClient.newCompleteCommand(activatedJob.getKey()).variables(variables).send();
 		} catch (Exception e) {
 			logger.error("Exchange to e-currency worker has failed, dispatching user task to handle exchange", e);
-			jobClient.newThrowErrorCommand(activatedJob.getKey()).errorCode("Error_ToBeHandledManually").send();
+			jobClient.newThrowErrorCommand(activatedJob.getKey()).errorCode("Error_ManualErrorHandlingOfTransferToConversionAccount").send();
 		} finally {
 			MDC.remove("bicAndEndToEndId");
 		}

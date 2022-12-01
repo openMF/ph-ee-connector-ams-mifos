@@ -42,8 +42,8 @@ import org.mifos.connector.ams.properties.TenantProperties;
 import org.mifos.connector.ams.zeebe.workers.accountdetails.AmsCreditorWorker;
 import org.mifos.connector.ams.zeebe.workers.accountdetails.AmsDebtorWorker;
 import org.mifos.connector.ams.zeebe.workers.bookamount.BookDebitOnFiatAccountWorker;
-import org.mifos.connector.ams.zeebe.workers.bookamount.CreditorExchangeWorker;
-import org.mifos.connector.ams.zeebe.workers.bookamount.IncomingMoneyWorker;
+import org.mifos.connector.ams.zeebe.workers.bookamount.TransferToDisposalAccountWorker;
+import org.mifos.connector.ams.zeebe.workers.bookamount.BookCreditedAmountToConversionAccountWorker;
 import org.mifos.connector.ams.zeebe.workers.bookamount.RevertDebitOnFiatAccountWorker;
 import org.mifos.connector.ams.zeebe.workers.bookamount.TransferToConversionAccountWorker;
 import org.mifos.connector.common.ams.dto.QuoteFspResponseDTO;
@@ -102,10 +102,10 @@ public class ZeebeeWorkers {
     private AmsCreditorWorker amsWorker;
     
     @Autowired
-    private IncomingMoneyWorker incomingMoneyWorker;
+    private BookCreditedAmountToConversionAccountWorker bookCreditedAmountToConversionAccountWorker;
     
     @Autowired
-    private CreditorExchangeWorker exchangeWorker;
+    private TransferToDisposalAccountWorker transferToDisposalAccountWorker;
     
     @Autowired
     private AmsDebtorWorker amsDebtorWorker;
@@ -240,14 +240,14 @@ public class ZeebeeWorkers {
             
             zeebeClient.newWorker()
             		.jobType("bookCreditedAmountToConversionAccount")
-            		.handler(incomingMoneyWorker)
+            		.handler(bookCreditedAmountToConversionAccountWorker)
             		.name("BookCreditedAmountToConversionAccount")
             		.maxJobsActive(workerMaxJobs)
             		.open();
             
             zeebeClient.newWorker()
     		.jobType("transferToDisposalAccount")
-    		.handler(exchangeWorker)
+    		.handler(transferToDisposalAccountWorker)
     		.name("TransferToDisposalAccount")
     		.maxJobsActive(workerMaxJobs)
     		.open();
