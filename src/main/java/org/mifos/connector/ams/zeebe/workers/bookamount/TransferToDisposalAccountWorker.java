@@ -54,7 +54,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 			jobClient.newCompleteCommand(activatedJob.getKey()).variables(variables).send();
 		} catch (Exception e) {
 			logger.error("Exchange to e-currency worker has failed, dispatching user task to handle exchange", e);
-			jobClient.newThrowErrorCommand(activatedJob.getKey()).errorCode("Error_ManualErrorHandlingOfTransferToConversionAccount").send();
+			jobClient.newThrowErrorCommand(activatedJob.getKey()).errorCode("Error_TransferToDisposalToBeHandledManually").send();
 		} finally {
 			MDC.remove("bicAndEndToEndId");
 		}

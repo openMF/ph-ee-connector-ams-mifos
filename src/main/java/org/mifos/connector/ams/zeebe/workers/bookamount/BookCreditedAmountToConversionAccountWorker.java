@@ -46,11 +46,11 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
 				jobClient.newCompleteCommand(activatedJob.getKey()).variables(variables).send();
 			} else {
 				logger.error("Worker to book incoming money in AMS has failed, dispatching user task to handle fiat deposit");
-				jobClient.newThrowErrorCommand(activatedJob.getKey()).errorCode("Error_ManualErrorHandlingOfBookingCreditedAmountToConversionAccount").send();
+				jobClient.newThrowErrorCommand(activatedJob.getKey()).errorCode("Error_BookToConversionToBeHandledManually").send();
 			}
 		} catch (Exception e) {
 			logger.error("Worker to book incoming money in AMS has failed, dispatching user task to handle fiat deposit", e);
-			jobClient.newThrowErrorCommand(activatedJob.getKey()).errorCode("Error_ManualErrorHandlingOfBookingCreditedAmountToConversionAccount").send();
+			jobClient.newThrowErrorCommand(activatedJob.getKey()).errorCode("Error_BookToConversionToBeHandledManually").send();
 		} finally {
 			MDC.remove("bicAndEndToEndId");
 		}
