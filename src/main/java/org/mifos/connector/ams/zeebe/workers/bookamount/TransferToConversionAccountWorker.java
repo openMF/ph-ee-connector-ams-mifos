@@ -34,9 +34,13 @@ public class TransferToConversionAccountWorker extends AbstractMoneyInOutWorker 
 		
 			String transactionDate = LocalDate.now().format(PATTERN);
 			Object amount = variables.get("amount");
+			
+			logger.info("Attempting to deposit the amount of {}", amount);
 		
 			Integer disposalAccountAmsId = (Integer) variables.get("disposalAccountAmsId");
 			Integer conversionAccountAmsId = (Integer) variables.get("conversionAccountAmsId");
+			
+			logger.info("Attempting to withdraw from account {}", disposalAccountAmsId);
 		
 			ResponseEntity<Object> responseObject = withdraw(transactionDate, amount, disposalAccountAmsId, paymentTypeExchangeECurrencyId);
 		
@@ -44,6 +48,8 @@ public class TransferToConversionAccountWorker extends AbstractMoneyInOutWorker 
 				jobClient.newFailCommand(activatedJob.getKey()).retries(0).send();
 				return;
 			}
+			
+			logger.info("Attempting to deposit to account {}", conversionAccountAmsId);
 		
 			responseObject = deposit(transactionDate, amount, conversionAccountAmsId, paymentTypeExchangeToFiatCurrencyId);
 		
