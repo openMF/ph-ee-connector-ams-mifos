@@ -41,10 +41,10 @@ import org.json.JSONObject;
 import org.mifos.connector.ams.properties.TenantProperties;
 import org.mifos.connector.ams.zeebe.workers.accountdetails.AmsCreditorWorker;
 import org.mifos.connector.ams.zeebe.workers.accountdetails.AmsDebtorWorker;
-import org.mifos.connector.ams.zeebe.workers.bookamount.BookDebitOnFiatAccountWorker;
+import org.mifos.connector.ams.zeebe.workers.bookamount.BookOnConversionAccountInAmsWorker;
 import org.mifos.connector.ams.zeebe.workers.bookamount.TransferToDisposalAccountWorker;
 import org.mifos.connector.ams.zeebe.workers.bookamount.BookCreditedAmountToConversionAccountWorker;
-import org.mifos.connector.ams.zeebe.workers.bookamount.RevertDebitOnFiatAccountWorker;
+import org.mifos.connector.ams.zeebe.workers.bookamount.RevertInAmsWorker;
 import org.mifos.connector.ams.zeebe.workers.bookamount.TransferToConversionAccountWorker;
 import org.mifos.connector.common.ams.dto.QuoteFspResponseDTO;
 import org.mifos.connector.common.channel.dto.TransactionChannelRequestDTO;
@@ -114,10 +114,10 @@ public class ZeebeeWorkers {
     private TransferToConversionAccountWorker transferToConversionAccount;
     
     @Autowired
-    private BookDebitOnFiatAccountWorker bookDebitOnFiatAccountWorker;
+    private BookOnConversionAccountInAmsWorker bookOnConversionAccountInAmsWorker;
     
     @Autowired
-    private RevertDebitOnFiatAccountWorker revertDebitOnFiatAccountWorker;
+    private RevertInAmsWorker revertInAmsWorker;
     
     @Value("${ams.local.enabled:false}")
     private boolean isAmsLocalEnabled;
@@ -269,9 +269,9 @@ public class ZeebeeWorkers {
             
             
             zeebeClient.newWorker()
-    		.jobType("bookOnFiatAccountinAms")
-    		.handler(bookDebitOnFiatAccountWorker)
-    		.name("BookOnFiatAccountInAms")
+    		.jobType("bookOnConversionAccountInAms")
+    		.handler(bookOnConversionAccountInAmsWorker)
+    		.name("BookOnConversionAccountInAms")
     		.maxJobsActive(workerMaxJobs)
     		.open();
             
@@ -279,7 +279,7 @@ public class ZeebeeWorkers {
             
             zeebeClient.newWorker()
     		.jobType("revertInAms")
-    		.handler(revertDebitOnFiatAccountWorker)
+    		.handler(revertInAmsWorker)
     		.name("RevertInAms")
     		.maxJobsActive(workerMaxJobs)
     		.open();

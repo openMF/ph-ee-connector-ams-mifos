@@ -1,30 +1,19 @@
 package org.mifos.connector.ams.zeebe.workers.bookamount;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
 import java.util.Optional;
 
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
-import org.springframework.web.util.UriComponentsBuilder;
 
 import io.camunda.zeebe.client.api.response.ActivatedJob;
 import io.camunda.zeebe.client.api.worker.JobClient;
 
 @Component
-public class BookDebitOnFiatAccountWorker extends AbstractMoneyInOutWorker {
-	
-	@Value("${fineract.generalLedger.glLiabilityAmountOnHoldId}")
-	private Integer glLiabilityAmountOnHoldId;
-	
-	@Value("${fineract.generalLedger.glLiabilityToCustomersInFiatCurrencyId}")
-	private Integer glLiabilityToCustomersInFiatCurrencyId;
+public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker {
 	
 	private static final DateTimeFormatter PATTERN = DateTimeFormatter.ofPattern(FORMAT);
 

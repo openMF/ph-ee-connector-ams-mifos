@@ -21,16 +21,9 @@ public class TransferToConversionAccountWorker extends AbstractMoneyInOutWorker 
 	@Value("${fineract.paymentType.paymentTypeExchangeToFiatCurrencyId}")
 	private Integer paymentTypeExchangeToFiatCurrencyId;
 	
-	@Value("${fineract.generalLedger.glLiabilityToCustomersInFiatCurrencyId}")
-	private Integer glLiabilityToCustomersInFiatCurrencyId;
-	
-	@Value("${fineract.generalLedger.glLiabilityAmountOnHoldId}")
-	private Integer glLiabilityAmountOnHoldId;
-	
 	private static final DateTimeFormatter PATTERN = DateTimeFormatter.ofPattern(FORMAT);
 
 	@Override
-	@SuppressWarnings("unchecked")
 	public void handle(JobClient jobClient, ActivatedJob activatedJob) throws Exception {
 		logger.error("Debtor exchange worker starting");
 		try {

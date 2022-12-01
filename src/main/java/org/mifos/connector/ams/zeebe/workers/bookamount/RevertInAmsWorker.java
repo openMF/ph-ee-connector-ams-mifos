@@ -14,7 +14,7 @@ import io.camunda.zeebe.client.api.response.ActivatedJob;
 import io.camunda.zeebe.client.api.worker.JobClient;
 
 @Component
-public class RevertDebitOnFiatAccountWorker extends AbstractMoneyInOutWorker {
+public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 	
 	private static final String ERROR_MESSAGE_PATTERN = "Revert debit worker fails with status code {}";
 
@@ -23,12 +23,6 @@ public class RevertDebitOnFiatAccountWorker extends AbstractMoneyInOutWorker {
 	
 	@Value("${fineract.paymentType.paymentTypeIssuingECurrencyId}")
 	private Integer paymentTypeIssuingECurrencyId;
-	
-	@Value("${fineract.generalLedger.glLiabilityAmountOnHoldId}")
-	private Integer glLiabilityAmountOnHoldId;
-	
-	@Value("${fineract.generalLedger.glLiabilityToCustomersInFiatCurrencyId}")
-	private Integer glLiabilityToCustomersInFiatCurrencyId;
 	
 	private static final DateTimeFormatter PATTERN = DateTimeFormatter.ofPattern(FORMAT);
 
