@@ -31,16 +31,15 @@ public class IncomingMoneyWorker extends AbstractMoneyInOutWorker {
 		
 			logger.info("Worker to book incoming money in AMS has started");
 			
-			Object interbankSettlementDate = variables.get("interbankSettlementDate");
-			logger.info("Received {} as interbank settlement date", interbankSettlementDate);
+			var interbankSettlementDate = variables.get("interbankSettlementDate");
 			String transactionDate = Optional.ofNullable(interbankSettlementDate)
 					.map(Object::toString)
 					.orElse(LocalDateTime.now().format(PATTERN));
 			Object amount = variables.get("amount");
 		
-			Integer fiatCurrencyAccountAmsId = (Integer) variables.get("fiatCurrencyAccountAmsId");
+			Integer conversionAccountAmsId = (Integer) variables.get("conversionAccountAmsId");
 		
-			ResponseEntity<Object> responseObject = deposit(transactionDate, amount, fiatCurrencyAccountAmsId, 1);
+			ResponseEntity<Object> responseObject = deposit(transactionDate, amount, conversionAccountAmsId, 1);
 		
 			if (HttpStatus.OK.equals(responseObject.getStatusCode())) {
 				logger.info("Worker to book incoming money in AMS has finished successfully");

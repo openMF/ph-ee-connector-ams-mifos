@@ -33,17 +33,17 @@ public class CreditorExchangeWorker extends AbstractMoneyInOutWorker {
 			String transactionDate = (String) variables.get("interbankSettlementDate");
 			Object amount = variables.get("amount");
 		
-			Integer fiatCurrencyAccountAmsId = (Integer) variables.get("fiatCurrencyAccountAmsId");
-			Integer eCurrencyAccountAmsId = (Integer) variables.get("eCurrencyAccountAmsId");
+			Integer conversionAccountAmsId = (Integer) variables.get("conversionAccountAmsId");
+			Integer disposalAccountAmsId = (Integer) variables.get("disposalAccountAmsId");
 		
-			ResponseEntity<Object> responseObject = withdraw(transactionDate, amount, fiatCurrencyAccountAmsId, paymentTypeExchangeFiatCurrencyId);
+			ResponseEntity<Object> responseObject = withdraw(transactionDate, amount, conversionAccountAmsId, paymentTypeExchangeFiatCurrencyId);
 		
 			if (!HttpStatus.OK.equals(responseObject.getStatusCode())) {
 				jobClient.newFailCommand(activatedJob.getKey()).retries(0).send();
 				return;
 			}
 		
-			responseObject = deposit(transactionDate, amount, eCurrencyAccountAmsId, paymentTypeIssuingECurrencyId);
+			responseObject = deposit(transactionDate, amount, disposalAccountAmsId, paymentTypeIssuingECurrencyId);
 		
 			if (!HttpStatus.OK.equals(responseObject.getStatusCode())) {
 				jobClient.newFailCommand(activatedJob.getKey()).retries(0).send().join();

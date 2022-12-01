@@ -43,9 +43,9 @@ import org.mifos.connector.ams.zeebe.workers.accountdetails.AmsCreditorWorker;
 import org.mifos.connector.ams.zeebe.workers.accountdetails.AmsDebtorWorker;
 import org.mifos.connector.ams.zeebe.workers.bookamount.BookDebitOnFiatAccountWorker;
 import org.mifos.connector.ams.zeebe.workers.bookamount.CreditorExchangeWorker;
-import org.mifos.connector.ams.zeebe.workers.bookamount.DebtorExchangeAndHoldWorker;
 import org.mifos.connector.ams.zeebe.workers.bookamount.IncomingMoneyWorker;
 import org.mifos.connector.ams.zeebe.workers.bookamount.RevertDebitOnFiatAccountWorker;
+import org.mifos.connector.ams.zeebe.workers.bookamount.TransferToConversionAccountWorker;
 import org.mifos.connector.common.ams.dto.QuoteFspResponseDTO;
 import org.mifos.connector.common.channel.dto.TransactionChannelRequestDTO;
 import org.mifos.connector.common.mojaloop.dto.FspMoneyData;
@@ -111,7 +111,7 @@ public class ZeebeeWorkers {
     private AmsDebtorWorker amsDebtorWorker;
     
     @Autowired
-    private DebtorExchangeAndHoldWorker debtorExchangeAndHoldWorker;
+    private TransferToConversionAccountWorker transferToConversionAccount;
     
     @Autowired
     private BookDebitOnFiatAccountWorker bookDebitOnFiatAccountWorker;
@@ -239,16 +239,16 @@ public class ZeebeeWorkers {
             		.open();
             
             zeebeClient.newWorker()
-            		.jobType("bookIncomingMoneyInAms")
+            		.jobType("bookCreditedAmountToConversionAccount")
             		.handler(incomingMoneyWorker)
-            		.name("BookCreditedAmountToFiatCurrencyAccount")
+            		.name("BookCreditedAmountToConversionAccount")
             		.maxJobsActive(workerMaxJobs)
             		.open();
             
             zeebeClient.newWorker()
-    		.jobType("exchangeToECurrency")
+    		.jobType("transferToDisposalAccount")
     		.handler(exchangeWorker)
-    		.name("ExchangeToECurrency")
+    		.name("TransferToDisposalAccount")
     		.maxJobsActive(workerMaxJobs)
     		.open();
             
@@ -261,7 +261,7 @@ public class ZeebeeWorkers {
             
             zeebeClient.newWorker()
     		.jobType("exchangeToFiatAndHoldInAms")
-    		.handler(debtorExchangeAndHoldWorker)
+    		.handler(transferToConversionAccount)
     		.name("ExchangeToFiatAndHoldInAms")
     		.maxJobsActive(workerMaxJobs)
     		.open();

@@ -43,8 +43,8 @@ public class AmsCreditorWorker extends AbstractAmsWorker {
 
 		AmsDataTableQueryResponse[] response = lookupAccount(creditorIban);
 		
-		variables.put("eCurrencyAccountAmsId", "");
-		variables.put("fiatCurrencyAccountAmsId", "");
+		variables.put("disposalAccountAmsId", "");
+		variables.put("conversionAccountAmsId", "");
 		
 		if (response.length != 0) {
 			var responseItem = response[0];
@@ -52,15 +52,15 @@ public class AmsCreditorWorker extends AbstractAmsWorker {
 			Long accountECurrencyId = responseItem.ecurrency_account_id();
 
 			try {
-				GetSavingsAccountsAccountIdResponse fiatCurrency = retrieveCurrencyIdAndStatus(accountFiatCurrencyId);
-				GetSavingsAccountsAccountIdResponse eCurrency = retrieveCurrencyIdAndStatus(accountECurrencyId);
+				GetSavingsAccountsAccountIdResponse conversion = retrieveCurrencyIdAndStatus(accountFiatCurrencyId);
+				GetSavingsAccountsAccountIdResponse disposal = retrieveCurrencyIdAndStatus(accountECurrencyId);
 
-				if (currency.equalsIgnoreCase(fiatCurrency.getCurrency().getCode())
-						&& fiatCurrency.getStatus().getId() == 300 
-						&& eCurrency.getStatus().getId() == 300) {
+				if (currency.equalsIgnoreCase(conversion.getCurrency().getCode())
+						&& conversion.getStatus().getId() == 300 
+						&& disposal.getStatus().getId() == 300) {
 					status = AccountAmsStatus.READY_TO_RECEIVE_MONEY;
-					variables.put("eCurrencyAccountAmsId", eCurrency.getId());
-					variables.put("fiatCurrencyAccountAmsId", fiatCurrency.getId());
+					variables.put("disposalAccountAmsId", disposal.getId());
+					variables.put("conversionAccountAmsId", conversion.getId());
 				}
 
 			} catch (Exception e) {

@@ -32,62 +32,24 @@ public class BookDebitOnFiatAccountWorker extends AbstractMoneyInOutWorker {
 	public void handle(JobClient jobClient, ActivatedJob activatedJob) throws Exception {
 		Map<String, Object> variables = activatedJob.getVariablesAsMap();
 		
-		Integer fiatCurrencyAccountAmsId = (Integer) variables.get("fiatCurrencyAccountAmsId");
-		Integer holdAmountId = (Integer) variables.get("holdAmountId");
+		Integer conversionAccountAmsId = (Integer) variables.get("conversionAccountAmsId");
 		
-		logger.info("Starting book debit on fiat account worker with currency account Id {} and hold amount Id {}", fiatCurrencyAccountAmsId, holdAmountId);
-		
-		ResponseEntity<Object> responseObject = release(fiatCurrencyAccountAmsId, holdAmountId);
+		logger.info("Starting book debit on fiat account worker with currency account Id {}", conversionAccountAmsId);
 		
 		String interbankSettlementDate = (String) variables.get("interbankSettlementDate");
 		
 		Object amount = variables.get("amount");
-		AccountIdAmountPair[] debits = new AccountIdAmountPair[] { new AccountIdAmountPair(glLiabilityAmountOnHoldId, amount) };
-		AccountIdAmountPair[] credits = new AccountIdAmountPair[] { new AccountIdAmountPair(glLiabilityToCustomersInFiatCurrencyId, amount) };
-		
-		JournalEntry entry = new JournalEntry(
-				"1",
-				(String) variables.get("currency"),
-				debits,
-				credits,
-				"",
-				LocalDate.now().format(PATTERN),
-				"",
-				String.format("%d", fiatCurrencyAccountAmsId),
-				"",
-				"",
-				"",
-				"",
-				"",
-				locale,
-				FORMAT
-				);
-			var entity = new HttpEntity<>(entry, httpHeaders);
-		
-			var urlTemplate = UriComponentsBuilder.fromHttpUrl(fineractApiUrl)
-				.path("/journalentries")
-				.encode()
-				.toUriString();
-		
-			responseObject = restTemplate.exchange(urlTemplate, HttpMethod.POST, entity, Object.class);
-		
-			if (!HttpStatus.OK.equals(responseObject.getStatusCode())) {
-				logger.error("Debtor exchange and hold worker fails with status code {}", responseObject.getStatusCodeValue());
-				jobClient.newFailCommand(activatedJob.getKey()).retries(0).send().join();
-				return;
-			}
 			
+		ResponseEntity<Object> responseObject = withdraw(Optional.ofNullable(interbankSettlementDate).orElse(LocalDateTime.now().format(PATTERN)), amount, conversionAccountAmsId, 1);
 			
-			responseObject = withdraw(Optional.ofNullable(interbankSettlementDate).orElse(LocalDateTime.now().format(PATTERN)), amount, fiatCurrencyAccountAmsId, 1);
-			
-			if (!HttpStatus.OK.equals(responseObject.getStatusCode())) {
-				logger.error("Debtor exchange and hold worker fails with status code {}", responseObject.getStatusCodeValue());
-				jobClient.newFailCommand(activatedJob.getKey()).retries(0).send().join();
-				return;
-			}
+		if (!HttpStatus.OK.equals(responseObject.getStatusCode())) {
+			logger.error("Debtor exchange and hold worker fails with status code {}", responseObject.getStatusCodeValue());
+			jobClient.newFailCommand(activatedJob.getKey()).retries(0).send().join();
+			return;
+		}
 		
-			jobClient.newCompleteCommand(activatedJob.getKey()).variables(variables).send();
+		jobClient.newCompleteCommand(activatedJob.getKey()).variables(variables).send();
 			
-			logger.info("Book debit on fiat account has finished  successfully");
+		logger.info("Book debit on fiat account has finished  successfully");
 	}
 }
