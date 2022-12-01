@@ -234,7 +234,7 @@ public class ZeebeeWorkers {
             zeebeClient.newWorker()
             		.jobType("getAccountDetailsFromAms")
             		.handler(amsWorker)
-            		.name("getAccountDetailsFromAms")
+            		.name("GetAccountDetailsFromAms")
             		.maxJobsActive(workerMaxJobs)
             		.open();
             
