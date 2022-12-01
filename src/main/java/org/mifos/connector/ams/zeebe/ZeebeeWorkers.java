@@ -260,9 +260,9 @@ public class ZeebeeWorkers {
     		.open();
             
             zeebeClient.newWorker()
-    		.jobType("exchangeToFiatAndHoldInAms")
+    		.jobType("transferToConversionAccount")
     		.handler(transferToConversionAccount)
-    		.name("ExchangeToFiatAndHoldInAms")
+    		.name("TransferToConversionAccount")
     		.maxJobsActive(workerMaxJobs)
     		.open();
             
