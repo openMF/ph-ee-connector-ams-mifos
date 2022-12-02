@@ -45,7 +45,7 @@ import org.mifos.connector.ams.zeebe.workers.bookamount.BookOnConversionAccountI
 import org.mifos.connector.ams.zeebe.workers.bookamount.TransferToDisposalAccountWorker;
 import org.mifos.connector.ams.zeebe.workers.bookamount.BookCreditedAmountToConversionAccountWorker;
 import org.mifos.connector.ams.zeebe.workers.bookamount.RevertInAmsWorker;
-import org.mifos.connector.ams.zeebe.workers.bookamount.TransferToConversionAccountWorker;
+import org.mifos.connector.ams.zeebe.workers.bookamount.TransferToConversionAccountInAmsWorker;
 import org.mifos.connector.common.ams.dto.QuoteFspResponseDTO;
 import org.mifos.connector.common.channel.dto.TransactionChannelRequestDTO;
 import org.mifos.connector.common.mojaloop.dto.FspMoneyData;
@@ -111,7 +111,7 @@ public class ZeebeeWorkers {
     private AmsDebtorWorker amsDebtorWorker;
     
     @Autowired
-    private TransferToConversionAccountWorker transferToConversionAccount;
+    private TransferToConversionAccountInAmsWorker transferToConversionAccountInAmsWorker;
     
     @Autowired
     private BookOnConversionAccountInAmsWorker bookOnConversionAccountInAmsWorker;
@@ -260,9 +260,9 @@ public class ZeebeeWorkers {
     		.open();
             
             zeebeClient.newWorker()
-    		.jobType("transferToConversionAccount")
-    		.handler(transferToConversionAccount)
-    		.name("TransferToConversionAccount")
+    		.jobType("transferToConversionAccountInAms")
+    		.handler(transferToConversionAccountInAmsWorker)
+    		.name("TransferToConversionAccountInAms")
     		.maxJobsActive(workerMaxJobs)
     		.open();
             

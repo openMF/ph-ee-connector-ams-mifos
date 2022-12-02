@@ -13,7 +13,7 @@ import io.camunda.zeebe.client.api.response.ActivatedJob;
 import io.camunda.zeebe.client.api.worker.JobClient;
 
 @Component
-public class TransferToConversionAccountWorker extends AbstractMoneyInOutWorker {
+public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWorker {
 	
 	@Value("${fineract.paymentType.paymentTypeExchangeECurrencyId}")
 	private Integer paymentTypeExchangeECurrencyId;
