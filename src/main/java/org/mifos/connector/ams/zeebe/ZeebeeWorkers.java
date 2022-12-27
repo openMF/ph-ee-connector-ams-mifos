@@ -121,10 +121,6 @@ public class ZeebeeWorkers {
                             ex.setProperty(TRANSACTION_ROLE, TransactionRole.PAYER.name());
                             ex.setProperty("payeeTenantId", job.getVariablesAsMap().get("payeeTenantId"));
                             logger.info("Payee Id before block funds {}",job.getVariablesAsMap().get("payeeTenantId"));
-                            if((ex.getProperty(TENANT_ID).toString().equalsIgnoreCase("gorilla")))
-                                ex.setProperty(TENANT_ID,"ibank-usa");
-                           else
-                                ex.setProperty(TENANT_ID,"ibank-india");
                             producerTemplate.send("direct:send-transfers", ex);
                             logger.info("Zeebe variable {}", job.getVariablesAsMap());
                         } else {
@@ -160,10 +156,6 @@ public class ZeebeeWorkers {
                             ex.setProperty(TRANSACTION_ROLE, TransactionRole.PAYER.name());
                             ex.setProperty("payeeTenantId", job.getVariablesAsMap().get("payeeTenantId"));
                             ex.setProperty("processType", "api");
-                            if((ex.getProperty(TENANT_ID).toString().equalsIgnoreCase("gorilla")))
-                                ex.setProperty(TENANT_ID,"ibank-usa");
-                            else
-                                ex.setProperty(TENANT_ID,"ibank-india");
                             producerTemplate.send("direct:send-transfers", ex);
                         } else {
                             Map<String, Object> variables = new HashMap<>();
@@ -198,10 +190,6 @@ public class ZeebeeWorkers {
                             ex.setProperty(ZEEBE_JOB_KEY, job.getKey());
                             ex.setProperty(TRANSACTION_ROLE, TransactionRole.PAYEE.name());
                             ex.setProperty("payeeTenantId", job.getVariablesAsMap().get("payeeTenantId"));
-                            if((ex.getProperty(TENANT_ID).toString().equalsIgnoreCase("gorilla")))
-                                ex.setProperty(TENANT_ID,"ibank-usa");
-                            else
-                                ex.setProperty(TENANT_ID,"ibank-india");
                             producerTemplate.send("direct:send-transfers", ex);
                         } else {
                             Map<String, Object> variables = new HashMap<>();
@@ -230,6 +218,7 @@ public class ZeebeeWorkers {
                                 Exchange ex = new DefaultExchange(camelContext);
                                 zeebeVariablesToCamelProperties(existingVariables, ex,
                                         CHANNEL_REQUEST,
+                                        TENANT_ID,
                                         TRANSACTION_ID);
 
                                 ex.setProperty(PARTY_ID_TYPE, channelRequest.getPayer().getPartyIdInfo().getPartyIdType().name());
@@ -347,17 +336,19 @@ public class ZeebeeWorkers {
                             Map<String, Object> existingVariables = job.getVariablesAsMap();
                             String partyIdType = (String) existingVariables.get(PARTY_ID_TYPE);
                             String partyId = (String) existingVariables.get(PARTY_ID);
-                            String tenantId = (String) existingVariables.get("payeeTenantId");
+                            String tenantId = (String) existingVariables.get(TENANT_ID);
                             if (isAmsLocalEnabled) {
                                 Exchange ex = new DefaultExchange(camelContext);
                                 ex.setProperty(PARTY_ID_TYPE, partyIdType);
                                 ex.setProperty(PARTY_ID, partyId);
                                 ex.setProperty(ZEEBE_JOB_KEY, job.getKey());
+                                if(dfspid.equalsIgnoreCase(existingVariables.get("payeeTenantId").toString()))
+                                {
+                                    ex.setProperty(TENANT_ID, existingVariables.get("payeeTenantId"));
+                                }
+                                else {
+                                ex.setProperty(TENANT_ID, tenantId);}
                                 ex.setProperty("payeeTenantId",existingVariables.get("payeeTenantId"));
-                                if(((String) existingVariables.get("payeeTenantId")).equalsIgnoreCase("gorilla"))
-                                    ex.setProperty(TENANT_ID, "ibank-usa");
-                                else
-                                    ex.setProperty(TENANT_ID, "ibank-india");
 
                                 producerTemplate.send("direct:get-party", ex);
                             } else {
@@ -419,8 +410,8 @@ public class ZeebeeWorkers {
                             Map<String, Object> existingVariables = job.getVariablesAsMap();
                             logger.info("Exisiting variables {}", existingVariables);
 
+                            String tenantId = (String) existingVariables.get(TENANT_ID);
 
-                            String tenantId = "lion";
                             if (isAmsLocalEnabled) {
                                 Exchange ex = new DefaultExchange(camelContext);
                                 Map<String, Object> variables = job.getVariablesAsMap();
@@ -431,10 +422,6 @@ public class ZeebeeWorkers {
                                         CHANNEL_REQUEST);
                                 ex.setProperty(TRANSFER_ACTION, CREATE.name());
                                 ex.setProperty("payeeTenantId",existingVariables.get("payeeTenantId"));
-                                if(tenantId.equalsIgnoreCase("gorilla"))
-                                    ex.setProperty(TENANT_ID, "ibank-usa");
-                                else
-                                    ex.setProperty(TENANT_ID, "ibank-india");
                                 ex.setProperty(ZEEBE_JOB_KEY, job.getKey());
 
                                 TransactionChannelRequestDTO transactionRequest = objectMapper.readValue((String) variables.get(CHANNEL_REQUEST), TransactionChannelRequestDTO.class);
