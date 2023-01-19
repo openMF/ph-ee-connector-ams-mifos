@@ -25,8 +25,8 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 		try {
 			Map<String, Object> variables = activatedJob.getVariablesAsMap();
 		
-			String bicAndEndToEndId = (String) variables.get("bicAndEndToEndId");
-			MDC.put("bicAndEndToEndId", bicAndEndToEndId);
+			String internalCorrelationId = (String) variables.get("internalCorrelationId");
+			MDC.put("internalCorrelationId", internalCorrelationId);
 		
 			logger.info("Exchange to e-currency worker has started");
 			
@@ -56,7 +56,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 			logger.error("Exchange to e-currency worker has failed, dispatching user task to handle exchange", e);
 			jobClient.newThrowErrorCommand(activatedJob.getKey()).errorCode("Error_TransferToDisposalToBeHandledManually").send();
 		} finally {
-			MDC.remove("bicAndEndToEndId");
+			MDC.remove("internalCorrelationId");
 		}
 	}
 }

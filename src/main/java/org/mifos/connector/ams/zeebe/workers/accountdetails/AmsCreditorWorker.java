@@ -32,8 +32,8 @@ public class AmsCreditorWorker extends AbstractAmsWorker {
 	public void handle(JobClient jobClient, ActivatedJob activatedJob) {
 		try {
 		var variables = activatedJob.getVariablesAsMap();
-		String bicAndEndToEndId = (String) variables.get("bicAndEndToEndId");
-		MDC.put("bicAndEndToEndId", bicAndEndToEndId);
+		String internalCorrelationId = (String) variables.get("internalCorrelationId");
+		MDC.put("internalCorrelationId", internalCorrelationId);
 		String creditorIban = (String) variables.get("creditorIban");
 		
 		logger.info("Started AMS creditor worker for creditor IBAN {}", creditorIban);
@@ -72,7 +72,7 @@ public class AmsCreditorWorker extends AbstractAmsWorker {
 		
 		logger.info("AMS creditor worker for creditor IBAN {} finished with status {}", creditorIban, status);
 
-		MDC.remove("bicAndEndToEndId");
+		MDC.remove("internalCorrelationId");
 		jobClient.newCompleteCommand(activatedJob.getKey()).variables(variables).send();
 		} catch (Throwable t) {
 			logger.error(t.getMessage(), t);
