@@ -20,6 +20,7 @@ fineract:
     paymentTypeIssuingECurrencyId: 7
     paymentTypeExchangeECurrencyId: 8
     paymentTypeExchangeToFiatCurrencyId: 6
+    paymentTypeFeeId: 1
   generalLedger:
     glLiabilityToCustomersInFiatCurrencyId: 10
     glLiabilityAmountOnHoldId: 14
