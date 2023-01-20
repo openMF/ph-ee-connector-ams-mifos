@@ -27,6 +27,12 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 		
 		String interbankSettlementDate = (String) variables.get("interbankSettlementDate");
 		
+		if (interbankSettlementDate == null) {
+			logger.error("Book debit on fiat account has failed due to Interbank settlement date not being present in pacs.002");
+			jobClient.newFailCommand(activatedJob.getKey()).retries(0).send().join();
+			return;
+		}
+		
 		Object amount = variables.get("amount");
 			
 		ResponseEntity<Object> responseObject = withdraw(Optional.ofNullable(interbankSettlementDate).orElse(LocalDateTime.now().format(PATTERN)), amount, conversionAccountAmsId, 1);
