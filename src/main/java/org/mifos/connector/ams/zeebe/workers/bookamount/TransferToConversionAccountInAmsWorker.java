@@ -44,7 +44,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001 = om.readValue(originalPain001, Pain00100110CustomerCreditTransferInitiationV10MessageSchema.class);
 			
 			BigDecimal amount = BigDecimal.ZERO;
-			BigDecimal fee = new BigDecimal((String) variables.get("transactionFeeAmount"));
+			BigDecimal fee = new BigDecimal(variables.get("transactionFeeAmount").toString());
 			
 			List<CreditTransferTransaction40> creditTransferTransactionInformation = pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation();
 			
