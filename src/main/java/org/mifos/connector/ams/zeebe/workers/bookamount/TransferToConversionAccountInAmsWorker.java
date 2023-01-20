@@ -33,7 +33,6 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 	private static final DateTimeFormatter PATTERN = DateTimeFormatter.ofPattern(FORMAT);
 
 	@Override
-	@SuppressWarnings("unchecked")
 	public void handle(JobClient jobClient, ActivatedJob activatedJob) throws Exception {
 		logger.error("Debtor exchange worker starting");
 		try {
@@ -45,21 +44,12 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001 = om.readValue(originalPain001, Pain00100110CustomerCreditTransferInitiationV10MessageSchema.class);
 			
 			BigDecimal amount = BigDecimal.ZERO;
-			BigDecimal fee = BigDecimal.ZERO;
+			BigDecimal fee = new BigDecimal((String) variables.get("transactionFeeAmount"));
 			
 			List<CreditTransferTransaction40> creditTransferTransactionInformation = pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation();
 			
 			for (CreditTransferTransaction40 ctti : creditTransferTransactionInformation) {
-				BigDecimal sum = new BigDecimal(ctti.getAmount().getInstructedAmount().getAmount().toString());
-				Map<String, Object> additionalProperties = ctti.getSupplementaryData().get(0).getEnvelope().getAdditionalProperties();
-				if (additionalProperties.containsKey("OrderManagerSupplementaryData")) {
-					Map<String, Object> orderManagerSupplementaryData = (Map<String, Object>) additionalProperties.get("OrderManagerSupplementaryData");
-					if (orderManagerSupplementaryData.containsKey("ParentInternalCorrelationId")) {
-						fee = sum;
-					} else {
-						amount = sum;
-					}
-				}
+				amount = new BigDecimal(ctti.getAmount().getInstructedAmount().getAmount().toString());
 			}
 			
 			logger.error("Debtor exchange worker incoming variables:");
