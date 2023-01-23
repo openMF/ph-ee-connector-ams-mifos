@@ -38,9 +38,10 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
 			String internalCorrelationId = (String) variables.get("internalCorrelationId");
 			MDC.put("internalCorrelationId", internalCorrelationId);
 		
-			logger.info("Worker to book incoming money in AMS has started");
-			
 			String originalPacs002 = (String) variables.get("originalPacs002");
+			
+			logger.info("Worker to book incoming money in AMS has started with incomint pacs.002 {}", originalPacs002);
+			
 			JAXBContext jc = JAXBContext.newInstance(ObjectFactory.class);
 			JAXBElement<Document> jaxbObject = (JAXBElement<Document>) jc.createUnmarshaller().unmarshal(new StringReader(originalPacs002));
 			Document pacs_002 = jaxbObject.getValue();
