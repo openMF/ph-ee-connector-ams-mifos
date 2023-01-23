@@ -79,13 +79,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 					
 				if (!HttpStatus.OK.equals(sagaResponseObject.getStatusCode())) {
 					jobClient.newFailCommand(activatedJob.getKey()).retries(0).send();
-					return;
 				}
-				return;
-			}
-		
-			if (!HttpStatus.OK.equals(responseObject.getStatusCode())) {
-				jobClient.newFailCommand(activatedJob.getKey()).retries(0).send();
 				return;
 			}
 			
@@ -93,6 +87,13 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 		
 			responseObject = deposit(transactionDate, amount, conversionAccountAmsId, paymentTypeExchangeToFiatCurrencyId);
 		
+			if (!HttpStatus.OK.equals(responseObject.getStatusCode())) {
+				jobClient.newFailCommand(activatedJob.getKey()).retries(0).send().join();
+				return;
+			}
+			
+			responseObject = deposit(transactionDate, fee, conversionAccountAmsId, paymentTypeFeeId);
+			
 			if (!HttpStatus.OK.equals(responseObject.getStatusCode())) {
 				jobClient.newFailCommand(activatedJob.getKey()).retries(0).send().join();
 				return;
