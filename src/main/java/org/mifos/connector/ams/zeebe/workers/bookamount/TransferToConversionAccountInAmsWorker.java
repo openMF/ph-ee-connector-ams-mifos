@@ -6,6 +6,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 
+import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -38,6 +39,9 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 		try {
 			Map<String, Object> variables = activatedJob.getVariablesAsMap();
 			
+			String internalCorrelationId = (String) variables.get("internalCorrelationId");
+			MDC.put("internalCorrelationId", internalCorrelationId);
+			
 			String originalPain001 = (String) variables.get("originalPain001");
 			
 			ObjectMapper om = new ObjectMapper();
@@ -57,12 +61,10 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 		
 			String transactionDate = LocalDate.now().format(PATTERN);
 			
-			logger.info("Attempting to deposit the amount of {}", amount);
-		
 			Integer disposalAccountAmsId = (Integer) variables.get("disposalAccountAmsId");
 			Integer conversionAccountAmsId = (Integer) variables.get("conversionAccountAmsId");
 			
-			logger.info("Attempting to withdraw from account {}", disposalAccountAmsId);
+			logger.info("Withdrawing amount {} from disposal account {}", amount, disposalAccountAmsId);
 			
 			ResponseEntity<Object> responseObject = withdraw(transactionDate, amount, disposalAccountAmsId, paymentTypeExchangeECurrencyId);
 				
@@ -70,6 +72,8 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 				jobClient.newFailCommand(activatedJob.getKey()).retries(0).send();
 				return;
 			}
+			
+			logger.info("Withdrawing fee {} from disposal account {}", fee, disposalAccountAmsId);
 				
 			responseObject = withdraw(transactionDate, fee, disposalAccountAmsId, paymentTypeFeeId);
 				
@@ -83,7 +87,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 				return;
 			}
 			
-			logger.info("Attempting to deposit to account {}", conversionAccountAmsId);
+			logger.info("Depositing amount {} to conversion account {}", account, conversionAccountAmsId);
 		
 			responseObject = deposit(transactionDate, amount, conversionAccountAmsId, paymentTypeExchangeToFiatCurrencyId);
 		
@@ -91,6 +95,8 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 				jobClient.newFailCommand(activatedJob.getKey()).retries(0).send().join();
 				return;
 			}
+			
+			logger.info("Depositing fee {} to conversion account {}", fee, conversionAccountAmsId);
 			
 			responseObject = deposit(transactionDate, fee, conversionAccountAmsId, paymentTypeFeeId);
 			
@@ -103,6 +109,8 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 		} catch (Exception e) {
 			logger.error(e.getMessage(), e);
 			jobClient.newThrowErrorCommand(activatedJob.getKey()).errorCode("Error_InsufficientFunds").send();
+		} finally {
+			MDC.remove("internalCorrelationId");
 		}
 	}
 

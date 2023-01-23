@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
+import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -29,6 +30,9 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 	public void handle(JobClient jobClient, ActivatedJob activatedJob) throws Exception {
 		Map<String, Object> variables = activatedJob.getVariablesAsMap();
 		
+		String internalCorrelationId = (String) variables.get("internalCorrelationId");
+		MDC.put("internalCorrelationId", internalCorrelationId);
+		
 		String originalPain001 = (String) variables.get("originalPain001");
 		
 		Integer conversionAccountAmsId = (Integer) variables.get("conversionAccountAmsId");
@@ -49,10 +53,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			amount = new BigDecimal(ctti.getAmount().getInstructedAmount().getAmount().toString());
 		}
 		
-		logger.error("Debtor exchange worker incoming variables:");
-		variables.entrySet().forEach(e -> logger.error("{}: {}", e.getKey(), e.getValue()));
-	
-		logger.info("Attempting to deposit the amount of {}", amount);
+		logger.error("Withdrawing amount {} from conversion account {}", amount, conversionAccountAmsId);
 	
 		ResponseEntity<Object> responseObject = withdraw(interbankSettlementDate, amount, conversionAccountAmsId, 1);
 			
@@ -60,6 +61,8 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			jobClient.newFailCommand(activatedJob.getKey()).retries(0).send();
 			return;
 		}
+		
+		logger.error("Withdrawing fee {} from conversion account {}", fee, conversionAccountAmsId);
 			
 		responseObject = withdraw(interbankSettlementDate, fee, conversionAccountAmsId, 1);
 			
@@ -72,12 +75,16 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			return;
 		}
 		
+		logger.error("Re-depositing amount {} in disposal account {}", amount, disposalAccountAmsId);
+		
 		responseObject = deposit(interbankSettlementDate, amount, disposalAccountAmsId, 1);
 		
 		if (!HttpStatus.OK.equals(responseObject.getStatusCode())) {
 			jobClient.newFailCommand(activatedJob.getKey()).retries(0).send();
 			return;
 		}
+		
+		logger.error("Re-depositing fee {} in disposal account {}", fee, disposalAccountAmsId);
 			
 		responseObject = deposit(interbankSettlementDate, fee, disposalAccountAmsId, 1);
 			
@@ -91,6 +98,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 		}
 		
 		jobClient.newCompleteCommand(activatedJob.getKey()).variables(variables).send();
+		MDC.remove("internalCorrelationId");
 	}
 
 }

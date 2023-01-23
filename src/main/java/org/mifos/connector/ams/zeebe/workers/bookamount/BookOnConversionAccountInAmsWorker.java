@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
+import org.slf4j.MDC;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
@@ -21,6 +22,9 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 	@Override
 	public void handle(JobClient jobClient, ActivatedJob activatedJob) throws Exception {
 		Map<String, Object> variables = activatedJob.getVariablesAsMap();
+		
+		String internalCorrelationId = (String) variables.get("internalCorrelationId");
+		MDC.put("internalCorrelationId", internalCorrelationId);
 		
 		Integer conversionAccountAmsId = (Integer) variables.get("conversionAccountAmsId");
 		
@@ -48,10 +52,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 			amount = new BigDecimal(ctti.getAmount().getInstructedAmount().getAmount().toString());
 		}
 		
-		logger.error("Debtor exchange worker incoming variables:");
-		variables.entrySet().forEach(e -> logger.error("{}: {}", e.getKey(), e.getValue()));
-	
-		logger.info("Attempting to deposit the amount of {}", amount);
+		logger.info("Withdrawing amount {} from conversion account {}", amount, conversionAccountAmsId);
 	
 		ResponseEntity<Object> responseObject = withdraw(interbankSettlementDate, amount, conversionAccountAmsId, 1);
 			
@@ -59,6 +60,8 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 			jobClient.newFailCommand(activatedJob.getKey()).retries(0).send();
 			return;
 		}
+		
+		logger.info("Withdrawing fee {} from conversion account {}", fee, conversionAccountAmsId);
 			
 		responseObject = withdraw(interbankSettlementDate, fee, conversionAccountAmsId, 1);
 			
@@ -74,5 +77,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 		jobClient.newCompleteCommand(activatedJob.getKey()).variables(variables).send();
 			
 		logger.info("Book debit on fiat account has finished  successfully");
+		
+		MDC.remove("internalCorrelationId");
 	}
 }
