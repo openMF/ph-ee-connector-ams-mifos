@@ -32,7 +32,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 		
 		logger.info("Starting book debit on fiat account worker with currency account Id {}", conversionAccountAmsId);
 		
-		String interbankSettlementDate = (String) variables.get("interbankSettlementDate");
+		String interbankSettlementDate = ((String) variables.get("interbankSettlementDate")).replaceAll("-", "");
 		
 		if (interbankSettlementDate == null) {
 			logger.error("Book debit on fiat account has failed due to Interbank settlement date not being present in pacs.002");
