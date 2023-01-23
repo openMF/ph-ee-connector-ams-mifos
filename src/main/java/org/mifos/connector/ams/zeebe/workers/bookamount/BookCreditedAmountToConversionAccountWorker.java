@@ -1,11 +1,8 @@
 package org.mifos.connector.ams.zeebe.workers.bookamount;
 
 import java.io.StringReader;
-import java.text.SimpleDateFormat;
-import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
-import java.util.Optional;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBElement;
@@ -46,12 +43,9 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
 			JAXBElement<Document> jaxbObject = (JAXBElement<Document>) jc.createUnmarshaller().unmarshal(new StringReader(originalPacs002));
 			Document pacs_002 = jaxbObject.getValue();
 			
-			XMLGregorianCalendar interbankSettlementDate = pacs_002.getFIToFIPmtStsRpt().getTxInfAndSts().get(0).getOrgnlTxRef().getIntrBkSttlmDt();
-			String transactionDate = interbankSettlementDate.toGregorianCalendar().toZonedDateTime().toLocalDate().format(PATTERN);
+			XMLGregorianCalendar acceptanceDate = pacs_002.getFIToFIPmtStsRpt().getTxInfAndSts().get(0).getAccptncDtTm();
+			String transactionDate = acceptanceDate.toGregorianCalendar().toZonedDateTime().toLocalDate().format(PATTERN);
 			
-//			String transactionDate = Optional.ofNullable(interbankSettlementDate)
-//					.map(Object::toString)
-//					.orElse(LocalDateTime.now().format(PATTERN));
 			Object amount = variables.get("amount");
 		
 			Integer conversionAccountAmsId = (Integer) variables.get("conversionAccountAmsId");
