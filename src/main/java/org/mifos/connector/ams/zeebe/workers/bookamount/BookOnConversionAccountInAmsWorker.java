@@ -1,8 +1,13 @@
 package org.mifos.connector.ams.zeebe.workers.bookamount;
 
+import java.io.StringReader;
 import java.math.BigDecimal;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
+
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBElement;
 
 import org.slf4j.MDC;
 import org.springframework.http.HttpStatus;
@@ -11,13 +16,17 @@ import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import eu.nets.realtime247.ri_2015_10.ObjectFactory;
 import io.camunda.zeebe.client.api.response.ActivatedJob;
 import io.camunda.zeebe.client.api.worker.JobClient;
+import iso.std.iso._20022.tech.xsd.pacs_002_001.Document;
 import iso.std.iso20022plus.tech.json.pain_001_001.CreditTransferTransaction40;
 import iso.std.iso20022plus.tech.json.pain_001_001.Pain00100110CustomerCreditTransferInitiationV10MessageSchema;
 
 @Component
 public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker {
+	
+	private static final DateTimeFormatter PATTERN = DateTimeFormatter.ofPattern(FORMAT);
 	
 	@Override
 	public void handle(JobClient jobClient, ActivatedJob activatedJob) throws Exception {
@@ -32,7 +41,13 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 		
 		logger.info("Starting book debit on fiat account worker with currency account Id {}", conversionAccountAmsId);
 		
-		String interbankSettlementDate = ((String) variables.get("interbankSettlementDate")).replaceAll("-", "");
+		String originalPacs002 = (String) variables.get("originalPacs002");
+		
+		JAXBContext jc = JAXBContext.newInstance(ObjectFactory.class);
+		JAXBElement<Document> jaxbObject = (JAXBElement<Document>) jc.createUnmarshaller().unmarshal(new StringReader(originalPacs002));
+		Document pacs_002 = jaxbObject.getValue();
+		
+		String interbankSettlementDate = pacs_002.getFIToFIPmtStsRpt().getTxInfAndSts().get(0).getOrgnlTxRef().getIntrBkSttlmDt().toGregorianCalendar().toZonedDateTime().toLocalDate().format(PATTERN);
 		
 		if (interbankSettlementDate == null) {
 			logger.error("Book debit on fiat account has failed due to Interbank settlement date not being present in pacs.002");
