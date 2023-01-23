@@ -1,6 +1,8 @@
 package org.mifos.connector.ams.zeebe.workers.bookamount;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 
@@ -25,6 +27,8 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 	
 	@Value("${fineract.paymentType.paymentTypeIssuingECurrencyId}")
 	private Integer paymentTypeIssuingECurrencyId;
+	
+	private static final DateTimeFormatter PATTERN = DateTimeFormatter.ofPattern(FORMAT);
 
 	@Override
 	public void handle(JobClient jobClient, ActivatedJob activatedJob) throws Exception {
@@ -37,7 +41,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 		
 		Integer conversionAccountAmsId = (Integer) variables.get("conversionAccountAmsId");
 		
-		String interbankSettlementDate = (String) variables.get("interbankSettlementDate");
+		String interbankSettlementDate = LocalDate.now().format(PATTERN);
 			
 		Integer disposalAccountAmsId = (Integer) variables.get("disposalAccountAmsId");
 		
