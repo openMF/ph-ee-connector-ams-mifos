@@ -87,7 +87,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 				return;
 			}
 			
-			logger.info("Depositing amount {} to conversion account {}", account, conversionAccountAmsId);
+			logger.info("Depositing amount {} to conversion account {}", amount, conversionAccountAmsId);
 		
 			responseObject = deposit(transactionDate, amount, conversionAccountAmsId, paymentTypeExchangeToFiatCurrencyId);
 		
