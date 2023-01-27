@@ -66,7 +66,9 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			
 			logger.info("Withdrawing amount {} from disposal account {}", amount, disposalAccountAmsId);
 			
-			ResponseEntity<Object> responseObject = withdraw(transactionDate, amount, disposalAccountAmsId, paymentTypeExchangeECurrencyId);
+			String tenantId = (String) variables.get("tenantIdentifier");
+			
+			ResponseEntity<Object> responseObject = withdraw(transactionDate, amount, disposalAccountAmsId, paymentTypeExchangeECurrencyId, tenantId);
 				
 			if (!HttpStatus.OK.equals(responseObject.getStatusCode())) {
 				jobClient.newFailCommand(activatedJob.getKey()).retries(0).send();
@@ -75,11 +77,11 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			
 			logger.info("Withdrawing fee {} from disposal account {}", fee, disposalAccountAmsId);
 				
-			responseObject = withdraw(transactionDate, fee, disposalAccountAmsId, paymentTypeFeeId);
+			responseObject = withdraw(transactionDate, fee, disposalAccountAmsId, paymentTypeFeeId, tenantId);
 				
 			if (!HttpStatus.OK.equals(responseObject.getStatusCode())) {
 				jobClient.newFailCommand(activatedJob.getKey()).retries(0).send();
-				ResponseEntity<Object> sagaResponseObject = deposit(transactionDate, amount, disposalAccountAmsId, paymentTypeExchangeECurrencyId);
+				ResponseEntity<Object> sagaResponseObject = deposit(transactionDate, amount, disposalAccountAmsId, paymentTypeExchangeECurrencyId, tenantId);
 					
 				if (!HttpStatus.OK.equals(sagaResponseObject.getStatusCode())) {
 					jobClient.newFailCommand(activatedJob.getKey()).retries(0).send();
@@ -89,7 +91,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			
 			logger.info("Depositing amount {} to conversion account {}", amount, conversionAccountAmsId);
 		
-			responseObject = deposit(transactionDate, amount, conversionAccountAmsId, paymentTypeExchangeToFiatCurrencyId);
+			responseObject = deposit(transactionDate, amount, conversionAccountAmsId, paymentTypeExchangeToFiatCurrencyId, tenantId);
 		
 			if (!HttpStatus.OK.equals(responseObject.getStatusCode())) {
 				jobClient.newFailCommand(activatedJob.getKey()).retries(0).send().join();
@@ -98,7 +100,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			
 			logger.info("Depositing fee {} to conversion account {}", fee, conversionAccountAmsId);
 			
-			responseObject = deposit(transactionDate, fee, conversionAccountAmsId, paymentTypeFeeId);
+			responseObject = deposit(transactionDate, fee, conversionAccountAmsId, paymentTypeFeeId, tenantId);
 			
 			if (!HttpStatus.OK.equals(responseObject.getStatusCode())) {
 				jobClient.newFailCommand(activatedJob.getKey()).retries(0).send().join();

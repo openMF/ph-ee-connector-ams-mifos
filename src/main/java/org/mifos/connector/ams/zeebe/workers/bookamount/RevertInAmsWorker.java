@@ -58,8 +58,10 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 		}
 		
 		logger.error("Withdrawing amount {} from conversion account {}", amount, conversionAccountAmsId);
+		
+		String tenantId = (String) variables.get("tenantIdentifier");
 	
-		ResponseEntity<Object> responseObject = withdraw(interbankSettlementDate, amount, conversionAccountAmsId, 1);
+		ResponseEntity<Object> responseObject = withdraw(interbankSettlementDate, amount, conversionAccountAmsId, 1, tenantId);
 			
 		if (!HttpStatus.OK.equals(responseObject.getStatusCode())) {
 			jobClient.newFailCommand(activatedJob.getKey()).retries(0).send();
@@ -68,11 +70,11 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 		
 		logger.error("Withdrawing fee {} from conversion account {}", fee, conversionAccountAmsId);
 			
-		responseObject = withdraw(interbankSettlementDate, fee, conversionAccountAmsId, 1);
+		responseObject = withdraw(interbankSettlementDate, fee, conversionAccountAmsId, 1, tenantId);
 			
 		if (!HttpStatus.OK.equals(responseObject.getStatusCode())) {
 			jobClient.newFailCommand(activatedJob.getKey()).retries(0).send();
-			ResponseEntity<Object> sagaResponseObject = deposit(interbankSettlementDate, amount, conversionAccountAmsId, 1);
+			ResponseEntity<Object> sagaResponseObject = deposit(interbankSettlementDate, amount, conversionAccountAmsId, 1, tenantId);
 			if (!HttpStatus.OK.equals(sagaResponseObject.getStatusCode())) {
 				jobClient.newFailCommand(activatedJob.getKey()).retries(0).send();
 			}
@@ -81,7 +83,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 		
 		logger.error("Re-depositing amount {} in disposal account {}", amount, disposalAccountAmsId);
 		
-		responseObject = deposit(interbankSettlementDate, amount, disposalAccountAmsId, 1);
+		responseObject = deposit(interbankSettlementDate, amount, disposalAccountAmsId, 1, tenantId);
 		
 		if (!HttpStatus.OK.equals(responseObject.getStatusCode())) {
 			jobClient.newFailCommand(activatedJob.getKey()).retries(0).send();
@@ -90,11 +92,11 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 		
 		logger.error("Re-depositing fee {} in disposal account {}", fee, disposalAccountAmsId);
 			
-		responseObject = deposit(interbankSettlementDate, fee, disposalAccountAmsId, 1);
+		responseObject = deposit(interbankSettlementDate, fee, disposalAccountAmsId, 1, tenantId);
 			
 		if (!HttpStatus.OK.equals(responseObject.getStatusCode())) {
 			jobClient.newFailCommand(activatedJob.getKey()).retries(0).send();
-			ResponseEntity<Object> sagaResponseObject = withdraw(interbankSettlementDate, amount, disposalAccountAmsId, 1);
+			ResponseEntity<Object> sagaResponseObject = withdraw(interbankSettlementDate, amount, disposalAccountAmsId, 1, tenantId);
 			if (!HttpStatus.OK.equals(sagaResponseObject.getStatusCode())) {
 				jobClient.newFailCommand(activatedJob.getKey()).retries(0).send();
 			}

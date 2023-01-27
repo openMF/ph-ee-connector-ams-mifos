@@ -35,15 +35,17 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 		
 			Integer conversionAccountAmsId = (Integer) variables.get("conversionAccountAmsId");
 			Integer disposalAccountAmsId = (Integer) variables.get("disposalAccountAmsId");
+			
+			String tenantId = (String) variables.get("tenantIdentifier");
 		
-			ResponseEntity<Object> responseObject = withdraw(transactionDate, amount, conversionAccountAmsId, paymentTypeExchangeFiatCurrencyId);
+			ResponseEntity<Object> responseObject = withdraw(transactionDate, amount, conversionAccountAmsId, paymentTypeExchangeFiatCurrencyId, tenantId);
 		
 			if (!HttpStatus.OK.equals(responseObject.getStatusCode())) {
 				jobClient.newFailCommand(activatedJob.getKey()).retries(0).send();
 				return;
 			}
 		
-			responseObject = deposit(transactionDate, amount, disposalAccountAmsId, paymentTypeIssuingECurrencyId);
+			responseObject = deposit(transactionDate, amount, disposalAccountAmsId, paymentTypeIssuingECurrencyId, tenantId);
 		
 			if (!HttpStatus.OK.equals(responseObject.getStatusCode())) {
 				jobClient.newFailCommand(activatedJob.getKey()).retries(0).send().join();

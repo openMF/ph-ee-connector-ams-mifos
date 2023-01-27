@@ -49,8 +49,10 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
 			Object amount = variables.get("amount");
 		
 			Integer conversionAccountAmsId = (Integer) variables.get("conversionAccountAmsId");
+			
+			String tenantId = (String) variables.get("tenantIdentifier");
 		
-			ResponseEntity<Object> responseObject = deposit(transactionDate, amount, conversionAccountAmsId, 1);
+			ResponseEntity<Object> responseObject = deposit(transactionDate, amount, conversionAccountAmsId, 1, tenantId);
 		
 			if (HttpStatus.OK.equals(responseObject.getStatusCode())) {
 				logger.info("Worker to book incoming money in AMS has finished successfully");

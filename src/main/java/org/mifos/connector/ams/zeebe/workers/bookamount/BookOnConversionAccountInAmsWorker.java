@@ -68,8 +68,10 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 		}
 		
 		logger.info("Withdrawing amount {} from conversion account {}", amount, conversionAccountAmsId);
+		
+		String tenantId = (String) variables.get("tenantIdentifier");
 	
-		ResponseEntity<Object> responseObject = withdraw(interbankSettlementDate, amount, conversionAccountAmsId, 1);
+		ResponseEntity<Object> responseObject = withdraw(interbankSettlementDate, amount, conversionAccountAmsId, 1, tenantId);
 			
 		if (!HttpStatus.OK.equals(responseObject.getStatusCode())) {
 			jobClient.newFailCommand(activatedJob.getKey()).retries(0).send();
@@ -78,11 +80,11 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 		
 		logger.info("Withdrawing fee {} from conversion account {}", fee, conversionAccountAmsId);
 			
-		responseObject = withdraw(interbankSettlementDate, fee, conversionAccountAmsId, 1);
+		responseObject = withdraw(interbankSettlementDate, fee, conversionAccountAmsId, 1, tenantId);
 			
 		if (!HttpStatus.OK.equals(responseObject.getStatusCode())) {
 			jobClient.newFailCommand(activatedJob.getKey()).retries(0).send();
-			ResponseEntity<Object> sagaResponseObject = deposit(interbankSettlementDate, amount, conversionAccountAmsId, 1);
+			ResponseEntity<Object> sagaResponseObject = deposit(interbankSettlementDate, amount, conversionAccountAmsId, 1, tenantId);
 			if (!HttpStatus.OK.equals(sagaResponseObject.getStatusCode())) {
 				jobClient.newFailCommand(activatedJob.getKey()).retries(0).send();
 			}
