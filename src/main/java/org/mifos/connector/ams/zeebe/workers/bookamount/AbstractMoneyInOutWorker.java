@@ -37,6 +37,7 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 	protected static final String FORMAT = "yyyyMMdd";
 	
 	protected ResponseEntity<Object> release(Integer currencyAccountAmsId, Integer holdAmountId, String tenantId) {
+		httpHeaders.remove("Fineract-Platform-TenantId");
 		httpHeaders.add("Fineract-Platform-TenantId", tenantId);
 		var entity = new HttpEntity<>(null, httpHeaders);
 		
@@ -92,6 +93,7 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 	}
 	
 	private <T> ResponseEntity<Object> doExchange(T body, Integer currencyAccountAmsId, String command, String tenantId) {
+		httpHeaders.remove("Fineract-Platform-TenantId");
 		httpHeaders.add("Fineract-Platform-TenantId", tenantId);
 		var entity = new HttpEntity<>(body, httpHeaders);
 		

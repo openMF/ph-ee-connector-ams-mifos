@@ -55,6 +55,7 @@ public abstract class AbstractAmsWorker implements JobHandler {
 	}
 
 	protected <T> T exchange(String urlTemplate, Class<T> responseType, String tenantId) {
+		httpHeaders.remove("Fineract-Platform-TenantId");
 		httpHeaders.add("Fineract-Platform-TenantId", tenantId);
 		logger.info("Sending http request with the following headers: {}", httpHeaders);
 		return restTemplate.exchange(
