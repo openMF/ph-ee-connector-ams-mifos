@@ -112,10 +112,13 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 		
 			jobClient.newCompleteCommand(activatedJob.getKey()).variables(variables).send();
 		} catch (Exception e) {
-			logger.error(e.getMessage(), e);
 			logger.warn("Fee withdrawal failed, re-depositing {} to disposal account", amount);
 			deposit(transactionDate, amount, disposalAccountAmsId, paymentTypeExchangeECurrencyId, tenantId);
-			jobClient.newThrowErrorCommand(activatedJob.getKey()).errorCode("Error_InsufficientFunds").send();
+			jobClient
+					.newThrowErrorCommand(activatedJob.getKey())
+					.errorCode("Error_InsufficientFunds")
+					.errorMessage(e.getMessage())
+					.send();
 		} finally {
 			MDC.remove("internalCorrelationId");
 		}
