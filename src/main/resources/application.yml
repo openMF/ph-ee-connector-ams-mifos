@@ -12,7 +12,7 @@ fineract:
   api-url: "http://fineract.binx-dev:8080/fineract-provider/api/v1"
   datatable-query-api: "/datatables/account_mapping/query"
   column-filter: "iban"
-  result-columns: "fiat_currency_account_id,ecurrency_account_id"
+  result-columns: "conversion_account_id,disposal_account_id"
   incoming-money-api: "/savingsaccounts/"
   locale: "en"
 

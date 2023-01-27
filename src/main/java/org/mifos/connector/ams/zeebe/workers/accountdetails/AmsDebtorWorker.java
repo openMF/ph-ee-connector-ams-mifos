@@ -37,8 +37,8 @@ public class AmsDebtorWorker extends AbstractAmsWorker {
 		} else {
 			AmsDataTableQueryResponse responseItem = lookupAccount[0];
 		
-			variables.put("disposalAccountAmsId", responseItem.ecurrency_account_id());
-			variables.put("conversionAccountAmsId", responseItem.fiat_currency_account_id());
+			variables.put("disposalAccountAmsId", responseItem.disposal_account_id());
+			variables.put("conversionAccountAmsId", responseItem.conversion_account_id());
 			jobClient.newCompleteCommand(activatedJob.getKey()).variables(variables).send();
 		}
 	}

@@ -1,4 +1,4 @@
 package org.mifos.connector.ams.zeebe.workers.accountdetails;
 
-public record AmsDataTableQueryResponse(Long fiat_currency_account_id, Long ecurrency_account_id) {
+public record AmsDataTableQueryResponse(Long conversion_account_id, Long disposal_account_id) {
 }

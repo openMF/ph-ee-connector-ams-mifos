@@ -50,8 +50,8 @@ public class AmsCreditorWorker extends AbstractAmsWorker {
 		
 		if (response.length != 0) {
 			var responseItem = response[0];
-			Long accountFiatCurrencyId = responseItem.fiat_currency_account_id();
-			Long accountECurrencyId = responseItem.ecurrency_account_id();
+			Long accountFiatCurrencyId = responseItem.conversion_account_id();
+			Long accountECurrencyId = responseItem.disposal_account_id();
 
 			try {
 				GetSavingsAccountsAccountIdResponse conversion = retrieveCurrencyIdAndStatus(accountFiatCurrencyId, tenantId);
