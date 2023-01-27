@@ -27,7 +27,7 @@ public class AmsDebtorWorker extends AbstractAmsWorker {
 
 		String debtorIban = (String) variables.get("debtorIban");
 		String tenantId = (String) variables.get("tenantIdentifier");
-		logger.info(">>>>>>>>>>>>>>>>>>> looking up debtor iban {} <<<<<<<<<<<<<<<<<<", debtorIban);
+		logger.info(">>>>>>>>>>>>>>>>>>> looking up debtor iban {} for tenant {} <<<<<<<<<<<<<<<<<<", debtorIban, tenantId);
 		
 		AmsDataTableQueryResponse[] lookupAccount = lookupAccount(debtorIban, tenantId);
 		
