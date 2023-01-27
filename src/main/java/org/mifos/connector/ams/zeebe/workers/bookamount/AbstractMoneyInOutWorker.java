@@ -9,6 +9,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -107,10 +108,14 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 		
 		logger.info(">> Sending {} to {} with headers {}", body, urlTemplate, httpHeaders);
 		
-		ResponseEntity<Object> response = restTemplate.exchange(urlTemplate, HttpMethod.POST, entity, Object.class);
-		
-		logger.info("<< Received HTTP {}", response.getStatusCode());
-		
-		return response;
+		try {
+			ResponseEntity<Object> response = restTemplate.exchange(urlTemplate, HttpMethod.POST, entity, Object.class);
+			logger.info("<< Received HTTP {}", response.getStatusCode());
+			return response;
+		} catch (HttpClientErrorException e) {
+			logger.error(e.getMessage(), e);
+			return ResponseEntity.status(e.getRawStatusCode()).headers(e.getResponseHeaders())
+	                .body(e.getResponseBodyAsString());
+		}
 	}
 }
