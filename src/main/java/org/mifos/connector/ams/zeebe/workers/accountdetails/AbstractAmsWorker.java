@@ -38,7 +38,7 @@ public abstract class AbstractAmsWorker implements JobHandler {
 		this.httpHeaders = httpHeaders;
 	}
 	
-	protected AmsDataTableQueryResponse[] lookupAccount(String iban) {
+	protected AmsDataTableQueryResponse[] lookupAccount(String iban, String tenantId) {
 		return exchange(UriComponentsBuilder
 				.fromHttpUrl(fineractApiUrl)
 				.path(datatableQueryApi)
@@ -46,10 +46,12 @@ public abstract class AbstractAmsWorker implements JobHandler {
 				.queryParam("valueFilter", iban)
 				.queryParam("resultColumns", resultColumns)
 				.encode().toUriString(),
-				AmsDataTableQueryResponse[].class);
+				AmsDataTableQueryResponse[].class,
+				tenantId);
 	}
 
-	protected <T> T exchange(String urlTemplate, Class<T> responseType) {
+	protected <T> T exchange(String urlTemplate, Class<T> responseType, String tenantId) {
+		httpHeaders.add("Fineract-Platform-TenantId", tenantId);
 		return restTemplate.exchange(
 				urlTemplate, 
 				HttpMethod.GET, 

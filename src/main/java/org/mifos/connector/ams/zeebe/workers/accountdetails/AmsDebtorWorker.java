@@ -26,9 +26,10 @@ public class AmsDebtorWorker extends AbstractAmsWorker {
 		var variables = activatedJob.getVariablesAsMap();
 
 		String debtorIban = (String) variables.get("debtorIban");
+		String tenantId = (String) variables.get("tenantIdentifier");
 		logger.info(">>>>>>>>>>>>>>>>>>> looking up debtor iban {} <<<<<<<<<<<<<<<<<<", debtorIban);
 		
-		AmsDataTableQueryResponse[] lookupAccount = lookupAccount(debtorIban);
+		AmsDataTableQueryResponse[] lookupAccount = lookupAccount(debtorIban, tenantId);
 		
 		if (lookupAccount.length == 0) {
 			logger.error("####################  No entry found for iban {} !!!  #########################", debtorIban);

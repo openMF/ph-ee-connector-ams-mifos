@@ -36,7 +36,8 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 	
 	protected static final String FORMAT = "yyyyMMdd";
 	
-	protected ResponseEntity<Object> release(Integer currencyAccountAmsId, Integer holdAmountId) {
+	protected ResponseEntity<Object> release(Integer currencyAccountAmsId, Integer holdAmountId, String tenantId) {
+		httpHeaders.add("Fineract-Platform-TenantId", tenantId);
 		var entity = new HttpEntity<>(null, httpHeaders);
 		
 		var urlTemplate = UriComponentsBuilder.fromHttpUrl(fineractApiUrl)
@@ -57,7 +58,7 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 		return response;
 	}
 	
-	protected ResponseEntity<Object> hold(String transactionDate, Object amount, Integer currencyAccountAmsId) {
+	protected ResponseEntity<Object> hold(String transactionDate, Object amount, Integer currencyAccountAmsId, String tenantId) {
 		var body = new HoldAmountBody(
 				transactionDate,
 				amount,
@@ -65,10 +66,10 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 				locale,
 				FORMAT
 				);
-		return doExchange(body, currencyAccountAmsId, "holdAmount");
+		return doExchange(body, currencyAccountAmsId, "holdAmount", tenantId);
 	}
 	
-	protected ResponseEntity<Object> deposit(String transactionDate, Object amount, Integer currencyAccountAmsId, Integer paymentTypeId) {
+	protected ResponseEntity<Object> deposit(String transactionDate, Object amount, Integer currencyAccountAmsId, Integer paymentTypeId, String tenantId) {
 		var body = new TransactionBody(
 				transactionDate,
 				amount,
@@ -76,10 +77,10 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 				"",
 				FORMAT,
 				locale);
-		return doExchange(body, currencyAccountAmsId, "deposit");
+		return doExchange(body, currencyAccountAmsId, "deposit", tenantId);
 	}
 
-	protected ResponseEntity<Object> withdraw(String transactionDate, Object amount, Integer currencyAccountAmsId, Integer paymentTypeId) {
+	protected ResponseEntity<Object> withdraw(String transactionDate, Object amount, Integer currencyAccountAmsId, Integer paymentTypeId, String tenantId) {
 		var body = new TransactionBody(
 				transactionDate,
 				amount,
@@ -87,10 +88,11 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 				"",
 				FORMAT,
 				locale);
-		return doExchange(body, currencyAccountAmsId, "withdrawal");
+		return doExchange(body, currencyAccountAmsId, "withdrawal", tenantId);
 	}
 	
-	private <T> ResponseEntity<Object> doExchange(T body, Integer currencyAccountAmsId, String command) {
+	private <T> ResponseEntity<Object> doExchange(T body, Integer currencyAccountAmsId, String command, String tenantId) {
+		httpHeaders.add("Fineract-Platform-TenantId", tenantId);
 		var entity = new HttpEntity<>(body, httpHeaders);
 		
 		var urlTemplate = UriComponentsBuilder.fromHttpUrl(fineractApiUrl)

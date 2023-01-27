@@ -12,7 +12,6 @@ public class HttpHeadersFactory {
 	public HttpHeaders httpHeaders() {
 		HttpHeaders headers = new HttpHeaders();
 		headers.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
-		headers.set("Fineract-Platform-TenantId", "default");
 		headers.set("Authorization", "Basic bWlmb3M6cGFzc3dvcmQ=");
 		return headers;
 	}

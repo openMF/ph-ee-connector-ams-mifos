@@ -40,8 +40,10 @@ public class AmsCreditorWorker extends AbstractAmsWorker {
 		
 		AccountAmsStatus status = AccountAmsStatus.NOT_READY_TO_RECEIVE_MONEY;
 		String currency = (String) variables.get("currency");
+		
+		String tenantId = (String) variables.get("tenantIdentifier");
 
-		AmsDataTableQueryResponse[] response = lookupAccount(creditorIban);
+		AmsDataTableQueryResponse[] response = lookupAccount(creditorIban, tenantId);
 		
 		variables.put("disposalAccountAmsId", "");
 		variables.put("conversionAccountAmsId", "");
@@ -52,8 +54,8 @@ public class AmsCreditorWorker extends AbstractAmsWorker {
 			Long accountECurrencyId = responseItem.ecurrency_account_id();
 
 			try {
-				GetSavingsAccountsAccountIdResponse conversion = retrieveCurrencyIdAndStatus(accountFiatCurrencyId);
-				GetSavingsAccountsAccountIdResponse disposal = retrieveCurrencyIdAndStatus(accountECurrencyId);
+				GetSavingsAccountsAccountIdResponse conversion = retrieveCurrencyIdAndStatus(accountFiatCurrencyId, tenantId);
+				GetSavingsAccountsAccountIdResponse disposal = retrieveCurrencyIdAndStatus(accountECurrencyId, tenantId);
 
 				if (currency.equalsIgnoreCase(conversion.getCurrency().getCode())
 						&& conversion.getStatus().getId() == 300 
@@ -79,12 +81,13 @@ public class AmsCreditorWorker extends AbstractAmsWorker {
 		}
 	}
 
-	private GetSavingsAccountsAccountIdResponse retrieveCurrencyIdAndStatus(Long accountCurrencyId) {
+	private GetSavingsAccountsAccountIdResponse retrieveCurrencyIdAndStatus(Long accountCurrencyId, String tenantId) {
 		return exchange(UriComponentsBuilder
 				.fromHttpUrl(fineractApiUrl)
 				.path(incomingMoneyApi)
 				.path(String.format("%d", accountCurrencyId))
 				.encode().toUriString(),
-				GetSavingsAccountsAccountIdResponse.class);
+				GetSavingsAccountsAccountIdResponse.class,
+				tenantId);
 	}
 }
