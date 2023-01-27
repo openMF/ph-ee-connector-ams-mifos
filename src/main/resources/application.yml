@@ -18,6 +18,11 @@ zeebe:
   broker:
     contactpoint: "127.0.0.1:26500"
 
+#ams:
+#  local:
+#    server-cert-check: false
+#    enabled: true
+
 ams:
   local:
     server-cert-check: false

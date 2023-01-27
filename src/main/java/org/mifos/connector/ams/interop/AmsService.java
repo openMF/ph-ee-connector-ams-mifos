@@ -16,6 +16,8 @@ public interface AmsService {
 
     void sendTransfer(Exchange e);
 
+    void repayLoan(Exchange e);
+
     void login(Exchange e);
 
     void getSavingsAccount(Exchange e);
@@ -29,7 +31,6 @@ public interface AmsService {
     void getClientByMobileNo(Exchange e);
 
     void getSavingsAccountsTransactions(Exchange e) ;
-
     default void getClientImage(Exchange e){}
 
 }
