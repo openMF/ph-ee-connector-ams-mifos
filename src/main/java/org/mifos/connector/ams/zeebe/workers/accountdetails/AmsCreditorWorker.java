@@ -35,13 +35,13 @@ public class AmsCreditorWorker extends AbstractAmsWorker {
 		String internalCorrelationId = (String) variables.get("internalCorrelationId");
 		MDC.put("internalCorrelationId", internalCorrelationId);
 		String creditorIban = (String) variables.get("creditorIban");
+		String tenantId = (String) variables.get("tenantIdentifier");
 		
-		logger.info("Started AMS creditor worker for creditor IBAN {}", creditorIban);
+		logger.info("Started AMS creditor worker for creditor IBAN {} and Tenant Id {}", creditorIban, tenantId);
 		
 		AccountAmsStatus status = AccountAmsStatus.NOT_READY_TO_RECEIVE_MONEY;
 		String currency = (String) variables.get("currency");
 		
-		String tenantId = (String) variables.get("tenantIdentifier");
 
 		AmsDataTableQueryResponse[] response = lookupAccount(creditorIban, tenantId);
 		
