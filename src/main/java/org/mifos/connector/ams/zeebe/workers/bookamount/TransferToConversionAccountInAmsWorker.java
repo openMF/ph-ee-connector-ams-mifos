@@ -78,13 +78,13 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			}
 			
 			logger.info("Withdrawing fee {} from disposal account {}", fee, disposalAccountAmsId);
-				
-			responseObject = withdraw(transactionDate, fee, disposalAccountAmsId, paymentTypeFeeId, tenantId);
-				
-			if (!HttpStatus.OK.equals(responseObject.getStatusCode())) {
+			
+			try {
+				withdraw(transactionDate, fee, disposalAccountAmsId, paymentTypeFeeId, tenantId);
+			} catch (Exception e) {
 				logger.warn("Fee withdrawal failed, re-depositing {} to disposal account", amount);
 				deposit(transactionDate, amount, disposalAccountAmsId, paymentTypeExchangeECurrencyId, tenantId);
-				jobClient.newFailCommand(activatedJob.getKey()).retries(0).send();
+				jobClient.newFailCommand(activatedJob.getKey()).retries(0).errorMessage(e.getMessage()).send();
 				return;
 			}
 			
