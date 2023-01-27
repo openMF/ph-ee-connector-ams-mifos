@@ -80,7 +80,10 @@ public class ClientResponseProcessor implements Processor {
             if ("1.2".equals(amsVersion)) {
                 ClientData client = exchange.getIn().getBody(ClientData.class);
                 EnumOptionData legalForm = client.getLegalForm();
-                if (legalForm == null || PERSON.equals(LegalForm.valueOf(legalForm.getValue().toUpperCase()))) {
+                if (legalForm == null ||
+                        (legalForm.getValue() != null &&
+                                        PERSON.equals(LegalForm.valueOf(legalForm.getValue().toUpperCase())))
+                ) {
                     PersonalInfo pi = new PersonalInfo();
                     pi.setDateOfBirth(client.getDateOfBirth() != null ? client.getDateOfBirth().toString() : null);
                     ComplexName cn = new ComplexName();

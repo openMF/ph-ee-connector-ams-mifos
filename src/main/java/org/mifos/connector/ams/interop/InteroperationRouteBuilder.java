@@ -120,7 +120,7 @@ public class InteroperationRouteBuilder extends ErrorHandlerRouteBuilder {
                         exchange.setProperty(IS_ERROR_SET_MANUALLY, true);
                     }
                 })
-                .log("Test 1: ${body}")
+                .log("Response body from get-external-account: ${body}")
                 .choice()
                 // check if http status code is <= 202
                 .when(e -> e.getIn().getHeader(Exchange.HTTP_RESPONSE_CODE, Integer.class) <= 202)
@@ -129,8 +129,8 @@ public class InteroperationRouteBuilder extends ErrorHandlerRouteBuilder {
                 .process(exchange -> {
                     PartyFspResponseDTO dto = exchange.getIn().getBody(PartyFspResponseDTO.class);
 
-                    logger.info("Test 2: {}", dto.getAccountId());
-                    logger.info("Test 3: {}", exchange.getIn().getHeader(Exchange.HTTP_RESPONSE_CODE, Integer.class));
+                    logger.info("Account Id: {}", dto.getAccountId());
+                    logger.info("Http response code: {}", exchange.getIn().getHeader(Exchange.HTTP_RESPONSE_CODE, Integer.class));
                 })
                 .when(e -> e.getProperty(IS_ERROR_SET_MANUALLY, Boolean.class) == null ||
                         !e.getProperty(IS_ERROR_SET_MANUALLY, Boolean.class))

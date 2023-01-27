@@ -28,6 +28,7 @@ public class ErrorTranslator {
         }
 
         PaymentHubError paymentHubError;
+        // todo improve try catch logic
         try {
             paymentHubError = errorMapper.getInternalError(errorCode);
             if (paymentHubError == null) {
@@ -61,10 +62,7 @@ public class ErrorTranslator {
         try {
             zeebeFinalVariables.put(ERROR_INFORMATION, objectMapper.writeValueAsString(phErrorDTO));
             PhErrorDTO errorDTO = objectMapper.readValue((String) zeebeFinalVariables.get(ERROR_INFORMATION), PhErrorDTO.class);
-            System.out.println("I got no error");
-            System.out.println(errorDTO);
         } catch (JsonProcessingException e) {
-            System.out.println("I got an error");
             e.printStackTrace();
             zeebeFinalVariables.put(ERROR_INFORMATION, phErrorDTO.toString());
         }

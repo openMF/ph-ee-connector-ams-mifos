@@ -32,8 +32,8 @@ public class ErrorParserRouteBuilder extends ErrorHandlerRouteBuilder {
                 .id("error-handler")
                 .log(LoggingLevel.INFO, "Error handler for response ${body}")
                 .choice()
-                // check if http status code is <= 202
-                .when(e -> e.getIn().getHeader(Exchange.HTTP_RESPONSE_CODE, Integer.class) >= 202)
+                // check if http status code is >= 202
+                .when(e -> e.getIn().getHeader(Exchange.HTTP_RESPONSE_CODE, Integer.class) >= 400)
                 .unmarshal().json(JsonLibrary.Jackson, ErrorResponse.class)
                 .process(exchange -> {
                     ErrorResponse errorResponse = exchange.getIn().getBody(ErrorResponse.class);
