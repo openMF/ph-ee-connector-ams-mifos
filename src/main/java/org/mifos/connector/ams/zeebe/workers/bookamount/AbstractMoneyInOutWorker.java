@@ -114,6 +114,7 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 			return response;
 		} catch (HttpClientErrorException e) {
 			logger.error(e.getMessage(), e);
+			logger.warn("Transaction returned with status code {}, rolling back any previous transactions", e.getRawStatusCode());
 			return ResponseEntity.status(e.getRawStatusCode()).headers(e.getResponseHeaders())
 	                .body(e.getResponseBodyAsString());
 		}
