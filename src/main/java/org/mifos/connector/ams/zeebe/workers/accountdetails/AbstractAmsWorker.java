@@ -1,5 +1,7 @@
 package org.mifos.connector.ams.zeebe.workers.accountdetails;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
@@ -11,6 +13,8 @@ import org.springframework.web.util.UriComponentsBuilder;
 import io.camunda.zeebe.client.api.worker.JobHandler;
 
 public abstract class AbstractAmsWorker implements JobHandler {
+	
+	Logger logger = LoggerFactory.getLogger(AbstractAmsWorker.class);
 	
 	@Value("${fineract.api-url}")
 	protected String fineractApiUrl;
@@ -52,6 +56,7 @@ public abstract class AbstractAmsWorker implements JobHandler {
 
 	protected <T> T exchange(String urlTemplate, Class<T> responseType, String tenantId) {
 		httpHeaders.add("Fineract-Platform-TenantId", tenantId);
+		logger.info("Sending http request with the following headers: {}", httpHeaders);
 		return restTemplate.exchange(
 				urlTemplate, 
 				HttpMethod.GET, 
