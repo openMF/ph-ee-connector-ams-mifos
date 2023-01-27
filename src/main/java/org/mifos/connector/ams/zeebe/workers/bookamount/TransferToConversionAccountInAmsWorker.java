@@ -80,12 +80,8 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			responseObject = withdraw(transactionDate, fee, disposalAccountAmsId, paymentTypeFeeId, tenantId);
 				
 			if (!HttpStatus.OK.equals(responseObject.getStatusCode())) {
+				deposit(transactionDate, amount, disposalAccountAmsId, paymentTypeExchangeECurrencyId, tenantId);
 				jobClient.newFailCommand(activatedJob.getKey()).retries(0).send();
-				ResponseEntity<Object> sagaResponseObject = deposit(transactionDate, amount, disposalAccountAmsId, paymentTypeExchangeECurrencyId, tenantId);
-					
-				if (!HttpStatus.OK.equals(sagaResponseObject.getStatusCode())) {
-					jobClient.newFailCommand(activatedJob.getKey()).retries(0).send();
-				}
 				return;
 			}
 			
@@ -94,6 +90,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			responseObject = deposit(transactionDate, amount, conversionAccountAmsId, paymentTypeExchangeToFiatCurrencyId, tenantId);
 		
 			if (!HttpStatus.OK.equals(responseObject.getStatusCode())) {
+				deposit(transactionDate, amount, disposalAccountAmsId, paymentTypeExchangeToFiatCurrencyId, tenantId);
 				jobClient.newFailCommand(activatedJob.getKey()).retries(0).send().join();
 				return;
 			}
@@ -103,6 +100,8 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			responseObject = deposit(transactionDate, fee, conversionAccountAmsId, paymentTypeFeeId, tenantId);
 			
 			if (!HttpStatus.OK.equals(responseObject.getStatusCode())) {
+				deposit(transactionDate, amount, disposalAccountAmsId, paymentTypeExchangeToFiatCurrencyId, tenantId);
+				deposit(transactionDate, fee, disposalAccountAmsId, paymentTypeExchangeToFiatCurrencyId, tenantId);
 				jobClient.newFailCommand(activatedJob.getKey()).retries(0).send().join();
 				return;
 			}
