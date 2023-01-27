@@ -36,6 +36,10 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 	@Override
 	public void handle(JobClient jobClient, ActivatedJob activatedJob) throws Exception {
 		logger.error("Debtor exchange worker starting");
+		String transactionDate = LocalDate.now().format(PATTERN);
+		BigDecimal amount = BigDecimal.ZERO;
+		Integer disposalAccountAmsId = null;
+		String tenantId = null;
 		try {
 			Map<String, Object> variables = activatedJob.getVariablesAsMap();
 			
@@ -47,7 +51,6 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			ObjectMapper om = new ObjectMapper();
 			Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001 = om.readValue(originalPain001, Pain00100110CustomerCreditTransferInitiationV10MessageSchema.class);
 			
-			BigDecimal amount = BigDecimal.ZERO;
 			BigDecimal fee = new BigDecimal(variables.get("transactionFeeAmount").toString());
 			
 			List<CreditTransferTransaction40> creditTransferTransactionInformation = pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation();
@@ -59,14 +62,13 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			logger.error("Debtor exchange worker incoming variables:");
 			variables.entrySet().forEach(e -> logger.error("{}: {}", e.getKey(), e.getValue()));
 		
-			String transactionDate = LocalDate.now().format(PATTERN);
 			
-			Integer disposalAccountAmsId = (Integer) variables.get("disposalAccountAmsId");
+			disposalAccountAmsId = (Integer) variables.get("disposalAccountAmsId");
 			Integer conversionAccountAmsId = (Integer) variables.get("conversionAccountAmsId");
 			
 			logger.info("Withdrawing amount {} from disposal account {}", amount, disposalAccountAmsId);
 			
-			String tenantId = (String) variables.get("tenantIdentifier");
+			tenantId = (String) variables.get("tenantIdentifier");
 			
 			ResponseEntity<Object> responseObject = withdraw(transactionDate, amount, disposalAccountAmsId, paymentTypeExchangeECurrencyId, tenantId);
 				
@@ -110,6 +112,8 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			jobClient.newCompleteCommand(activatedJob.getKey()).variables(variables).send();
 		} catch (Exception e) {
 			logger.error(e.getMessage(), e);
+			logger.warn("Fee withdrawal failed, re-depositing {} to disposal account", amount);
+			deposit(transactionDate, amount, disposalAccountAmsId, paymentTypeExchangeECurrencyId, tenantId);
 			jobClient.newThrowErrorCommand(activatedJob.getKey()).errorCode("Error_InsufficientFunds").send();
 		} finally {
 			MDC.remove("internalCorrelationId");
