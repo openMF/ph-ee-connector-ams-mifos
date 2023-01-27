@@ -33,6 +33,11 @@ public class ZeebeVariables {
     public static final String TRANSFER_RELEASE_FAILED = "transferReleaseFailed";
     public static final String TRANSFER_RESPONSE_PREFIX = "transferResponse";
 
+    public static final String ERROR_CODE = "errorCode";
+    public static final String ERROR_PAYLOAD = "errorPayload";
+    public static final String IS_ERROR_HANDLED = "isErrorHandled";
+
+
     static {
         ACTION_FAILURE_MAP.put(TransferActionType.PREPARE.name(), TRANSFER_PREPARE_FAILED);
         ACTION_FAILURE_MAP.put(TransferActionType.CREATE.name(), TRANSFER_CREATE_FAILED);

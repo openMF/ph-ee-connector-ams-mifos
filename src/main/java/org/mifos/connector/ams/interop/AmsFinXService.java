@@ -46,6 +46,8 @@ public class AmsFinXService extends AmsCommonService implements AmsService {
         headers.put(HTTP_METHOD, "GET");
         headers.put(HTTP_PATH, amsInteropAccountsPath.replace("{externalAccountId}", e.getProperty(EXTERNAL_ACCOUNT_ID, String.class)));
         headers.putAll(tenantService.getHeaders(e.getProperty(TENANT_ID, String.class)));
+        System.out.println("Header" + headers.get(HTTP_PATH));
+        System.out.println("Header" + headers.get(HTTP_METHOD));
         cxfrsUtil.sendInOut("cxfrs:bean:ams.local.interop", e, headers, null);
     }
 

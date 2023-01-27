@@ -1,9 +1,11 @@
 package org.mifos.connector.ams.interop;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import io.camunda.zeebe.client.ZeebeClient;
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
 import org.json.JSONObject;
+import org.mifos.connector.ams.errorhandler.ErrorTranslator;
 import org.mifos.connector.common.mojaloop.type.TransactionRole;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,13 +19,8 @@ import java.util.Map;
 import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSACTION_ROLE;
 import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSFER_ACTION;
 import static org.mifos.connector.ams.camel.config.CamelProperties.ZEEBE_JOB_KEY;
-import static org.mifos.connector.ams.zeebe.ZeebeVariables.ACTION_FAILURE_MAP;
-import static org.mifos.connector.ams.zeebe.ZeebeVariables.ERROR_INFORMATION;
-import static org.mifos.connector.ams.zeebe.ZeebeVariables.TRANSACTION_ID;
-import static org.mifos.connector.ams.zeebe.ZeebeVariables.TRANSFER_CODE;
-import static org.mifos.connector.ams.zeebe.ZeebeVariables.TRANSFER_CREATE_FAILED;
-import static org.mifos.connector.ams.zeebe.ZeebeVariables.TRANSFER_PREPARE_FAILED;
-import static org.mifos.connector.ams.zeebe.ZeebeVariables.TRANSFER_RESPONSE_PREFIX;
+import static org.mifos.connector.ams.zeebe.ZeebeVariables.*;
+import static org.mifos.connector.ams.zeebe.ZeebeVariables.ERROR_PAYLOAD;
 import static org.mifos.connector.common.ams.dto.TransferActionType.PREPARE;
 import static org.mifos.connector.common.camel.ErrorHandlerRouteBuilder.createError;
 import static org.mifos.connector.common.mojaloop.type.ErrorCode.PAYEE_FSP_REJECTED_TRANSACTION;
@@ -38,6 +35,9 @@ public class TransfersResponseProcessor implements Processor {
     @Autowired(required = false)
     private ZeebeClient zeebeClient;
 
+    @Autowired
+    private ErrorTranslator errorTranslator;
+
     @Override
     public void process(Exchange exchange) {
         Integer responseCode = exchange.getIn().getHeader(Exchange.HTTP_RESPONSE_CODE, Integer.class);
@@ -48,20 +48,11 @@ public class TransfersResponseProcessor implements Processor {
 
         if (responseCode > 202) {
 
-            String transactionRole = exchange.getProperty(TRANSACTION_ROLE, String.class);
-            String errorMsg = String.format("Invalid responseCode %s for transfer on %s side, transactionId: %s Message: %s",
-                    responseCode,
-                    transactionRole,
-                    exchange.getProperty(TRANSACTION_ID),
-                    exchange.getIn().getBody(String.class));
+            variables.put(ERROR_CODE, exchange.getProperty(ERROR_CODE));
+            variables.put(ERROR_INFORMATION, exchange.getProperty(ERROR_INFORMATION));
+            variables.put(ERROR_PAYLOAD, exchange.getProperty(ERROR_PAYLOAD));
+            variables = errorTranslator.translateError(variables);
 
-            logger.error(errorMsg);
-
-            JSONObject errorJson = new JSONObject(exchange.getIn().getBody(String.class));
-
-            String errorCode = transactionRole.equals(TransactionRole.PAYER.name()) ?
-                    String.valueOf(PAYER_REJECTED_TRANSACTION_REQUEST.getCode()) : String.valueOf(PAYEE_FSP_REJECTED_TRANSACTION.getCode());
-            variables.put(ERROR_INFORMATION, errorJson.toString());
             variables.put(ACTION_FAILURE_MAP.get(transferAction), true);
 
         } else {

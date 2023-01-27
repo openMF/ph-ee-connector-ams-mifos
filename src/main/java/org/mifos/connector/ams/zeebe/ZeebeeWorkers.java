@@ -336,7 +336,7 @@ public class ZeebeeWorkers {
                             Map<String, Object> existingVariables = job.getVariablesAsMap();
                             String partyIdType = (String) existingVariables.get(PARTY_ID_TYPE);
                             String partyId = (String) existingVariables.get(PARTY_ID);
-                            String tenantId = (String) existingVariables.get(TENANT_ID);
+                            String tenantId = (String) existingVariables.get(TENANT_ID); // payer
                             if (isAmsLocalEnabled) {
                                 Exchange ex = new DefaultExchange(camelContext);
                                 ex.setProperty(PARTY_ID_TYPE, partyIdType);
@@ -351,6 +351,18 @@ public class ZeebeeWorkers {
                                 ex.setProperty("payeeTenantId",existingVariables.get("payeeTenantId"));
 
                                 producerTemplate.send("direct:get-party", ex);
+
+                                /*
+                                 * payeeTenantId == dfspid => payee else payer
+                                 *
+                                 * a = payer tenant
+                                 * b = payee tenant
+                                 *
+                                 * debit -> gorilla
+                                 * credit -> gorilla
+                                 *
+                                 * PLATFORM-TENANT-ID -> PAYER/PAYEE
+                                 */
                             } else {
                                 Map<String, Object> variables = new HashMap<>();
                                 Party party = new Party( // only return fspId from configuration
