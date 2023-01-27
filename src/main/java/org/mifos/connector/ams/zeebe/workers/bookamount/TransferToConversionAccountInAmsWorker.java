@@ -35,8 +35,8 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 
 	@Override
 	public void handle(JobClient jobClient, ActivatedJob activatedJob) throws Exception {
-		logger.error("Debtor exchange worker starting");
 		String transactionDate = LocalDate.now().format(PATTERN);
+		logger.error("Debtor exchange worker starting");
 		BigDecimal amount = BigDecimal.ZERO;
 		Integer disposalAccountAmsId = null;
 		String tenantId = null;
