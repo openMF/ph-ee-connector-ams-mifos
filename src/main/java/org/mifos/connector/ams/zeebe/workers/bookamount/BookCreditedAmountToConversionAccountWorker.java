@@ -36,8 +36,9 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
 			MDC.put("internalCorrelationId", internalCorrelationId);
 		
 			String originalPacs002 = (String) variables.get("originalPacs002");
+			String tenantId = (String) variables.get("tenantIdentifier");
 			
-			logger.info("Worker to book incoming money in AMS has started with incomint pacs.002 {}", originalPacs002);
+			logger.info("Worker to book incoming money in AMS has started with incoming pacs.002 {} for tenant {}", originalPacs002, tenantId);
 			
 			JAXBContext jc = JAXBContext.newInstance(ObjectFactory.class);
 			JAXBElement<Document> jaxbObject = (JAXBElement<Document>) jc.createUnmarshaller().unmarshal(new StringReader(originalPacs002));
@@ -50,7 +51,6 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
 		
 			Integer conversionAccountAmsId = (Integer) variables.get("conversionAccountAmsId");
 			
-			String tenantId = (String) variables.get("tenantIdentifier");
 		
 			ResponseEntity<Object> responseObject = deposit(transactionDate, amount, conversionAccountAmsId, 1, tenantId);
 		

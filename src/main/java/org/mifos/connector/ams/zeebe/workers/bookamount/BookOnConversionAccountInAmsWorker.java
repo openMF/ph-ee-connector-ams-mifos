@@ -67,9 +67,8 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 			amount = new BigDecimal(ctti.getAmount().getInstructedAmount().getAmount().toString());
 		}
 		
-		logger.info("Withdrawing amount {} from conversion account {}", amount, conversionAccountAmsId);
-		
 		String tenantId = (String) variables.get("tenantIdentifier");
+		logger.info("Withdrawing amount {} from conversion account {} of tenant {}", amount, conversionAccountAmsId, tenantId);
 	
 		ResponseEntity<Object> responseObject = withdraw(interbankSettlementDate, amount, conversionAccountAmsId, 1, tenantId);
 			
