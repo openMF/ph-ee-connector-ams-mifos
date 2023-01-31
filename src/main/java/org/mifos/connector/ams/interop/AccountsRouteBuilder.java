@@ -16,7 +16,7 @@ import static org.mifos.connector.ams.zeebe.ZeebeVariables.*;
 
 @Component
 public class AccountsRouteBuilder extends RouteBuilder {
-    @Autowired
+    @Autowired(required = false)
     private AmsService amsService;
     @Value("${ams.local.version}")
     private String amsVersion;

@@ -54,7 +54,7 @@ public class InteroperationRouteBuilder extends ErrorHandlerRouteBuilder {
     @Autowired
     private Processor pojoToString;
 
-    @Autowired
+    @Autowired(required = false)
     private AmsService amsService;
 
     @Autowired
