@@ -3,7 +3,6 @@ package org.mifos.connector.ams.zeebe.workers.bookamount;
 import java.io.StringReader;
 import java.math.BigDecimal;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
 import java.util.Map;
 
 import javax.xml.bind.JAXBContext;
@@ -14,14 +13,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import eu.nets.realtime247.ri_2015_10.ObjectFactory;
 import io.camunda.zeebe.client.api.response.ActivatedJob;
 import io.camunda.zeebe.client.api.worker.JobClient;
 import iso.std.iso._20022.tech.xsd.pacs_002_001.Document;
-import iso.std.iso20022plus.tech.json.pain_001_001.CreditTransferTransaction40;
-import iso.std.iso20022plus.tech.json.pain_001_001.Pain00100110CustomerCreditTransferInitiationV10MessageSchema;
 
 @Component
 public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker {
@@ -36,8 +31,6 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 		MDC.put("internalCorrelationId", internalCorrelationId);
 		
 		Integer conversionAccountAmsId = (Integer) variables.get("conversionAccountAmsId");
-		
-		String originalPain001 = (String) variables.get("originalPain001");
 		
 		String originalPacs002 = (String) variables.get("originalPacs002");
 
@@ -55,17 +48,8 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 			return;
 		}
 		
-		ObjectMapper om = new ObjectMapper();
-		Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001 = om.readValue(originalPain001, Pain00100110CustomerCreditTransferInitiationV10MessageSchema.class);
-		
-		BigDecimal amount = BigDecimal.ZERO;
+		BigDecimal amount = new BigDecimal((String) variables.get("amount"));
 		BigDecimal fee = new BigDecimal(variables.get("transactionFeeAmount").toString());
-		
-		List<CreditTransferTransaction40> creditTransferTransactionInformation = pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation();
-		
-		for (CreditTransferTransaction40 ctti : creditTransferTransactionInformation) {
-			amount = new BigDecimal(ctti.getAmount().getInstructedAmount().getAmount().toString());
-		}
 		
 		String tenantId = (String) variables.get("tenantIdentifier");
 		logger.info("Withdrawing amount {} from conversion account {} of tenant {}", amount, conversionAccountAmsId, tenantId);

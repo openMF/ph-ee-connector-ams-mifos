@@ -3,7 +3,6 @@ package org.mifos.connector.ams.zeebe.workers.bookamount;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
 import java.util.Map;
 
 import org.slf4j.MDC;
@@ -12,12 +11,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import io.camunda.zeebe.client.api.response.ActivatedJob;
 import io.camunda.zeebe.client.api.worker.JobClient;
-import iso.std.iso20022plus.tech.json.pain_001_001.CreditTransferTransaction40;
-import iso.std.iso20022plus.tech.json.pain_001_001.Pain00100110CustomerCreditTransferInitiationV10MessageSchema;
 
 @Component
 public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWorker {
@@ -46,18 +41,9 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			String internalCorrelationId = (String) variables.get("internalCorrelationId");
 			MDC.put("internalCorrelationId", internalCorrelationId);
 			
-			String originalPain001 = (String) variables.get("originalPain001");
-			
-			ObjectMapper om = new ObjectMapper();
-			Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001 = om.readValue(originalPain001, Pain00100110CustomerCreditTransferInitiationV10MessageSchema.class);
+			amount = new BigDecimal((String) variables.get("amount"));
 			
 			BigDecimal fee = new BigDecimal(variables.get("transactionFeeAmount").toString());
-			
-			List<CreditTransferTransaction40> creditTransferTransactionInformation = pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation();
-			
-			for (CreditTransferTransaction40 ctti : creditTransferTransactionInformation) {
-				amount = new BigDecimal(ctti.getAmount().getInstructedAmount().getAmount().toString());
-			}
 			
 			logger.error("Debtor exchange worker incoming variables:");
 			variables.entrySet().forEach(e -> logger.error("{}: {}", e.getKey(), e.getValue()));
