@@ -402,6 +402,7 @@ public class ZeebeeWorkers {
                                 client.newCompleteCommand(job.getKey())
                                         .variables(variables)
                                         .send();
+                                logger.info("Interop disabled with variables {}", variables);
                                 return;
                             }
 
