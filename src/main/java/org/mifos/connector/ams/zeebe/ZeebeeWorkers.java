@@ -97,6 +97,9 @@ public class ZeebeeWorkers {
     @Value("${zeebe.enabled:true}")
     private boolean isZeebeEnabled;
 
+    @Value("${interop-party-registration.enabled}")
+    private boolean interopPartyRegistrationEnabled;
+
     @PostConstruct
     public void setupWorkers() {
         if (isZeebeEnabled) {
@@ -392,6 +395,15 @@ public class ZeebeeWorkers {
                         .handler((client, job) -> {
                             logWorkerDetails(job);
                             Map<String, Object> existingVariables = job.getVariablesAsMap();
+
+                            if (!interopPartyRegistrationEnabled) {
+                                Map<String, Object> variables = new HashMap<>();
+                                variables.put(ACCOUNT_CURRENCY, "USD");
+                                client.newCompleteCommand(job.getKey())
+                                        .variables(variables)
+                                        .send();
+                                return;
+                            }
 
                             if (isAmsLocalEnabled) {
                                 Exchange ex = new DefaultExchange(camelContext);
