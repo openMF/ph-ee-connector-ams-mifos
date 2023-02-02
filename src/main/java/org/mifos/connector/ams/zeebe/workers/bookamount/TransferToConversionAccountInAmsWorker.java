@@ -91,8 +91,6 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			responseObject = deposit(transactionDate, amount, conversionAccountAmsId, paymentTypeExchangeToFiatCurrencyId, tenantId);
 		
 			if (!HttpStatus.OK.equals(responseObject.getStatusCode())) {
-				deposit(transactionDate, amount, disposalAccountAmsId, paymentTypeExchangeToFiatCurrencyId, tenantId);
-				deposit(transactionDate, fee, disposalAccountAmsId, paymentTypeExchangeToFiatCurrencyId, tenantId);
 				jobClient.newFailCommand(activatedJob.getKey()).retries(0).send().join();
 				return;
 			}
