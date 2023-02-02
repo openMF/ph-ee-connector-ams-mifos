@@ -6,16 +6,25 @@ import java.time.format.DateTimeFormatter;
 import java.util.Map;
 
 import org.slf4j.MDC;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import hu.dpc.rt.utils.mapstruct.Pain001Camt052Mapper;
 import io.camunda.zeebe.client.api.response.ActivatedJob;
 import io.camunda.zeebe.client.api.worker.JobClient;
+import iso.std.iso20022plus.tech.json.camt_052_001.BankToCustomerAccountReportV08;
+import iso.std.iso20022plus.tech.json.pain_001_001.Pain00100110CustomerCreditTransferInitiationV10MessageSchema;
 
 @Component
 public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWorker {
+	
+	@Autowired
+	private Pain001Camt052Mapper camt052Mapper;
 	
 	@Value("${fineract.paymentType.paymentTypeExchangeECurrencyId}")
 	private Integer paymentTypeExchangeECurrencyId;
@@ -37,6 +46,10 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 		String tenantId = null;
 		try {
 			Map<String, Object> variables = activatedJob.getVariablesAsMap();
+			
+			String originalPain001 = (String) variables.get("originalPain001");
+			ObjectMapper om = new ObjectMapper();
+			Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001 = om.readValue(originalPain001, Pain00100110CustomerCreditTransferInitiationV10MessageSchema.class);
 			
 			String internalCorrelationId = (String) variables.get("internalCorrelationId");
 			MDC.put("internalCorrelationId", internalCorrelationId);
@@ -68,8 +81,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			try {
 				withdraw(transactionDate, fee, disposalAccountAmsId, paymentTypeFeeId, tenantId);
 			} catch (Exception e) {
-				logger.warn("Fee withdrawal failed, re-depositing {} to disposal account", amount);
-				deposit(transactionDate, amount, disposalAccountAmsId, paymentTypeExchangeECurrencyId, tenantId);
+				logger.warn("Fee withdrawal failed");
 				jobClient.newFailCommand(activatedJob.getKey()).retries(0).errorMessage(e.getMessage()).send();
 				return;
 			}
@@ -89,17 +101,20 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			
 			responseObject = deposit(transactionDate, fee, conversionAccountAmsId, paymentTypeFeeId, tenantId);
 			
+			BankToCustomerAccountReportV08 convertedCamt052 = camt052Mapper.toCamt052(pain001.getDocument());
+			String camt052 = om.writeValueAsString(convertedCamt052);
+			
+			logger.info(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  camt.052  <<<<<<<<<<<<<<<<<<<<<<<<");
+			logger.info("The following camt.052 will be inserted into the data table: {}", camt052);
+			
 			if (!HttpStatus.OK.equals(responseObject.getStatusCode())) {
-				deposit(transactionDate, amount, disposalAccountAmsId, paymentTypeExchangeToFiatCurrencyId, tenantId);
-				deposit(transactionDate, fee, disposalAccountAmsId, paymentTypeExchangeToFiatCurrencyId, tenantId);
 				jobClient.newFailCommand(activatedJob.getKey()).retries(0).send().join();
 				return;
 			}
 		
 			jobClient.newCompleteCommand(activatedJob.getKey()).variables(variables).send();
 		} catch (Exception e) {
-			logger.warn("Fee withdrawal failed, re-depositing {} to disposal account", amount);
-			deposit(transactionDate, amount, disposalAccountAmsId, paymentTypeExchangeECurrencyId, tenantId);
+			logger.warn("Fee withdrawal failed");
 			jobClient
 					.newThrowErrorCommand(activatedJob.getKey())
 					.errorCode("Error_InsufficientFunds")

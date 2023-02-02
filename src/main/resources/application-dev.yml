@@ -14,6 +14,8 @@ fineract:
   column-filter: "iban"
   result-columns: "conversion_account_id,disposal_account_id"
   incoming-money-api: "/savingsaccounts/"
+  transaction-details-api: "/datatables/transaction_details/"
+  datatable-name: "transaction_details"
   locale: "en"
   paymentType:
     paymentTypeExchangeFiatCurrencyId: 5

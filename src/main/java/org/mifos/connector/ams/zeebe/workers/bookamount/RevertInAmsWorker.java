@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.slf4j.MDC;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,8 +15,10 @@ import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import hu.dpc.rt.utils.mapstruct.Pain001Camt052Mapper;
 import io.camunda.zeebe.client.api.response.ActivatedJob;
 import io.camunda.zeebe.client.api.worker.JobClient;
+import iso.std.iso20022plus.tech.json.camt_052_001.BankToCustomerAccountReportV08;
 import iso.std.iso20022plus.tech.json.pain_001_001.CreditTransferTransaction40;
 import iso.std.iso20022plus.tech.json.pain_001_001.Pain00100110CustomerCreditTransferInitiationV10MessageSchema;
 
@@ -27,6 +30,9 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 	
 	@Value("${fineract.paymentType.paymentTypeIssuingECurrencyId}")
 	private Integer paymentTypeIssuingECurrencyId;
+	
+	@Autowired
+	private Pain001Camt052Mapper camt052Mapper;
 	
 	private static final DateTimeFormatter PATTERN = DateTimeFormatter.ofPattern(FORMAT);
 
@@ -93,6 +99,12 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 		logger.error("Re-depositing fee {} in disposal account {}", fee, disposalAccountAmsId);
 			
 		responseObject = deposit(interbankSettlementDate, fee, disposalAccountAmsId, 1, tenantId);
+		
+		BankToCustomerAccountReportV08 convertedCamt052 = camt052Mapper.toCamt052(pain001.getDocument());
+		String camt052 = om.writeValueAsString(convertedCamt052);
+		
+		logger.info(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  camt.052  <<<<<<<<<<<<<<<<<<<<<<<<");
+		logger.info("The following camt.052 will be inserted into the data table: {}", camt052);
 			
 		if (!HttpStatus.OK.equals(responseObject.getStatusCode())) {
 			jobClient.newFailCommand(activatedJob.getKey()).retries(0).send();
