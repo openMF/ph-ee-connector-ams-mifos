@@ -28,7 +28,7 @@ import static org.mifos.connector.ams.zeebe.ZeebeVariables.BOOK_TRANSACTION_ID;
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.EXTERNAL_ACCOUNT_ID;
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.TRANSACTION_ID;
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.TRANSFER_CODE;
-import static org.mifos.connector.ams.zeebe.ZeebeVariables.*;
+import static org.mifos.connector.ams.zeebe.ZeebeVariables.NOTE;
 
 @Component
 @ConditionalOnExpression("${ams.local.enabled}")
