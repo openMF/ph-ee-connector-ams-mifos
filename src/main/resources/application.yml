@@ -22,3 +22,6 @@ ams:
   local:
     server-cert-check: false
     enabled: false
+
+interop-party-registration:
+  enabled: false

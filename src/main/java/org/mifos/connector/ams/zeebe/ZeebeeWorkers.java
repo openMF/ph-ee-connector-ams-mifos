@@ -37,23 +37,7 @@ import java.util.Map;
 import static org.mifos.connector.ams.camel.config.CamelProperties.*;
 import static org.mifos.connector.ams.zeebe.ZeebeUtil.zeebeVariable;
 import static org.mifos.connector.ams.zeebe.ZeebeUtil.zeebeVariablesToCamelProperties;
-import static org.mifos.connector.ams.zeebe.ZeebeVariables.ACCOUNT;
-import static org.mifos.connector.ams.zeebe.ZeebeVariables.ACCOUNT_CURRENCY;
-import static org.mifos.connector.ams.zeebe.ZeebeVariables.BOOK_TRANSACTION_ID;
-import static org.mifos.connector.ams.zeebe.ZeebeVariables.CHANNEL_REQUEST;
-import static org.mifos.connector.ams.zeebe.ZeebeVariables.EXTERNAL_ACCOUNT_ID;
-import static org.mifos.connector.ams.zeebe.ZeebeVariables.LOCAL_QUOTE_FAILED;
-import static org.mifos.connector.ams.zeebe.ZeebeVariables.LOCAL_QUOTE_RESPONSE;
-import static org.mifos.connector.ams.zeebe.ZeebeVariables.PARTY_ID;
-import static org.mifos.connector.ams.zeebe.ZeebeVariables.PARTY_ID_TYPE;
-import static org.mifos.connector.ams.zeebe.ZeebeVariables.PAYEE_PARTY_RESPONSE;
-import static org.mifos.connector.ams.zeebe.ZeebeVariables.QUOTE_FAILED;
-import static org.mifos.connector.ams.zeebe.ZeebeVariables.QUOTE_SWITCH_REQUEST;
-import static org.mifos.connector.ams.zeebe.ZeebeVariables.QUOTE_SWITCH_REQUEST_AMOUNT;
-import static org.mifos.connector.ams.zeebe.ZeebeVariables.TENANT_ID;
-import static org.mifos.connector.ams.zeebe.ZeebeVariables.TRANSACTION_ID;
-import static org.mifos.connector.ams.zeebe.ZeebeVariables.TRANSFER_CODE;
-import static org.mifos.connector.ams.zeebe.ZeebeVariables.TRANSFER_PREPARE_FAILED;
+import static org.mifos.connector.ams.zeebe.ZeebeVariables.*;
 import static org.mifos.connector.common.ams.dto.TransferActionType.CREATE;
 import static org.mifos.connector.common.ams.dto.TransferActionType.PREPARE;
 import static org.mifos.connector.common.ams.dto.TransferActionType.RELEASE;
@@ -96,6 +80,9 @@ public class ZeebeeWorkers {
 
     @Value("${zeebe.enabled:true}")
     private boolean isZeebeEnabled;
+
+    @Value("${interop-party-registration.enabled}")
+    private boolean interopPartyRegistrationEnabled;
 
     @PostConstruct
     public void setupWorkers() {
@@ -336,7 +323,7 @@ public class ZeebeeWorkers {
                             Map<String, Object> existingVariables = job.getVariablesAsMap();
                             String partyIdType = (String) existingVariables.get(PARTY_ID_TYPE);
                             String partyId = (String) existingVariables.get(PARTY_ID);
-                            String tenantId = (String) existingVariables.get(TENANT_ID);
+                            String tenantId = (String) existingVariables.get(TENANT_ID); // payer
                             if (isAmsLocalEnabled) {
                                 Exchange ex = new DefaultExchange(camelContext);
                                 ex.setProperty(PARTY_ID_TYPE, partyIdType);
@@ -351,6 +338,18 @@ public class ZeebeeWorkers {
                                 ex.setProperty("payeeTenantId",existingVariables.get("payeeTenantId"));
 
                                 producerTemplate.send("direct:get-party", ex);
+
+                                /*
+                                 * payeeTenantId == dfspid => payee else payer
+                                 *
+                                 * a = payer tenant
+                                 * b = payee tenant
+                                 *
+                                 * debit -> gorilla
+                                 * credit -> gorilla
+                                 *
+                                 * PLATFORM-TENANT-ID -> PAYER/PAYEE
+                                 */
                             } else {
                                 Map<String, Object> variables = new HashMap<>();
                                 Party party = new Party( // only return fspId from configuration
@@ -380,6 +379,17 @@ public class ZeebeeWorkers {
                         .handler((client, job) -> {
                             logWorkerDetails(job);
                             Map<String, Object> existingVariables = job.getVariablesAsMap();
+
+                            if (!interopPartyRegistrationEnabled) {
+                                Map<String, Object> variables = new HashMap<>();
+                                variables.put(ACCOUNT_CURRENCY, "USD");
+                                variables.put(INTEROP_REGISTRATION_FAILED, false);
+                                client.newCompleteCommand(job.getKey())
+                                        .variables(variables)
+                                        .send();
+                                logger.info("Interop disabled with variables {}", variables);
+                                return;
+                            }
 
                             if (isAmsLocalEnabled) {
                                 Exchange ex = new DefaultExchange(camelContext);
