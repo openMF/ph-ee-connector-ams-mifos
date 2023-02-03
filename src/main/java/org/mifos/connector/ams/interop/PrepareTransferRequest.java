@@ -93,7 +93,7 @@ public class PrepareTransferRequest implements Processor {
                 TransactionRole.valueOf(exchange.getProperty(TRANSACTION_ROLE, String.class)));
         }
 
-        logger.info("prepared transferRequestDTO: {}", objectMapper.writeValueAsString(transferRequestDTO));
+        logger.debug("prepared transferRequestDTO: {}", objectMapper.writeValueAsString(transferRequestDTO));
         exchange.getIn().setBody(transferRequestDTO);
     }
 }
