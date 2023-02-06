@@ -41,7 +41,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 	public void handle(JobClient jobClient, ActivatedJob activatedJob) throws Exception {
 		String transactionDate = LocalDate.now().format(PATTERN);
 		logger.error("Debtor exchange worker starting");
-		BigDecimal amount = BigDecimal.ZERO;
+		Object amount = new Object();
 		Integer disposalAccountAmsId = null;
 		String tenantId = null;
 		try {
@@ -54,9 +54,9 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			String internalCorrelationId = (String) variables.get("internalCorrelationId");
 			MDC.put("internalCorrelationId", internalCorrelationId);
 			
-			amount = new BigDecimal((String) variables.get("amount"));
+			amount = variables.get("amount");
 			
-			BigDecimal fee = new BigDecimal(variables.get("transactionFeeAmount").toString());
+			Object fee = variables.get("transactionFeeAmount");
 			
 			logger.error("Debtor exchange worker incoming variables:");
 			variables.entrySet().forEach(e -> logger.error("{}: {}", e.getKey(), e.getValue()));

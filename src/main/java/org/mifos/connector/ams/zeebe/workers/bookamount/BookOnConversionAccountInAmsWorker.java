@@ -1,7 +1,6 @@
 package org.mifos.connector.ams.zeebe.workers.bookamount;
 
 import java.io.StringReader;
-import java.math.BigDecimal;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
 
@@ -61,8 +60,8 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 			return;
 		}
 		
-		BigDecimal amount = new BigDecimal((String) variables.get("amount"));
-		BigDecimal fee = new BigDecimal(variables.get("transactionFeeAmount").toString());
+		Object amount = variables.get("amount");
+		Object fee = variables.get("transactionFeeAmount");
 		
 		String tenantId = (String) variables.get("tenantIdentifier");
 		logger.info("Withdrawing amount {} from conversion account {} of tenant {}", amount, conversionAccountAmsId, tenantId);
