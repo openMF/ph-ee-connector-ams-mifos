@@ -20,6 +20,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import eu.nets.realtime247.ri_2015_10.ObjectFactory;
 import io.camunda.zeebe.client.api.response.ActivatedJob;
 import io.camunda.zeebe.client.api.worker.JobClient;
@@ -69,8 +71,10 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 		
 			responseObject = deposit(transactionDate, amount, disposalAccountAmsId, paymentTypeIssuingECurrencyId, tenantId);
 			
+			ObjectMapper om = new ObjectMapper();
+			
 			BankToCustomerAccountReportV08 convertedCamt052 = camt052Mapper.toCamt052(pacs008);
-			String camt052 = convertedCamt052.toString();
+			String camt052 = om.writeValueAsString(convertedCamt052);
 			
 			logger.info(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  camt.052  <<<<<<<<<<<<<<<<<<<<<<<<");
 			logger.info("The following camt.052 will be inserted into the data table: {}", camt052);

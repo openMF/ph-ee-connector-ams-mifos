@@ -21,6 +21,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import eu.nets.realtime247.ri_2015_10.ObjectFactory;
 import io.camunda.zeebe.client.api.response.ActivatedJob;
 import io.camunda.zeebe.client.api.worker.JobClient;
@@ -69,8 +71,10 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
 			
 			ResponseEntity<Object> responseObject = deposit(transactionDate, amount, conversionAccountAmsId, 1, tenantId);
 			
+			ObjectMapper om = new ObjectMapper();
+			
 			BankToCustomerAccountReportV08 convertedCamt052 = camt052Mapper.toCamt052(pacs008);
-			String camt052 = convertedCamt052.toString();
+			String camt052 = om.writeValueAsString(convertedCamt052);
 			
 			LocalDateTime now = LocalDateTime.now();
 			
