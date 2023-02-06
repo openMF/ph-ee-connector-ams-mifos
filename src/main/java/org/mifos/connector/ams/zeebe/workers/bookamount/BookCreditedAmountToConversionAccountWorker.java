@@ -9,26 +9,20 @@ import javax.xml.bind.JAXBElement;
 import javax.xml.datatype.XMLGregorianCalendar;
 
 import org.jboss.logging.MDC;
-import org.mifos.connector.ams.mapstruct.Pain001Camt052Mapper;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import eu.nets.realtime247.ri_2015_10.ObjectFactory;
 import io.camunda.zeebe.client.api.response.ActivatedJob;
 import io.camunda.zeebe.client.api.worker.JobClient;
 import iso.std.iso._20022.tech.xsd.pacs_002_001.Document;
-import iso.std.iso20022plus.tech.json.camt_052_001.BankToCustomerAccountReportV08;
-import iso.std.iso20022plus.tech.json.pain_001_001.Pain00100110CustomerCreditTransferInitiationV10MessageSchema;
 
 @Component
 public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyInOutWorker {
 	
-	@Autowired
-	private Pain001Camt052Mapper camt052Mapper;
+	// @Autowired
+	// private Pain001Camt052Mapper camt052Mapper;
 	
 	private static final DateTimeFormatter PATTERN = DateTimeFormatter.ofPattern(FORMAT);
 
@@ -41,9 +35,9 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
 			logger.info("Incoming money worker started with variables");
 			variables.keySet().forEach(logger::info);
 			
-			String originalPain001 = (String) variables.get("originalPain001");
-			ObjectMapper om = new ObjectMapper();
-			Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001 = om.readValue(originalPain001, Pain00100110CustomerCreditTransferInitiationV10MessageSchema.class);
+			// String originalPain001 = (String) variables.get("originalPain001");
+			// ObjectMapper om = new ObjectMapper();
+			// Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001 = om.readValue(originalPain001, Pain00100110CustomerCreditTransferInitiationV10MessageSchema.class);
 		
 			String internalCorrelationId = (String) variables.get("internalCorrelationId");
 			MDC.put("internalCorrelationId", internalCorrelationId);
@@ -66,11 +60,11 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
 			
 			ResponseEntity<Object> responseObject = deposit(transactionDate, amount, conversionAccountAmsId, 1, tenantId);
 			
-			BankToCustomerAccountReportV08 convertedCamt052 = camt052Mapper.toCamt052(pain001.getDocument());
-			String camt052 = om.writeValueAsString(convertedCamt052);
+			// BankToCustomerAccountReportV08 convertedCamt052 = camt052Mapper.toCamt052(pain001.getDocument());
+			// String camt052 = om.writeValueAsString(convertedCamt052);
 			
-			logger.info(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  camt.052  <<<<<<<<<<<<<<<<<<<<<<<<");
-			logger.info("The following camt.052 will be inserted into the data table: {}", camt052);
+			// logger.info(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  camt.052  <<<<<<<<<<<<<<<<<<<<<<<<");
+			// logger.info("The following camt.052 will be inserted into the data table: {}", camt052);
 		
 			if (HttpStatus.OK.equals(responseObject.getStatusCode())) {
 				logger.info("Worker to book incoming money in AMS has finished successfully");
