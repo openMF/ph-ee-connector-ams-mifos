@@ -443,6 +443,7 @@ public class ZeebeeWorkers {
                                 variables.put("initiator", transactionType.getInitiator().name());
                                 variables.put("initiatorType", transactionType.getInitiatorType().name());
                                 variables.put("scenario", transactionType.getScenario().name());
+                                variables.get(NOTE);
                                 variables.put("amount", new FspMoneyData(transactionRequest.getAmount().getAmountDecimal(),
                                         transactionRequest.getAmount().getCurrency()));
                                 variables.put("processType", "api");

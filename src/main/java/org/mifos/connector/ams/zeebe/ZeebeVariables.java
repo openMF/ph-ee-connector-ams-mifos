@@ -36,7 +36,7 @@ public class ZeebeVariables {
     public static final String ERROR_CODE = "errorCode";
     public static final String ERROR_PAYLOAD = "errorPayload";
     public static final String IS_ERROR_HANDLED = "isErrorHandled";
-
+    public static final String NOTE = "note";
 
     static {
         ACTION_FAILURE_MAP.put(TransferActionType.PREPARE.name(), TRANSFER_PREPARE_FAILED);
