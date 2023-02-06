@@ -79,7 +79,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
 			LocalDateTime now = LocalDateTime.now();
 			
 			TransactionDetails td = new TransactionDetails(
-					8, 
+					16, 
 					pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getPmtId().getTxId(),
 					internalCorrelationId,
 					camt052,
@@ -96,7 +96,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
 			var urlTemplate = UriComponentsBuilder.fromHttpUrl(fineractApiUrl)
 					.path("/datatables")
 					.path("/transaction_details")
-					.path("/8")
+					.path("/16")
 					.queryParam("genericResultSet", true)
 					.encode()
 					.toUriString();

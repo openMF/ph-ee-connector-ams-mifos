@@ -115,7 +115,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 LocalDateTime now = LocalDateTime.now();
 		
 		TransactionDetails td = new TransactionDetails(
-				8, 
+				16, 
 				pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getPaymentIdentification().getEndToEndIdentification(),
 				internalCorrelationId,
 				camt052,
@@ -132,7 +132,7 @@ LocalDateTime now = LocalDateTime.now();
 		var urlTemplate = UriComponentsBuilder.fromHttpUrl(fineractApiUrl)
 				.path("/datatables")
 				.path("/transaction_details")
-				.path("/8")
+				.path("/16")
 				.queryParam("genericResultSet", true)
 				.encode()
 				.toUriString();
