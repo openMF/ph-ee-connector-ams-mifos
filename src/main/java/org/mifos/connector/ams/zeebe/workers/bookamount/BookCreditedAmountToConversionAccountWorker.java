@@ -90,9 +90,9 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
 			var entity = new HttpEntity<>(td, httpHeaders);
 			
 			var urlTemplate = UriComponentsBuilder.fromHttpUrl(fineractApiUrl)
-					.path("datatables")
-					.path("transaction_details")
-					.path("8")
+					.path("/datatables")
+					.path("/transaction_details")
+					.path("/8")
 					.queryParam("genericResultSet", true)
 					.encode()
 					.toUriString();
