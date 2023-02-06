@@ -82,6 +82,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 				withdraw(transactionDate, fee, disposalAccountAmsId, paymentTypeFeeId, tenantId);
 			} catch (Exception e) {
 				logger.warn("Fee withdrawal failed");
+				logger.error(e.getMessage(), e);
 				jobClient.newFailCommand(activatedJob.getKey()).retries(0).errorMessage(e.getMessage()).send();
 				return;
 			}
