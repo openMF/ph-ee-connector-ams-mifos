@@ -8,6 +8,7 @@ import java.util.Map;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBElement;
 
+import org.mifos.connector.ams.mapstruct.Pain001Camt052Mapper;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -17,7 +18,6 @@ import org.springframework.stereotype.Component;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import eu.nets.realtime247.ri_2015_10.ObjectFactory;
-import hu.dpc.rt.utils.mapstruct.Pain001Camt052Mapper;
 import io.camunda.zeebe.client.api.response.ActivatedJob;
 import io.camunda.zeebe.client.api.worker.JobClient;
 import iso.std.iso._20022.tech.xsd.pacs_002_001.Document;

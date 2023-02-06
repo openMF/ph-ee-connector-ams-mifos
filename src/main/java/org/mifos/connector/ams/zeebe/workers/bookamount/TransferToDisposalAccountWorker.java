@@ -3,6 +3,7 @@ package org.mifos.connector.ams.zeebe.workers.bookamount;
 import java.util.Map;
 
 import org.jboss.logging.MDC;
+import org.mifos.connector.ams.mapstruct.Pain001Camt052Mapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -11,7 +12,6 @@ import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import hu.dpc.rt.utils.mapstruct.Pain001Camt052Mapper;
 import io.camunda.zeebe.client.api.response.ActivatedJob;
 import io.camunda.zeebe.client.api.worker.JobClient;
 import iso.std.iso20022plus.tech.json.camt_052_001.BankToCustomerAccountReportV08;
