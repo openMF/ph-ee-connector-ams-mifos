@@ -28,6 +28,7 @@ import static org.mifos.connector.ams.zeebe.ZeebeVariables.BOOK_TRANSACTION_ID;
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.EXTERNAL_ACCOUNT_ID;
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.TRANSACTION_ID;
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.TRANSFER_CODE;
+import static org.mifos.connector.ams.zeebe.ZeebeVariables.NOTE;
 
 @Component
 @ConditionalOnExpression("${ams.local.enabled}")
@@ -50,7 +51,7 @@ public class PrepareTransferRequest implements Processor {
         transactionType.setInitiatorType(InitiatorType.valueOf(initiatorType));
         transactionType.setScenario(Scenario.valueOf(scenario));
 
-        String note = zeebeVariable(exchange, "note", String.class);
+        String note = zeebeVariable(exchange,NOTE, String.class);
         FspMoneyData amount = zeebeVariable(exchange, "amount", FspMoneyData.class);
         FspMoneyData fspFee = zeebeVariable(exchange, "fspFee", FspMoneyData.class);
         FspMoneyData fspCommission = zeebeVariable(exchange, "fspCommission", FspMoneyData.class);
