@@ -47,7 +47,9 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
 			variables.keySet().forEach(logger::info);
 			
 			String originalPacs008 = (String) variables.get("originalPacs008");
-			JAXBContext jc = JAXBContext.newInstance(ObjectFactory.class);
+			JAXBContext jc = JAXBContext.newInstance(ObjectFactory.class,
+					iso.std.iso._20022.tech.xsd.pacs_008_001.ObjectFactory.class,
+					iso.std.iso._20022.tech.xsd.pacs_002_001.ObjectFactory.class);
 			JAXBElement<iso.std.iso._20022.tech.xsd.pacs_008_001.Document> object = (JAXBElement<iso.std.iso._20022.tech.xsd.pacs_008_001.Document>) jc.createUnmarshaller().unmarshal(new StringReader(originalPacs008));
 			iso.std.iso._20022.tech.xsd.pacs_008_001.Document pacs008 = object.getValue();
 			
