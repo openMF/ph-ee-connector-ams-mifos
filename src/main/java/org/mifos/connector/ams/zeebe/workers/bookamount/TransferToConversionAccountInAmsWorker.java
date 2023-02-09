@@ -64,18 +64,23 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			ObjectMapper om = new ObjectMapper();
 			Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001 = om.readValue(originalPain001, Pain00100110CustomerCreditTransferInitiationV10MessageSchema.class);
 			
-			logger.info(">>>>>>>>>>>>>>>>>> Validating incoming pain.001 <<<<<<<<<<<<<<<<");
-			InputStream resource = new ClassPathResource("/services/json-schema/pain.001.001/pain.001.001.10-CustomerCreditTransferInitiationV10.Message.schema.json").getInputStream();
-			JsonSchemaFactory sf = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V202012);
 			
-			JsonNode json = om.readTree(originalPain001);
-			JsonSchema schema = sf.getSchema(resource);
-			Set<ValidationMessage> validationResult = schema.validate(json);
+			try {
+				logger.info(">>>>>>>>>>>>>>>>>> Validating incoming pain.001 <<<<<<<<<<<<<<<<");
+				InputStream resource = new ClassPathResource("/services/json-schema/pain.001.001/pain.001.001.10-CustomerCreditTransferInitiationV10.Message.schema.json").getInputStream();
+				JsonSchemaFactory sf = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V202012);
 			
-			if (validationResult.isEmpty()) {
-				logger.info(">>>>>>>>>>>>>>>> pain.001 validation successful <<<<<<<<<<<<<<<");
-			} else {
-				logger.error(validationResult.toString());
+				JsonNode json = om.readTree(originalPain001);
+				JsonSchema schema = sf.getSchema(resource);
+				Set<ValidationMessage> validationResult = schema.validate(json);
+			
+				if (validationResult.isEmpty()) {
+					logger.info(">>>>>>>>>>>>>>>> pain.001 validation successful <<<<<<<<<<<<<<<");
+				} else {
+					logger.error(validationResult.toString());
+				}
+			} catch (Exception e) {
+				logger.warn("Unable to validate pain.001: {}", e.getMessage());
 			}
 			
 			
