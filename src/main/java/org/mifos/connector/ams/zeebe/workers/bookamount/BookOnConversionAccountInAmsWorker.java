@@ -54,7 +54,9 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 
 		logger.info("Starting book debit on fiat account worker with currency account Id {} with incoming pacs.002 {}", conversionAccountAmsId, originalPacs002);
 		
-		JAXBContext jc = JAXBContext.newInstance(ObjectFactory.class);
+		JAXBContext jc = JAXBContext.newInstance(ObjectFactory.class,
+				iso.std.iso._20022.tech.xsd.pacs_008_001.ObjectFactory.class,
+                iso.std.iso._20022.tech.xsd.pacs_002_001.ObjectFactory.class);
 		JAXBElement<Document> jaxbObject = (JAXBElement<Document>) jc.createUnmarshaller().unmarshal(new StringReader(originalPacs002));
 		Document pacs_002 = jaxbObject.getValue();
 		
