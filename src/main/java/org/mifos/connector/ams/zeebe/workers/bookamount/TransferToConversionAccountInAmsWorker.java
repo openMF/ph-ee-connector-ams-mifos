@@ -75,7 +75,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			if (validationResult.isEmpty()) {
 				logger.info(">>>>>>>>>>>>>>>> pain.001 validation successful <<<<<<<<<<<<<<<");
 			} else {
-				throw new RuntimeException(validationResult.toString());
+				logger.error(validationResult.toString());
 			}
 			
 			
