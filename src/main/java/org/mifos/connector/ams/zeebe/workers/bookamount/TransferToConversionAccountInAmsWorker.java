@@ -1,15 +1,18 @@
 package org.mifos.connector.ams.zeebe.workers.bookamount;
 
+import java.io.InputStream;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
+import java.util.Set;
 
 import org.mifos.connector.ams.mapstruct.Pain001Camt052Mapper;
 import org.mifos.connector.ams.zeebe.workers.utils.TransactionDetails;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
@@ -18,7 +21,12 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.networknt.schema.JsonSchema;
+import com.networknt.schema.JsonSchemaFactory;
+import com.networknt.schema.SpecVersion;
+import com.networknt.schema.ValidationMessage;
 
 import io.camunda.zeebe.client.api.response.ActivatedJob;
 import io.camunda.zeebe.client.api.worker.JobClient;
@@ -55,6 +63,21 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			String originalPain001 = (String) variables.get("originalPain001");
 			ObjectMapper om = new ObjectMapper();
 			Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001 = om.readValue(originalPain001, Pain00100110CustomerCreditTransferInitiationV10MessageSchema.class);
+			
+			logger.info(">>>>>>>>>>>>>>>>>> Validating incoming pain.001 <<<<<<<<<<<<<<<<");
+			InputStream resource = new ClassPathResource("/services/json-schema/pain.001.001/pain.001.001.10-CustomerCreditTransferInitiationV10.Message.schema.json").getInputStream();
+			JsonSchemaFactory sf = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V202012);
+			
+			JsonNode json = om.readTree(originalPain001);
+			JsonSchema schema = sf.getSchema(resource);
+			Set<ValidationMessage> validationResult = schema.validate(json);
+			
+			if (validationResult.isEmpty()) {
+				logger.info(">>>>>>>>>>>>>>>> pain.001 validation successful <<<<<<<<<<<<<<<");
+			} else {
+				throw new RuntimeException(validationResult.toString());
+			}
+			
 			
 			String internalCorrelationId = (String) variables.get("internalCorrelationId");
 			MDC.put("internalCorrelationId", internalCorrelationId);
@@ -154,7 +177,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 		
 			jobClient.newCompleteCommand(activatedJob.getKey()).variables(variables).send();
 		} catch (Exception e) {
-			logger.warn("Fee withdrawal failed");
+			logger.warn("Fee to conversion account failed");
 			logger.error(e.getMessage(), e);
 			jobClient
 					.newThrowErrorCommand(activatedJob.getKey())
