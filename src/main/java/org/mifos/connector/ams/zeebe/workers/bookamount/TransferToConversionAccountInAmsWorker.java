@@ -111,7 +111,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			logger.info("Withdrawing fee {} from disposal account {}", fee, disposalAccountAmsId);
 			
 			try {
-				withdraw(transactionDate, fee, disposalAccountAmsId, paymentTypeFeeId, tenantId);
+				responseObject = withdraw(transactionDate, fee, disposalAccountAmsId, paymentTypeFeeId, tenantId);
 				postCamt052(tenantId, camt052, internalCorrelationId, responseObject);
 			} catch (Exception e) {
 				logger.warn("Fee withdrawal failed");
