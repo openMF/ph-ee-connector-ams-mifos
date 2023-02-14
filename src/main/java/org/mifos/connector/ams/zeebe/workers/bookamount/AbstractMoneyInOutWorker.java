@@ -1,5 +1,6 @@
 package org.mifos.connector.ams.zeebe.workers.bookamount;
 
+import org.mifos.connector.ams.log.IOTxLogger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +24,9 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 	
 	@Autowired
 	protected HttpHeaders httpHeaders;
+	
+	@Autowired
+	private IOTxLogger wireLogger;
 	
 	@Value("${fineract.api-url}")
 	protected String fineractApiUrl;
@@ -109,7 +113,10 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 		logger.info(">> Sending {} to {} with headers {}", body, urlTemplate, httpHeaders);
 		
 		try {
+			wireLogger.sending(body.toString());
 			ResponseEntity<Object> response = restTemplate.exchange(urlTemplate, HttpMethod.POST, entity, Object.class);
+			wireLogger.receiving(response.toString());
+			
 			logger.info("<< Received HTTP {}", response.getStatusCode());
 			return response;
 		} catch (HttpClientErrorException e) {
