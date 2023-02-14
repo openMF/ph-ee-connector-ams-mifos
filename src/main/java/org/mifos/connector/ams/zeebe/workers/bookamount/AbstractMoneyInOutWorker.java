@@ -106,9 +106,16 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 	@SuppressWarnings("unchecked")
 	protected void postCamt052(String tenantId, String camt052, String internalCorrelationId,
 			ResponseEntity<Object> responseObject) throws JsonProcessingException {
+		logger.info(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  camt.052  <<<<<<<<<<<<<<<<<<<<<<<<");
+		
 		Map<String, Object> body = (Map<String, Object>) responseObject.getBody();
+		logger.info("Generating camt.052 based on the following reponse body: {}", body);
+		
 		Long txId = (Long) body.get("resourceId");
+		logger.info("Setting amsTransactionId to {}", txId);
+		
 		Long clientId = (Long) body.get("clientId");
+		logger.info("Setting clientId to {}", clientId);
 		
 		LocalDateTime now = LocalDateTime.now();
 		
@@ -120,7 +127,6 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 				now,
 				now);
 		
-		logger.info(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  camt.052  <<<<<<<<<<<<<<<<<<<<<<<<");
 		logger.info("The following camt.052 will be inserted into the data table: {}", camt052);
 		
 		httpHeaders.remove("Fineract-Platform-TenantId");
