@@ -117,7 +117,7 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 			ResponseEntity<Object> response = restTemplate.exchange(urlTemplate, HttpMethod.POST, entity, Object.class);
 			wireLogger.receiving(response.toString());
 			
-			logger.info("<< Received HTTP {}", response.getStatusCode());
+			logger.info("<< Received {}", response);
 			return response;
 		} catch (HttpClientErrorException e) {
 			logger.error(e.getMessage(), e);
