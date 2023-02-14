@@ -111,10 +111,10 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 		Map<String, Object> body = (Map<String, Object>) responseObject.getBody();
 		logger.info("Generating camt.052 based on the following reponse body: {}", body);
 		
-		Long txId = (Long) body.get("resourceId");
+		Object txId = body.get("resourceId");
 		logger.info("Setting amsTransactionId to {}", txId);
 		
-		Long clientId = (Long) body.get("clientId");
+		Object clientId = body.get("clientId");
 		logger.info("Setting clientId to {}", clientId);
 		
 		LocalDateTime now = LocalDateTime.now();
