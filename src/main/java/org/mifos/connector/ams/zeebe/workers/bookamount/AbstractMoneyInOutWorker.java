@@ -1,6 +1,10 @@
 package org.mifos.connector.ams.zeebe.workers.bookamount;
 
+import java.time.LocalDateTime;
+import java.util.Map;
+
 import org.mifos.connector.ams.log.IOTxLogger;
+import org.mifos.connector.ams.zeebe.workers.utils.TransactionDetails;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,6 +17,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
 
 import io.camunda.zeebe.client.api.worker.JobHandler;
 
@@ -95,6 +101,50 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 				FORMAT,
 				locale);
 		return doExchange(body, currencyAccountAmsId, "withdrawal", tenantId);
+	}
+	
+	@SuppressWarnings("unchecked")
+	protected void postCamt052(String tenantId, String camt052, String internalCorrelationId,
+			ResponseEntity<Object> responseObject) throws JsonProcessingException {
+		Map<String, Object> body = (Map<String, Object>) responseObject.getBody();
+		Long txId = (Long) body.get("resourceId");
+		Long clientId = (Long) body.get("clientId");
+		
+		LocalDateTime now = LocalDateTime.now();
+		
+		TransactionDetails td = new TransactionDetails(
+				clientId, 
+				txId,
+				internalCorrelationId,
+				camt052,
+				now,
+				now);
+		
+		logger.info(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  camt.052  <<<<<<<<<<<<<<<<<<<<<<<<");
+		logger.info("The following camt.052 will be inserted into the data table: {}", camt052);
+		
+		httpHeaders.remove("Fineract-Platform-TenantId");
+		httpHeaders.add("Fineract-Platform-TenantId", tenantId);
+		var entity = new HttpEntity<>(td, httpHeaders);
+		
+		var urlTemplate = UriComponentsBuilder.fromHttpUrl(fineractApiUrl)
+				.path("/datatables")
+				.path("/transaction_details")
+				.path("/" + clientId)
+				.queryParam("genericResultSet", true)
+				.encode()
+				.toUriString();
+		
+		logger.info(">> Sending {} to {} with headers {}", td, urlTemplate, httpHeaders);
+		
+		try {
+			ResponseEntity<Object> response = restTemplate.exchange(urlTemplate, HttpMethod.POST, entity, Object.class);
+			logger.info("<< Received HTTP {}", response.getStatusCode());
+		} catch (HttpClientErrorException e) {
+			logger.error(e.getMessage(), e);
+			logger.warn("Cam052 insert returned with status code {}", e.getRawStatusCode());
+			throw new RuntimeException(e);
+		}
 	}
 	
 	private <T> ResponseEntity<Object> doExchange(T body, Integer currencyAccountAmsId, String command, String tenantId) {
