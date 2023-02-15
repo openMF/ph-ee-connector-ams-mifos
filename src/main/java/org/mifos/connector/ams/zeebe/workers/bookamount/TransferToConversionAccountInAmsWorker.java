@@ -96,9 +96,9 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			
 			tenantId = (String) variables.get("tenantIdentifier");
 			
-			ResponseEntity<Object> responseObject = withdraw(transactionDate, amount, disposalAccountAmsId, paymentTypeExchangeECurrencyId, tenantId);
+			ResponseEntity<Object> withdrawAmountResponseObject = withdraw(transactionDate, amount, disposalAccountAmsId, paymentTypeExchangeECurrencyId, tenantId);
 			
-			if (!HttpStatus.OK.equals(responseObject.getStatusCode())) {
+			if (!HttpStatus.OK.equals(withdrawAmountResponseObject.getStatusCode())) {
 				jobClient.newFailCommand(activatedJob.getKey()).retries(0).send();
 				return;
 			}
@@ -106,13 +106,13 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			BankToCustomerAccountReportV08 convertedCamt052 = camt052Mapper.toCamt052(pain001.getDocument());
 			String camt052 = om.writeValueAsString(convertedCamt052);
 
-			postCamt052(tenantId, camt052, internalCorrelationId, responseObject);
+			postCamt052(tenantId, camt052, internalCorrelationId, withdrawAmountResponseObject);
 			
 			logger.info("Withdrawing fee {} from disposal account {}", fee, disposalAccountAmsId);
 			
 			try {
-				responseObject = withdraw(transactionDate, fee, disposalAccountAmsId, paymentTypeFeeId, tenantId);
-				postCamt052(tenantId, camt052, internalCorrelationId, responseObject);
+				ResponseEntity<Object> withdrawFeeResponseObject = withdraw(transactionDate, fee, disposalAccountAmsId, paymentTypeFeeId, tenantId);
+				postCamt052(tenantId, camt052, internalCorrelationId, withdrawFeeResponseObject);
 			} catch (Exception e) {
 				logger.warn("Fee withdrawal failed");
 				logger.error(e.getMessage(), e);
@@ -122,22 +122,22 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			
 			logger.info("Depositing amount {} to conversion account {}", amount, conversionAccountAmsId);
 		
-			responseObject = deposit(transactionDate, amount, conversionAccountAmsId, paymentTypeExchangeToFiatCurrencyId, tenantId);
+			ResponseEntity<Object> depositAmountResponseObject = deposit(transactionDate, amount, conversionAccountAmsId, paymentTypeExchangeToFiatCurrencyId, tenantId);
 		
-			if (!HttpStatus.OK.equals(responseObject.getStatusCode())) {
+			if (!HttpStatus.OK.equals(depositAmountResponseObject.getStatusCode())) {
 				jobClient.newFailCommand(activatedJob.getKey()).retries(0).send().join();
 				return;
 			}
 			
-			postCamt052(tenantId, camt052, internalCorrelationId, responseObject);
+			postCamt052(tenantId, camt052, internalCorrelationId, depositAmountResponseObject);
 			
 			logger.info("Depositing fee {} to conversion account {}", fee, conversionAccountAmsId);
 			
-			responseObject = deposit(transactionDate, fee, conversionAccountAmsId, paymentTypeFeeId, tenantId);
+			ResponseEntity<Object> depositFeeResponseObject = deposit(transactionDate, fee, conversionAccountAmsId, paymentTypeFeeId, tenantId);
 			
-			postCamt052(tenantId, camt052, internalCorrelationId, responseObject);
+			postCamt052(tenantId, camt052, internalCorrelationId, depositFeeResponseObject);
 			
-			if (!HttpStatus.OK.equals(responseObject.getStatusCode())) {
+			if (!HttpStatus.OK.equals(depositFeeResponseObject.getStatusCode())) {
 				jobClient.newFailCommand(activatedJob.getKey()).retries(0).send().join();
 				return;
 			}
