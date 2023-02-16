@@ -1,3 +1,3 @@
 #!/bin/sh
 
-docker build .
+docker build . $*

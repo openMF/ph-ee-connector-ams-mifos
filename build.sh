@@ -1,3 +1,4 @@
 #!/bin/sh
 
-mvn -U clean package -U
+mvn -U clean package
+
