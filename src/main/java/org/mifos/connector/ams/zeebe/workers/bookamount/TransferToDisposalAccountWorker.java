@@ -19,7 +19,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.nets.realtime247.ri_2015_10.ObjectFactory;
 import io.camunda.zeebe.client.api.response.ActivatedJob;
 import io.camunda.zeebe.client.api.worker.JobClient;
-import iso.std.iso20022plus.tech.json.camt_052_001.BankToCustomerAccountReportV08;
+import iso.std.iso._20022.tech.json.camt_052_001.BankToCustomerAccountReportV08;
 
 @Component
 public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {

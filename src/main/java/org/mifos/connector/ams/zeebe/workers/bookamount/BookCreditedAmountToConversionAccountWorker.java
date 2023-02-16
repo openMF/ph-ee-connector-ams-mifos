@@ -1,32 +1,29 @@
 package org.mifos.connector.ams.zeebe.workers.bookamount;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import eu.nets.realtime247.ri_2015_10.ObjectFactory;
-import io.camunda.zeebe.client.api.response.ActivatedJob;
-import io.camunda.zeebe.client.api.worker.JobClient;
-import iso.std.iso._20022.tech.xsd.pacs_002_001.Document;
-import iso.std.iso20022plus.tech.json.camt_052_001.BankToCustomerAccountReportV08;
-import org.jboss.logging.MDC;
-import org.mifos.connector.ams.mapstruct.Pacs008Camt052Mapper;
-import org.mifos.connector.ams.zeebe.workers.utils.TransactionDetails;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Component;
-import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.util.UriComponentsBuilder;
-
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBElement;
-import javax.xml.datatype.XMLGregorianCalendar;
 import java.io.StringReader;
-import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
+
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBElement;
+import javax.xml.datatype.XMLGregorianCalendar;
+
+import org.jboss.logging.MDC;
+import org.mifos.connector.ams.mapstruct.Pacs008Camt052Mapper;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Component;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import eu.nets.realtime247.ri_2015_10.ObjectFactory;
+import io.camunda.zeebe.client.api.response.ActivatedJob;
+import io.camunda.zeebe.client.api.worker.JobClient;
+import iso.std.iso._20022.tech.json.camt_052_001.BankToCustomerAccountReportV08;
+import iso.std.iso._20022.tech.xsd.pacs_002_001.Document;
 
 @Component
 public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyInOutWorker {
