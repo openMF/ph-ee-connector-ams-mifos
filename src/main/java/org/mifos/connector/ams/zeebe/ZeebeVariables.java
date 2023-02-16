@@ -32,11 +32,14 @@ public class ZeebeVariables {
     public static final String TRANSFER_PREPARE_FAILED = "transferPrepareFailed";
     public static final String TRANSFER_RELEASE_FAILED = "transferReleaseFailed";
     public static final String TRANSFER_RESPONSE_PREFIX = "transferResponse";
+    public static final String ACCOUNT_IDENTIFIER="accountIdentifier";
+    public static final String ACCOUNT_NUMBER="accountNumber";
 
     public static final String ERROR_CODE = "errorCode";
     public static final String ERROR_PAYLOAD = "errorPayload";
     public static final String IS_ERROR_HANDLED = "isErrorHandled";
     public static final String NOTE = "note";
+    public static final String REQUESTED_DATE = "requestedDate";
 
     static {
         ACTION_FAILURE_MAP.put(TransferActionType.PREPARE.name(), TRANSFER_PREPARE_FAILED);

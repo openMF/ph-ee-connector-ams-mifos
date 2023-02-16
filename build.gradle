@@ -10,7 +10,8 @@ plugins {
 }
 
 repositories {
-    // mavenLocal()
+    mavenLocal()
+
     maven {
         url = uri('https://repo.maven.apache.org/maven2')
     }
@@ -21,7 +22,7 @@ repositories {
 }
 
 dependencies {
-    implementation 'org.mifos:ph-ee-connector-common:1.2.1-SNAPSHOT'
+    implementation 'org.mifos:ph-ee-connector-common:1.2.2-SNAPSHOT'
     implementation 'com.sun.xml.ws:jaxws-ri:2.3.2'
     implementation 'org.apache.camel.springboot:camel-spring-boot-starter:3.4.0'
     implementation 'org.apache.camel:camel-endpointdsl:3.4.0'

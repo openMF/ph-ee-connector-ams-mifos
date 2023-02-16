@@ -10,9 +10,11 @@ import org.json.JSONObject;
 import org.mifos.connector.ams.errorhandler.ErrorTranslator;
 import org.mifos.connector.ams.tenant.TenantNotExistException;
 import org.mifos.connector.ams.utils.Utils;
+import org.mifos.connector.ams.zeebe.ZeebeUtil;
 import org.mifos.connector.common.ams.dto.ClientData;
 import org.mifos.connector.common.ams.dto.Customer;
 import org.mifos.connector.common.ams.dto.InteropAccountDTO;
+import org.mifos.connector.common.ams.dto.LoanRepaymentDTO;
 import org.mifos.connector.common.ams.dto.LoginFineractCnResponseDTO;
 import org.mifos.connector.common.ams.dto.PartyFspResponseDTO;
 import org.mifos.connector.common.ams.dto.ProductDefinition;
@@ -187,6 +189,21 @@ public class InteroperationRouteBuilder extends ErrorHandlerRouteBuilder {
                     .process(transfersResponseProcessor)
                 .end();
 
+        from("direct:send-transfers-loan")
+                .id("send-transfers-loan")
+                .log(LoggingLevel.DEBUG, "Sending transfer with action: ${exchangeProperty." + TRANSFER_ACTION + "} " +
+                        " for transaction: ${exchangeProperty." + TRANSACTION_ID + "}")
+                .log("Process type: ${exchangeProperty." + PROCESS_TYPE + "}")
+                .process(exchange -> {
+                    LoanRepaymentDTO loanRepaymentDTO=ZeebeUtil.setLoanRepaymentBody(exchange);
+                    String requestBody = objectMapper.writeValueAsString(loanRepaymentDTO);
+                    logger.debug("Request Body : {}", requestBody);
+                    exchange.getIn().setBody(requestBody);
+                    exchange.setProperty("accountNumber",exchange.getProperty(ACCOUNT_NUMBER));
+                })
+                .process(amsService::repayLoan);
+
+
         from("direct:fincn-oauth")
                 .id("fincn-oauth")
                 .log(LoggingLevel.INFO, "Fineract CN oauth request for tenant: ${exchangeProperty." + TENANT_ID + "}")
@@ -342,6 +359,5 @@ public class InteroperationRouteBuilder extends ErrorHandlerRouteBuilder {
                     exchange.setProperty(PARTY_ID, transactionRequest.getPayee().getPartyIdInfo().getPartyIdentifier());
                 })
                 .to("direct:send-transfers");
-
     }
 }

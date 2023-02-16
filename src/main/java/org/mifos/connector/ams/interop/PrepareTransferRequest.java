@@ -3,10 +3,7 @@ package org.mifos.connector.ams.interop;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
-import org.mifos.connector.ams.zeebe.ZeebeUtil;
 import org.mifos.connector.common.ams.dto.TransferFspRequestDTO;
-import org.mifos.connector.common.mojaloop.dto.Extension;
-import org.mifos.connector.common.mojaloop.dto.ExtensionList;
 import org.mifos.connector.common.mojaloop.dto.FspMoneyData;
 import org.mifos.connector.common.mojaloop.dto.TransactionType;
 import org.mifos.connector.common.mojaloop.type.InitiatorType;
@@ -17,9 +14,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.stereotype.Component;
-import org.springframework.util.StringUtils;
 
-import java.util.Map;
 import java.util.UUID;
 
 import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSACTION_ROLE;
@@ -75,22 +70,22 @@ public class PrepareTransferRequest implements Processor {
 
         if (fspFee != null || fspCommission != null) {
             transferRequestDTO = new TransferFspRequestDTO(
-                transactionCode,
-                transferCode,
-                exchange.getProperty(EXTERNAL_ACCOUNT_ID, String.class),
-                amount,
-                fspFee,
-                fspCommission,
-                TransactionRole.valueOf(exchange.getProperty(TRANSACTION_ROLE, String.class)),
-                transactionType,
-                note);
+                    transactionCode,
+                    transferCode,
+                    exchange.getProperty(EXTERNAL_ACCOUNT_ID, String.class),
+                    amount,
+                    fspFee,
+                    fspCommission,
+                    TransactionRole.valueOf(exchange.getProperty(TRANSACTION_ROLE, String.class)),
+                    transactionType,
+                    note);
         } else {
             transferRequestDTO = new TransferFspRequestDTO(
-                transactionCode,
-                transferCode,
-                exchange.getProperty(EXTERNAL_ACCOUNT_ID, String.class),
-                amount,
-                TransactionRole.valueOf(exchange.getProperty(TRANSACTION_ROLE, String.class)));
+                    transactionCode,
+                    transferCode,
+                    exchange.getProperty(EXTERNAL_ACCOUNT_ID, String.class),
+                    amount,
+                    TransactionRole.valueOf(exchange.getProperty(TRANSACTION_ROLE, String.class)));
         }
 
         logger.debug("prepared transferRequestDTO: {}", objectMapper.writeValueAsString(transferRequestDTO));

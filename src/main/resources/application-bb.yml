@@ -19,3 +19,6 @@ ams:
         password: password
         authtype: basic
         fspId: in02tn04
+
+# Savings : S , Loan : L
+accountPrefixes: "S,L"
