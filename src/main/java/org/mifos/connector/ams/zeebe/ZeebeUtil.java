@@ -68,8 +68,10 @@ public class ZeebeUtil {
     }
 
     public static String getCurrentDate(String requestedDate,String dateFormat) {
-        LocalDateTime datetime = LocalDateTime.parse(requestedDate, DateTimeFormatter.ofPattern(dateFormat));
-        return datetime.format(DateTimeFormatter.ofPattern(dateFormat));
+        String dateFormatGiven="yyyy-MM-dd'T'HH:mm:ss.SSSXXX";
+        LocalDateTime datetime = LocalDateTime.parse(requestedDate, DateTimeFormatter.ofPattern(dateFormatGiven));
+        String newDate= datetime.format(DateTimeFormatter.ofPattern(dateFormat));
+        return newDate;
     }
 
     public static LoanRepaymentDTO setLoanRepaymentBody(Exchange exchange) {
@@ -78,19 +80,21 @@ public class ZeebeUtil {
         loanRepaymentDTO.setDateFormat(dateFormat);
         loanRepaymentDTO.setLocale("en");
         loanRepaymentDTO.setTransactionAmount(exchange.getProperty("amount").toString());
-        String currDate = getCurrentDate(exchange.getProperty("requestedDate").toString(),dateFormat);
-        loanRepaymentDTO.setTransactionDate(currDate);
+        loanRepaymentDTO.setTransactionDate(exchange.getProperty("requestedDate").toString());
         return loanRepaymentDTO;
     }
 
     public static void setZeebeVariables(Exchange e, Map<String, Object> variables, String requestDate, String accountHoldingInstitutionId, String transactionChannelRequestDTO) {
+        String dateFormat = "dd MMMM yyyy";
+        String currentDate=getCurrentDate(requestDate,dateFormat);
+
         variables.put(ACCOUNT_IDENTIFIER,e.getProperty(ACCOUNT_IDENTIFIER));
         variables.put(ACCOUNT_NUMBER,e.getProperty(ACCOUNT_NUMBER));
         variables.put(TRANSACTION_ID, UUID.randomUUID().toString());
         variables.put(TENANT_ID,accountHoldingInstitutionId);
         variables.put(TRANSFER_ACTION,CREATE.name());
         variables.put(CHANNEL_REQUEST,transactionChannelRequestDTO);
-        variables.put(REQUESTED_DATE,requestDate);
+        variables.put(REQUESTED_DATE,currentDate);
         variables.put(EXTERNAL_ACCOUNT_ID,e.getProperty(ACCOUNT_NUMBER));
         variables.put("payeeTenantId", accountHoldingInstitutionId);
     }
