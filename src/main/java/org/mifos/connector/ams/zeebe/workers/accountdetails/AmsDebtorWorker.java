@@ -17,8 +17,8 @@ public class AmsDebtorWorker extends AbstractAmsWorker {
 	public AmsDebtorWorker() {
 	}
 	
-	public AmsDebtorWorker(RestTemplate restTemplate, HttpHeaders httpHeaders) {
-		super(restTemplate, httpHeaders);
+	public AmsDebtorWorker(RestTemplate restTemplate) {
+		super(restTemplate);
 	}
 
 	public void handle(JobClient jobClient, ActivatedJob activatedJob) throws Exception {

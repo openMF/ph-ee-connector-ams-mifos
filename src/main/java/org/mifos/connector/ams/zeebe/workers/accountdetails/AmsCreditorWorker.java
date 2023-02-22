@@ -24,8 +24,8 @@ public class AmsCreditorWorker extends AbstractAmsWorker {
 	public AmsCreditorWorker() {
 	}
 
-	public AmsCreditorWorker(RestTemplate restTemplate, HttpHeaders httpHeaders) {
-		super(restTemplate, httpHeaders);
+	public AmsCreditorWorker(RestTemplate restTemplate) {
+		super(restTemplate);
 	}
 
 	@Override

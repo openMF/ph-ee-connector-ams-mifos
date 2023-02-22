@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
@@ -27,9 +28,6 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 	
 	@Autowired
 	protected RestTemplate restTemplate;
-	
-	@Autowired
-	protected HttpHeaders httpHeaders;
 	
 	@Autowired
 	private IOTxLogger wireLogger;
@@ -48,8 +46,10 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 	protected static final String FORMAT = "yyyyMMdd";
 	
 	protected ResponseEntity<Object> release(Integer currencyAccountAmsId, Integer holdAmountId, String tenantId) {
-		httpHeaders.remove("Fineract-Platform-TenantId");
-		httpHeaders.add("Fineract-Platform-TenantId", tenantId);
+		HttpHeaders httpHeaders = new HttpHeaders();
+		httpHeaders.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
+		httpHeaders.set("Authorization", "Basic bWlmb3M6cGFzc3dvcmQ=");
+		httpHeaders.set("Fineract-Platform-TenantId", tenantId);
 		var entity = new HttpEntity<>(null, httpHeaders);
 		
 		var urlTemplate = UriComponentsBuilder.fromHttpUrl(fineractApiUrl)
@@ -129,8 +129,10 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 		
 		logger.info("The following camt.052 will be inserted into the data table: {}", camt052);
 		
-		httpHeaders.remove("Fineract-Platform-TenantId");
-		httpHeaders.add("Fineract-Platform-TenantId", tenantId);
+		HttpHeaders httpHeaders = new HttpHeaders();
+		httpHeaders.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
+		httpHeaders.set("Authorization", "Basic bWlmb3M6cGFzc3dvcmQ=");
+		httpHeaders.set("Fineract-Platform-TenantId", "default");
 		var entity = new HttpEntity<>(td, httpHeaders);
 		
 		var urlTemplate = UriComponentsBuilder.fromHttpUrl(fineractApiUrl)
@@ -154,8 +156,10 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 	}
 	
 	private <T> ResponseEntity<Object> doExchange(T body, Integer currencyAccountAmsId, String command, String tenantId) {
-		httpHeaders.remove("Fineract-Platform-TenantId");
-		httpHeaders.add("Fineract-Platform-TenantId", tenantId);
+		HttpHeaders httpHeaders = new HttpHeaders();
+		httpHeaders.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
+		httpHeaders.set("Authorization", "Basic bWlmb3M6cGFzc3dvcmQ=");
+		httpHeaders.set("Fineract-Platform-TenantId", "default");
 		var entity = new HttpEntity<>(body, httpHeaders);
 		
 		var urlTemplate = UriComponentsBuilder.fromHttpUrl(fineractApiUrl)
