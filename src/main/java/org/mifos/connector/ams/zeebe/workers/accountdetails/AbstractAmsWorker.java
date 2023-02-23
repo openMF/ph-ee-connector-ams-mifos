@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -31,15 +32,11 @@ public abstract class AbstractAmsWorker implements JobHandler {
 	@Autowired
 	private RestTemplate restTemplate;
 	
-	@Autowired
-	private HttpHeaders httpHeaders;
-	
 	public AbstractAmsWorker() {
 	}
 
-	public AbstractAmsWorker(RestTemplate restTemplate, HttpHeaders httpHeaders) {
+	public AbstractAmsWorker(RestTemplate restTemplate) {
 		this.restTemplate = restTemplate;
-		this.httpHeaders = httpHeaders;
 	}
 	
 	protected AmsDataTableQueryResponse[] lookupAccount(String iban, String tenantId) {
@@ -55,8 +52,10 @@ public abstract class AbstractAmsWorker implements JobHandler {
 	}
 
 	protected <T> T exchange(String urlTemplate, Class<T> responseType, String tenantId) {
-		httpHeaders.remove("Fineract-Platform-TenantId");
-		httpHeaders.add("Fineract-Platform-TenantId", tenantId);
+		HttpHeaders httpHeaders = new HttpHeaders();
+		httpHeaders.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
+		httpHeaders.set("Authorization", "Basic bWlmb3M6cGFzc3dvcmQ=");
+		httpHeaders.set("Fineract-Platform-TenantId", tenantId);
 		logger.info("Sending http request with the following headers: {}", httpHeaders);
 		return restTemplate.exchange(
 				urlTemplate, 
