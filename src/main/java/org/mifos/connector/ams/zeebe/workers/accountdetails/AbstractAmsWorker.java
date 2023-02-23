@@ -55,7 +55,7 @@ public abstract class AbstractAmsWorker implements JobHandler {
 		HttpHeaders httpHeaders = new HttpHeaders();
 		httpHeaders.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
 		httpHeaders.set("Authorization", "Basic bWlmb3M6cGFzc3dvcmQ=");
-		httpHeaders.set("Fineract-Platform-TenantId", "default");
+		httpHeaders.set("Fineract-Platform-TenantId", tenantId);
 		logger.info("Sending http request with the following headers: {}", httpHeaders);
 		return restTemplate.exchange(
 				urlTemplate, 

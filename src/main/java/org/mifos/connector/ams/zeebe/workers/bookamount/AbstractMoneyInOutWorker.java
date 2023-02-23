@@ -132,7 +132,7 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 		HttpHeaders httpHeaders = new HttpHeaders();
 		httpHeaders.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
 		httpHeaders.set("Authorization", "Basic bWlmb3M6cGFzc3dvcmQ=");
-		httpHeaders.set("Fineract-Platform-TenantId", "default");
+		httpHeaders.set("Fineract-Platform-TenantId", tenantId);
 		var entity = new HttpEntity<>(td, httpHeaders);
 		
 		var urlTemplate = UriComponentsBuilder.fromHttpUrl(fineractApiUrl)
@@ -159,7 +159,7 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 		HttpHeaders httpHeaders = new HttpHeaders();
 		httpHeaders.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
 		httpHeaders.set("Authorization", "Basic bWlmb3M6cGFzc3dvcmQ=");
-		httpHeaders.set("Fineract-Platform-TenantId", "default");
+		httpHeaders.set("Fineract-Platform-TenantId", tenantId);
 		var entity = new HttpEntity<>(body, httpHeaders);
 		
 		var urlTemplate = UriComponentsBuilder.fromHttpUrl(fineractApiUrl)
