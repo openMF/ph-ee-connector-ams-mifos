@@ -197,10 +197,12 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 			} catch (HttpClientErrorException e) {
 				logger.error(e.getMessage(), e);
 				if (HttpStatus.CONFLICT.equals(e.getStatusCode())) {
-					logger.warn("Transaction is already executing, but not completed yet");
+					logger.warn("Transaction is already executing, has not completed yet");
 					break;
+				} else {
+					logger.warn("Transaction returned with status code {}", e.getRawStatusCode());
 				}
-				logger.warn("Transaction returned with status code {}, rolling back any previous transactions", e.getRawStatusCode());
+				logger.warn(e.getMessage(), e);
 				return ResponseEntity.status(e.getRawStatusCode()).headers(e.getResponseHeaders())
 		                .body(e.getResponseBodyAsString());
 			} catch (Exception e) {
@@ -208,11 +210,16 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 						|| (e instanceof ResourceAccessException
 								&& e.getCause() instanceof SocketTimeoutException)) {
 					retryCount--;
+					logger.warn("Communication with Fineract timed out, retrying transaction {} more times with idempotency header value {}", retryCount, idempotencyHeaderValue);
 					try {
 						Thread.sleep(idempotencyRetryInterval);
 					} catch (InterruptedException ie) {
 						logger.error(ie.getMessage(), ie);
+						return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ie.getMessage());
 					}
+				} else {
+					logger.error(e.getMessage(), e);
+					return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
 				}
 			}
 		}
