@@ -37,7 +37,7 @@ ams:
     auth:
       host: https://localhost:8443
     loan:
-      host: https://localhost:8443
+      host: http://localhost:8443
       repayment-path: /fineract-provider/api/v1/interoperation/transactions/{accountNumber}/loanrepayment
 
 
