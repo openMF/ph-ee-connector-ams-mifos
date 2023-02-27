@@ -96,7 +96,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			
 			tenantId = (String) variables.get("tenantIdentifier");
 			
-			ResponseEntity<Object> withdrawAmountResponseObject = withdraw(transactionDate, amount, disposalAccountAmsId, paymentTypeExchangeECurrencyId, tenantId);
+			ResponseEntity<Object> withdrawAmountResponseObject = withdraw(transactionDate, amount, disposalAccountAmsId, paymentTypeExchangeECurrencyId, tenantId, internalCorrelationId);
 			
 			if (!HttpStatus.OK.equals(withdrawAmountResponseObject.getStatusCode())) {
 				jobClient.newFailCommand(activatedJob.getKey()).retries(0).send();
@@ -111,7 +111,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			logger.info("Withdrawing fee {} from disposal account {}", fee, disposalAccountAmsId);
 			
 			try {
-				ResponseEntity<Object> withdrawFeeResponseObject = withdraw(transactionDate, fee, disposalAccountAmsId, paymentTypeFeeId, tenantId);
+				ResponseEntity<Object> withdrawFeeResponseObject = withdraw(transactionDate, fee, disposalAccountAmsId, paymentTypeFeeId, tenantId, internalCorrelationId);
 				postCamt052(tenantId, camt052, internalCorrelationId, withdrawFeeResponseObject);
 			} catch (Exception e) {
 				logger.warn("Fee withdrawal failed");
@@ -122,7 +122,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			
 			logger.info("Depositing amount {} to conversion account {}", amount, conversionAccountAmsId);
 		
-			ResponseEntity<Object> depositAmountResponseObject = deposit(transactionDate, amount, conversionAccountAmsId, paymentTypeExchangeToFiatCurrencyId, tenantId);
+			ResponseEntity<Object> depositAmountResponseObject = deposit(transactionDate, amount, conversionAccountAmsId, paymentTypeExchangeToFiatCurrencyId, tenantId, internalCorrelationId);
 		
 			if (!HttpStatus.OK.equals(depositAmountResponseObject.getStatusCode())) {
 				jobClient.newFailCommand(activatedJob.getKey()).retries(0).send().join();
@@ -133,7 +133,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			
 			logger.info("Depositing fee {} to conversion account {}", fee, conversionAccountAmsId);
 			
-			ResponseEntity<Object> depositFeeResponseObject = deposit(transactionDate, fee, conversionAccountAmsId, paymentTypeFeeId, tenantId);
+			ResponseEntity<Object> depositFeeResponseObject = deposit(transactionDate, fee, conversionAccountAmsId, paymentTypeFeeId, tenantId, internalCorrelationId);
 			
 			postCamt052(tenantId, camt052, internalCorrelationId, depositFeeResponseObject);
 			

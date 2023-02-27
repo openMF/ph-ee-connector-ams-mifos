@@ -3,7 +3,6 @@ package org.mifos.connector.ams.zeebe.workers.bookamount;
 import java.net.SocketTimeoutException;
 import java.time.LocalDateTime;
 import java.util.Map;
-import java.util.UUID;
 
 import org.mifos.connector.ams.log.IOTxLogger;
 import org.mifos.connector.ams.zeebe.workers.utils.TransactionDetails;
@@ -82,19 +81,8 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 		
 		return response;
 	}
-	
-	protected ResponseEntity<Object> hold(String transactionDate, Object amount, Integer currencyAccountAmsId, String tenantId) {
-		var body = new HoldAmountBody(
-				transactionDate,
-				amount,
-				"Transfer out - on Hold - pending checks",
-				locale,
-				FORMAT
-				);
-		return doExchange(body, currencyAccountAmsId, "holdAmount", tenantId);
-	}
-	
-	protected ResponseEntity<Object> deposit(String transactionDate, Object amount, Integer currencyAccountAmsId, Integer paymentTypeId, String tenantId) {
+
+	protected ResponseEntity<Object> deposit(String transactionDate, Object amount, Integer currencyAccountAmsId, Integer paymentTypeId, String tenantId, String internalCorrelationId) {
 		var body = new TransactionBody(
 				transactionDate,
 				amount,
@@ -102,10 +90,10 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 				"",
 				FORMAT,
 				locale);
-		return doExchange(body, currencyAccountAmsId, "deposit", tenantId);
+		return doExchange(body, currencyAccountAmsId, "deposit", tenantId, internalCorrelationId);
 	}
 
-	protected ResponseEntity<Object> withdraw(String transactionDate, Object amount, Integer currencyAccountAmsId, Integer paymentTypeId, String tenantId) {
+	protected ResponseEntity<Object> withdraw(String transactionDate, Object amount, Integer currencyAccountAmsId, Integer paymentTypeId, String tenantId, String internalCorrelationId) {
 		var body = new TransactionBody(
 				transactionDate,
 				amount,
@@ -113,7 +101,7 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 				"",
 				FORMAT,
 				locale);
-		return doExchange(body, currencyAccountAmsId, "withdrawal", tenantId);
+		return doExchange(body, currencyAccountAmsId, "withdrawal", tenantId, internalCorrelationId);
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -168,7 +156,7 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 		}
 	}
 	
-	private <T> ResponseEntity<Object> doExchange(T body, Integer currencyAccountAmsId, String command, String tenantId) {
+	private <T> ResponseEntity<Object> doExchange(T body, Integer currencyAccountAmsId, String command, String tenantId, String internalCorrelationId) {
 		HttpHeaders httpHeaders = new HttpHeaders();
 		httpHeaders.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
 		httpHeaders.set("Authorization", "Basic bWlmb3M6cGFzc3dvcmQ=");
@@ -186,9 +174,8 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 		logger.info(">> Sending {} to {} with headers {}", body, urlTemplate, httpHeaders);
 		
 		int retryCount = idempotencyRetryCount;
-		String idempotencyHeaderValue = UUID.randomUUID().toString();
 		httpHeaders.remove(idempotencyKeyHeaderName);
-		httpHeaders.set(idempotencyKeyHeaderName, idempotencyHeaderValue);
+		httpHeaders.set(idempotencyKeyHeaderName, internalCorrelationId);
 		
 		while (retryCount > 0) {
 			try {
@@ -214,7 +201,7 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 						|| (e instanceof ResourceAccessException
 								&& e.getCause() instanceof SocketTimeoutException)) {
 					retryCount--;
-					logger.warn("Communication with Fineract timed out, retrying transaction {} more times with idempotency header value {}", retryCount, idempotencyHeaderValue);
+					logger.warn("Communication with Fineract timed out, retrying transaction {} more times with idempotency header value {}", retryCount, internalCorrelationId);
 					try {
 						Thread.sleep(idempotencyRetryInterval);
 					} catch (InterruptedException ie) {
