@@ -115,13 +115,13 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 		Object txId = body.get("resourceId");
 		logger.info("Setting amsTransactionId to {}", txId);
 		
-		Object clientId = body.get("clientId");
-		logger.info("Setting clientId to {}", clientId);
+		Object savingsId = body.get("savingsId");
+		logger.info("Setting savingsId to {}", savingsId);
 		
 		LocalDateTime now = LocalDateTime.now();
 		
 		TransactionDetails td = new TransactionDetails(
-				clientId, 
+				savingsId, 
 				txId,
 				internalCorrelationId,
 				camt052,
@@ -139,7 +139,7 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 		var urlTemplate = UriComponentsBuilder.fromHttpUrl(fineractApiUrl)
 				.path("/datatables")
 				.path("/transaction_details")
-				.path("/" + clientId)
+				.path("/" + savingsId)
 				.queryParam("genericResultSet", true)
 				.encode()
 				.toUriString();
