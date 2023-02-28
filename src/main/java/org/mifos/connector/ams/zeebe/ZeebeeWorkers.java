@@ -99,7 +99,7 @@ public class ZeebeeWorkers {
     private TenantProperties tenantProperties;
 
     @Autowired
-    private AmsCreditorWorker amsWorker;
+    private AmsCreditorWorker amsCreditorWorker;
     
     @Autowired
     private BookCreditedAmountToConversionAccountWorker bookCreditedAmountToConversionAccountWorker;
@@ -118,6 +118,9 @@ public class ZeebeeWorkers {
     
     @Autowired
     private RevertInAmsWorker revertInAmsWorker;
+    
+    @Autowired
+    private OnUsTransferWorker onUsTransferWorker;
     
     @Value("${ams.local.enabled:false}")
     private boolean isAmsLocalEnabled;
@@ -233,7 +236,7 @@ public class ZeebeeWorkers {
             
             zeebeClient.newWorker()
             		.jobType("getAccountDetailsFromAms")
-            		.handler(amsWorker)
+            		.handler(amsCreditorWorker)
             		.name("GetAccountDetailsFromAms")
             		.maxJobsActive(workerMaxJobs)
             		.open();
@@ -267,7 +270,6 @@ public class ZeebeeWorkers {
     		.open();
             
             
-            
             zeebeClient.newWorker()
     		.jobType("bookOnConversionAccountInAms")
     		.handler(bookOnConversionAccountInAmsWorker)
@@ -283,6 +285,31 @@ public class ZeebeeWorkers {
     		.name("RevertInAms")
     		.maxJobsActive(workerMaxJobs)
     		.open();
+            
+            
+            // OnUs
+            zeebeClient.newWorker()
+            .jobType("getAccountIdsFromAms")
+    		.handler(amsCreditorWorker)
+    		.name("GetDebtorAccountIdsFromAms")
+    		.maxJobsActive(workerMaxJobs)
+    		.open();
+            
+            zeebeClient.newWorker()
+            .jobType("getAccountDetailsFromAms")
+    		.handler(amsCreditorWorker)
+    		.name("GetCreditorAccountIdFromAms")
+    		.maxJobsActive(workerMaxJobs)
+    		.open();
+            
+            zeebeClient.newWorker()
+            .jobType("transferTheAmountBetweenDisposalAccounts")
+    		.handler(onUsTransferWorker)
+    		.name("TransferTheAmountBetweenDisposalAccounts")
+    		.maxJobsActive(workerMaxJobs)
+    		.open();
+            
+            
             
             for (String dfspid : dfspids) {
                 logger.info("## generating " + WORKER_PAYER_LOCAL_QUOTE + "{} worker", dfspid);

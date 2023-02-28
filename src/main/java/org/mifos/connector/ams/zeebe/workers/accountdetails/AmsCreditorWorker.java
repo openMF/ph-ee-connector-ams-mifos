@@ -5,7 +5,6 @@ import org.jboss.logging.MDC;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -34,16 +33,16 @@ public class AmsCreditorWorker extends AbstractAmsWorker {
 		var variables = activatedJob.getVariablesAsMap();
 		String internalCorrelationId = (String) variables.get("internalCorrelationId");
 		MDC.put("internalCorrelationId", internalCorrelationId);
-		String creditorIban = (String) variables.get("creditorIban");
+		String iban = (String) variables.get("iban");
 		String tenantId = (String) variables.get("tenantIdentifier");
 		
-		logger.info("Started AMS creditor worker for creditor IBAN {} and Tenant Id {}", creditorIban, tenantId);
+		logger.info("Started AMS creditor worker for creditor IBAN {} and Tenant Id {}", iban, tenantId);
 		
 		AccountAmsStatus status = AccountAmsStatus.NOT_READY_TO_RECEIVE_MONEY;
 		String currency = (String) variables.get("currency");
 		
 
-		AmsDataTableQueryResponse[] response = lookupAccount(creditorIban, tenantId);
+		AmsDataTableQueryResponse[] response = lookupAccount(iban, tenantId);
 		
 		variables.put("disposalAccountAmsId", "");
 		variables.put("conversionAccountAmsId", "");
@@ -72,7 +71,7 @@ public class AmsCreditorWorker extends AbstractAmsWorker {
 
 		variables.put("accountAmsStatus", status.name());
 		
-		logger.info("AMS creditor worker for creditor IBAN {} finished with status {}", creditorIban, status);
+		logger.info("AMS creditor worker for creditor IBAN {} finished with status {}", iban, status);
 
 		MDC.remove("internalCorrelationId");
 		jobClient.newCompleteCommand(activatedJob.getKey()).variables(variables).send();
