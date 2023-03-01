@@ -200,19 +200,18 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 				if (e instanceof InterruptedException
 						|| (e instanceof ResourceAccessException
 								&& e.getCause() instanceof SocketTimeoutException)) {
-					retryCount--;
 					logger.warn("Communication with Fineract timed out, retrying transaction {} more times with idempotency header value {}", retryCount, internalCorrelationId);
-					try {
-						Thread.sleep(idempotencyRetryInterval);
-					} catch (InterruptedException ie) {
-						logger.error(ie.getMessage(), ie);
-						return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ie.getMessage());
-					}
 				} else {
 					logger.error(e.getMessage(), e);
-					return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+				}
+				try {
+					Thread.sleep(idempotencyRetryInterval);
+				} catch (InterruptedException ie) {
+					logger.error(ie.getMessage(), ie);
+					return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ie.getMessage());
 				}
 			}
+			retryCount--;
 		}
 		
 		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An unexpected error occurred");

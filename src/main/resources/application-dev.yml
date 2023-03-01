@@ -27,7 +27,7 @@ fineract:
     glLiabilityToCustomersInFiatCurrencyId: 10
     glLiabilityAmountOnHoldId: 14
   idempotency:
-    count: 3
+    count: 10
     interval: 200
     key-header-name: "Idemptency-Key"
 
