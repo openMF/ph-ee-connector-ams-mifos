@@ -33,6 +33,8 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 		try {
 			Map<String, Object> variables = activatedJob.getVariablesAsMap();
 			
+			logger.info("Starting onUs transfer worker with variables {}", variables);
+			
 			String internalCorrelationId = variables.get("internalCorrelationId").toString();
 			
 			String originalPain001 = (String) variables.get("originalPain001");
