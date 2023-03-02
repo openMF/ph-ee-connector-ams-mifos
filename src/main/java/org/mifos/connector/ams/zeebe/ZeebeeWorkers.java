@@ -291,7 +291,7 @@ public class ZeebeeWorkers {
             // OnUs
             zeebeClient.newWorker()
             .jobType("getAccountIdsFromAms")
-    		.handler(amsCreditorWorker)
+    		.handler(amsDebtorWorker)
     		.name("GetDebtorAccountIdsFromAms")
     		.maxJobsActive(workerMaxJobs)
     		.open();
