@@ -43,8 +43,8 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 			String camt052 = om.writeValueAsString(convertedCamt052);
 			
 			Object amount = variables.get("amount");
-			Integer creditorDisposalAccountAmsId = (Integer) variables.get("creditorDisposalAccountAmsId");
-			Integer debtorDisposalAccountAmsId = (Integer) variables.get("debtorDisposalAccountAmsId");
+			Integer creditorDisposalAccountAmsId = Integer.parseInt(variables.get("creditorDisposalAccountAmsId").toString());
+			Integer debtorDisposalAccountAmsId = Integer.parseInt(variables.get("debtorDisposalAccountAmsId").toString());
 			Object feeAmount = variables.get("feeAmount");
 			String tenantIdentifier = variables.get("tenantIdentifier").toString();
 			
