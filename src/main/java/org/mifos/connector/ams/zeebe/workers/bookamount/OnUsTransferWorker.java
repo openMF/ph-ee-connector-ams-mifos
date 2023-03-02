@@ -47,7 +47,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 			Object amount = variables.get("amount");
 			Integer creditorDisposalAccountAmsId = Integer.parseInt(variables.get("creditorDisposalAccountAmsId").toString());
 			Integer debtorDisposalAccountAmsId = Integer.parseInt(variables.get("debtorDisposalAccountAmsId").toString());
-			Object feeAmount = variables.get("feeAmount");
+			Object feeAmount = variables.get("transactionFeeAmount");
 			String tenantIdentifier = variables.get("tenantIdentifier").toString();
 			
 			String interbankSettlementDate = LocalDate.now().format(PATTERN);
