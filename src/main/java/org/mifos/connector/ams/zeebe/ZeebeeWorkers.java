@@ -315,6 +315,11 @@ public class ZeebeeWorkers {
                                 exchange.setProperty(TRANSFER_ACTION, CREATE.name());
                                 exchange.setProperty(ZEEBE_JOB_KEY, job.getKey());
 
+                                // setting party related variables as exchange property
+                                QuoteSwitchRequestDTO quoteRequest = objectMapper.readValue((String) variables.get(QUOTE_SWITCH_REQUEST), QuoteSwitchRequestDTO.class);
+                                exchange.setProperty(PARTY_ID, quoteRequest.getPayee().getPartyIdInfo().getPartyIdentifier());
+                                exchange.setProperty(PARTY_ID_TYPE, quoteRequest.getPayee().getPartyIdInfo().getPartyIdType());
+
                                 FspMoneyData amountData = zeebeVariable(exchange, "amount", FspMoneyData.class);
                                 MoneyData amount = new MoneyData(amountData.getAmount(), amountData.getCurrency());
 
