@@ -47,6 +47,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 			Object amount = variables.get("amount");
 			Integer creditorDisposalAccountAmsId = Integer.parseInt(variables.get("creditorDisposalAccountAmsId").toString());
 			Integer debtorDisposalAccountAmsId = Integer.parseInt(variables.get("debtorDisposalAccountAmsId").toString());
+			Integer debtorConversionAccountAmsId = Integer.parseInt(variables.get("debtorConversionAccountAmsId").toString());
 			Object feeAmount = variables.get("transactionFeeAmount");
 			String tenantIdentifier = variables.get("tenantIdentifier").toString();
 			
@@ -70,7 +71,12 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 			);
 			
 			opExecutor.execute(
-					deposit(interbankSettlementDate, feeAmount, creditorDisposalAccountAmsId, 1, tenantIdentifier, internalCorrelationId), 
+					deposit(interbankSettlementDate, feeAmount, debtorConversionAccountAmsId, 1, tenantIdentifier, internalCorrelationId), 
+					ERROR_FAILED_CREDIT_TRANSFER
+			);
+			
+			opExecutor.execute(
+					withdraw(interbankSettlementDate, feeAmount, debtorConversionAccountAmsId, 1, tenantIdentifier, internalCorrelationId), 
 					ERROR_FAILED_CREDIT_TRANSFER
 			);
 			
