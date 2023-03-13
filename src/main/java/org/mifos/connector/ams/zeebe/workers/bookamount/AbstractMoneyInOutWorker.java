@@ -214,6 +214,6 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 			retryCount--;
 		}
 		
-		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An unexpected error occurred");
+		throw new RuntimeException("An unexpected error occurred");
 	}
 }
