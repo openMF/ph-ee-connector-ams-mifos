@@ -170,17 +170,10 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 		
 		logger.info(">> Sending {} to {} with headers {}", body, urlTemplate, httpHeaders);
 		
-		try {
-			wireLogger.sending(body.toString());
-			ResponseEntity<Object> response = restTemplate.exchange(urlTemplate, HttpMethod.POST, entity, Object.class);
-			wireLogger.receiving(response.toString());
-			logger.info("<< Received {}", response);
-			return response;
-		} catch (HttpClientErrorException e) {
-			logger.error(e.getMessage(), e);
-			logger.warn("Transaction returned with status code {}, rolling back any previous transactions", e.getRawStatusCode());
-			return ResponseEntity.status(e.getRawStatusCode()).headers(e.getResponseHeaders())
-	                .body(e.getResponseBodyAsString());
-		}
+		wireLogger.sending(body.toString());
+		ResponseEntity<Object> response = restTemplate.exchange(urlTemplate, HttpMethod.POST, entity, Object.class);
+		wireLogger.receiving(response.toString());
+		logger.info("<< Received {}", response);
+		return response;
 	}
 }
