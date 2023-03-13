@@ -76,14 +76,16 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 		
 		postCamt052(tenantId, camt052, internalCorrelationId, responseObject);
 		
-		logger.info("Withdrawing fee {} from conversion account {}", fee, conversionAccountAmsId);
+		if (fee != null) {
+			logger.info("Withdrawing fee {} from conversion account {}", fee, conversionAccountAmsId);
+				
+			responseObject = withdraw(interbankSettlementDate, fee, conversionAccountAmsId, 1, tenantId, internalCorrelationId);
+			postCamt052(tenantId, camt052, internalCorrelationId, responseObject);
 			
-		responseObject = withdraw(interbankSettlementDate, fee, conversionAccountAmsId, 1, tenantId, internalCorrelationId);
-		postCamt052(tenantId, camt052, internalCorrelationId, responseObject);
-		
-		if (!HttpStatus.OK.equals(responseObject.getStatusCode())) {
-			jobClient.newFailCommand(activatedJob.getKey()).retries(0).send();
-			return;
+			if (!HttpStatus.OK.equals(responseObject.getStatusCode())) {
+				jobClient.newFailCommand(activatedJob.getKey()).retries(0).send();
+				return;
+			}
 		}
 		
 		jobClient.newCompleteCommand(activatedJob.getKey()).variables(variables).send();

@@ -108,16 +108,18 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 
 			postCamt052(tenantId, camt052, internalCorrelationId, withdrawAmountResponseObject);
 			
-			logger.info("Withdrawing fee {} from disposal account {}", fee, disposalAccountAmsId);
-			
-			try {
-				ResponseEntity<Object> withdrawFeeResponseObject = withdraw(transactionDate, fee, disposalAccountAmsId, paymentTypeFeeId, tenantId, internalCorrelationId);
-				postCamt052(tenantId, camt052, internalCorrelationId, withdrawFeeResponseObject);
-			} catch (Exception e) {
-				logger.warn("Fee withdrawal failed");
-				logger.error(e.getMessage(), e);
-				jobClient.newFailCommand(activatedJob.getKey()).retries(0).errorMessage(e.getMessage()).send();
-				return;
+			if (fee != null) {
+				logger.info("Withdrawing fee {} from disposal account {}", fee, disposalAccountAmsId);
+				
+				try {
+					ResponseEntity<Object> withdrawFeeResponseObject = withdraw(transactionDate, fee, disposalAccountAmsId, paymentTypeFeeId, tenantId, internalCorrelationId);
+					postCamt052(tenantId, camt052, internalCorrelationId, withdrawFeeResponseObject);
+				} catch (Exception e) {
+					logger.warn("Fee withdrawal failed");
+					logger.error(e.getMessage(), e);
+					jobClient.newFailCommand(activatedJob.getKey()).retries(0).errorMessage(e.getMessage()).send();
+					return;
+				}
 			}
 			
 			logger.info("Depositing amount {} to conversion account {}", amount, conversionAccountAmsId);

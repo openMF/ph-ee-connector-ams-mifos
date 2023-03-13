@@ -79,21 +79,19 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 		
 		postCamt052(tenantId, camt052, internalCorrelationId, responseObject);
 		
-		logger.error("Withdrawing fee {} from conversion account {}", fee, conversionAccountAmsId);
-			
-		responseObject = withdraw(interbankSettlementDate, fee, conversionAccountAmsId, 1, tenantId, internalCorrelationId);
-			
-		if (!HttpStatus.OK.equals(responseObject.getStatusCode())) {
-			jobClient.newFailCommand(activatedJob.getKey()).retries(0).send();
-			ResponseEntity<Object> sagaResponseObject = deposit(interbankSettlementDate, amount, conversionAccountAmsId, 1, tenantId, internalCorrelationId);
-			if (!HttpStatus.OK.equals(sagaResponseObject.getStatusCode())) {
+		if (fee != null) {
+			logger.error("Withdrawing fee {} from conversion account {}", fee, conversionAccountAmsId);
+				
+			responseObject = withdraw(interbankSettlementDate, fee, conversionAccountAmsId, 1, tenantId, internalCorrelationId);
+				
+			if (!HttpStatus.OK.equals(responseObject.getStatusCode())) {
 				jobClient.newFailCommand(activatedJob.getKey()).retries(0).send();
+				return;
 			}
-			return;
+			
+			postCamt052(tenantId, camt052, internalCorrelationId, responseObject);
 		}
-		
-		postCamt052(tenantId, camt052, internalCorrelationId, responseObject);
-		
+
 		logger.error("Re-depositing amount {} in disposal account {}", amount, disposalAccountAmsId);
 		
 		responseObject = deposit(interbankSettlementDate, amount, disposalAccountAmsId, 1, tenantId, internalCorrelationId);
@@ -105,18 +103,14 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 		
 		postCamt052(tenantId, camt052, internalCorrelationId, responseObject);
 		
-		logger.error("Re-depositing fee {} in disposal account {}", fee, disposalAccountAmsId);
-			
-		responseObject = deposit(interbankSettlementDate, fee, disposalAccountAmsId, 1, tenantId, internalCorrelationId);
-		
-		postCamt052(tenantId, camt052, internalCorrelationId, responseObject);
+		if (fee != null) {
+			logger.error("Re-depositing fee {} in disposal account {}", fee, disposalAccountAmsId);
+			responseObject = deposit(interbankSettlementDate, fee, disposalAccountAmsId, 1, tenantId, internalCorrelationId);
+			postCamt052(tenantId, camt052, internalCorrelationId, responseObject);
+		}
 		
 		if (!HttpStatus.OK.equals(responseObject.getStatusCode())) {
 			jobClient.newFailCommand(activatedJob.getKey()).retries(0).send();
-			ResponseEntity<Object> sagaResponseObject = withdraw(interbankSettlementDate, amount, disposalAccountAmsId, 1, tenantId, internalCorrelationId);
-			if (!HttpStatus.OK.equals(sagaResponseObject.getStatusCode())) {
-				jobClient.newFailCommand(activatedJob.getKey()).retries(0).send();
-			}
 			return;
 		}
 		
