@@ -1,5 +1,6 @@
 package org.mifos.connector.ams.zeebe.workers.bookamount;
 
+import java.net.SocketTimeoutException;
 import java.time.LocalDateTime;
 import java.util.Map;
 
@@ -12,10 +13,12 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -170,10 +173,46 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 		
 		logger.info(">> Sending {} to {} with headers {}", body, urlTemplate, httpHeaders);
 		
-		wireLogger.sending(body.toString());
-		ResponseEntity<Object> response = restTemplate.exchange(urlTemplate, HttpMethod.POST, entity, Object.class);
-		wireLogger.receiving(response.toString());
-		logger.info("<< Received {}", response);
-		return response;
+		int retryCount = idempotencyRetryCount;
+		httpHeaders.remove(idempotencyKeyHeaderName);
+		httpHeaders.set(idempotencyKeyHeaderName, internalCorrelationId);
+		
+		while (retryCount > 0) {
+			try {
+				wireLogger.sending(body.toString());
+				ResponseEntity<Object> response = restTemplate.exchange(urlTemplate, HttpMethod.POST, entity, Object.class);
+				wireLogger.receiving(response.toString());
+				
+				logger.info("<< Received {}", response);
+				return response;
+			} catch (HttpClientErrorException e) {
+				logger.error(e.getMessage(), e);
+				if (HttpStatus.CONFLICT.equals(e.getStatusCode())) {
+					logger.warn("Transaction is already executing, has not completed yet");
+					break;
+				} else {
+					logger.warn("Transaction returned with status code {}", e.getRawStatusCode());
+				}
+				logger.warn(e.getMessage(), e);
+				throw new RuntimeException(e);
+			} catch (Exception e) {
+				if (e instanceof InterruptedException
+						|| (e instanceof ResourceAccessException
+								&& e.getCause() instanceof SocketTimeoutException)) {
+					logger.warn("Communication with Fineract timed out, retrying transaction {} more times with idempotency header value {}", retryCount, internalCorrelationId);
+				} else {
+					logger.error(e.getMessage(), e);
+				}
+				try {
+					Thread.sleep(idempotencyRetryInterval);
+				} catch (InterruptedException ie) {
+					logger.error(ie.getMessage(), ie);
+					throw new RuntimeException(ie);
+				}
+			}
+			retryCount--;
+		}
+		
+		throw new RuntimeException("An unexpected error occurred");
 	}
 }
