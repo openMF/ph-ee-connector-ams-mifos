@@ -1,6 +1,7 @@
 package org.mifos.connector.ams.zeebe.workers.bookamount;
 
 import java.io.InputStream;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
@@ -108,7 +109,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 
 			postCamt052(tenantId, camt052, internalCorrelationId, withdrawAmountResponseObject);
 			
-			if (fee != null) {
+			if (fee != null && ((fee instanceof Integer i && i > 0) || (fee instanceof BigDecimal bd && !bd.equals(BigDecimal.ZERO)))) {
 				logger.info("Withdrawing fee {} from disposal account {}", fee, disposalAccountAmsId);
 				
 				try {

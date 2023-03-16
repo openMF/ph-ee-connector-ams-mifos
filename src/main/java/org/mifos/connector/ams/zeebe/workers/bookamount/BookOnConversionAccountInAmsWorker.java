@@ -1,6 +1,7 @@
 package org.mifos.connector.ams.zeebe.workers.bookamount;
 
 import java.io.StringReader;
+import java.math.BigDecimal;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
 
@@ -76,12 +77,13 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 		
 		postCamt052(tenantId, camt052, internalCorrelationId, responseObject);
 		
-		if (fee != null) {
+		if (fee != null && ((fee instanceof Integer i && i > 0) || (fee instanceof BigDecimal bd && !bd.equals(BigDecimal.ZERO)))) {
+				
 			logger.info("Withdrawing fee {} from conversion account {}", fee, conversionAccountAmsId);
 				
 			responseObject = withdraw(interbankSettlementDate, fee, conversionAccountAmsId, 1, tenantId, internalCorrelationId);
 			postCamt052(tenantId, camt052, internalCorrelationId, responseObject);
-			
+
 			if (!HttpStatus.OK.equals(responseObject.getStatusCode())) {
 				jobClient.newFailCommand(activatedJob.getKey()).retries(0).send();
 				return;

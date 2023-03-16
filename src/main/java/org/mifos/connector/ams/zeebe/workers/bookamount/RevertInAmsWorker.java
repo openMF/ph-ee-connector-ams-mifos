@@ -79,7 +79,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 		
 		postCamt052(tenantId, camt052, internalCorrelationId, responseObject);
 		
-		if (fee != null) {
+		if (fee != null && !fee.equals(BigDecimal.ZERO)) {
 			logger.error("Withdrawing fee {} from conversion account {}", fee, conversionAccountAmsId);
 				
 			responseObject = withdraw(interbankSettlementDate, fee, conversionAccountAmsId, 1, tenantId, internalCorrelationId);
@@ -103,7 +103,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 		
 		postCamt052(tenantId, camt052, internalCorrelationId, responseObject);
 		
-		if (fee != null) {
+		if (fee != null && !fee.equals(BigDecimal.ZERO)) {
 			logger.error("Re-depositing fee {} in disposal account {}", fee, disposalAccountAmsId);
 			responseObject = deposit(interbankSettlementDate, fee, disposalAccountAmsId, 1, tenantId, internalCorrelationId);
 			postCamt052(tenantId, camt052, internalCorrelationId, responseObject);
