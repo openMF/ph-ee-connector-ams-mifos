@@ -1,6 +1,7 @@
 package org.mifos.connector.ams.zeebe.workers.bookamount;
 
 import java.io.InputStream;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
@@ -117,23 +118,25 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 
 			postCamt052(tenantId, camt052, internalCorrelationId, withdrawAmountResponseObject);
 			
-			logger.info("Withdrawing fee {} from disposal account {}", fee, disposalAccountAmsId);
-			
-			try {
-				ResponseEntity<Object> withdrawFeeResponseObject = withdraw(
-						transactionDate, 
-						fee, 
-						disposalAccountAmsId, 
-						paymentScheme,
-						"MoneyOutFeeDisposalWithdraw",
-						tenantId, 
-						internalCorrelationId);
-				postCamt052(tenantId, camt052, internalCorrelationId, withdrawFeeResponseObject);
-			} catch (Exception e) {
-				logger.warn("Fee withdrawal failed");
-				logger.error(e.getMessage(), e);
-				jobClient.newFailCommand(activatedJob.getKey()).retries(0).errorMessage(e.getMessage()).send();
-				return;
+			if (fee != null && ((fee instanceof Integer i && i > 0) || (fee instanceof BigDecimal bd && !bd.equals(BigDecimal.ZERO)))) {
+				logger.info("Withdrawing fee {} from disposal account {}", fee, disposalAccountAmsId);
+				
+				try {
+					ResponseEntity<Object> withdrawFeeResponseObject = withdraw(
+							transactionDate, 
+							fee, 
+							disposalAccountAmsId, 
+							paymentScheme,
+							"MoneyOutFeeDisposalWithdraw",
+							tenantId, 
+							internalCorrelationId);
+					postCamt052(tenantId, camt052, internalCorrelationId, withdrawFeeResponseObject);
+				} catch (Exception e) {
+					logger.warn("Fee withdrawal failed");
+					logger.error(e.getMessage(), e);
+					jobClient.newFailCommand(activatedJob.getKey()).retries(0).errorMessage(e.getMessage()).send();
+					return;
+				}
 			}
 			
 			logger.info("Depositing amount {} to conversion account {}", amount, conversionAccountAmsId);
