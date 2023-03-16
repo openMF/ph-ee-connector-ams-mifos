@@ -1,14 +1,10 @@
 package org.mifos.connector.ams.zeebe.workers.bookamount;
 
 import java.io.StringReader;
-import java.time.format.DateTimeFormatter;
 import java.util.Map;
-import java.util.Optional;
-import java.util.function.Supplier;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBElement;
-import javax.xml.datatype.XMLGregorianCalendar;
 
 import org.jboss.logging.MDC;
 import org.mifos.connector.ams.mapstruct.Pacs008Camt052Mapper;
@@ -23,7 +19,6 @@ import eu.nets.realtime247.ri_2015_10.ObjectFactory;
 import io.camunda.zeebe.client.api.response.ActivatedJob;
 import io.camunda.zeebe.client.api.worker.JobClient;
 import iso.std.iso._20022.tech.json.camt_052_001.BankToCustomerAccountReportV08;
-import iso.std.iso._20022.tech.xsd.pacs_002_001.Document;
 
 @Component
 public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyInOutWorker {
@@ -31,8 +26,6 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
     @Autowired
     private Pacs008Camt052Mapper camt052Mapper;
     
-    private static final DateTimeFormatter PATTERN = DateTimeFormatter.ofPattern(FORMAT);
-
     @Override
     @SuppressWarnings("unchecked")
     public void handle(JobClient jobClient, ActivatedJob activatedJob) throws Exception {
@@ -48,36 +41,12 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
                     iso.std.iso._20022.tech.xsd.pacs_002_001.ObjectFactory.class);
             JAXBElement<iso.std.iso._20022.tech.xsd.pacs_008_001.Document> object = (JAXBElement<iso.std.iso._20022.tech.xsd.pacs_008_001.Document>) jc.createUnmarshaller().unmarshal(new StringReader(originalPacs008));
             iso.std.iso._20022.tech.xsd.pacs_008_001.Document pacs008 = object.getValue();
+            String transactionDate = (String) variables.get("transactionDate");
 
             String internalCorrelationId = (String) variables.get("internalCorrelationId");
             MDC.put("internalCorrelationId", internalCorrelationId);
-            String transactionDate;
             String tenantId = (String) variables.get("tenantIdentifier");
             String paymentScheme = (String) variables.get("paymentScheme");
-
-            if (isIG2(pacs008)) {
-
-                logger.info("Worker to book incoming IG2 money in AMS has started with incoming pacs.008 {} for tenant {}", originalPacs008, tenantId);
-
-                XMLGregorianCalendar acceptanceDate = pacs008.getFIToFICstmrCdtTrf().getGrpHdr().getCreDtTm();
-                transactionDate = acceptanceDate.toGregorianCalendar().toZonedDateTime().toLocalDate().format(PATTERN);
-
-            } else if (isHctInts(pacs008)) {
-
-                String originalPacs002 = (String) variables.get("originalPacs002");
-                logger.info("Worker to book incoming hct-inst money in AMS has started with incoming pacs.002 {} for tenant {}", originalPacs002, tenantId);
-
-                JAXBElement<Document> jaxbObject = (JAXBElement<Document>) jc.createUnmarshaller().unmarshal(new StringReader(originalPacs002));
-                Document pacs_002 = jaxbObject.getValue();
-
-                XMLGregorianCalendar acceptanceDate = pacs_002.getFIToFIPmtStsRpt().getTxInfAndSts().get(0).getAccptncDtTm();
-                transactionDate = acceptanceDate.toGregorianCalendar().toZonedDateTime().toLocalDate().format(PATTERN);
-
-            } else {
-                jobClient.newThrowErrorCommand(activatedJob.getKey()).errorCode("Error_InvalidCreditTransferType").send();
-                return;
-            }
-
 
             Object amount = variables.get("amount");
 
@@ -112,33 +81,6 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
             jobClient.newThrowErrorCommand(activatedJob.getKey()).errorCode("Error_BookToConversionToBeHandledManually").send();
         } finally {
             MDC.remove("internalCorrelationId");
-        }
-    }
-
-    private boolean isIG2(iso.std.iso._20022.tech.xsd.pacs_008_001.Document creditTransfer) {
-        Optional<String> sttlmMtd = nullSafe(() -> creditTransfer.getFIToFICstmrCdtTrf().getGrpHdr().getSttlmInf().getSttlmMtd().value());
-        Optional<String> clrSys = nullSafe(() -> creditTransfer.getFIToFICstmrCdtTrf().getGrpHdr().getSttlmInf().getClrSys().getPrtry());
-        if (sttlmMtd.isEmpty() || clrSys.isEmpty()) {
-            return false;
-        }
-        return sttlmMtd.get().equals("CLRG") && clrSys.get().equals("IG2");
-    }
-
-    private boolean isHctInts(iso.std.iso._20022.tech.xsd.pacs_008_001.Document creditTransfer) {
-        Optional<String> svcLvl = nullSafe(() -> creditTransfer.getFIToFICstmrCdtTrf().getGrpHdr().getPmtTpInf().getSvcLvl().getCd());
-        Optional<String> lclInstrm = nullSafe(() -> creditTransfer.getFIToFICstmrCdtTrf().getGrpHdr().getPmtTpInf().getLclInstrm().getCd());
-        if (svcLvl.isEmpty() || lclInstrm.isEmpty()) {
-            return false;
-        }
-        return svcLvl.get().equals("SEPA") && lclInstrm.get().equals("INST");
-    }
-
-    public static <T> Optional<T> nullSafe(Supplier<T> resolver) {
-        try {
-            T result = resolver.get();
-            return Optional.ofNullable(result);
-        } catch (NullPointerException | IndexOutOfBoundsException e) {
-            return Optional.empty();
         }
     }
 }

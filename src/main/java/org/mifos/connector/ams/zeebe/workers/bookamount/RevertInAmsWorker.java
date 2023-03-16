@@ -1,15 +1,12 @@
 package org.mifos.connector.ams.zeebe.workers.bookamount;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 
 import org.mifos.connector.ams.mapstruct.Pain001Camt052Mapper;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
@@ -24,18 +21,10 @@ import iso.std.iso._20022.tech.json.pain_001_001.Pain00100110CustomerCreditTrans
 
 @Component
 public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
-
-	@Value("${fineract.paymentType.paymentTypeExchangeFiatCurrencyId}")
-	private Integer paymentTypeExchangeFiatCurrencyId;
-	
-	@Value("${fineract.paymentType.paymentTypeIssuingECurrencyId}")
-	private Integer paymentTypeIssuingECurrencyId;
 	
 	@Autowired
 	private Pain001Camt052Mapper camt052Mapper;
 	
-	private static final DateTimeFormatter PATTERN = DateTimeFormatter.ofPattern(FORMAT);
-
 	@Override
 	public void handle(JobClient jobClient, ActivatedJob activatedJob) throws Exception {
 		Map<String, Object> variables = activatedJob.getVariablesAsMap();
@@ -47,8 +36,8 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 		
 		Integer conversionAccountAmsId = (Integer) variables.get("conversionAccountAmsId");
 		
-		String interbankSettlementDate = LocalDate.now().format(PATTERN);
-			
+		String transactionDate = (String) variables.get("transactionDate");
+
 		Integer disposalAccountAmsId = (Integer) variables.get("disposalAccountAmsId");
 		
 		String paymentScheme = (String) variables.get("paymentScheme");
@@ -70,7 +59,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 		String tenantId = (String) variables.get("tenantIdentifier");
 	
 		ResponseEntity<Object> responseObject = withdraw(
-				interbankSettlementDate, 
+				transactionDate, 
 				amount, 
 				conversionAccountAmsId, 
 				paymentScheme,
@@ -92,7 +81,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			logger.error("Withdrawing fee {} from conversion account {}", fee, conversionAccountAmsId);
 				
 			responseObject = withdraw(
-					interbankSettlementDate, 
+					transactionDate, 
 					fee, 
 					conversionAccountAmsId, 
 					paymentScheme,
@@ -111,7 +100,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 		logger.error("Re-depositing amount {} in disposal account {}", amount, disposalAccountAmsId);
 		
 		responseObject = deposit(
-				interbankSettlementDate, 
+				transactionDate, 
 				amount, 
 				disposalAccountAmsId, 
 				paymentScheme,
@@ -129,7 +118,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 		if (fee != null && !fee.equals(BigDecimal.ZERO)) {
 			logger.error("Re-depositing fee {} in disposal account {}", fee, disposalAccountAmsId);
 			responseObject = deposit(
-					interbankSettlementDate, 
+					transactionDate, 
 					fee, 
 					disposalAccountAmsId, 
 					paymentScheme,

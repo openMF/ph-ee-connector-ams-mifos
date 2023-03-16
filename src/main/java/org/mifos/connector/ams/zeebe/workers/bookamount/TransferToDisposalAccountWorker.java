@@ -1,7 +1,6 @@
 package org.mifos.connector.ams.zeebe.workers.bookamount;
 
 import java.io.StringReader;
-import java.time.format.DateTimeFormatter;
 import java.util.Map;
 
 import javax.xml.bind.JAXBContext;
@@ -28,6 +27,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 	private Pacs008Camt052Mapper camt052Mapper;
 
 	@Override
+	@SuppressWarnings("unchecked")
 	public void handle(JobClient jobClient, ActivatedJob activatedJob) throws Exception {
 		try {
 			Map<String, Object> variables = activatedJob.getVariablesAsMap();
@@ -40,20 +40,10 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 		
 			String internalCorrelationId = (String) variables.get("internalCorrelationId");
 			String paymentScheme = (String) variables.get("paymentScheme");
+			String transactionDate = (String) variables.get("transactionDate");
 			MDC.put("internalCorrelationId", internalCorrelationId);
 
 			logger.info("Exchange to e-currency worker has started");
-
-			String transactionDate = (String) variables.getOrDefault(
-					"interbankSettlementDate", 
-					pacs008
-							.getFIToFICstmrCdtTrf()
-							.getGrpHdr()
-							.getIntrBkSttlmDt()
-							.toGregorianCalendar()
-							.toZonedDateTime()
-							.toLocalDate()
-							.format(DateTimeFormatter.ofPattern("yyyyMMdd")));
 
 			Object amount = variables.get("amount");
 		

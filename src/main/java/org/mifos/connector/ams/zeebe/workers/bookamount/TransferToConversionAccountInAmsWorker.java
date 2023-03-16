@@ -10,7 +10,6 @@ import java.util.Set;
 import org.mifos.connector.ams.mapstruct.Pain001Camt052Mapper;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -33,15 +32,6 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 	
 	@Autowired
 	private Pain001Camt052Mapper camt052Mapper;
-	
-	@Value("${fineract.paymentType.paymentTypeExchangeECurrencyId}")
-	private Integer paymentTypeExchangeECurrencyId;
-	
-	@Value("${fineract.paymentType.paymentTypeExchangeToFiatCurrencyId}")
-	private Integer paymentTypeExchangeToFiatCurrencyId;
-	
-	@Value("${fineract.paymentType.paymentTypeFeeId}")
-	private Integer paymentTypeFeeId;
 	
 	private static final DateTimeFormatter PATTERN = DateTimeFormatter.ofPattern(FORMAT);
 
