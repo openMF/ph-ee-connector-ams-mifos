@@ -30,7 +30,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
 
     @Autowired
     private Pacs008Camt052Mapper camt052Mapper;
-
+    
     private static final DateTimeFormatter PATTERN = DateTimeFormatter.ofPattern(FORMAT);
 
     @Override
@@ -53,6 +53,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
             MDC.put("internalCorrelationId", internalCorrelationId);
             String transactionDate;
             String tenantId = (String) variables.get("tenantIdentifier");
+            String paymentScheme = (String) variables.get("paymentScheme");
 
             if (isIG2(pacs008)) {
 
@@ -82,7 +83,14 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
 
             Integer conversionAccountAmsId = (Integer) variables.get("conversionAccountAmsId");
 
-            ResponseEntity<Object> responseObject = deposit(transactionDate, amount, conversionAccountAmsId, 1, tenantId, internalCorrelationId);
+            ResponseEntity<Object> responseObject = deposit(
+            		transactionDate, 
+            		amount, 
+            		conversionAccountAmsId, 
+            		paymentScheme,
+            		"MoneyInAmountConversionDeposit",
+            		tenantId, 
+            		internalCorrelationId);
             
             
             if (HttpStatus.OK.equals(responseObject.getStatusCode())) {

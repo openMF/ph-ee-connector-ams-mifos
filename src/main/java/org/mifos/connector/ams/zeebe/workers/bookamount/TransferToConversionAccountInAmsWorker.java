@@ -81,6 +81,8 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			String internalCorrelationId = (String) variables.get("internalCorrelationId");
 			MDC.put("internalCorrelationId", internalCorrelationId);
 			
+			String paymentScheme = (String) variables.get("paymentScheme");
+			
 			amount = variables.get("amount");
 			
 			Object fee = variables.get("transactionFeeAmount");
@@ -96,7 +98,14 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			
 			tenantId = (String) variables.get("tenantIdentifier");
 			
-			ResponseEntity<Object> withdrawAmountResponseObject = withdraw(transactionDate, amount, disposalAccountAmsId, paymentTypeExchangeECurrencyId, tenantId, internalCorrelationId);
+			ResponseEntity<Object> withdrawAmountResponseObject = withdraw(
+					transactionDate, 
+					amount, 
+					disposalAccountAmsId, 
+					paymentScheme,
+					"MoneyOutAmountDisposalWithdraw",
+					tenantId, 
+					internalCorrelationId);
 			
 			if (!HttpStatus.OK.equals(withdrawAmountResponseObject.getStatusCode())) {
 				jobClient.newFailCommand(activatedJob.getKey()).retries(0).send();
@@ -111,7 +120,14 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			logger.info("Withdrawing fee {} from disposal account {}", fee, disposalAccountAmsId);
 			
 			try {
-				ResponseEntity<Object> withdrawFeeResponseObject = withdraw(transactionDate, fee, disposalAccountAmsId, paymentTypeFeeId, tenantId, internalCorrelationId);
+				ResponseEntity<Object> withdrawFeeResponseObject = withdraw(
+						transactionDate, 
+						fee, 
+						disposalAccountAmsId, 
+						paymentScheme,
+						"MoneyOutFeeDisposalWithdraw",
+						tenantId, 
+						internalCorrelationId);
 				postCamt052(tenantId, camt052, internalCorrelationId, withdrawFeeResponseObject);
 			} catch (Exception e) {
 				logger.warn("Fee withdrawal failed");
@@ -122,7 +138,14 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			
 			logger.info("Depositing amount {} to conversion account {}", amount, conversionAccountAmsId);
 		
-			ResponseEntity<Object> depositAmountResponseObject = deposit(transactionDate, amount, conversionAccountAmsId, paymentTypeExchangeToFiatCurrencyId, tenantId, internalCorrelationId);
+			ResponseEntity<Object> depositAmountResponseObject = deposit(
+					transactionDate, 
+					amount, 
+					conversionAccountAmsId, 
+					paymentScheme,
+					"MoneyOutAmountConversionDeposit",
+					tenantId, 
+					internalCorrelationId);
 		
 			if (!HttpStatus.OK.equals(depositAmountResponseObject.getStatusCode())) {
 				jobClient.newFailCommand(activatedJob.getKey()).retries(0).send().join();
@@ -133,7 +156,14 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			
 			logger.info("Depositing fee {} to conversion account {}", fee, conversionAccountAmsId);
 			
-			ResponseEntity<Object> depositFeeResponseObject = deposit(transactionDate, fee, conversionAccountAmsId, paymentTypeFeeId, tenantId, internalCorrelationId);
+			ResponseEntity<Object> depositFeeResponseObject = deposit(
+					transactionDate, 
+					fee, 
+					conversionAccountAmsId, 
+					paymentScheme,
+					"MoneyOutFeeConversionDeposit",
+					tenantId, 
+					internalCorrelationId);
 			
 			postCamt052(tenantId, camt052, internalCorrelationId, depositFeeResponseObject);
 			

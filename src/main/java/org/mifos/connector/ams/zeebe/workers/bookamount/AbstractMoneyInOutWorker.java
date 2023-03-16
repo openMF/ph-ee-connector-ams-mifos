@@ -4,6 +4,7 @@ import java.net.SocketTimeoutException;
 import java.time.LocalDateTime;
 import java.util.Map;
 
+import org.mifos.connector.ams.fineract.CsvFineractIdLookup;
 import org.mifos.connector.ams.log.IOTxLogger;
 import org.mifos.connector.ams.zeebe.workers.utils.TransactionDetails;
 import org.slf4j.Logger;
@@ -35,7 +36,10 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 	@Autowired
 	private IOTxLogger wireLogger;
 	
-	@Value("${fineract.api-url}")
+	@Autowired
+    private CsvFineractIdLookup fineractIdLookup;
+
+    @Value("${fineract.api-url}")
 	protected String fineractApiUrl;
 
 	@Value("${fineract.incoming-money-api}")
@@ -82,7 +86,8 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 		return response;
 	}
 
-	protected ResponseEntity<Object> deposit(String transactionDate, Object amount, Integer currencyAccountAmsId, Integer paymentTypeId, String tenantId, String internalCorrelationId) {
+	protected ResponseEntity<Object> deposit(String transactionDate, Object amount, Integer currencyAccountAmsId, String paymentScheme, String paymentTypeName, String tenantId, String internalCorrelationId) {
+		Integer paymentTypeId = fineractIdLookup.getFineractId(String.format("%s%s", paymentScheme, paymentTypeName));
 		var body = new TransactionBody(
 				transactionDate,
 				amount,
@@ -93,7 +98,8 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 		return doExchange(body, currencyAccountAmsId, "deposit", tenantId, internalCorrelationId);
 	}
 
-	protected ResponseEntity<Object> withdraw(String transactionDate, Object amount, Integer currencyAccountAmsId, Integer paymentTypeId, String tenantId, String internalCorrelationId) {
+	protected ResponseEntity<Object> withdraw(String transactionDate, Object amount, Integer currencyAccountAmsId, String paymentScheme, String paymentTypeName, String tenantId, String internalCorrelationId) {
+		Integer paymentTypeId = fineractIdLookup.getFineractId(String.format("%s%s", paymentScheme, paymentTypeName));
 		var body = new TransactionBody(
 				transactionDate,
 				amount,

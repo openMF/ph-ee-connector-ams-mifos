@@ -43,6 +43,8 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 		String internalCorrelationId = (String) variables.get("internalCorrelationId");
 		MDC.put("internalCorrelationId", internalCorrelationId);
 		
+		String paymentScheme = (String) variables.get("paymentScheme");
+		
 		Integer conversionAccountAmsId = (Integer) variables.get("conversionAccountAmsId");
 		
 		String originalPacs002 = (String) variables.get("originalPacs002");
@@ -69,7 +71,14 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 		String tenantId = (String) variables.get("tenantIdentifier");
 		logger.info("Withdrawing amount {} from conversion account {} of tenant {}", amount, conversionAccountAmsId, tenantId);
 	
-		ResponseEntity<Object> responseObject = withdraw(interbankSettlementDate, amount, conversionAccountAmsId, 1, tenantId, internalCorrelationId);
+		ResponseEntity<Object> responseObject = withdraw(
+				interbankSettlementDate, 
+				amount, 
+				conversionAccountAmsId, 
+				paymentScheme,
+				"MoneyOutAmountConversionWithdraw",
+				tenantId, 
+				internalCorrelationId);
 		
 		BankToCustomerAccountReportV08 convertedCamt052 = camt052Mapper.toCamt052(pain001.getDocument());
 		String camt052 = om.writeValueAsString(convertedCamt052);
@@ -78,7 +87,14 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 		
 		logger.info("Withdrawing fee {} from conversion account {}", fee, conversionAccountAmsId);
 			
-		responseObject = withdraw(interbankSettlementDate, fee, conversionAccountAmsId, 1, tenantId, internalCorrelationId);
+		responseObject = withdraw(
+				interbankSettlementDate, 
+				fee, 
+				conversionAccountAmsId, 
+				paymentScheme,
+				"MoneyOutFeeConversionWithdraw",
+				tenantId, 
+				internalCorrelationId);
 		postCamt052(tenantId, camt052, internalCorrelationId, responseObject);
 		
 		if (!HttpStatus.OK.equals(responseObject.getStatusCode())) {

@@ -10,7 +10,6 @@ import javax.xml.bind.JAXBElement;
 import org.jboss.logging.MDC;
 import org.mifos.connector.ams.mapstruct.Pacs008Camt052Mapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
@@ -27,12 +26,6 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 	
 	@Autowired
 	private Pacs008Camt052Mapper camt052Mapper;
-	
-	@Value("${fineract.paymentType.paymentTypeExchangeFiatCurrencyId}")
-	private Integer paymentTypeExchangeFiatCurrencyId;
-	
-	@Value("${fineract.paymentType.paymentTypeIssuingECurrencyId}")
-	private Integer paymentTypeIssuingECurrencyId;
 
 	@Override
 	public void handle(JobClient jobClient, ActivatedJob activatedJob) throws Exception {
@@ -46,6 +39,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 			iso.std.iso._20022.tech.xsd.pacs_008_001.Document pacs008 = object.getValue();
 		
 			String internalCorrelationId = (String) variables.get("internalCorrelationId");
+			String paymentScheme = (String) variables.get("paymentScheme");
 			MDC.put("internalCorrelationId", internalCorrelationId);
 
 			logger.info("Exchange to e-currency worker has started");
@@ -68,7 +62,14 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 			
 			String tenantId = (String) variables.get("tenantIdentifier");
 		
-			ResponseEntity<Object> responseObject = withdraw(transactionDate, amount, conversionAccountAmsId, paymentTypeExchangeFiatCurrencyId, tenantId, internalCorrelationId);
+			ResponseEntity<Object> responseObject = withdraw(
+					transactionDate, 
+					amount, 
+					conversionAccountAmsId, 
+					paymentScheme,
+					"MoneyInAmountConversionWithdraw",
+					tenantId, 
+					internalCorrelationId);
 		
 			if (!HttpStatus.OK.equals(responseObject.getStatusCode())) {
 				jobClient.newFailCommand(activatedJob.getKey()).retries(0).send();
@@ -82,7 +83,14 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 			
 			postCamt052(tenantId, camt052, internalCorrelationId, responseObject);
 		
-			responseObject = deposit(transactionDate, amount, disposalAccountAmsId, paymentTypeIssuingECurrencyId, tenantId, internalCorrelationId);
+			responseObject = deposit(
+					transactionDate, 
+					amount, 
+					disposalAccountAmsId, 
+					paymentScheme,
+					"MoneyInAmountDisposalDeposit",
+					tenantId, 
+					internalCorrelationId);
 			
 			if (!HttpStatus.OK.equals(responseObject.getStatusCode())) {
 				jobClient.newFailCommand(activatedJob.getKey()).retries(0).send().join();

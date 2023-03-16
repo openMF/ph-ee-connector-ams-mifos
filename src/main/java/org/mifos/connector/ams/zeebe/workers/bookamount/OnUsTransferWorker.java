@@ -37,6 +37,8 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 			
 			String internalCorrelationId = variables.get("internalCorrelationId").toString();
 			
+			String paymentScheme = (String) variables.get("paymentScheme");
+			
 			String originalPain001 = (String) variables.get("originalPain001");
 			ObjectMapper om = new ObjectMapper();
 			Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001 = om.readValue(originalPain001, Pain00100110CustomerCreditTransferInitiationV10MessageSchema.class);
@@ -47,6 +49,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 			Object amount = variables.get("amount");
 			Integer creditorDisposalAccountAmsId = Integer.parseInt(variables.get("creditorDisposalAccountAmsId").toString());
 			Integer debtorDisposalAccountAmsId = Integer.parseInt(variables.get("debtorDisposalAccountAmsId").toString());
+			Integer debtorConversionAccountAmsId = Integer.parseInt(variables.get("debtorConversionAccountAmsId").toString());
 			Object feeAmount = variables.get("transactionFeeAmount");
 			String tenantIdentifier = variables.get("tenantIdentifier").toString();
 			
@@ -55,22 +58,62 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 			FineractOperationExecutor opExecutor = new FineractOperationExecutor(jobClient, activatedJob, internalCorrelationId, camt052, tenantIdentifier);
 			
 			opExecutor.execute(
-					withdraw(interbankSettlementDate, amount, debtorDisposalAccountAmsId, 1, tenantIdentifier, internalCorrelationId), 
+					withdraw(
+							interbankSettlementDate, 
+							amount, 
+							debtorDisposalAccountAmsId, 
+							paymentScheme,
+							"DebtorAmountDisposalWithdraw",
+							tenantIdentifier, 
+							internalCorrelationId), 
 					ERROR_FAILED_CREDIT_TRANSFER
 			);
 			
 			opExecutor.execute(
-					withdraw(interbankSettlementDate, feeAmount, debtorDisposalAccountAmsId, 1, tenantIdentifier, internalCorrelationId), 
+					withdraw(
+							interbankSettlementDate, 
+							feeAmount, 
+							debtorDisposalAccountAmsId, 
+							paymentScheme,
+							"DebtorFeeDisposalWithdraw",
+							tenantIdentifier, 
+							internalCorrelationId), 
 					ERROR_FAILED_CREDIT_TRANSFER
 			);
 			
 			opExecutor.execute(
-					deposit(interbankSettlementDate, amount, creditorDisposalAccountAmsId, 1, tenantIdentifier, internalCorrelationId), 
+					deposit(
+							interbankSettlementDate, 
+							amount, 
+							creditorDisposalAccountAmsId, 
+							paymentScheme,
+							"CreditorAmountDisposalDeposit",
+							tenantIdentifier, 
+							internalCorrelationId), 
 					ERROR_FAILED_CREDIT_TRANSFER
 			);
 			
 			opExecutor.execute(
-					deposit(interbankSettlementDate, feeAmount, creditorDisposalAccountAmsId, 1, tenantIdentifier, internalCorrelationId), 
+					deposit(
+							interbankSettlementDate, 
+							feeAmount, 
+							debtorConversionAccountAmsId, 
+							paymentScheme,
+							"DebtorFeeConversionDeposit",
+							tenantIdentifier, 
+							internalCorrelationId), 
+					ERROR_FAILED_CREDIT_TRANSFER
+			);
+			
+			opExecutor.execute(
+					withdraw(
+							interbankSettlementDate, 
+							feeAmount, 
+							debtorConversionAccountAmsId, 
+							paymentScheme,
+							"DebtorFeeConversionWithdraw",
+							tenantIdentifier, 
+							internalCorrelationId), 
 					ERROR_FAILED_CREDIT_TRANSFER
 			);
 			

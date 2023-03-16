@@ -51,6 +51,8 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			
 		Integer disposalAccountAmsId = (Integer) variables.get("disposalAccountAmsId");
 		
+		String paymentScheme = (String) variables.get("paymentScheme");
+		
 		ObjectMapper om = new ObjectMapper();
 		Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001 = om.readValue(originalPain001, Pain00100110CustomerCreditTransferInitiationV10MessageSchema.class);
 		
@@ -67,7 +69,14 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 		
 		String tenantId = (String) variables.get("tenantIdentifier");
 	
-		ResponseEntity<Object> responseObject = withdraw(interbankSettlementDate, amount, conversionAccountAmsId, 1, tenantId, internalCorrelationId);
+		ResponseEntity<Object> responseObject = withdraw(
+				interbankSettlementDate, 
+				amount, 
+				conversionAccountAmsId, 
+				paymentScheme,
+				"MoneyOutRevertAmountConversionWithdraw",
+				tenantId, 
+				internalCorrelationId);
 			
 		if (!HttpStatus.OK.equals(responseObject.getStatusCode())) {
 			jobClient.newFailCommand(activatedJob.getKey()).retries(0).send();
@@ -81,14 +90,17 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 		
 		logger.error("Withdrawing fee {} from conversion account {}", fee, conversionAccountAmsId);
 			
-		responseObject = withdraw(interbankSettlementDate, fee, conversionAccountAmsId, 1, tenantId, internalCorrelationId);
+		responseObject = withdraw(
+				interbankSettlementDate, 
+				fee, 
+				conversionAccountAmsId, 
+				paymentScheme,
+				"MoneyOutRevertFeeConversionWithdraw",
+				tenantId, 
+				internalCorrelationId);
 			
 		if (!HttpStatus.OK.equals(responseObject.getStatusCode())) {
 			jobClient.newFailCommand(activatedJob.getKey()).retries(0).send();
-			ResponseEntity<Object> sagaResponseObject = deposit(interbankSettlementDate, amount, conversionAccountAmsId, 1, tenantId, internalCorrelationId);
-			if (!HttpStatus.OK.equals(sagaResponseObject.getStatusCode())) {
-				jobClient.newFailCommand(activatedJob.getKey()).retries(0).send();
-			}
 			return;
 		}
 		
@@ -96,7 +108,14 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 		
 		logger.error("Re-depositing amount {} in disposal account {}", amount, disposalAccountAmsId);
 		
-		responseObject = deposit(interbankSettlementDate, amount, disposalAccountAmsId, 1, tenantId, internalCorrelationId);
+		responseObject = deposit(
+				interbankSettlementDate, 
+				amount, 
+				disposalAccountAmsId, 
+				paymentScheme,
+				"MoneyOutRevertAmountDisposalDeposit",
+				tenantId, 
+				internalCorrelationId);
 		
 		if (!HttpStatus.OK.equals(responseObject.getStatusCode())) {
 			jobClient.newFailCommand(activatedJob.getKey()).retries(0).send();
@@ -107,16 +126,19 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 		
 		logger.error("Re-depositing fee {} in disposal account {}", fee, disposalAccountAmsId);
 			
-		responseObject = deposit(interbankSettlementDate, fee, disposalAccountAmsId, 1, tenantId, internalCorrelationId);
+		responseObject = deposit(
+				interbankSettlementDate, 
+				fee, 
+				disposalAccountAmsId, 
+				paymentScheme,
+				"MoneyOutRevertFeeDisposalDeposit",
+				tenantId, 
+				internalCorrelationId);
 		
 		postCamt052(tenantId, camt052, internalCorrelationId, responseObject);
 		
 		if (!HttpStatus.OK.equals(responseObject.getStatusCode())) {
 			jobClient.newFailCommand(activatedJob.getKey()).retries(0).send();
-			ResponseEntity<Object> sagaResponseObject = withdraw(interbankSettlementDate, amount, disposalAccountAmsId, 1, tenantId, internalCorrelationId);
-			if (!HttpStatus.OK.equals(sagaResponseObject.getStatusCode())) {
-				jobClient.newFailCommand(activatedJob.getKey()).retries(0).send();
-			}
 			return;
 		}
 		
