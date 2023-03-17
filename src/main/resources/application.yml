@@ -6,7 +6,8 @@ camel:
     json-jackson:
       auto-discover-object-mapper: true
 
-dfspids: "DFSPID"
+server:
+  port: 8080
 
 zeebe:
   client:
@@ -25,8 +26,22 @@ zeebe:
 
 ams:
   local:
+    enabled: true
+    tenants:
+      - name: "gorilla"
+        user: mifos
+        password: password
+        authtype: basic
+        fspId: in02tn03
+      - name: "rhino"
+        user: mifos
+        password: password
+        authtype: basic
+        fspId: in02tn04
     server-cert-check: false
-    enabled: false
 
 interop-party-registration:
   enabled: false
+
+accountPrefixes: "S,L"
+

@@ -39,6 +39,7 @@ dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter-engine:5.6.0'
     compileOnly 'org.projectlombok:lombok:1.18.24'
     annotationProcessor 'org.projectlombok:lombok:1.18.24'
+    implementation "org.springdoc:springdoc-openapi-ui:1.6.11"
 }
 
 group = 'org.mifos'

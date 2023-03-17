@@ -1,10 +1,13 @@
 package org.mifos.connector.ams.interop;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.camel.LoggingLevel;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.model.dataformat.JsonLibrary;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.mifos.connector.ams.model.BalanceResponseDTO;
+import org.mifos.connector.ams.model.StatusResponseDTO;
 import org.mifos.connector.common.ams.dto.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -20,9 +23,13 @@ public class AccountsRouteBuilder extends RouteBuilder {
     private AmsService amsService;
     @Value("${ams.local.version}")
     private String amsVersion;
+
+    @Autowired
+    ObjectMapper objectMapper;
+
     @Override
     public void configure() {
-        from("rest:GET:/ams/accounts/{IdentifierType}/{IdentifierId}/status")
+        from("direct:get-account-status")
                 .id("ams-connector-account-management-status-check")
                 .log(LoggingLevel.INFO, "##ams-connector-account-management-status-check")
                 .process(e -> {
@@ -39,14 +46,14 @@ public class AccountsRouteBuilder extends RouteBuilder {
                 .unmarshal().json(JsonLibrary.Jackson, InteropAccountDTO.class)
                 .process(e -> {
                     InteropAccountDTO account = e.getIn().getBody(InteropAccountDTO.class);
-                    JSONObject response = new JSONObject();
-                    response.put("accountStatus", account.getStatus().getCode());
-                    response.put("subStatus", account.getSubStatus().getCode());
-                    response.put("lei", "");
-                    e.getIn().setBody(response.toString());
+                    StatusResponseDTO statusResponseDTO = new StatusResponseDTO();
+                    statusResponseDTO.setAccountStatus(account.getStatus().getCode());
+                    statusResponseDTO.setSubStatus(account.getSubStatus().getCode());
+                    statusResponseDTO.setLei("");
+                    e.getIn().setBody(objectMapper.writeValueAsString(statusResponseDTO));
                 });
         // @formatter:off
-        from("rest:GET:/ams/accounts/{IdentifierType}/{IdentifierId}/accountname")
+        from("direct:get-account-name")
                 .id("ams-connector-account-management-get-name")
                 .log(LoggingLevel.INFO, "##ams-connector-account-management-get-name")
                 .process(e -> {
@@ -105,7 +112,7 @@ public class AccountsRouteBuilder extends RouteBuilder {
                         })
                     .endChoice()
                 .end();
-        from("rest:GET:/ams/accounts/{IdentifierType}/{IdentifierId}/balance")
+        from("direct:get-account-balance")
                 .id("ams-connector-account-management-balance-check")
                 .log(LoggingLevel.INFO, "## ams-connector-account-management-balance-check")
                 .process(e -> {
@@ -122,16 +129,16 @@ public class AccountsRouteBuilder extends RouteBuilder {
                 .unmarshal().json(JsonLibrary.Jackson, InteropAccountDTO.class)
                 .process(e -> {
                     InteropAccountDTO account = e.getIn().getBody(InteropAccountDTO.class);
-                    JSONObject response = new JSONObject();
-                    response.put("currentBalance", account.getAccountBalance().toString());
-                    response.put("availableBalance", account.getAvailableBalance().toString());
-                    response.put("reservedBalance",  "");
-                    response.put("unclearedBalance", "");
-                    response.put("currency", account.getCurrency());
-                    response.put("accountStatus", account.getStatus().getCode());
-                    e.getIn().setBody(response.toString());
+                    BalanceResponseDTO balanceResponseDTO = new BalanceResponseDTO();
+                    balanceResponseDTO.setCurrentBalance(account.getAccountBalance().toString());
+                    balanceResponseDTO.setAvailableBalance(account.getAvailableBalance().toString());
+                    balanceResponseDTO.setReservedBalance("");
+                    balanceResponseDTO.setUnclearedBalance("");
+                    balanceResponseDTO.setCurrency(account.getCurrency());
+                    balanceResponseDTO.setAccountStatus(account.getStatus().getCode());
+                    e.getIn().setBody(objectMapper.writeValueAsString(balanceResponseDTO));
                 });
-        from("rest:GET:/ams/accounts/{IdentifierType}/{IdentifierId}/transactions")
+        from("direct:get-account-transactions")
                 .id("ams-connector-account-management-get-transactions")
                 .log(LoggingLevel.INFO, "## ams-connector-account-management-get-transactions")
                 .process(e -> {
@@ -155,7 +162,7 @@ public class AccountsRouteBuilder extends RouteBuilder {
                     JSONArray response =
                     e.getIn().setBody(response.toString());
                 });*/
-        from("rest:GET:/ams/accounts/{IdentifierType}/{IdentifierId}/statemententries")
+        from("direct:get-account-statement")
                 .id("account-management-get-statemententries")
                 .log(LoggingLevel.INFO, "## account-management-get-statemententries")
                 .process(e -> {
