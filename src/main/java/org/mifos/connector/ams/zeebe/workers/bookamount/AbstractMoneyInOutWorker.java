@@ -87,6 +87,7 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 	}
 
 	protected ResponseEntity<Object> deposit(String transactionDate, Object amount, Integer currencyAccountAmsId, String paymentScheme, String paymentTypeName, String tenantId, String internalCorrelationId) {
+		logger.info("Looking up {} {}", paymentScheme, paymentTypeName);
 		Integer paymentTypeId = fineractIdLookup.getFineractId(String.format("%s%s", paymentScheme, paymentTypeName));
 		var body = new TransactionBody(
 				transactionDate,
@@ -99,6 +100,7 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 	}
 
 	protected ResponseEntity<Object> withdraw(String transactionDate, Object amount, Integer currencyAccountAmsId, String paymentScheme, String paymentTypeName, String tenantId, String internalCorrelationId) {
+		logger.info("Looking up {} {}", paymentScheme, paymentTypeName);
 		Integer paymentTypeId = fineractIdLookup.getFineractId(String.format("%s%s", paymentScheme, paymentTypeName));
 		var body = new TransactionBody(
 				transactionDate,

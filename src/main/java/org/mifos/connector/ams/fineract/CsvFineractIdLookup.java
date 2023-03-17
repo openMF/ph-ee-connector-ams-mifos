@@ -39,7 +39,10 @@ public class CsvFineractIdLookup {
 		try (CSVReader csvReader = new CSVReader(reader)) {
 			List<String[]> csvLines = csvReader.readAll();
 			csvLines.remove(0);
-			csvLines.forEach(elem -> lookupMap.put(elem[0], Integer.parseInt(elem[2])));
+			csvLines.forEach(elem -> {
+				logger.info("Populating lookup map with {} {}", elem[0], elem[2]);
+				lookupMap.put(elem[0], Integer.parseInt(elem[2]));
+			});
 		} catch (CsvException e) {
 			logger.error(e.getMessage(), e);
 		}
