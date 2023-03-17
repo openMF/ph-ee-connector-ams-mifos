@@ -26,7 +26,7 @@ public class CsvFineractIdLookup {
 	
 	public CsvFineractIdLookup() {
 		try {
-			readReader(Paths.get(ClassLoader.getSystemResource("PaymentTypes.csv").toURI()));
+			readReader(Paths.get(getClass().getClassLoader().getResource("PaymentTypes.csv").toURI()));
 		} catch (URISyntaxException e) {
 			logger.error(e.getMessage(), e);
 		}
