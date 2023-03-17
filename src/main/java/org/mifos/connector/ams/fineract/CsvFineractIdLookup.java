@@ -2,16 +2,15 @@ package org.mifos.connector.ams.fineract;
 
 import java.io.IOException;
 import java.io.Reader;
-import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.io.FileSystemResource;
 import org.springframework.stereotype.Component;
 
 import com.opencsv.CSVReader;
@@ -25,11 +24,7 @@ public class CsvFineractIdLookup {
 	private Map<String, Integer> lookupMap = new HashMap<>();
 	
 	public CsvFineractIdLookup() {
-		try {
-			readReader(Paths.get(getClass().getClassLoader().getResource("PaymentTypes.csv").toURI()));
-		} catch (URISyntaxException e) {
-			logger.error(e.getMessage(), e);
-		}
+		readReader(new FileSystemResource("PaymentTypes.csv").getFile().toPath());
 	}
 
 	private void readReader(Path path) {
