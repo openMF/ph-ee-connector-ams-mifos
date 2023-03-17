@@ -6,4 +6,5 @@ WORKDIR /app
 
 COPY keystore.jks /app/
 COPY target/*.jar /app/
+COPY PaymentTypes.csv /app/
 CMD java -jar *.jar 
