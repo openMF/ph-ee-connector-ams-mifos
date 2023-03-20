@@ -9,7 +9,7 @@ camel:
 dfspids: "DFSPID"
 
 fineract:
-  api-url: "http://fineract.binx-dev:8080/fineract-provider/api/v1"
+  api-url: ${FINERACT_URL}
   datatable-query-api: "/datatables/account_mapping/query"
   column-filter: "iban"
   result-columns: "conversion_account_id,disposal_account_id"

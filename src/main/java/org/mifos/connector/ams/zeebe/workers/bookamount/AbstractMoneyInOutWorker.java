@@ -56,6 +56,9 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 	
 	@Value("${fineract.idempotency.key-header-name}")
 	private String idempotencyKeyHeaderName;
+	
+	@Value("${fineract.auth-token}")
+	private String authToken;
 
 	protected Logger logger = LoggerFactory.getLogger(getClass());
 	
@@ -64,7 +67,7 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 	protected ResponseEntity<Object> release(Integer currencyAccountAmsId, Integer holdAmountId, String tenantId) {
 		HttpHeaders httpHeaders = new HttpHeaders();
 		httpHeaders.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
-		httpHeaders.set("Authorization", "Basic bWlmb3M6cGFzc3dvcmQ=");
+		httpHeaders.set("Authorization", "Basic " + authToken);
 		httpHeaders.set("Fineract-Platform-TenantId", tenantId);
 		var entity = new HttpEntity<>(null, httpHeaders);
 		
@@ -140,7 +143,7 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 		
 		HttpHeaders httpHeaders = new HttpHeaders();
 		httpHeaders.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
-		httpHeaders.set("Authorization", "Basic bWlmb3M6cGFzc3dvcmQ=");
+		httpHeaders.set("Authorization", "Basic " + authToken);
 		httpHeaders.set("Fineract-Platform-TenantId", tenantId);
 		var entity = new HttpEntity<>(td, httpHeaders);
 		
@@ -167,7 +170,7 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 	private <T> ResponseEntity<Object> doExchange(T body, Integer currencyAccountAmsId, String command, String tenantId, String internalCorrelationId) {
 		HttpHeaders httpHeaders = new HttpHeaders();
 		httpHeaders.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
-		httpHeaders.set("Authorization", "Basic bWlmb3M6cGFzc3dvcmQ=");
+		httpHeaders.set("Authorization", "Basic " + authToken);
 		httpHeaders.set("Fineract-Platform-TenantId", tenantId);
 		var entity = new HttpEntity<>(body, httpHeaders);
 		
