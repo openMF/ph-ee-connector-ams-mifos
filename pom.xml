@@ -24,14 +24,6 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     </properties>
-    
-    <distributionManagement>
-		<repository>
-			<id>alluvial-devops-payment-hub</id>
-			<name>alluvial-devops-payment-hub</name>
-			<url>https://alluvial-devops-296716421908.d.codeartifact.eu-central-1.amazonaws.com/maven/payment-hub/</url>
-		</repository>
-	</distributionManagement>
 
     <dependencies>
     	<dependency>
