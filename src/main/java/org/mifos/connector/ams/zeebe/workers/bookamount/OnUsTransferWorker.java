@@ -63,7 +63,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 							amount, 
 							debtorDisposalAccountAmsId, 
 							paymentScheme,
-							"DebtorAmountDisposalWithdraw",
+							"transferTheAmountBetweenDisposalAccounts.Debtor.DisposalAccount.WithdrawTransactionAmount",
 							tenantIdentifier, 
 							internalCorrelationId), 
 					ERROR_FAILED_CREDIT_TRANSFER
@@ -75,7 +75,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 							feeAmount, 
 							debtorDisposalAccountAmsId, 
 							paymentScheme,
-							"DebtorFeeDisposalWithdraw",
+							"transferTheAmountBetweenDisposalAccounts.Debtor.DisposalAccount.WithdrawTransactionFee",
 							tenantIdentifier, 
 							internalCorrelationId), 
 					ERROR_FAILED_CREDIT_TRANSFER
@@ -87,7 +87,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 							amount, 
 							creditorDisposalAccountAmsId, 
 							paymentScheme,
-							"CreditorAmountDisposalDeposit",
+							"transferTheAmountBetweenDisposalAccounts.Creditor.DisposalAccount.DepositTransactionAmount",
 							tenantIdentifier, 
 							internalCorrelationId), 
 					ERROR_FAILED_CREDIT_TRANSFER
@@ -99,7 +99,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 							feeAmount, 
 							debtorConversionAccountAmsId, 
 							paymentScheme,
-							"DebtorFeeConversionDeposit",
+							"transferTheAmountBetweenDisposalAccounts.Debtor.ConversionAccount.DepositTransactionFee",
 							tenantIdentifier, 
 							internalCorrelationId), 
 					ERROR_FAILED_CREDIT_TRANSFER
@@ -111,7 +111,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 							feeAmount, 
 							debtorConversionAccountAmsId, 
 							paymentScheme,
-							"DebtorFeeConversionWithdraw",
+							"transferTheAmountBetweenDisposalAccounts.Debtor.ConversionAccount.WithdrawTransactionFee",
 							tenantIdentifier, 
 							internalCorrelationId), 
 					ERROR_FAILED_CREDIT_TRANSFER

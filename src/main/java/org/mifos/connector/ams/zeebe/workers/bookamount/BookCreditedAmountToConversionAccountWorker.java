@@ -57,7 +57,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
             		amount, 
             		conversionAccountAmsId, 
             		paymentScheme,
-            		"MoneyInAmountConversionDeposit",
+            		"bookCreditedAmountToConversionAccount.ConversionAccount.DepositTransactionAmount",
             		tenantId, 
             		internalCorrelationId);
             

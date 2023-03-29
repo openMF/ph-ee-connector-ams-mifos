@@ -53,7 +53,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 				amount, 
 				conversionAccountAmsId, 
 				paymentScheme,
-				"MoneyOutAmountConversionWithdraw",
+				"bookOnConversionAccountInAms.ConversionAccount.WithdrawTransactionAmount",
 				tenantId, 
 				internalCorrelationId);
 		
@@ -71,7 +71,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 					fee, 
 					conversionAccountAmsId, 
 					paymentScheme,
-					"MoneyOutFeeConversionWithdraw",
+					"bookOnConversionAccountInAms.ConversionAccount.WithdrawTransactionFee",
 					tenantId, 
 					internalCorrelationId);
 			postCamt052(tenantId, camt052, internalCorrelationId, responseObject);

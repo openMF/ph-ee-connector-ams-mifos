@@ -63,7 +63,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 				amount, 
 				conversionAccountAmsId, 
 				paymentScheme,
-				"MoneyOutRevertAmountConversionWithdraw",
+				"revertInAms.ConversionAccount.WithdrawTransactionAmount",
 				tenantId, 
 				internalCorrelationId);
 			
@@ -85,7 +85,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 					fee, 
 					conversionAccountAmsId, 
 					paymentScheme,
-					"MoneyOutRevertFeeConversionWithdraw",
+					"revertInAms.ConversionAccount.WithdrawTransactionFee",
 					tenantId, 
 					internalCorrelationId);
 				
@@ -104,7 +104,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 				amount, 
 				disposalAccountAmsId, 
 				paymentScheme,
-				"MoneyOutRevertAmountDisposalDeposit",
+				"revertInAms.DisposalAccount.DepositTransactionAmount",
 				tenantId, 
 				internalCorrelationId);
 		
@@ -122,7 +122,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 					fee, 
 					disposalAccountAmsId, 
 					paymentScheme,
-					"MoneyOutRevertFeeDisposalDeposit",
+					"revertInAms.DisposalAccount.DepositTransactionFee",
 					tenantId, 
 					internalCorrelationId);
 			postCamt052(tenantId, camt052, internalCorrelationId, responseObject);

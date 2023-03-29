@@ -94,7 +94,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 					amount, 
 					disposalAccountAmsId, 
 					paymentScheme,
-					"MoneyOutAmountDisposalWithdraw",
+					"transferToConversionAccountInAms.DisposalAccount.WithdrawTransactionAmount",
 					tenantId, 
 					internalCorrelationId);
 			
@@ -117,7 +117,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 							fee, 
 							disposalAccountAmsId, 
 							paymentScheme,
-							"MoneyOutFeeDisposalWithdraw",
+							"transferToConversionAccountInAms.DisposalAccount.WithdrawTransactionFee",
 							tenantId, 
 							internalCorrelationId);
 					postCamt052(tenantId, camt052, internalCorrelationId, withdrawFeeResponseObject);
@@ -136,7 +136,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 					amount, 
 					conversionAccountAmsId, 
 					paymentScheme,
-					"MoneyOutAmountConversionDeposit",
+					"transferToConversionAccountInAms.ConversionAccount.DepositTransactionAmount",
 					tenantId, 
 					internalCorrelationId);
 		
@@ -154,7 +154,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 					fee, 
 					conversionAccountAmsId, 
 					paymentScheme,
-					"MoneyOutFeeConversionDeposit",
+					"transferToConversionAccountInAms.ConversionAccount.DepositTransactionFee",
 					tenantId, 
 					internalCorrelationId);
 			

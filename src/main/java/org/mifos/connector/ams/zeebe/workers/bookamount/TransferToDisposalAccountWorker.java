@@ -57,7 +57,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 					amount, 
 					conversionAccountAmsId, 
 					paymentScheme,
-					"MoneyInAmountConversionWithdraw",
+					"transferToDisposalAccount.ConversionAccount.WithdrawTransactionAmount",
 					tenantId, 
 					internalCorrelationId);
 		
@@ -78,7 +78,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 					amount, 
 					disposalAccountAmsId, 
 					paymentScheme,
-					"MoneyInAmountDisposalDeposit",
+					"transferToDisposalAccount.DisposalAccount.DepositTransactionAmount",
 					tenantId, 
 					internalCorrelationId);
 			
