@@ -2,12 +2,18 @@ package org.mifos.connector.ams.zeebe.workers.bookamount;
 
 import java.net.SocketTimeoutException;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 import org.mifos.connector.ams.fineract.PaymentTypeConfig;
 import org.mifos.connector.ams.fineract.PaymentTypeConfigFactory;
 import org.mifos.connector.ams.log.IOTxLogger;
+import org.mifos.connector.ams.zeebe.workers.utils.Header;
+import org.mifos.connector.ams.zeebe.workers.utils.TransactionBody;
 import org.mifos.connector.ams.zeebe.workers.utils.TransactionDetails;
+import org.mifos.connector.ams.zeebe.workers.utils.TransactionItem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -230,5 +236,23 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 		}
 		
 		throw new RuntimeException("An unexpected error occurred");
+	}
+	
+	protected TransactionItem createTransactionItem(Integer requestId, String relativeUrl, String internalCorrelationId, String tenantId, String bodyItem) throws JsonProcessingException {
+		List<Header> headers = headers(internalCorrelationId, tenantId);
+		return new TransactionItem(requestId, relativeUrl, "POST", headers, bodyItem);
+	}
+	
+	private List<Header> headers(String internalCorrelationId, String tenantId) {
+		return Collections.unmodifiableList(new ArrayList<>() {
+			private static final long serialVersionUID = 1L;
+
+			{
+				add(new Header("Idempotency-Key", internalCorrelationId));
+				add(new Header("Content-Type", "application/json"));
+				add(new Header("Fineract-Platform-TenantId", tenantId));
+				add(new Header("Authorization", authToken));
+			}
+		});
 	}
 }

@@ -4,14 +4,20 @@ import java.io.InputStream;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.mifos.connector.ams.fineract.PaymentTypeConfig;
+import org.mifos.connector.ams.fineract.PaymentTypeConfigFactory;
 import org.mifos.connector.ams.mapstruct.Pain001Camt052Mapper;
+import org.mifos.connector.ams.zeebe.workers.utils.TransactionBody;
+import org.mifos.connector.ams.zeebe.workers.utils.TransactionItem;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
@@ -33,6 +39,15 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 	@Autowired
 	private Pain001Camt052Mapper camt052Mapper;
 	
+	@Value("${fineract.incoming-money-api}")
+	protected String incomingMoneyApi;
+	
+	@Value("${fineract.auth-token}")
+	private String authToken;
+	
+	@Autowired
+    private PaymentTypeConfigFactory paymentTypeConfigFactory;
+	
 	private static final DateTimeFormatter PATTERN = DateTimeFormatter.ofPattern(FORMAT);
 
 	@Override
@@ -41,7 +56,6 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 		logger.error("Debtor exchange worker starting");
 		Object amount = new Object();
 		Integer disposalAccountAmsId = null;
-		String tenantId = null;
 		try {
 			Map<String, Object> variables = activatedJob.getVariablesAsMap();
 			
@@ -87,7 +101,26 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			
 			logger.info("Withdrawing amount {} from disposal account {}", amount, disposalAccountAmsId);
 			
-			tenantId = (String) variables.get("tenantIdentifier");
+			String tenantId = (String) variables.get("tenantIdentifier");
+			
+			String relativeUrl = String.format("%s/%d/transactions?command=%s", incomingMoneyApi, disposalAccountAmsId, "withdrawal");
+			
+			PaymentTypeConfig paymentTypeConfig = paymentTypeConfigFactory.getPaymentTypeConfig(tenantId);
+			Integer paymentTypeId = paymentTypeConfig.findPaymentTypeByOperation(String.format("%s.%s", paymentScheme, "transferToConversionAccountInAms.DisposalAccount.WithdrawTransactionAmount"));
+			
+			TransactionBody body = new TransactionBody(
+					transactionDate,
+					amount,
+					paymentTypeId,
+					"",
+					FORMAT,
+					locale);
+			
+			String bodyItem = om.writeValueAsString(body);
+			
+			List<TransactionItem> items = new ArrayList<>();
+			
+			items.add(createTransactionItem(1, relativeUrl, internalCorrelationId, tenantId, bodyItem));
 			
 			ResponseEntity<Object> withdrawAmountResponseObject = withdraw(
 					transactionDate, 
@@ -98,20 +131,17 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 					tenantId, 
 					internalCorrelationId);
 			
-			if (!HttpStatus.OK.equals(withdrawAmountResponseObject.getStatusCode())) {
-				jobClient.newFailCommand(activatedJob.getKey()).retries(0).send();
-				return;
-			}
+			
 			
 			BankToCustomerAccountReportV08 convertedCamt052 = camt052Mapper.toCamt052(pain001.getDocument());
 			String camt052 = om.writeValueAsString(convertedCamt052);
+			
+			String camt052RelativeUrl = String.format("datatables/transaction_details/%d", disposalAccountAmsId);
 
 			postCamt052(tenantId, camt052, internalCorrelationId, withdrawAmountResponseObject);
 			
 			if (fee != null && ((fee instanceof Integer i && i > 0) || (fee instanceof BigDecimal bd && !bd.equals(BigDecimal.ZERO)))) {
 				logger.info("Withdrawing fee {} from disposal account {}", fee, disposalAccountAmsId);
-				
-				try {
 					ResponseEntity<Object> withdrawFeeResponseObject = withdraw(
 							transactionDate, 
 							fee, 
@@ -121,12 +151,6 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 							tenantId, 
 							internalCorrelationId);
 					postCamt052(tenantId, camt052, internalCorrelationId, withdrawFeeResponseObject);
-				} catch (Exception e) {
-					logger.warn("Fee withdrawal failed");
-					logger.error(e.getMessage(), e);
-					jobClient.newFailCommand(activatedJob.getKey()).retries(0).errorMessage(e.getMessage()).send();
-					return;
-				}
 			}
 			
 			logger.info("Depositing amount {} to conversion account {}", amount, conversionAccountAmsId);
@@ -140,16 +164,12 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 					tenantId, 
 					internalCorrelationId);
 		
-			if (!HttpStatus.OK.equals(depositAmountResponseObject.getStatusCode())) {
-				jobClient.newFailCommand(activatedJob.getKey()).retries(0).send().join();
-				return;
-			}
-			
 			postCamt052(tenantId, camt052, internalCorrelationId, depositAmountResponseObject);
 			
 			logger.info("Depositing fee {} to conversion account {}", fee, conversionAccountAmsId);
 			
-			ResponseEntity<Object> depositFeeResponseObject = deposit(
+			if (fee != null && ((fee instanceof Integer i && i > 0) || (fee instanceof BigDecimal bd && !bd.equals(BigDecimal.ZERO)))) {
+				ResponseEntity<Object> depositFeeResponseObject = deposit(
 					transactionDate, 
 					fee, 
 					conversionAccountAmsId, 
@@ -158,11 +178,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 					tenantId, 
 					internalCorrelationId);
 			
-			postCamt052(tenantId, camt052, internalCorrelationId, depositFeeResponseObject);
-			
-			if (!HttpStatus.OK.equals(depositFeeResponseObject.getStatusCode())) {
-				jobClient.newFailCommand(activatedJob.getKey()).retries(0).send().join();
-				return;
+				postCamt052(tenantId, camt052, internalCorrelationId, depositFeeResponseObject);
 			}
 		
 			jobClient.newCompleteCommand(activatedJob.getKey()).variables(variables).send();
