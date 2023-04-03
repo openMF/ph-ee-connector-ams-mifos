@@ -79,7 +79,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			Object fee = variables.get("transactionFeeAmount");
 			
 			logger.error("Debtor exchange worker incoming variables:");
-			variables.entrySet().forEach(e -> logger.error("{}: {}", e.getKey(), e.getValue()));
+			variables.entrySet().forEach(e -> logger.error("{}: {} of type {}", e.getKey(), e.getValue(), e.getValue().getClass()));
 		
 			
 			disposalAccountAmsId = (Integer) variables.get("disposalAccountAmsId");
