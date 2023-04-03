@@ -76,7 +76,11 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			
 			amount = variables.get("amount");
 			
-			Object fee = variables.get("transactionFeeAmount");
+			Object feeAmount = variables.get("transactionFeeAmount");
+			BigDecimal fee = null;
+			if (feeAmount != null) {
+				fee = new BigDecimal(feeAmount.toString());
+			}
 			
 			logger.error("Debtor exchange worker incoming variables:");
 			variables.entrySet().forEach(e -> logger.error("{}: {} of type {}", e.getKey(), e.getValue(), e.getValue().getClass()));
@@ -108,7 +112,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 
 			postCamt052(tenantId, camt052, internalCorrelationId, withdrawAmountResponseObject);
 			
-			if (fee != null && ((fee instanceof Integer i && i > 0) || (fee instanceof BigDecimal bd && !bd.equals(BigDecimal.ZERO)))) {
+			if (fee != null && !fee.equals(BigDecimal.ZERO)) {
 				logger.info("Withdrawing fee {} from disposal account {}", fee, disposalAccountAmsId);
 				
 				try {
@@ -147,22 +151,25 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			
 			postCamt052(tenantId, camt052, internalCorrelationId, depositAmountResponseObject);
 			
-			logger.info("Depositing fee {} to conversion account {}", fee, conversionAccountAmsId);
+			if (fee != null && !fee.equals(BigDecimal.ZERO)) {
 			
-			ResponseEntity<Object> depositFeeResponseObject = deposit(
-					transactionDate, 
-					fee, 
-					conversionAccountAmsId, 
-					paymentScheme,
-					"transferToConversionAccountInAms.ConversionAccount.DepositTransactionFee",
-					tenantId, 
-					internalCorrelationId);
+				logger.info("Depositing fee {} to conversion account {}", fee, conversionAccountAmsId);
 			
-			postCamt052(tenantId, camt052, internalCorrelationId, depositFeeResponseObject);
+				ResponseEntity<Object> depositFeeResponseObject = deposit(
+						transactionDate, 
+						fee, 
+						conversionAccountAmsId, 
+						paymentScheme,
+						"transferToConversionAccountInAms.ConversionAccount.DepositTransactionFee",
+						tenantId, 
+						internalCorrelationId);
 			
-			if (!HttpStatus.OK.equals(depositFeeResponseObject.getStatusCode())) {
-				jobClient.newFailCommand(activatedJob.getKey()).retries(0).send().join();
-				return;
+				postCamt052(tenantId, camt052, internalCorrelationId, depositFeeResponseObject);
+			
+				if (!HttpStatus.OK.equals(depositFeeResponseObject.getStatusCode())) {
+					jobClient.newFailCommand(activatedJob.getKey()).retries(0).send().join();
+					return;
+				}
 			}
 		
 			jobClient.newCompleteCommand(activatedJob.getKey()).variables(variables).send();
