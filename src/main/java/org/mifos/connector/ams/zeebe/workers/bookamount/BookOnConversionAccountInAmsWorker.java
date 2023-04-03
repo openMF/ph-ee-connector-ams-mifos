@@ -43,7 +43,11 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 		logger.info("Starting book debit on fiat account worker");
 		
 		Object amount = variables.get("amount");
-		Object fee = variables.get("transactionFeeAmount");
+		Object feeAmount = variables.get("transactionFeeAmount");
+		BigDecimal fee = null;
+		if (feeAmount != null) {
+			fee = new BigDecimal(feeAmount.toString());
+		}
 		
 		String tenantId = (String) variables.get("tenantIdentifier");
 		logger.info("Withdrawing amount {} from conversion account {} of tenant {}", amount, conversionAccountAmsId, tenantId);
@@ -62,7 +66,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 		
 		postCamt052(tenantId, camt052, internalCorrelationId, responseObject);
 		
-		if (fee != null && ((fee instanceof Integer i && i > 0) || (fee instanceof BigDecimal bd && !bd.equals(BigDecimal.ZERO)))) {
+		if (fee != null && !fee.equals(BigDecimal.ZERO)) {
 				
 			logger.info("Withdrawing fee {} from conversion account {}", fee, conversionAccountAmsId);
 				
