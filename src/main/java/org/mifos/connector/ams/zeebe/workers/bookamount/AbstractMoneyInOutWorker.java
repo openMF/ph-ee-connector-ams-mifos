@@ -1,16 +1,12 @@
 package org.mifos.connector.ams.zeebe.workers.bookamount;
 
 import java.net.SocketTimeoutException;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
 import org.mifos.connector.ams.fineract.PaymentTypeConfig;
 import org.mifos.connector.ams.fineract.PaymentTypeConfigFactory;
 import org.mifos.connector.ams.log.IOTxLogger;
-import org.mifos.connector.ams.zeebe.workers.utils.Header;
 import org.mifos.connector.ams.zeebe.workers.utils.TransactionBody;
 import org.mifos.connector.ams.zeebe.workers.utils.TransactionDetails;
 import org.mifos.connector.ams.zeebe.workers.utils.TransactionItem;
@@ -31,6 +27,7 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.camunda.zeebe.client.api.worker.JobHandler;
 
@@ -140,15 +137,10 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 		Object savingsId = body.get("savingsId");
 		logger.info("Setting savingsId to {}", savingsId);
 		
-		LocalDateTime now = LocalDateTime.now();
-		
 		TransactionDetails td = new TransactionDetails(
-				savingsId, 
-				txId,
+				"$.resourceId",
 				internalCorrelationId,
-				camt052,
-				now,
-				now);
+				camt052);
 		
 		logger.info("The following camt.052 will be inserted into the data table: {}", camt052);
 		
@@ -238,21 +230,63 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 		throw new RuntimeException("An unexpected error occurred");
 	}
 	
-	protected TransactionItem createTransactionItem(Integer requestId, String relativeUrl, String internalCorrelationId, String tenantId, String bodyItem) throws JsonProcessingException {
-		List<Header> headers = headers(internalCorrelationId, tenantId);
-		return new TransactionItem(requestId, relativeUrl, "POST", headers, bodyItem);
-	}
-	
-	private List<Header> headers(String internalCorrelationId, String tenantId) {
-		return Collections.unmodifiableList(new ArrayList<>() {
-			private static final long serialVersionUID = 1L;
-
-			{
-				add(new Header("Idempotency-Key", internalCorrelationId));
-				add(new Header("Content-Type", "application/json"));
-				add(new Header("Fineract-Platform-TenantId", tenantId));
-				add(new Header("Authorization", authToken));
+	protected void doBatch(List<TransactionItem> items, String tenantId, String internalCorrelationId) throws JsonProcessingException {
+		HttpHeaders httpHeaders = new HttpHeaders();
+		httpHeaders.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
+		httpHeaders.set("Authorization", "Basic " + authToken);
+		httpHeaders.set("Fineract-Platform-TenantId", tenantId);
+		var entity = new HttpEntity<>(items, httpHeaders);
+		
+		var urlTemplate = UriComponentsBuilder.fromHttpUrl(fineractApiUrl)
+				.path("/batches")
+				.queryParam("enclosingTransaction", true)
+				.encode()
+				.toUriString();
+		
+		logger.info(">> Sending {} to {} with headers {}", items, urlTemplate, httpHeaders);
+		
+		ObjectMapper om = new ObjectMapper();
+		String body = om.writeValueAsString(items);
+		
+		int retryCount = idempotencyRetryCount;
+		httpHeaders.remove(idempotencyKeyHeaderName);
+		httpHeaders.set(idempotencyKeyHeaderName, internalCorrelationId);
+		
+		while (retryCount > 0) {
+			try {
+				wireLogger.sending(body.toString());
+				ResponseEntity<Object> response = restTemplate.exchange(urlTemplate, HttpMethod.POST, entity, Object.class);
+				wireLogger.receiving(response.toString());
+				
+				logger.info("<< Received {}", response);
+			} catch (HttpClientErrorException e) {
+				logger.error(e.getMessage(), e);
+				if (HttpStatus.CONFLICT.equals(e.getStatusCode())) {
+					logger.warn("Transaction is already executing, has not completed yet");
+					break;
+				} else {
+					logger.warn("Transaction returned with status code {}", e.getRawStatusCode());
+				}
+				logger.warn(e.getMessage(), e);
+				throw new RuntimeException(e);
+			} catch (Exception e) {
+				if (e instanceof InterruptedException
+						|| (e instanceof ResourceAccessException
+								&& e.getCause() instanceof SocketTimeoutException)) {
+					logger.warn("Communication with Fineract timed out, retrying transaction {} more times with idempotency header value {}", retryCount, internalCorrelationId);
+				} else {
+					logger.error(e.getMessage(), e);
+				}
+				try {
+					Thread.sleep(idempotencyRetryInterval);
+				} catch (InterruptedException ie) {
+					logger.error(ie.getMessage(), ie);
+					throw new RuntimeException(ie);
+				}
 			}
-		});
+			retryCount--;
+		}
+		
+		throw new RuntimeException("An unexpected error occurred");
 	}
 }
