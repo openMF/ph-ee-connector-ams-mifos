@@ -1,16 +1,23 @@
 package org.mifos.connector.ams.zeebe.workers.bookamount;
 
 import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBElement;
 
 import org.jboss.logging.MDC;
+import org.mifos.connector.ams.fineract.PaymentTypeConfig;
+import org.mifos.connector.ams.fineract.PaymentTypeConfigFactory;
 import org.mifos.connector.ams.mapstruct.Pacs008Camt052Mapper;
+import org.mifos.connector.ams.zeebe.workers.utils.BatchItemBuilder;
+import org.mifos.connector.ams.zeebe.workers.utils.TransactionBody;
+import org.mifos.connector.ams.zeebe.workers.utils.TransactionDetails;
+import org.mifos.connector.ams.zeebe.workers.utils.TransactionItem;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -25,6 +32,15 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 	
 	@Autowired
 	private Pacs008Camt052Mapper camt052Mapper;
+	
+	@Value("${fineract.incoming-money-api}")
+	protected String incomingMoneyApi;
+	
+	@Value("${fineract.auth-token}")
+	private String authToken;
+	
+	@Autowired
+    private PaymentTypeConfigFactory paymentTypeConfigFactory;
 
 	@Override
 	@SuppressWarnings("unchecked")
@@ -51,44 +67,64 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 			Integer disposalAccountAmsId = (Integer) variables.get("disposalAccountAmsId");
 			
 			String tenantId = (String) variables.get("tenantIdentifier");
-		
-			ResponseEntity<Object> responseObject = withdraw(
-					transactionDate, 
-					amount, 
-					conversionAccountAmsId, 
-					paymentScheme,
-					"transferToDisposalAccount.ConversionAccount.WithdrawTransactionAmount",
-					tenantId, 
-					internalCorrelationId);
-		
-			if (!HttpStatus.OK.equals(responseObject.getStatusCode())) {
-				jobClient.newFailCommand(activatedJob.getKey()).retries(0).send();
-				return;
-			}
 			
 			ObjectMapper om = new ObjectMapper();
+			
+			BatchItemBuilder biBuilder = new BatchItemBuilder(internalCorrelationId, tenantId);
+			
+			String conversionAccountWithdrawRelativeUrl = String.format("%s/%d/transactions?command=%s", incomingMoneyApi, conversionAccountAmsId, "withdrawal");
+			
+			PaymentTypeConfig paymentTypeConfig = paymentTypeConfigFactory.getPaymentTypeConfig(tenantId);
+			Integer paymentTypeId = paymentTypeConfig.findPaymentTypeByOperation(String.format("%s.%s", paymentScheme, "transferToDisposalAccount.ConversionAccount.WithdrawTransactionAmount"));
+			
+			TransactionBody body = new TransactionBody(
+					transactionDate,
+					amount,
+					paymentTypeId,
+					"",
+					FORMAT,
+					locale);
+			
+			String bodyItem = om.writeValueAsString(body);
+			
+			List<TransactionItem> items = new ArrayList<>();
+			
+			biBuilder.add(items, conversionAccountWithdrawRelativeUrl, bodyItem, false);
 			
 			BankToCustomerAccountReportV08 convertedCamt052 = camt052Mapper.toCamt052(pacs008);
 			String camt052 = om.writeValueAsString(convertedCamt052);
 			
-			postCamt052(tenantId, camt052, internalCorrelationId, responseObject);
-		
-			responseObject = deposit(
-					transactionDate, 
-					amount, 
-					disposalAccountAmsId, 
-					paymentScheme,
-					"transferToDisposalAccount.DisposalAccount.DepositTransactionAmount",
-					tenantId, 
-					internalCorrelationId);
+			String camt052RelativeUrl = String.format("datatables/transaction_details/%d", disposalAccountAmsId);
 			
-			if (!HttpStatus.OK.equals(responseObject.getStatusCode())) {
-				jobClient.newFailCommand(activatedJob.getKey()).retries(0).send().join();
-				return;
-			}
+			TransactionDetails td = new TransactionDetails(
+					"$.resourceId",
+					internalCorrelationId,
+					camt052);
 			
-			postCamt052(tenantId, camt052, internalCorrelationId, responseObject);
+			String camt052Body = om.writeValueAsString(td);
+
+			biBuilder.add(items, camt052RelativeUrl, camt052Body, true);
+			
+			
+			String conversionAccountDepositRelativeUrl = String.format("%s/%d/transactions?command=%s", incomingMoneyApi, conversionAccountAmsId, "deposit");
+			paymentTypeId = paymentTypeConfig.findPaymentTypeByOperation(String.format("%s.%s", paymentScheme, "transferToDisposalAccount.DisposalAccount.DepositTransactionAmount"));
+			
+			body = new TransactionBody(
+					transactionDate,
+					amount,
+					paymentTypeId,
+					"",
+					FORMAT,
+					locale);
+			
+			bodyItem = om.writeValueAsString(body);
+			
+			biBuilder.add(items, conversionAccountDepositRelativeUrl, bodyItem, false);
+			
+			biBuilder.add(items, camt052RelativeUrl, camt052Body, true);
 		
+			doBatch(items, tenantId, internalCorrelationId);
+			
 			logger.info("Exchange to e-currency worker has finished successfully");
 			jobClient.newCompleteCommand(activatedJob.getKey()).variables(variables).send();
 		} catch (Exception e) {
