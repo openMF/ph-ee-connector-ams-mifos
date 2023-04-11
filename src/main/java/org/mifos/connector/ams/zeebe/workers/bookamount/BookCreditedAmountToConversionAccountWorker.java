@@ -106,6 +106,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
     		biBuilder.add(items, camt052RelativeUrl, camt052Body, true);
 
             doBatch(items, tenantId, internalCorrelationId);
+            jobClient.newCompleteCommand(activatedJob.getKey()).variables(variables).send();
         } catch (Exception e) {
             logger.error("Worker to book incoming money in AMS has failed, dispatching user task to handle fiat deposit", e);
             jobClient.newThrowErrorCommand(activatedJob.getKey()).errorCode("Error_BookToConversionToBeHandledManually").send();
