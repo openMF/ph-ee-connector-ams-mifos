@@ -34,7 +34,7 @@ public class BatchItemBuilder {
 		headers.add(new Header("Idempotency-Key", internalCorrelationId));
 		headers.add(new Header("Content-Type", "application/json"));
 		headers.add(new Header("Fineract-Platform-TenantId", tenantId));
-		headers.add(new Header("Authorization", authToken));
+		headers.add(new Header("Authorization", "Basic " + authToken));
 		return headers;
 	}
 }
