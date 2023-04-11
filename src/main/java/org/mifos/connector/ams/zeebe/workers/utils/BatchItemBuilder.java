@@ -1,7 +1,6 @@
 package org.mifos.connector.ams.zeebe.workers.utils;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -31,15 +30,11 @@ public class BatchItemBuilder {
 	}
 	
 	private List<Header> headers(String internalCorrelationId, String tenantId) {
-		return Collections.unmodifiableList(new ArrayList<>() {
-			private static final long serialVersionUID = 1L;
-
-			{
-				add(new Header("Idempotency-Key", internalCorrelationId));
-				add(new Header("Content-Type", "application/json"));
-				add(new Header("Fineract-Platform-TenantId", tenantId));
-				add(new Header("Authorization", authToken));
-			}
-		});
+		List<Header> headers = new ArrayList<>();
+		headers.add(new Header("Idempotency-Key", internalCorrelationId));
+		headers.add(new Header("Content-Type", "application/json"));
+		headers.add(new Header("Fineract-Platform-TenantId", tenantId));
+		headers.add(new Header("Authorization", authToken));
+		return headers;
 	}
 }
