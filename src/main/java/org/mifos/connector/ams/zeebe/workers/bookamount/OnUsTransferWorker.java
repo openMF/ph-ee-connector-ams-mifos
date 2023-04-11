@@ -1,5 +1,6 @@
 package org.mifos.connector.ams.zeebe.workers.bookamount;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
@@ -46,11 +47,11 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 			BankToCustomerAccountReportV08 convertedCamt052 = camt052Mapper.toCamt052(pain001.getDocument());
 			String camt052 = om.writeValueAsString(convertedCamt052);
 			
-			Object amount = variables.get("amount");
+			BigDecimal amount = new BigDecimal(variables.get("amount").toString());
 			Integer creditorDisposalAccountAmsId = Integer.parseInt(variables.get("creditorDisposalAccountAmsId").toString());
 			Integer debtorDisposalAccountAmsId = Integer.parseInt(variables.get("debtorDisposalAccountAmsId").toString());
 			Integer debtorConversionAccountAmsId = Integer.parseInt(variables.get("debtorConversionAccountAmsId").toString());
-			Object feeAmount = variables.get("transactionFeeAmount");
+			BigDecimal feeAmount = new BigDecimal(variables.get("transactionFeeAmount").toString());
 			String tenantIdentifier = variables.get("tenantIdentifier").toString();
 			
 			String interbankSettlementDate = LocalDate.now().format(PATTERN);
@@ -69,7 +70,8 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 					ERROR_FAILED_CREDIT_TRANSFER
 			);
 			
-			opExecutor.execute(
+			if (!BigDecimal.ZERO.equals(feeAmount)) {
+				opExecutor.execute(
 					withdraw(
 							interbankSettlementDate, 
 							feeAmount, 
@@ -79,7 +81,8 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 							tenantIdentifier, 
 							internalCorrelationId), 
 					ERROR_FAILED_CREDIT_TRANSFER
-			);
+						);
+			}
 			
 			opExecutor.execute(
 					deposit(
@@ -93,7 +96,8 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 					ERROR_FAILED_CREDIT_TRANSFER
 			);
 			
-			opExecutor.execute(
+			if (!BigDecimal.ZERO.equals(feeAmount)) {
+				opExecutor.execute(
 					deposit(
 							interbankSettlementDate, 
 							feeAmount, 
@@ -103,9 +107,9 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 							tenantIdentifier, 
 							internalCorrelationId), 
 					ERROR_FAILED_CREDIT_TRANSFER
-			);
+						);
 			
-			opExecutor.execute(
+				opExecutor.execute(
 					withdraw(
 							interbankSettlementDate, 
 							feeAmount, 
@@ -115,7 +119,8 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 							tenantIdentifier, 
 							internalCorrelationId), 
 					ERROR_FAILED_CREDIT_TRANSFER
-			);
+				);
+			}
 			
 			jobClient.newCompleteCommand(activatedJob.getKey()).variables(variables).send();
 		} catch (JsonProcessingException e) {
