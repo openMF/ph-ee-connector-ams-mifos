@@ -1,13 +1,20 @@
 package org.mifos.connector.ams.zeebe.workers.bookamount;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
+import org.mifos.connector.ams.fineract.PaymentTypeConfig;
+import org.mifos.connector.ams.fineract.PaymentTypeConfigFactory;
 import org.mifos.connector.ams.mapstruct.Pain001Camt052Mapper;
+import org.mifos.connector.ams.zeebe.workers.utils.BatchItemBuilder;
+import org.mifos.connector.ams.zeebe.workers.utils.TransactionBody;
+import org.mifos.connector.ams.zeebe.workers.utils.TransactionDetails;
+import org.mifos.connector.ams.zeebe.workers.utils.TransactionItem;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -22,6 +29,15 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 	
 	@Autowired
 	private Pain001Camt052Mapper camt052Mapper;
+	
+	@Value("${fineract.incoming-money-api}")
+	protected String incomingMoneyApi;
+	
+	@Value("${fineract.auth-token}")
+	private String authToken;
+	
+	@Autowired
+    private PaymentTypeConfigFactory paymentTypeConfigFactory;
 	
 	@Override
 	public void handle(JobClient jobClient, ActivatedJob activatedJob) throws Exception {
@@ -43,44 +59,72 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 		logger.info("Starting book debit on fiat account worker");
 		
 		Object amount = variables.get("amount");
-		Object fee = variables.get("transactionFeeAmount");
+		Object feeAmount = variables.get("transactionFeeAmount");
+		BigDecimal fee = null;
+		if (feeAmount != null) {
+			fee = new BigDecimal(feeAmount.toString());
+		}
 		
 		String tenantId = (String) variables.get("tenantIdentifier");
 		logger.info("Withdrawing amount {} from conversion account {} of tenant {}", amount, conversionAccountAmsId, tenantId);
-	
-		ResponseEntity<Object> responseObject = withdraw(
-				transactionDate, 
-				amount, 
-				conversionAccountAmsId, 
-				paymentScheme,
-				"bookOnConversionAccountInAms.ConversionAccount.WithdrawTransactionAmount",
-				tenantId, 
-				internalCorrelationId);
 		
+		BatchItemBuilder biBuilder = new BatchItemBuilder(internalCorrelationId, tenantId);
+		
+		String conversionAccountWithdrawalRelativeUrl = String.format("%s/%d/transactions?command=%s", incomingMoneyApi, conversionAccountAmsId, "withdrawal");
+		
+		PaymentTypeConfig paymentTypeConfig = paymentTypeConfigFactory.getPaymentTypeConfig(tenantId);
+		Integer paymentTypeId = paymentTypeConfig.findPaymentTypeByOperation(String.format("%s.%s", paymentScheme, "bookOnConversionAccountInAms.ConversionAccount.WithdrawTransactionAmount"));
+		
+		TransactionBody body = new TransactionBody(
+				transactionDate,
+				amount,
+				paymentTypeId,
+				"",
+				FORMAT,
+				locale);
+		
+		String bodyItem = om.writeValueAsString(body);
+		
+		List<TransactionItem> items = new ArrayList<>();
+		
+		biBuilder.add(items, conversionAccountWithdrawalRelativeUrl, bodyItem, false);
+	
 		BankToCustomerAccountReportV08 convertedCamt052 = camt052Mapper.toCamt052(pain001.getDocument());
 		String camt052 = om.writeValueAsString(convertedCamt052);
 		
-		postCamt052(tenantId, camt052, internalCorrelationId, responseObject);
+		String camt052RelativeUrl = String.format("datatables/transaction_details/%d", conversionAccountAmsId);
 		
-		if (fee != null && ((fee instanceof Integer i && i > 0) || (fee instanceof BigDecimal bd && !bd.equals(BigDecimal.ZERO)))) {
+		TransactionDetails td = new TransactionDetails(
+				"$.resourceId",
+				internalCorrelationId,
+				camt052);
+		
+		String camt052Body = om.writeValueAsString(td);
+
+		biBuilder.add(items, camt052RelativeUrl, camt052Body, true);
+		
+		if (!fee.equals(BigDecimal.ZERO)) {
 				
 			logger.info("Withdrawing fee {} from conversion account {}", fee, conversionAccountAmsId);
-				
-			responseObject = withdraw(
-					transactionDate, 
-					fee, 
-					conversionAccountAmsId, 
-					paymentScheme,
-					"bookOnConversionAccountInAms.ConversionAccount.WithdrawTransactionFee",
-					tenantId, 
-					internalCorrelationId);
-			postCamt052(tenantId, camt052, internalCorrelationId, responseObject);
-
-			if (!HttpStatus.OK.equals(responseObject.getStatusCode())) {
-				jobClient.newFailCommand(activatedJob.getKey()).retries(0).send();
-				return;
-			}
+			
+			paymentTypeId = paymentTypeConfig.findPaymentTypeByOperation(String.format("%s.%s", paymentScheme, "bookOnConversionAccountInAms.ConversionAccount.WithdrawTransactionFee"));
+			
+			body = new TransactionBody(
+					transactionDate,
+					fee,
+					paymentTypeId,
+					"",
+					FORMAT,
+					locale);
+			
+			bodyItem = om.writeValueAsString(body);
+			
+			biBuilder.add(items, conversionAccountWithdrawalRelativeUrl, bodyItem, false);
+		
+			biBuilder.add(items, camt052RelativeUrl, camt052Body, true);
 		}
+		
+		doBatch(items, tenantId, internalCorrelationId);
 		
 		jobClient.newCompleteCommand(activatedJob.getKey()).variables(variables).send();
 			
