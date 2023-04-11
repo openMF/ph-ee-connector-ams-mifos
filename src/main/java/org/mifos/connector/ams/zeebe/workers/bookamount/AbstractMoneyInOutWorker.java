@@ -259,6 +259,7 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 				wireLogger.receiving(response.toString());
 				
 				logger.info("<< Received {}", response);
+				return;
 			} catch (HttpClientErrorException e) {
 				logger.error(e.getMessage(), e);
 				if (HttpStatus.CONFLICT.equals(e.getStatusCode())) {
