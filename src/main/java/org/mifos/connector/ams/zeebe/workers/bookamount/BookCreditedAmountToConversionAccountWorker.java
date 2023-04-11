@@ -1,16 +1,23 @@
 package org.mifos.connector.ams.zeebe.workers.bookamount;
 
 import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBElement;
 
 import org.jboss.logging.MDC;
+import org.mifos.connector.ams.fineract.PaymentTypeConfig;
+import org.mifos.connector.ams.fineract.PaymentTypeConfigFactory;
 import org.mifos.connector.ams.mapstruct.Pacs008Camt052Mapper;
+import org.mifos.connector.ams.zeebe.workers.utils.BatchItemBuilder;
+import org.mifos.connector.ams.zeebe.workers.utils.TransactionBody;
+import org.mifos.connector.ams.zeebe.workers.utils.TransactionDetails;
+import org.mifos.connector.ams.zeebe.workers.utils.TransactionItem;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -25,6 +32,15 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
 
     @Autowired
     private Pacs008Camt052Mapper camt052Mapper;
+    
+    @Value("${fineract.incoming-money-api}")
+	protected String incomingMoneyApi;
+	
+	@Value("${fineract.auth-token}")
+	private String authToken;
+	
+	@Autowired
+    private PaymentTypeConfigFactory paymentTypeConfigFactory;
     
     @Override
     @SuppressWarnings("unchecked")
@@ -51,31 +67,45 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
             Object amount = variables.get("amount");
 
             Integer conversionAccountAmsId = (Integer) variables.get("conversionAccountAmsId");
+            
+            BatchItemBuilder biBuilder = new BatchItemBuilder(internalCorrelationId, tenantId);
+    		
+    		String conversionAccountWithdrawalRelativeUrl = String.format("%s/%d/transactions?command=%s", incomingMoneyApi, conversionAccountAmsId, "deposit");
+    		
+    		PaymentTypeConfig paymentTypeConfig = paymentTypeConfigFactory.getPaymentTypeConfig(tenantId);
+    		Integer paymentTypeId = paymentTypeConfig.findPaymentTypeByOperation(String.format("%s.%s", paymentScheme, "bookCreditedAmountToConversionAccount.ConversionAccount.DepositTransactionAmount"));
+    		
+    		TransactionBody body = new TransactionBody(
+    				transactionDate,
+    				amount,
+    				paymentTypeId,
+    				"",
+    				FORMAT,
+    				locale);
+    		
+    		ObjectMapper om = new ObjectMapper();
+    		
+    		String bodyItem = om.writeValueAsString(body);
+    		
+    		List<TransactionItem> items = new ArrayList<>();
+    		
+    		biBuilder.add(items, conversionAccountWithdrawalRelativeUrl, bodyItem, false);
+    	
+    		BankToCustomerAccountReportV08 convertedCamt052 = camt052Mapper.toCamt052(pacs008);
+    		String camt052 = om.writeValueAsString(convertedCamt052);
+    		
+    		String camt052RelativeUrl = String.format("datatables/transaction_details/%d", conversionAccountAmsId);
+    		
+    		TransactionDetails td = new TransactionDetails(
+    				"$.resourceId",
+    				internalCorrelationId,
+    				camt052);
+    		
+    		String camt052Body = om.writeValueAsString(td);
 
-            ResponseEntity<Object> responseObject = deposit(
-            		transactionDate, 
-            		amount, 
-            		conversionAccountAmsId, 
-            		paymentScheme,
-            		"bookCreditedAmountToConversionAccount.ConversionAccount.DepositTransactionAmount",
-            		tenantId, 
-            		internalCorrelationId);
-            
-            
-            if (HttpStatus.OK.equals(responseObject.getStatusCode())) {
-                logger.info("Worker to book incoming money in AMS has finished successfully");
-                
-                ObjectMapper om = new ObjectMapper();
-                BankToCustomerAccountReportV08 convertedCamt052 = camt052Mapper.toCamt052(pacs008);
-                String camt052 = om.writeValueAsString(convertedCamt052);
-                
-                postCamt052(tenantId, camt052, internalCorrelationId, responseObject);
-                
-                jobClient.newCompleteCommand(activatedJob.getKey()).variables(variables).send();
-            } else {
-                logger.error("Worker to book incoming money in AMS has failed, dispatching user task to handle fiat deposit");
-                jobClient.newThrowErrorCommand(activatedJob.getKey()).errorCode("Error_BookToConversionToBeHandledManually").send();
-            }
+    		biBuilder.add(items, camt052RelativeUrl, camt052Body, true);
+
+            doBatch(items, tenantId, internalCorrelationId);
         } catch (Exception e) {
             logger.error("Worker to book incoming money in AMS has failed, dispatching user task to handle fiat deposit", e);
             jobClient.newThrowErrorCommand(activatedJob.getKey()).errorCode("Error_BookToConversionToBeHandledManually").send();
