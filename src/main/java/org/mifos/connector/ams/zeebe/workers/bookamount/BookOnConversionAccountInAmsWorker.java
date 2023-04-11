@@ -68,7 +68,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 		String tenantId = (String) variables.get("tenantIdentifier");
 		logger.info("Withdrawing amount {} from conversion account {} of tenant {}", amount, conversionAccountAmsId, tenantId);
 		
-		BatchItemBuilder biBuilder = new BatchItemBuilder(internalCorrelationId, tenantId);
+		BatchItemBuilder biBuilder = new BatchItemBuilder(tenantId);
 		
 		String conversionAccountWithdrawalRelativeUrl = String.format("%s/%d/transactions?command=%s", incomingMoneyApi, conversionAccountAmsId, "withdrawal");
 		

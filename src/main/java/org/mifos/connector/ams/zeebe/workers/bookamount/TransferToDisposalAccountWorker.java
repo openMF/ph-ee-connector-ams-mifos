@@ -70,7 +70,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 			
 			ObjectMapper om = new ObjectMapper();
 			
-			BatchItemBuilder biBuilder = new BatchItemBuilder(internalCorrelationId, tenantId);
+			BatchItemBuilder biBuilder = new BatchItemBuilder(tenantId);
 			
 			String conversionAccountWithdrawRelativeUrl = String.format("%s/%d/transactions?command=%s", incomingMoneyApi, conversionAccountAmsId, "withdrawal");
 			

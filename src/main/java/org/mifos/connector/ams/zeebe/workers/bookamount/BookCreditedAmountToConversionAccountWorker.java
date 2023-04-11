@@ -68,7 +68,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
 
             Integer conversionAccountAmsId = (Integer) variables.get("conversionAccountAmsId");
             
-            BatchItemBuilder biBuilder = new BatchItemBuilder(internalCorrelationId, tenantId);
+            BatchItemBuilder biBuilder = new BatchItemBuilder(tenantId);
     		
     		String conversionAccountWithdrawalRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "deposit");
     		

@@ -107,7 +107,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			
 			String tenantId = (String) variables.get("tenantIdentifier");
 			
-			BatchItemBuilder biBuilder = new BatchItemBuilder(internalCorrelationId, tenantId);
+			BatchItemBuilder biBuilder = new BatchItemBuilder(tenantId);
 			
 			String disposalAccountWithdrawRelativeUrl = String.format("%s/%d/transactions?command=%s", incomingMoneyApi, disposalAccountAmsId, "withdrawal");
 			

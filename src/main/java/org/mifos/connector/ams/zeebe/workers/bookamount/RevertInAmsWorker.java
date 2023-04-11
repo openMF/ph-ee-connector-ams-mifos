@@ -82,7 +82,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 		
 		
 		
-		BatchItemBuilder biBuilder = new BatchItemBuilder(internalCorrelationId, tenantId);
+		BatchItemBuilder biBuilder = new BatchItemBuilder(tenantId);
 		
 		String conversionAccountWithdrawRelativeUrl = String.format("%s/%d/transactions?command=%s", incomingMoneyApi, conversionAccountAmsId, "withdrawal");
 		
