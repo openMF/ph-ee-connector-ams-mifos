@@ -1,10 +1,9 @@
 package org.mifos.connector.ams.zeebe.workers.utils;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 
@@ -26,16 +25,16 @@ public class BatchItemBuilder {
 	}
 	
 	private TransactionItem createTransactionItem(Integer requestId, String relativeUrl, String internalCorrelationId, String tenantId, String bodyItem, Integer reference) throws JsonProcessingException {
-		HttpHeaders headers = headers(internalCorrelationId, tenantId);
+		List<Header> headers = headers(internalCorrelationId, tenantId);
 		return new TransactionItem(requestId, relativeUrl, "POST", reference, headers, bodyItem);
 	}
 	
-	private HttpHeaders headers(String internalCorrelationId, String tenantId) {
-		HttpHeaders httpHeaders = new HttpHeaders();
-		httpHeaders.set("Idempotency-Key", internalCorrelationId);
-		httpHeaders.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
-		httpHeaders.set("Authorization", "Basic " + authToken);
-		httpHeaders.set("Fineract-Platform-TenantId", tenantId);
-		return httpHeaders;
+	private List<Header> headers(String internalCorrelationId, String tenantId) {
+		List<Header> headers = new ArrayList<>();
+		headers.add(new Header("Idempotency-Key", internalCorrelationId));
+		headers.add(new Header("Content-Type", "application/json"));
+		headers.add(new Header("Fineract-Platform-TenantId", tenantId));
+		headers.add(new Header("Authorization", authToken));
+		return headers;
 	}
 }
