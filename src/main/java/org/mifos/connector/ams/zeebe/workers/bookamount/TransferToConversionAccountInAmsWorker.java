@@ -91,7 +91,11 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			
 			amount = variables.get("amount");
 			
-			Object fee = variables.get("transactionFeeAmount");
+			Object feeAmount = variables.get("transactionFeeAmount");
+			BigDecimal fee = null;
+			if (feeAmount != null) {
+				fee = new BigDecimal(feeAmount.toString());
+			}
 			
 			logger.error("Debtor exchange worker incoming variables:");
 			variables.entrySet().forEach(e -> logger.error("{}: {}", e.getKey(), e.getValue()));
@@ -138,7 +142,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 
 			biBuilder.add(items, camt052RelativeUrl, camt052Body, true);
 
-			if (fee != null && ((fee instanceof Integer i && i > 0) || (fee instanceof BigDecimal bd && !bd.equals(BigDecimal.ZERO)))) {
+			if (!fee.equals(BigDecimal.ZERO)) {
 				logger.info("Withdrawing fee {} from disposal account {}", fee, disposalAccountAmsId);
 					Integer withdrawTransactionFeePaymentTypeId = paymentTypeConfig.findPaymentTypeByOperation(String.format("%s.%s", paymentScheme, "transferToConversionAccountInAms.DisposalAccount.WithdrawTransactionFee"));
 					
@@ -177,7 +181,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 		
 			logger.info("Depositing fee {} to conversion account {}", fee, conversionAccountAmsId);
 			
-			if (fee != null && ((fee instanceof Integer i && i > 0) || (fee instanceof BigDecimal bd && !bd.equals(BigDecimal.ZERO)))) {
+			if (!fee.equals(BigDecimal.ZERO)) {
 				Integer depositTransactionFeePaymentTypeId = paymentTypeConfig.findPaymentTypeByOperation(String.format("%s.%s", paymentScheme, "transferToConversionAccountInAms.ConversionAccount.DepositTransactionFee"));
 				
 				TransactionBody depositTransactionFeeBody = new TransactionBody(
