@@ -3,12 +3,19 @@ package org.mifos.connector.ams.zeebe.workers.bookamount;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
+import org.mifos.connector.ams.fineract.PaymentTypeConfig;
+import org.mifos.connector.ams.fineract.PaymentTypeConfigFactory;
 import org.mifos.connector.ams.mapstruct.Pain001Camt052Mapper;
+import org.mifos.connector.ams.zeebe.workers.utils.BatchItemBuilder;
+import org.mifos.connector.ams.zeebe.workers.utils.TransactionBody;
+import org.mifos.connector.ams.zeebe.workers.utils.TransactionDetails;
+import org.mifos.connector.ams.zeebe.workers.utils.TransactionItem;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -26,6 +33,15 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 
 	@Autowired
 	private Pain001Camt052Mapper camt052Mapper;
+	
+	@Value("${fineract.incoming-money-api}")
+	protected String incomingMoneyApi;
+	
+	@Value("${fineract.auth-token}")
+	private String authToken;
+	
+	@Autowired
+    private PaymentTypeConfigFactory paymentTypeConfigFactory;
 	
 	private static final DateTimeFormatter PATTERN = DateTimeFormatter.ofPattern(FORMAT);
 
@@ -56,70 +72,121 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 			
 			String interbankSettlementDate = LocalDate.now().format(PATTERN);
 			
-			FineractOperationExecutor opExecutor = new FineractOperationExecutor(jobClient, activatedJob, internalCorrelationId, camt052, tenantIdentifier);
-			
-			opExecutor.execute(
-					withdraw(
-							interbankSettlementDate, 
-							amount, 
-							debtorDisposalAccountAmsId, 
-							paymentScheme,
-							"transferTheAmountBetweenDisposalAccounts.Debtor.DisposalAccount.WithdrawTransactionAmount",
-							tenantIdentifier, 
-							internalCorrelationId), 
-					ERROR_FAILED_CREDIT_TRANSFER
-			);
+            BatchItemBuilder biBuilder = new BatchItemBuilder(tenantIdentifier);
+    		
+    		String debtorDisposalWithdrawalRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), debtorDisposalAccountAmsId, "withdrawal");
+    		
+    		PaymentTypeConfig paymentTypeConfig = paymentTypeConfigFactory.getPaymentTypeConfig(tenantIdentifier);
+    		Integer paymentTypeId = paymentTypeConfig.findPaymentTypeByOperation(String.format("%s.%s", paymentScheme, "transferTheAmountBetweenDisposalAccounts.Debtor.DisposalAccount.WithdrawTransactionAmount"));
+    		
+    		TransactionBody body = new TransactionBody(
+    				interbankSettlementDate,
+    				amount,
+    				paymentTypeId,
+    				"",
+    				FORMAT,
+    				locale);
+    		
+    		String bodyItem = om.writeValueAsString(body);
+    		
+    		List<TransactionItem> items = new ArrayList<>();
+    		
+    		biBuilder.add(items, debtorDisposalWithdrawalRelativeUrl, bodyItem, false);
+    	
+    		String camt052RelativeUrl = String.format("datatables/transaction_details/%d", debtorDisposalAccountAmsId);
+    		
+    		TransactionDetails td = new TransactionDetails(
+    				"$.resourceId",
+    				internalCorrelationId,
+    				camt052);
+    		
+    		String camt052Body = om.writeValueAsString(td);
+
+    		biBuilder.add(items, camt052RelativeUrl, camt052Body, true);
+    		
 			
 			if (!BigDecimal.ZERO.equals(feeAmount)) {
-				opExecutor.execute(
-					withdraw(
-							interbankSettlementDate, 
-							feeAmount, 
-							debtorDisposalAccountAmsId, 
-							paymentScheme,
-							"transferTheAmountBetweenDisposalAccounts.Debtor.DisposalAccount.WithdrawTransactionFee",
-							tenantIdentifier, 
-							internalCorrelationId), 
-					ERROR_FAILED_CREDIT_TRANSFER
-						);
+				paymentTypeId = paymentTypeConfig.findPaymentTypeByOperation(String.format("%s.%s", paymentScheme, "transferTheAmountBetweenDisposalAccounts.Debtor.DisposalAccount.WithdrawTransactionFee"));
+	    		
+	    		body = new TransactionBody(
+	    				interbankSettlementDate,
+	    				feeAmount,
+	    				paymentTypeId,
+	    				"",
+	    				FORMAT,
+	    				locale);
+	    		
+	    		bodyItem = om.writeValueAsString(body);
+	    		
+	    		biBuilder.add(items, debtorDisposalWithdrawalRelativeUrl, bodyItem, false);
+	    	
+	    		camt052RelativeUrl = String.format("datatables/transaction_details/%d", debtorDisposalAccountAmsId);
+	    		
+	    		biBuilder.add(items, camt052RelativeUrl, camt052Body, true);
 			}
 			
-			opExecutor.execute(
-					deposit(
-							interbankSettlementDate, 
-							amount, 
-							creditorDisposalAccountAmsId, 
-							paymentScheme,
-							"transferTheAmountBetweenDisposalAccounts.Creditor.DisposalAccount.DepositTransactionAmount",
-							tenantIdentifier, 
-							internalCorrelationId), 
-					ERROR_FAILED_CREDIT_TRANSFER
-			);
+			paymentTypeId = paymentTypeConfig.findPaymentTypeByOperation(String.format("%s.%s", paymentScheme, "transferTheAmountBetweenDisposalAccounts.Creditor.DisposalAccount.DepositTransactionAmount"));
+		    		
+    		body = new TransactionBody(
+    				interbankSettlementDate,
+    				amount,
+    				paymentTypeId,
+    				"",
+    				FORMAT,
+    				locale);
+		    		
+    		bodyItem = om.writeValueAsString(body);
+    		
+    		String creditorDisposalDepositRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), creditorDisposalAccountAmsId, "deposit");
+	    		
+    		biBuilder.add(items, creditorDisposalDepositRelativeUrl, bodyItem, false);
+	    	
+    		camt052RelativeUrl = String.format("datatables/transaction_details/%d", creditorDisposalAccountAmsId);
+		    		
+    		biBuilder.add(items, camt052RelativeUrl, camt052Body, true);
 			
 			if (!BigDecimal.ZERO.equals(feeAmount)) {
-				opExecutor.execute(
-					deposit(
-							interbankSettlementDate, 
-							feeAmount, 
-							debtorConversionAccountAmsId, 
-							paymentScheme,
-							"transferTheAmountBetweenDisposalAccounts.Debtor.ConversionAccount.DepositTransactionFee",
-							tenantIdentifier, 
-							internalCorrelationId), 
-					ERROR_FAILED_CREDIT_TRANSFER
-						);
-			
-				opExecutor.execute(
-					withdraw(
-							interbankSettlementDate, 
-							feeAmount, 
-							debtorConversionAccountAmsId, 
-							paymentScheme,
-							"transferTheAmountBetweenDisposalAccounts.Debtor.ConversionAccount.WithdrawTransactionFee",
-							tenantIdentifier, 
-							internalCorrelationId), 
-					ERROR_FAILED_CREDIT_TRANSFER
-				);
+				paymentTypeId = paymentTypeConfig.findPaymentTypeByOperation(String.format("%s.%s", paymentScheme, "transferTheAmountBetweenDisposalAccounts.Debtor.ConversionAccount.DepositTransactionFee"));
+	    		
+	    		body = new TransactionBody(
+	    				interbankSettlementDate,
+	    				feeAmount,
+	    				paymentTypeId,
+	    				"",
+	    				FORMAT,
+	    				locale);
+			    		
+	    		bodyItem = om.writeValueAsString(body);
+	    		
+	    		String debtorConversionDepositRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), debtorConversionAccountAmsId, "deposit");
+		    		
+	    		biBuilder.add(items, debtorConversionDepositRelativeUrl, bodyItem, false);
+		    	
+	    		camt052RelativeUrl = String.format("datatables/transaction_details/%d", debtorConversionAccountAmsId);
+			    		
+	    		biBuilder.add(items, camt052RelativeUrl, camt052Body, true);
+	    		
+	    		
+	    		
+	    		paymentTypeId = paymentTypeConfig.findPaymentTypeByOperation(String.format("%s.%s", paymentScheme, "transferTheAmountBetweenDisposalAccounts.Debtor.ConversionAccount.WithdrawTransactionFee"));
+	    		
+	    		body = new TransactionBody(
+	    				interbankSettlementDate,
+	    				feeAmount,
+	    				paymentTypeId,
+	    				"",
+	    				FORMAT,
+	    				locale);
+			    		
+	    		bodyItem = om.writeValueAsString(body);
+	    		
+	    		String debtorConversionWithdrawRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), debtorConversionAccountAmsId, "withdrawal");
+		    		
+	    		biBuilder.add(items, debtorConversionWithdrawRelativeUrl, bodyItem, false);
+		    	
+	    		camt052RelativeUrl = String.format("datatables/transaction_details/%d", debtorConversionAccountAmsId);
+			    		
+	    		biBuilder.add(items, camt052RelativeUrl, camt052Body, true);
 			}
 			
 			jobClient.newCompleteCommand(activatedJob.getKey()).variables(variables).send();
@@ -129,34 +196,6 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 		} catch (Exception e) {
 			logger.error(e.getMessage(), e);
 			jobClient.newFailCommand(activatedJob.getKey()).retries(0).errorMessage(e.getMessage()).send();
-		}
-	}
-
-	private class FineractOperationExecutor {
-
-		private JobClient jobClient;
-		private ActivatedJob activatedJob;
-		private String internalCorrelationId;
-		private String camt052;
-		private String tenantIdentifier;
-		
-		FineractOperationExecutor(JobClient jobClient, ActivatedJob activatedJob, String internalCorrelationId,
-				String camt052, String tenantIdentifier) {
-			super();
-			this.jobClient = jobClient;
-			this.activatedJob = activatedJob;
-			this.internalCorrelationId = internalCorrelationId;
-			this.camt052 = camt052;
-			this.tenantIdentifier = tenantIdentifier;
-		}
-		
-		void execute(ResponseEntity<Object> responseObject, String errorCode) throws JsonProcessingException {
-			if (!HttpStatus.OK.equals(responseObject.getStatusCode())) {
-				jobClient.newThrowErrorCommand(activatedJob.getKey()).errorCode(errorCode).errorMessage(responseObject.getBody().toString()).send();
-				return;
-			}
-			
-			postCamt052(tenantIdentifier, camt052, internalCorrelationId, responseObject);
 		}
 	}
 }
