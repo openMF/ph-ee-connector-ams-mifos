@@ -94,7 +94,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 			BankToCustomerAccountReportV08 convertedCamt052 = camt052Mapper.toCamt052(pacs008);
 			String camt052 = om.writeValueAsString(convertedCamt052);
 			
-			String camt052RelativeUrl = String.format("datatables/transaction_details/%d", disposalAccountAmsId);
+			String camt052RelativeUrl = String.format("datatables/transaction_details/%d", conversionAccountAmsId);
 			
 			TransactionDetails td = new TransactionDetails(
 					"$.resourceId",
@@ -106,7 +106,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 			biBuilder.add(items, camt052RelativeUrl, camt052Body, true);
 			
 			
-			String conversionAccountDepositRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "deposit");
+			String disposalAccountDepositRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), disposalAccountAmsId, "deposit");
 			paymentTypeId = paymentTypeConfig.findPaymentTypeByOperation(String.format("%s.%s", paymentScheme, "transferToDisposalAccount.DisposalAccount.DepositTransactionAmount"));
 			
 			body = new TransactionBody(
@@ -119,7 +119,16 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 			
 			bodyItem = om.writeValueAsString(body);
 			
-			biBuilder.add(items, conversionAccountDepositRelativeUrl, bodyItem, false);
+			biBuilder.add(items, disposalAccountDepositRelativeUrl, bodyItem, false);
+			
+			camt052RelativeUrl = String.format("datatables/transaction_details/%d", disposalAccountAmsId);
+			
+			td = new TransactionDetails(
+					"$.resourceId",
+					internalCorrelationId,
+					camt052);
+			
+			camt052Body = om.writeValueAsString(td);
 			
 			biBuilder.add(items, camt052RelativeUrl, camt052Body, true);
 		
