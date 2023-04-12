@@ -70,7 +70,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 		
 		BatchItemBuilder biBuilder = new BatchItemBuilder(tenantId);
 		
-		String conversionAccountWithdrawalRelativeUrl = String.format("%s/%d/transactions?command=%s", incomingMoneyApi, conversionAccountAmsId, "withdrawal");
+		String conversionAccountWithdrawalRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "withdrawal");
 		
 		PaymentTypeConfig paymentTypeConfig = paymentTypeConfigFactory.getPaymentTypeConfig(tenantId);
 		Integer paymentTypeId = paymentTypeConfig.findPaymentTypeByOperation(String.format("%s.%s", paymentScheme, "bookOnConversionAccountInAms.ConversionAccount.WithdrawTransactionAmount"));
@@ -103,7 +103,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 
 		biBuilder.add(items, camt052RelativeUrl, camt052Body, true);
 		
-		if (!fee.equals(BigDecimal.ZERO)) {
+		if (!BigDecimal.ZERO.equals(fee)) {
 				
 			logger.info("Withdrawing fee {} from conversion account {}", fee, conversionAccountAmsId);
 			

@@ -15,8 +15,6 @@ import org.mifos.connector.ams.zeebe.workers.utils.TransactionItem;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -84,7 +82,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 		
 		BatchItemBuilder biBuilder = new BatchItemBuilder(tenantId);
 		
-		String conversionAccountWithdrawRelativeUrl = String.format("%s/%d/transactions?command=%s", incomingMoneyApi, conversionAccountAmsId, "withdrawal");
+		String conversionAccountWithdrawRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "withdrawal");
 		
 		PaymentTypeConfig paymentTypeConfig = paymentTypeConfigFactory.getPaymentTypeConfig(tenantId);
 		Integer paymentTypeId = paymentTypeConfig.findPaymentTypeByOperation(String.format("%s.%s", paymentScheme, "revertInAms.ConversionAccount.WithdrawTransactionAmount"));
@@ -106,7 +104,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 		BankToCustomerAccountReportV08 convertedCamt052 = camt052Mapper.toCamt052(pain001.getDocument());
 		String camt052 = om.writeValueAsString(convertedCamt052);
 		
-		String camt052RelativeUrl = String.format("datatables/transaction_details/%d", disposalAccountAmsId);
+		String camt052RelativeUrl = String.format("datatables/transaction_details/%d", conversionAccountAmsId);
 		
 		TransactionDetails td = new TransactionDetails(
 				"$.resourceId",
@@ -117,29 +115,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 
 		biBuilder.add(items, camt052RelativeUrl, camt052Body, true);
 		
-		
-		
-		
-		
-		
-	
-		ResponseEntity<Object> responseObject = withdraw(
-				transactionDate, 
-				amount, 
-				conversionAccountAmsId, 
-				paymentScheme,
-				"revertInAms.ConversionAccount.WithdrawTransactionAmount",
-				tenantId, 
-				internalCorrelationId);
-			
-		if (!HttpStatus.OK.equals(responseObject.getStatusCode())) {
-			jobClient.newFailCommand(activatedJob.getKey()).retries(0).send();
-			return;
-		}
-		
-		postCamt052(tenantId, camt052, internalCorrelationId, responseObject);
-		
-		if (!fee.equals(BigDecimal.ZERO)) {
+		if (!BigDecimal.ZERO.equals(fee)) {
 			logger.error("Withdrawing fee {} from conversion account {}", fee, conversionAccountAmsId);
 			
 			paymentTypeId = paymentTypeConfig.findPaymentTypeByOperation(String.format("%s.%s", paymentScheme, "revertInAms.ConversionAccount.WithdrawTransactionFee"));
@@ -161,7 +137,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 
 		logger.error("Re-depositing amount {} in disposal account {}", amount, disposalAccountAmsId);
 		
-		String disposalAccountDepositRelativeUrl = String.format("%s/%d/transactions?command=%s", incomingMoneyApi, disposalAccountAmsId, "deposit");
+		String disposalAccountDepositRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), disposalAccountAmsId, "deposit");
 		
 		paymentTypeId = paymentTypeConfig.findPaymentTypeByOperation(String.format("%s.%s", paymentScheme, "revertInAms.DisposalAccount.DepositTransactionAmount"));
 		
@@ -177,9 +153,18 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 		
 		biBuilder.add(items, disposalAccountDepositRelativeUrl, bodyItem, false);
 		
+		camt052RelativeUrl = String.format("datatables/transaction_details/%d", disposalAccountAmsId);
+		
+		td = new TransactionDetails(
+				"$.resourceId",
+				internalCorrelationId,
+				camt052);
+		
+		camt052Body = om.writeValueAsString(td);
+		
 		biBuilder.add(items, camt052RelativeUrl, camt052Body, true);
 		
-		if (!fee.equals(BigDecimal.ZERO)) {
+		if (!BigDecimal.ZERO.equals(fee)) {
 			logger.error("Re-depositing fee {} in disposal account {}", fee, disposalAccountAmsId);
 			
 			paymentTypeId = paymentTypeConfig.findPaymentTypeByOperation(String.format("%s.%s", paymentScheme, "revertInAms.DisposalAccount.DepositTransactionFee"));

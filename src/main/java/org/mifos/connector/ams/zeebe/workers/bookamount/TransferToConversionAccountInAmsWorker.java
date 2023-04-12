@@ -109,7 +109,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			
 			BatchItemBuilder biBuilder = new BatchItemBuilder(tenantId);
 			
-			String disposalAccountWithdrawRelativeUrl = String.format("%s/%d/transactions?command=%s", incomingMoneyApi, disposalAccountAmsId, "withdrawal");
+			String disposalAccountWithdrawRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), disposalAccountAmsId, "withdrawal");
 			
 			PaymentTypeConfig paymentTypeConfig = paymentTypeConfigFactory.getPaymentTypeConfig(tenantId);
 			Integer paymentTypeId = paymentTypeConfig.findPaymentTypeByOperation(String.format("%s.%s", paymentScheme, "transferToConversionAccountInAms.DisposalAccount.WithdrawTransactionAmount"));
@@ -142,7 +142,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 
 			biBuilder.add(items, camt052RelativeUrl, camt052Body, true);
 
-			if (!fee.equals(BigDecimal.ZERO)) {
+			if (!BigDecimal.ZERO.equals(fee)) {
 				logger.info("Withdrawing fee {} from disposal account {}", fee, disposalAccountAmsId);
 					Integer withdrawTransactionFeePaymentTypeId = paymentTypeConfig.findPaymentTypeByOperation(String.format("%s.%s", paymentScheme, "transferToConversionAccountInAms.DisposalAccount.WithdrawTransactionFee"));
 					
@@ -162,7 +162,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			
 			logger.info("Depositing amount {} to conversion account {}", amount, conversionAccountAmsId);
 			
-			String conversionAccountDepositRelativeUrl = String.format("%s/%d/transactions?command=%s", incomingMoneyApi, conversionAccountAmsId, "deposit");
+			String conversionAccountDepositRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "deposit");
 			
 			Integer conversionAccountDepositAmountPaymentTypeId = paymentTypeConfig.findPaymentTypeByOperation(String.format("%s.%s", paymentScheme, "transferToConversionAccountInAms.ConversionAccount.DepositTransactionAmount"));
 			
@@ -177,11 +177,13 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			String depositAmountBodyItem = om.writeValueAsString(depositAmountBody);
 			
 			biBuilder.add(items, conversionAccountDepositRelativeUrl, depositAmountBodyItem, false);
+			
+			camt052RelativeUrl = String.format("datatables/transaction_details/%d", conversionAccountAmsId);
 			biBuilder.add(items, camt052RelativeUrl, camt052Body, true);
 		
-			logger.info("Depositing fee {} to conversion account {}", fee, conversionAccountAmsId);
 			
-			if (!fee.equals(BigDecimal.ZERO)) {
+			if (!BigDecimal.ZERO.equals(fee)) {
+				logger.info("Depositing fee {} to conversion account {}", fee, conversionAccountAmsId);
 				Integer depositTransactionFeePaymentTypeId = paymentTypeConfig.findPaymentTypeByOperation(String.format("%s.%s", paymentScheme, "transferToConversionAccountInAms.ConversionAccount.DepositTransactionFee"));
 				
 				TransactionBody depositTransactionFeeBody = new TransactionBody(
