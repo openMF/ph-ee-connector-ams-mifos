@@ -189,6 +189,8 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 	    		biBuilder.add(items, camt052RelativeUrl, camt052Body, true);
 			}
 			
+			doBatch(items, tenantIdentifier, internalCorrelationId);
+			
 			jobClient.newCompleteCommand(activatedJob.getKey()).variables(variables).send();
 		} catch (JsonProcessingException e) {
 			logger.error(e.getMessage(), e);
