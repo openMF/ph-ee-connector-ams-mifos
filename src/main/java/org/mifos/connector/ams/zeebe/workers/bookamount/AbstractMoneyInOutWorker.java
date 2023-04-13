@@ -265,10 +265,7 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 				for (LinkedHashMap<String, Object> responseItem : responseBody) {
 					Integer statusCode = (Integer) responseItem.get("statusCode");
 					if (statusCode != 200) {
-						LinkedHashMap<String, Object> responseItemBody = (LinkedHashMap<String, Object>) responseItem.get("body");
-						LinkedHashMap<String, Object> errors = ((List<LinkedHashMap<String, Object>>) responseItemBody.get("errors")).get(0);
-						String defaultUserMessage = (String) errors.get("defaultUserMessage");
-						throw new RuntimeException(defaultUserMessage);
+						throw new RuntimeException();
 					}
 				}
 				return;
