@@ -266,7 +266,7 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 					Integer statusCode = (Integer) responseItem.get("statusCode");
 					if (statusCode != 200) {
 						retryCount = 0;
-						throw new RuntimeException();
+						throw new RuntimeException("An unexpected error occurred");
 					}
 				}
 				return;

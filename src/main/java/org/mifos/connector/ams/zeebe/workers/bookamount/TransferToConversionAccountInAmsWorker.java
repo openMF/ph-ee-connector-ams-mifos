@@ -204,7 +204,6 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 		
 			jobClient.newCompleteCommand(activatedJob.getKey()).variables(variables).send();
 		} catch (Exception e) {
-			logger.warn("Fee to conversion account failed");
 			logger.error(e.getMessage(), e);
 			jobClient
 					.newThrowErrorCommand(activatedJob.getKey())
