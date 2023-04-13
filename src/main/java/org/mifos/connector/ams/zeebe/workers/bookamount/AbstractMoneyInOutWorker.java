@@ -1,6 +1,7 @@
 package org.mifos.connector.ams.zeebe.workers.bookamount;
 
 import java.net.SocketTimeoutException;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -230,6 +231,7 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 		throw new RuntimeException("An unexpected error occurred");
 	}
 	
+	@SuppressWarnings("unchecked")
 	protected void doBatch(List<TransactionItem> items, String tenantId, String internalCorrelationId) throws JsonProcessingException {
 		HttpHeaders httpHeaders = new HttpHeaders();
 		httpHeaders.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
@@ -258,7 +260,17 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 				ResponseEntity<Object> response = restTemplate.exchange(urlTemplate, HttpMethod.POST, entity, Object.class);
 				wireLogger.receiving(response.toString());
 				
-				logger.info("<< Received {}", response);
+				logger.info("<< Received {} with body type {}", response, response.getBody().getClass());
+				List<LinkedHashMap<String, Object>> responseBody = (List<LinkedHashMap<String, Object>>) response.getBody();
+				for (LinkedHashMap<String, Object> responseItem : responseBody) {
+					Integer statusCode = (Integer) responseItem.get("statusCode");
+					if (statusCode != 200) {
+						LinkedHashMap<String, Object> responseItemBody = (LinkedHashMap<String, Object>) responseItem.get("body");
+						LinkedHashMap<String, Object> errors = ((List<LinkedHashMap<String, Object>>) responseItemBody.get("errors")).get(0);
+						String defaultUserMessage = (String) errors.get("defaultUserMessage");
+						throw new RuntimeException(defaultUserMessage);
+					}
+				}
 				return;
 			} catch (HttpClientErrorException e) {
 				logger.error(e.getMessage(), e);
