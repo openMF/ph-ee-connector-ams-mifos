@@ -265,6 +265,7 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 				for (LinkedHashMap<String, Object> responseItem : responseBody) {
 					Integer statusCode = (Integer) responseItem.get("statusCode");
 					if (statusCode != 200) {
+						retryCount = 0;
 						throw new RuntimeException();
 					}
 				}
@@ -279,6 +280,8 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 				}
 				logger.warn(e.getMessage(), e);
 				throw new RuntimeException(e);
+			} catch (RuntimeException e) {
+				throw e;
 			} catch (Exception e) {
 				if (e instanceof InterruptedException
 						|| (e instanceof ResourceAccessException
