@@ -54,7 +54,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 	@Override
 	public void handle(JobClient jobClient, ActivatedJob activatedJob) throws Exception {
 		String transactionDate = LocalDate.now().format(PATTERN);
-		logger.error("Debtor exchange worker starting");
+		logger.debug("Debtor exchange worker starting");
 		Object amount = new Object();
 		Integer disposalAccountAmsId = null;
 		try {
@@ -97,8 +97,8 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 				fee = new BigDecimal(feeAmount.toString());
 			}
 			
-			logger.error("Debtor exchange worker incoming variables:");
-			variables.entrySet().forEach(e -> logger.error("{}: {} of type {}", e.getKey(), e.getValue(), e.getValue().getClass()));
+			logger.debug("Debtor exchange worker incoming variables:");
+			variables.entrySet().forEach(e -> logger.debug("{}: {} of type {}", e.getKey(), e.getValue(), e.getValue().getClass()));
 		
 			disposalAccountAmsId = (Integer) variables.get("disposalAccountAmsId");
 			Integer conversionAccountAmsId = (Integer) variables.get("conversionAccountAmsId");

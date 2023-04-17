@@ -71,7 +71,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			amount = new BigDecimal(ctti.getAmount().getInstructedAmount().getAmount().toString());
 		}
 		
-		logger.error("Withdrawing amount {} from conversion account {}", amount, conversionAccountAmsId);
+		logger.debug("Withdrawing amount {} from conversion account {}", amount, conversionAccountAmsId);
 		
 		String tenantId = (String) variables.get("tenantIdentifier");
 		
@@ -116,7 +116,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 		biBuilder.add(items, camt052RelativeUrl, camt052Body, true);
 		
 		if (!BigDecimal.ZERO.equals(fee)) {
-			logger.error("Withdrawing fee {} from conversion account {}", fee, conversionAccountAmsId);
+			logger.debug("Withdrawing fee {} from conversion account {}", fee, conversionAccountAmsId);
 			
 			paymentTypeId = paymentTypeConfig.findPaymentTypeByOperation(String.format("%s.%s", paymentScheme, "revertInAms.ConversionAccount.WithdrawTransactionFee"));
 			
@@ -135,7 +135,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			biBuilder.add(items, camt052RelativeUrl, camt052Body, true);
 		}
 
-		logger.error("Re-depositing amount {} in disposal account {}", amount, disposalAccountAmsId);
+		logger.debug("Re-depositing amount {} in disposal account {}", amount, disposalAccountAmsId);
 		
 		String disposalAccountDepositRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), disposalAccountAmsId, "deposit");
 		
@@ -165,7 +165,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 		biBuilder.add(items, camt052RelativeUrl, camt052Body, true);
 		
 		if (!BigDecimal.ZERO.equals(fee)) {
-			logger.error("Re-depositing fee {} in disposal account {}", fee, disposalAccountAmsId);
+			logger.debug("Re-depositing fee {} in disposal account {}", fee, disposalAccountAmsId);
 			
 			paymentTypeId = paymentTypeConfig.findPaymentTypeByOperation(String.format("%s.%s", paymentScheme, "revertInAms.DisposalAccount.DepositTransactionFee"));
 			

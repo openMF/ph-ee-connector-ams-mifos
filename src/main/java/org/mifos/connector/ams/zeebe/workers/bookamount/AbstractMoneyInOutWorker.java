@@ -1,5 +1,6 @@
 package org.mifos.connector.ams.zeebe.workers.bookamount;
 
+import java.net.ConnectException;
 import java.net.SocketTimeoutException;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -85,11 +86,11 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 				.encode()
 				.toUriString();
 		
-		logger.info(">> Sending {} to {} with headers {}", null, urlTemplate, httpHeaders);
+		logger.debug(">> Sending {} to {} with headers {}", null, urlTemplate, httpHeaders);
 		
 		ResponseEntity<Object> response = restTemplate.exchange(urlTemplate, HttpMethod.POST, entity, Object.class);
 		
-		logger.info("<< Received HTTP {}", response.getStatusCode());
+		logger.debug("<< Received HTTP {}", response.getStatusCode());
 		
 		return response;
 	}
@@ -159,11 +160,11 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 				.encode()
 				.toUriString();
 		
-		logger.info(">> Sending {} to {} with headers {}", td, urlTemplate, httpHeaders);
+		logger.debug(">> Sending {} to {} with headers {}", td, urlTemplate, httpHeaders);
 		
 		try {
 			ResponseEntity<Object> response = restTemplate.exchange(urlTemplate, HttpMethod.POST, entity, Object.class);
-			logger.info("<< Received HTTP {}", response.getStatusCode());
+			logger.debug("<< Received HTTP {}", response.getStatusCode());
 		} catch (HttpClientErrorException e) {
 			logger.error(e.getMessage(), e);
 			logger.warn("Cam052 insert returned with status code {}", e.getRawStatusCode());
@@ -186,7 +187,7 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 				.encode()
 				.toUriString();
 		
-		logger.info(">> Sending {} to {} with headers {}", body, urlTemplate, httpHeaders);
+		logger.debug(">> Sending {} to {} with headers {}", body, urlTemplate, httpHeaders);
 		
 		int retryCount = idempotencyRetryCount;
 		httpHeaders.remove(idempotencyKeyHeaderName);
@@ -198,7 +199,7 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 				ResponseEntity<Object> response = restTemplate.exchange(urlTemplate, HttpMethod.POST, entity, Object.class);
 				wireLogger.receiving(response.toString());
 				
-				logger.info("<< Received {}", response);
+				logger.debug("<< Received {}", response);
 				return response;
 			} catch (HttpClientErrorException e) {
 				logger.error(e.getMessage(), e);
@@ -245,7 +246,7 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 				.encode()
 				.toUriString();
 		
-		logger.info(">> Sending {} to {} with headers {}", items, urlTemplate, httpHeaders);
+		logger.debug(">> Sending {} to {} with headers {}", items, urlTemplate, httpHeaders);
 		
 		ObjectMapper om = new ObjectMapper();
 		String body = om.writeValueAsString(items);
@@ -260,7 +261,7 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 				ResponseEntity<Object> response = restTemplate.exchange(urlTemplate, HttpMethod.POST, entity, Object.class);
 				wireLogger.receiving(response.toString());
 				
-				logger.info("<< Received {} with body type {}", response, response.getBody().getClass());
+				logger.debug("<< Received {} with body type {}", response, response.getBody().getClass());
 				List<LinkedHashMap<String, Object>> responseBody = (List<LinkedHashMap<String, Object>>) response.getBody();
 				for (LinkedHashMap<String, Object> responseItem : responseBody) {
 					Integer statusCode = (Integer) responseItem.get("statusCode");
@@ -285,7 +286,8 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 			} catch (Exception e) {
 				if (e instanceof InterruptedException
 						|| (e instanceof ResourceAccessException
-								&& e.getCause() instanceof SocketTimeoutException)) {
+								&& (e.getCause() instanceof SocketTimeoutException
+										|| e.getCause() instanceof ConnectException))) {
 					logger.warn("Communication with Fineract timed out, retrying transaction {} more times with idempotency header value {}", retryCount, internalCorrelationId);
 				} else {
 					logger.error(e.getMessage(), e);
