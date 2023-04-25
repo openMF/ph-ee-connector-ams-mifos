@@ -103,8 +103,8 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
     				"$.resourceId",
     				internalCorrelationId,
     				camt052,
-    				transactionCategoryPurposeCode,
-    				transactionGroupId);
+    				transactionGroupId,
+    				transactionCategoryPurposeCode);
     		
     		String camt052Body = om.writeValueAsString(td);
 
