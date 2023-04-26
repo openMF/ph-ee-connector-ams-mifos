@@ -161,6 +161,8 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 
 			biBuilder.add(items, camt052RelativeUrl, camt052Body, true);
 			
+			logger.debug("Attempting to send {}", om.writeValueAsString(items));
+			
 			doBatch(items, tenantId, internalCorrelationId);
 			
 			jobClient.newCompleteCommand(activatedJob.getKey()).variables(variables).send();
