@@ -6,6 +6,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.persistence.OptimisticLockException;
+
+import org.apache.camel.spi.OptimisticLockingAggregationRepository.OptimisticLockingException;
 import org.mifos.connector.ams.fineract.PaymentTypeConfig;
 import org.mifos.connector.ams.fineract.PaymentTypeConfigFactory;
 import org.mifos.connector.ams.log.IOTxLogger;
@@ -16,6 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -238,6 +242,7 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 		httpHeaders.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
 		httpHeaders.set("Authorization", "Basic " + authToken);
 		httpHeaders.set("Fineract-Platform-TenantId", tenantId);
+		int idempotencyPostfix = 0;
 		var entity = new HttpEntity<>(items, httpHeaders);
 		
 		var urlTemplate = UriComponentsBuilder.fromHttpUrl(fineractApiUrl)
@@ -253,7 +258,7 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 		
 		int retryCount = idempotencyRetryCount;
 		httpHeaders.remove(idempotencyKeyHeaderName);
-		httpHeaders.set(idempotencyKeyHeaderName, internalCorrelationId);
+		httpHeaders.set(idempotencyKeyHeaderName, String.format("%s_%d", internalCorrelationId, idempotencyPostfix));
 		
 		while (retryCount > 0) {
 			try {
@@ -271,6 +276,9 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 					}
 				}
 				return;
+			} catch (OptimisticLockException | OptimisticLockingException | OptimisticLockingFailureException e) {
+				logger.error(e.getMessage(), e);
+				idempotencyPostfix++;
 			} catch (HttpClientErrorException e) {
 				logger.error(e.getMessage(), e);
 				if (HttpStatus.CONFLICT.equals(e.getStatusCode())) {
