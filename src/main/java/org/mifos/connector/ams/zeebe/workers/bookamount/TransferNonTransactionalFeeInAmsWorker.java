@@ -52,6 +52,7 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 		String tenantId = (String) variables.get("tenantIdentifier");
 		PaymentTypeConfig paymentTypeConfig = paymentTypeConfigFactory.getPaymentTypeConfig(tenantId);
 		String paymentScheme = (String) variables.get("paymentScheme");
+		logger.debug("Got payment scheme {}", paymentScheme);
 		String transactionDate = LocalDate.now().format(PATTERN);
 		BigDecimal amount = new BigDecimal(variables.get("amount").toString());
 		ObjectMapper om = new ObjectMapper();
@@ -59,6 +60,7 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 		String internalCorrelationId = (String) variables.get("internalCorrelationId");
 		String transactionGroupId = (String) variables.get("transactionGroupId");
 		String categoryPurposeCode = (String) variables.get("categoryPurposeCode");
+		logger.debug("Got category purpose code {}", categoryPurposeCode);
 		
 		try {
 			MDC.put("internalCorrelationId", internalCorrelationId);
@@ -66,6 +68,7 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 			Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001 = om.readValue(originalPain001, Pain00100110CustomerCreditTransferInitiationV10MessageSchema.class);
 			
 			Integer paymentTypeId = paymentTypeConfig.findPaymentTypeByOperation(String.format("%s.%s.%s", paymentScheme, categoryPurposeCode, "transferToConversionAccountInAms.DisposalAccount.WithdrawNonTransactionalFee"));
+			logger.debug("Looking up {}, got payment type id {}", String.format("%s.%s.%s", paymentScheme, categoryPurposeCode, "transferToConversionAccountInAms.DisposalAccount.WithdrawNonTransactionalFee"), paymentTypeId);
 			TransactionBody body = new TransactionBody(
 					transactionDate,
 					amount,
@@ -99,6 +102,7 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 			
 			
 			paymentTypeId = paymentTypeConfig.findPaymentTypeByOperation(String.format("%s.%s.%s", paymentScheme, categoryPurposeCode, "transferToConversionAccountInAms.ConversionAccount.DepositNonTransactionalFee"));
+			logger.debug("Looking up {}, got payment type id {}", String.format("%s.%s.%s", paymentScheme, categoryPurposeCode, "transferToConversionAccountInAms.ConversionAccount.DepositNonTransactionalFee"), paymentTypeId);
 			body = new TransactionBody(
 					transactionDate,
 					amount,
@@ -129,6 +133,7 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 			
 			
 			paymentTypeId = paymentTypeConfig.findPaymentTypeByOperation(String.format("%s.%s.%s", paymentScheme, categoryPurposeCode, "transferToConversionAccountInAms.ConversionAccount.WithdrawNonTransactionalFee"));
+			logger.debug("Looking up {}, got payment type id {}", String.format("%s.%s.%s", paymentScheme, categoryPurposeCode, "transferToConversionAccountInAms.ConversionAccount.WithdrawNonTransactionalFee"), paymentTypeId);
 			body = new TransactionBody(
 					transactionDate,
 					amount,
