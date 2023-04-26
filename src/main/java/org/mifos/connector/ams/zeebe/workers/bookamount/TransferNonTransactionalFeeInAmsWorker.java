@@ -59,16 +59,16 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 		BatchItemBuilder biBuilder = new BatchItemBuilder(tenantId);
 		String internalCorrelationId = (String) variables.get("internalCorrelationId");
 		String transactionGroupId = (String) variables.get("transactionGroupId");
-		String categoryPurposeCode = (String) variables.get("categoryPurposeCode");
-		logger.debug("Got category purpose code {}", categoryPurposeCode);
+		String categoryPurpose = (String) variables.get("categoryPurpose");
+		logger.debug("Got category purpose code {}", categoryPurpose);
 		
 		try {
 			MDC.put("internalCorrelationId", internalCorrelationId);
 			String originalPain001 = (String) variables.get("originalPain001");
 			Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001 = om.readValue(originalPain001, Pain00100110CustomerCreditTransferInitiationV10MessageSchema.class);
 			
-			Integer paymentTypeId = paymentTypeConfig.findPaymentTypeByOperation(String.format("%s.%s.%s", paymentScheme, categoryPurposeCode, "transferToConversionAccountInAms.DisposalAccount.WithdrawNonTransactionalFee"));
-			logger.debug("Looking up {}, got payment type id {}", String.format("%s.%s.%s", paymentScheme, categoryPurposeCode, "transferToConversionAccountInAms.DisposalAccount.WithdrawNonTransactionalFee"), paymentTypeId);
+			Integer paymentTypeId = paymentTypeConfig.findPaymentTypeByOperation(String.format("%s.%s.%s", paymentScheme, categoryPurpose, "transferToConversionAccountInAms.DisposalAccount.WithdrawNonTransactionalFee"));
+			logger.debug("Looking up {}, got payment type id {}", String.format("%s.%s.%s", paymentScheme, categoryPurpose, "transferToConversionAccountInAms.DisposalAccount.WithdrawNonTransactionalFee"), paymentTypeId);
 			TransactionBody body = new TransactionBody(
 					transactionDate,
 					amount,
@@ -93,7 +93,7 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 					internalCorrelationId,
 					camt052,
 					transactionGroupId,
-					categoryPurposeCode);
+					categoryPurpose);
 			
 			String camt052Body = om.writeValueAsString(td);
 
@@ -101,8 +101,8 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 			
 			
 			
-			paymentTypeId = paymentTypeConfig.findPaymentTypeByOperation(String.format("%s.%s.%s", paymentScheme, categoryPurposeCode, "transferToConversionAccountInAms.ConversionAccount.DepositNonTransactionalFee"));
-			logger.debug("Looking up {}, got payment type id {}", String.format("%s.%s.%s", paymentScheme, categoryPurposeCode, "transferToConversionAccountInAms.ConversionAccount.DepositNonTransactionalFee"), paymentTypeId);
+			paymentTypeId = paymentTypeConfig.findPaymentTypeByOperation(String.format("%s.%s.%s", paymentScheme, categoryPurpose, "transferToConversionAccountInAms.ConversionAccount.DepositNonTransactionalFee"));
+			logger.debug("Looking up {}, got payment type id {}", String.format("%s.%s.%s", paymentScheme, categoryPurpose, "transferToConversionAccountInAms.ConversionAccount.DepositNonTransactionalFee"), paymentTypeId);
 			body = new TransactionBody(
 					transactionDate,
 					amount,
@@ -124,7 +124,7 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 					internalCorrelationId,
 					camt052,
 					transactionGroupId,
-					categoryPurposeCode);
+					categoryPurpose);
 			
 			camt052Body = om.writeValueAsString(td);
 
@@ -132,8 +132,8 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 			
 			
 			
-			paymentTypeId = paymentTypeConfig.findPaymentTypeByOperation(String.format("%s.%s.%s", paymentScheme, categoryPurposeCode, "transferToConversionAccountInAms.ConversionAccount.WithdrawNonTransactionalFee"));
-			logger.debug("Looking up {}, got payment type id {}", String.format("%s.%s.%s", paymentScheme, categoryPurposeCode, "transferToConversionAccountInAms.ConversionAccount.WithdrawNonTransactionalFee"), paymentTypeId);
+			paymentTypeId = paymentTypeConfig.findPaymentTypeByOperation(String.format("%s.%s.%s", paymentScheme, categoryPurpose, "transferToConversionAccountInAms.ConversionAccount.WithdrawNonTransactionalFee"));
+			logger.debug("Looking up {}, got payment type id {}", String.format("%s.%s.%s", paymentScheme, categoryPurpose, "transferToConversionAccountInAms.ConversionAccount.WithdrawNonTransactionalFee"), paymentTypeId);
 			body = new TransactionBody(
 					transactionDate,
 					amount,
@@ -155,7 +155,7 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 					internalCorrelationId,
 					camt052,
 					transactionGroupId,
-					categoryPurposeCode);
+					categoryPurpose);
 			
 			camt052Body = om.writeValueAsString(td);
 
