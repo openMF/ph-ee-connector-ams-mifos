@@ -70,6 +70,10 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 			BigDecimal feeAmount = new BigDecimal(variables.get("transactionFeeAmount").toString());
 			String tenantIdentifier = variables.get("tenantIdentifier").toString();
 			
+			String transactionGroupId = (String) variables.get("transactionGroupId");
+			String transactionCategoryPurposeCode = (String) variables.get("transactionCategoryPurposeCode");
+			String transactionFeeCategoryPurposeCode = (String) variables.get("transactionFeeCategoryPurposeCode");
+			
 			String interbankSettlementDate = LocalDate.now().format(PATTERN);
 			
             BatchItemBuilder biBuilder = new BatchItemBuilder(tenantIdentifier);
@@ -98,7 +102,9 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
     		TransactionDetails td = new TransactionDetails(
     				"$.resourceId",
     				internalCorrelationId,
-    				camt052);
+    				camt052,
+    				transactionGroupId,
+    				transactionCategoryPurposeCode);
     		
     		String camt052Body = om.writeValueAsString(td);
 
@@ -122,6 +128,14 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 	    	
 	    		camt052RelativeUrl = String.format("datatables/transaction_details/%d", debtorDisposalAccountAmsId);
 	    		
+	    		td = new TransactionDetails(
+	    				"$.resourceId",
+	    				internalCorrelationId,
+	    				camt052,
+	    				transactionGroupId,
+	    				transactionFeeCategoryPurposeCode);
+	    		
+	    		camt052Body = om.writeValueAsString(td);
 	    		biBuilder.add(items, camt052RelativeUrl, camt052Body, true);
 			}
 			
@@ -142,7 +156,14 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
     		biBuilder.add(items, creditorDisposalDepositRelativeUrl, bodyItem, false);
 	    	
     		camt052RelativeUrl = String.format("datatables/transaction_details/%d", creditorDisposalAccountAmsId);
-		    		
+    		td = new TransactionDetails(
+    				"$.resourceId",
+    				internalCorrelationId,
+    				camt052,
+    				transactionGroupId,
+    				transactionCategoryPurposeCode);
+    		
+    		camt052Body = om.writeValueAsString(td);
     		biBuilder.add(items, camt052RelativeUrl, camt052Body, true);
 			
 			if (!BigDecimal.ZERO.equals(feeAmount)) {
@@ -163,7 +184,15 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 	    		biBuilder.add(items, debtorConversionDepositRelativeUrl, bodyItem, false);
 		    	
 	    		camt052RelativeUrl = String.format("datatables/transaction_details/%d", debtorConversionAccountAmsId);
-			    		
+	    		
+	    		td = new TransactionDetails(
+	    				"$.resourceId",
+	    				internalCorrelationId,
+	    				camt052,
+	    				transactionGroupId,
+	    				transactionFeeCategoryPurposeCode);
+	    		
+	    		camt052Body = om.writeValueAsString(td);
 	    		biBuilder.add(items, camt052RelativeUrl, camt052Body, true);
 	    		
 	    		

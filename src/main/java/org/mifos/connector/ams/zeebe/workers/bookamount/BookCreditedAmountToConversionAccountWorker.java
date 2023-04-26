@@ -58,6 +58,9 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
             JAXBElement<iso.std.iso._20022.tech.xsd.pacs_008_001.Document> object = (JAXBElement<iso.std.iso._20022.tech.xsd.pacs_008_001.Document>) jc.createUnmarshaller().unmarshal(new StringReader(originalPacs008));
             iso.std.iso._20022.tech.xsd.pacs_008_001.Document pacs008 = object.getValue();
             String transactionDate = (String) variables.get("transactionDate");
+            
+            String transactionCategoryPurposeCode = (String) variables.get("transactionCategoryPurposeCode");
+            String transactionGroupId = (String) variables.get("transactionGroupId");
 
             String internalCorrelationId = (String) variables.get("internalCorrelationId");
             MDC.put("internalCorrelationId", internalCorrelationId);
@@ -99,7 +102,9 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
     		TransactionDetails td = new TransactionDetails(
     				"$.resourceId",
     				internalCorrelationId,
-    				camt052);
+    				camt052,
+    				transactionGroupId,
+    				transactionCategoryPurposeCode);
     		
     		String camt052Body = om.writeValueAsString(td);
 

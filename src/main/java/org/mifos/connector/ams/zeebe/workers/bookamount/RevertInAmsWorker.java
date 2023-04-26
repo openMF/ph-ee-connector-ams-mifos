@@ -57,6 +57,10 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 		
 		String paymentScheme = (String) variables.get("paymentScheme");
 		
+		String transactionGroupId = (String) variables.get("transactionGroupId");
+		String transactionCategoryPurposeCode = (String) variables.get("transactionCategoryPurposeCode");
+		String transactionFeeCategoryPurposeCode = (String) variables.get("transactionFeeCategoryPurposeCode");
+		
 		ObjectMapper om = new ObjectMapper();
 		Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001 = om.readValue(originalPain001, Pain00100110CustomerCreditTransferInitiationV10MessageSchema.class);
 		
@@ -109,7 +113,9 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 		TransactionDetails td = new TransactionDetails(
 				"$.resourceId",
 				internalCorrelationId,
-				camt052);
+				camt052,
+				transactionGroupId,
+				transactionCategoryPurposeCode);
 		
 		String camt052Body = om.writeValueAsString(td);
 
@@ -132,6 +138,13 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			
 			biBuilder.add(items, conversionAccountWithdrawRelativeUrl, bodyItem, false);
 			
+			td = new TransactionDetails(
+					"$.resourceId",
+					internalCorrelationId,
+					camt052,
+					transactionGroupId,
+					transactionFeeCategoryPurposeCode);
+			camt052Body = om.writeValueAsString(td);
 			biBuilder.add(items, camt052RelativeUrl, camt052Body, true);
 		}
 
@@ -158,7 +171,9 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 		td = new TransactionDetails(
 				"$.resourceId",
 				internalCorrelationId,
-				camt052);
+				camt052,
+				transactionGroupId,
+				transactionCategoryPurposeCode);
 		
 		camt052Body = om.writeValueAsString(td);
 		
@@ -181,6 +196,13 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			
 			biBuilder.add(items, disposalAccountDepositRelativeUrl, bodyItem, false);
 			
+			td = new TransactionDetails(
+					"$.resourceId",
+					internalCorrelationId,
+					camt052,
+					transactionGroupId,
+					transactionFeeCategoryPurposeCode);
+			camt052Body = om.writeValueAsString(td);
 			biBuilder.add(items, camt052RelativeUrl, camt052Body, true);
 		}
 		
