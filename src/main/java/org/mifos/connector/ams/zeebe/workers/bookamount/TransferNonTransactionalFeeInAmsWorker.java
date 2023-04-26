@@ -17,6 +17,7 @@ import org.mifos.connector.ams.zeebe.workers.utils.TransactionItem;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -25,6 +26,7 @@ import io.camunda.zeebe.client.api.worker.JobClient;
 import iso.std.iso._20022.tech.json.camt_052_001.BankToCustomerAccountReportV08;
 import iso.std.iso._20022.tech.json.pain_001_001.Pain00100110CustomerCreditTransferInitiationV10MessageSchema;
 
+@Component
 public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWorker {
 	
 	@Autowired
