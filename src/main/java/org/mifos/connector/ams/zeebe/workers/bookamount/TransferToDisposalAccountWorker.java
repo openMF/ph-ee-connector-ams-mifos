@@ -58,6 +58,9 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 			String paymentScheme = (String) variables.get("paymentScheme");
 			String transactionDate = (String) variables.get("transactionDate");
 			MDC.put("internalCorrelationId", internalCorrelationId);
+			
+			String transactionGroupId = (String) variables.get("transactionGroupId");
+			String transactionCategoryPurposeCode = (String) variables.get("transactionCategoryPurposeCode");
 
 			logger.info("Exchange to e-currency worker has started");
 
@@ -99,7 +102,9 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 			TransactionDetails td = new TransactionDetails(
 					"$.resourceId",
 					internalCorrelationId,
-					camt052);
+					camt052,
+					transactionGroupId,
+					transactionCategoryPurposeCode);
 			
 			String camt052Body = om.writeValueAsString(td);
 
@@ -126,7 +131,9 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 			td = new TransactionDetails(
 					"$.resourceId",
 					internalCorrelationId,
-					camt052);
+					camt052,
+					transactionGroupId,
+					transactionCategoryPurposeCode);
 			
 			camt052Body = om.writeValueAsString(td);
 			

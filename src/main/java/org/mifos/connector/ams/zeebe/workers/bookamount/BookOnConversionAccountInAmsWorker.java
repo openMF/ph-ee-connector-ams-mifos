@@ -56,6 +56,10 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 		
 		Integer conversionAccountAmsId = (Integer) variables.get("conversionAccountAmsId");
 		
+		String transactionGroupId = (String) variables.get("transactionGroupId");
+		String transactionCategoryPurposeCode = (String) variables.get("transactionCategoryPurposeCode");
+		String transactionFeeCategoryPurposeCode = (String) variables.get("transactionFeeCategoryPurposeCode");
+		
 		logger.info("Starting book debit on fiat account worker");
 		
 		Object amount = variables.get("amount");
@@ -97,7 +101,9 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 		TransactionDetails td = new TransactionDetails(
 				"$.resourceId",
 				internalCorrelationId,
-				camt052);
+				camt052,
+				transactionGroupId,
+				transactionCategoryPurposeCode);
 		
 		String camt052Body = om.writeValueAsString(td);
 
@@ -121,6 +127,13 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 			
 			biBuilder.add(items, conversionAccountWithdrawalRelativeUrl, bodyItem, false);
 		
+			td = new TransactionDetails(
+					"$.resourceId",
+					internalCorrelationId,
+					camt052,
+					transactionGroupId,
+					transactionFeeCategoryPurposeCode);
+			camt052Body = om.writeValueAsString(td);
 			biBuilder.add(items, camt052RelativeUrl, camt052Body, true);
 		}
 		

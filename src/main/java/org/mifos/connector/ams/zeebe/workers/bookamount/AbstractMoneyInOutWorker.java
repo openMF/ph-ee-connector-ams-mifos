@@ -4,18 +4,20 @@ import java.net.ConnectException;
 import java.net.SocketTimeoutException;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
+import javax.persistence.OptimisticLockException;
+
+import org.apache.camel.spi.OptimisticLockingAggregationRepository.OptimisticLockingException;
 import org.mifos.connector.ams.fineract.PaymentTypeConfig;
 import org.mifos.connector.ams.fineract.PaymentTypeConfigFactory;
 import org.mifos.connector.ams.log.IOTxLogger;
 import org.mifos.connector.ams.zeebe.workers.utils.TransactionBody;
-import org.mifos.connector.ams.zeebe.workers.utils.TransactionDetails;
 import org.mifos.connector.ams.zeebe.workers.utils.TransactionItem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -125,53 +127,6 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 		return doExchange(body, currencyAccountAmsId, "withdrawal", tenantId, internalCorrelationId);
 	}
 	
-	@SuppressWarnings("unchecked")
-	protected void postCamt052(String tenantId, String camt052, String internalCorrelationId,
-			ResponseEntity<Object> responseObject) throws JsonProcessingException {
-		logger.info(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  camt.052  <<<<<<<<<<<<<<<<<<<<<<<<");
-		
-		Map<String, Object> body = (Map<String, Object>) responseObject.getBody();
-		logger.info("Generating camt.052 based on the following reponse body: {}", body);
-		
-		Object txId = body.get("resourceId");
-		logger.info("Setting amsTransactionId to {}", txId);
-		
-		Object savingsId = body.get("savingsId");
-		logger.info("Setting savingsId to {}", savingsId);
-		
-		TransactionDetails td = new TransactionDetails(
-				"$.resourceId",
-				internalCorrelationId,
-				camt052);
-		
-		logger.info("The following camt.052 will be inserted into the data table: {}", camt052);
-		
-		HttpHeaders httpHeaders = new HttpHeaders();
-		httpHeaders.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
-		httpHeaders.set("Authorization", "Basic " + authToken);
-		httpHeaders.set("Fineract-Platform-TenantId", tenantId);
-		var entity = new HttpEntity<>(td, httpHeaders);
-		
-		var urlTemplate = UriComponentsBuilder.fromHttpUrl(fineractApiUrl)
-				.path("/datatables")
-				.path("/transaction_details")
-				.path("/" + savingsId)
-				.queryParam("genericResultSet", true)
-				.encode()
-				.toUriString();
-		
-		logger.debug(">> Sending {} to {} with headers {}", td, urlTemplate, httpHeaders);
-		
-		try {
-			ResponseEntity<Object> response = restTemplate.exchange(urlTemplate, HttpMethod.POST, entity, Object.class);
-			logger.debug("<< Received HTTP {}", response.getStatusCode());
-		} catch (HttpClientErrorException e) {
-			logger.error(e.getMessage(), e);
-			logger.warn("Cam052 insert returned with status code {}", e.getRawStatusCode());
-			throw new RuntimeException(e);
-		}
-	}
-	
 	private <T> ResponseEntity<Object> doExchange(T body, Integer currencyAccountAmsId, String command, String tenantId, String internalCorrelationId) {
 		HttpHeaders httpHeaders = new HttpHeaders();
 		httpHeaders.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
@@ -238,6 +193,7 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 		httpHeaders.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
 		httpHeaders.set("Authorization", "Basic " + authToken);
 		httpHeaders.set("Fineract-Platform-TenantId", tenantId);
+		int idempotencyPostfix = 0;
 		var entity = new HttpEntity<>(items, httpHeaders);
 		
 		var urlTemplate = UriComponentsBuilder.fromHttpUrl(fineractApiUrl)
@@ -253,7 +209,7 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 		
 		int retryCount = idempotencyRetryCount;
 		httpHeaders.remove(idempotencyKeyHeaderName);
-		httpHeaders.set(idempotencyKeyHeaderName, internalCorrelationId);
+		httpHeaders.set(idempotencyKeyHeaderName, String.format("%s_%d", internalCorrelationId, idempotencyPostfix));
 		
 		while (retryCount > 0) {
 			try {
@@ -271,6 +227,9 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 					}
 				}
 				return;
+			} catch (OptimisticLockException | OptimisticLockingException | OptimisticLockingFailureException e) {
+				logger.error(e.getMessage(), e);
+				idempotencyPostfix++;
 			} catch (HttpClientErrorException e) {
 				logger.error(e.getMessage(), e);
 				if (HttpStatus.CONFLICT.equals(e.getStatusCode())) {

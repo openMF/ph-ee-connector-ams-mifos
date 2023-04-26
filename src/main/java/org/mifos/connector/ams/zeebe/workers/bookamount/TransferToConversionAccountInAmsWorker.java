@@ -60,6 +60,10 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 		try {
 			Map<String, Object> variables = activatedJob.getVariablesAsMap();
 			
+			String transactionGroupId = (String) variables.get("transactionGroupId");
+			String transactionCategoryPurposeCode = (String) variables.get("transactionCategoryPurposeCode");
+			String transactionFeeCategoryPurposeCode = (String) variables.get("transactionFeeCategoryPurposeCode");
+			
 			String originalPain001 = (String) variables.get("originalPain001");
 			ObjectMapper om = new ObjectMapper();
 			Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001 = om.readValue(originalPain001, Pain00100110CustomerCreditTransferInitiationV10MessageSchema.class);
@@ -136,7 +140,9 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			TransactionDetails td = new TransactionDetails(
 					"$.resourceId",
 					internalCorrelationId,
-					camt052);
+					camt052,
+					transactionGroupId,
+					transactionCategoryPurposeCode);
 			
 			String camt052Body = om.writeValueAsString(td);
 
@@ -157,6 +163,14 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 					String withdrawTransactionFeeBodyItem = om.writeValueAsString(withdrawTransactionFeeBody);
 					biBuilder.add(items, disposalAccountWithdrawRelativeUrl, withdrawTransactionFeeBodyItem, false);
 					
+					td = new TransactionDetails(
+							"$.resourceId",
+							internalCorrelationId,
+							camt052,
+							transactionGroupId,
+							transactionFeeCategoryPurposeCode);
+					
+					camt052Body = om.writeValueAsString(td);
 					biBuilder.add(items, camt052RelativeUrl, camt052Body, true);
 			}
 			
@@ -179,6 +193,14 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			biBuilder.add(items, conversionAccountDepositRelativeUrl, depositAmountBodyItem, false);
 			
 			camt052RelativeUrl = String.format("datatables/transaction_details/%d", conversionAccountAmsId);
+			td = new TransactionDetails(
+					"$.resourceId",
+					internalCorrelationId,
+					camt052,
+					transactionGroupId,
+					transactionCategoryPurposeCode);
+			
+			camt052Body = om.writeValueAsString(td);
 			biBuilder.add(items, camt052RelativeUrl, camt052Body, true);
 		
 			
@@ -197,6 +219,14 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 				String depositTransactionFeeBodyItem = om.writeValueAsString(depositTransactionFeeBody);
 				biBuilder.add(items, conversionAccountDepositRelativeUrl, depositTransactionFeeBodyItem, false);
 				
+				td = new TransactionDetails(
+						"$.resourceId",
+						internalCorrelationId,
+						camt052,
+						transactionGroupId,
+						transactionFeeCategoryPurposeCode);
+				
+				camt052Body = om.writeValueAsString(td);
 				biBuilder.add(items, camt052RelativeUrl, camt052Body, true);
 			}
 			
