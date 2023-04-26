@@ -165,6 +165,8 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 			
 			doBatch(items, tenantId, internalCorrelationId);
 			
+			variables.put("transactionDate", transactionDate);
+			
 			jobClient.newCompleteCommand(activatedJob.getKey()).variables(variables).send();
 		} catch (Exception e) {
 			logger.error(e.getMessage(), e);
