@@ -45,6 +45,7 @@ import org.mifos.connector.ams.zeebe.workers.bookamount.BookCreditedAmountToConv
 import org.mifos.connector.ams.zeebe.workers.bookamount.BookOnConversionAccountInAmsWorker;
 import org.mifos.connector.ams.zeebe.workers.bookamount.OnUsTransferWorker;
 import org.mifos.connector.ams.zeebe.workers.bookamount.RevertInAmsWorker;
+import org.mifos.connector.ams.zeebe.workers.bookamount.TransferNonTransactionalFeeInAmsWorker;
 import org.mifos.connector.ams.zeebe.workers.bookamount.TransferToConversionAccountInAmsWorker;
 import org.mifos.connector.ams.zeebe.workers.bookamount.TransferToDisposalAccountWorker;
 import org.mifos.connector.common.ams.dto.QuoteFspResponseDTO;
@@ -122,6 +123,9 @@ public class ZeebeeWorkers {
     
     @Autowired
     private OnUsTransferWorker onUsTransferWorker;
+    
+    @Autowired
+    private TransferNonTransactionalFeeInAmsWorker transferNonTransactionalFeeInAmsWorker;
     
     @Value("${ams.local.enabled:false}")
     private boolean isAmsLocalEnabled;
@@ -309,6 +313,13 @@ public class ZeebeeWorkers {
     		.name("TransferTheAmountBetweenDisposalAccounts")
     		.maxJobsActive(workerMaxJobs)
     		.open();
+            
+            zeebeClient.newWorker()
+            .jobType("transferNonTransactionalFeeInAms")
+            .handler(transferNonTransactionalFeeInAmsWorker)
+            .name("TransferNonTransactionalFeeInAms")
+            .maxJobsActive(workerMaxJobs)
+            .open();
             
             
             
