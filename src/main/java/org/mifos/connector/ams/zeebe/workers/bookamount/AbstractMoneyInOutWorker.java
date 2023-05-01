@@ -136,7 +136,7 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 								retryCount--;
 								continue retry;
 							}
-							break;
+							break retry;
 						case 500:
 							String response500Body = (String) responseItem.get("body");
 							logger.debug("Got response body {}", response500Body);
@@ -147,7 +147,7 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 								retryCount--;
 								continue retry;
 							}
-							break;
+							break retry;
 						case 409:
 							logger.warn("Transaction is already executing, has not completed yet");
 							return;
@@ -165,7 +165,7 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 			logger.info("{} more attempts", retryCount);
 		}
 		
-		logger.error("Failed to execute transaction in {} tries.", idempotencyRetryCount);
+		logger.error("Failed to execute transaction in {} tries.", idempotencyRetryCount - retryCount + 1);
 		throw new RuntimeException("Failed to execute transaction.");
 	}
 }
