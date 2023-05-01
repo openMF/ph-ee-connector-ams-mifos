@@ -82,18 +82,17 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 		String body = om.writeValueAsString(items);
 		
 		int retryCount = idempotencyRetryCount;
-		httpHeaders.remove(idempotencyKeyHeaderName);
-		httpHeaders.set(idempotencyKeyHeaderName, String.format("%s_%d", internalCorrelationId, idempotencyPostfix));
 		
 		retry:
 		while (retryCount > 0) {
+			httpHeaders.remove(idempotencyKeyHeaderName);
+			httpHeaders.set(idempotencyKeyHeaderName, String.format("%s_%d", internalCorrelationId, idempotencyPostfix));
 			wireLogger.sending(body.toString());
 			ResponseEntity<Object> response = null;
 			try {
 				response = restTemplate.exchange(urlTemplate, HttpMethod.POST, entity, Object.class);
 				wireLogger.receiving(response.toString());
 			} catch (ResourceAccessException e) {
-				// Do we have a timeout?
 				if (e.getCause() instanceof SocketTimeoutException
 						|| e.getCause() instanceof ConnectException) {
 					logger.warn("Communication with Fineract timed out, retrying transaction {} more times with idempotency header value {}", retryCount, internalCorrelationId);
@@ -107,7 +106,7 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 					throw new RuntimeException(ie);
 				}
 			} catch (RestClientException e) {
-				// Some other exception occurred, one which is not related to timeout
+				// Some other exception occurred, one not related to timeout
 				logger.error(e.getMessage(), e);
 				throw e;
 			} catch (Throwable t) {
@@ -115,7 +114,6 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 				throw new RuntimeException(t);
 			}
 			
-			// Do we have an optimistic lock exception?
 			List<LinkedHashMap<String, Object>> responseBody = (List<LinkedHashMap<String, Object>>) response.getBody();
 			
 			boolean allOk = true;
@@ -137,7 +135,6 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 							}
 							break;
 						case 500:
-							// If it's 500 due to optimistic lock exception, we're retrying in a short while
 							String response500Body = (String) responseItem.get("body");
 							if (response500Body.contains("NullPointerException")) {
 								logger.info("Possible optimistic lock exception, retrying in a short while");
