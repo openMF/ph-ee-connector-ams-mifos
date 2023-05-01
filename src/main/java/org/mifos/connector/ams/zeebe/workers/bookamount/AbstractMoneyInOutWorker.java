@@ -138,9 +138,8 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 							break;
 						case 500:
 							// If it's 500 due to optimistic lock exception, we're retrying in a short while
-							LinkedHashMap<String, Object> response500Body = (LinkedHashMap<String, Object>) responseItem.get("body");
-							String exception500 = (String) response500Body.get("Exception");
-							if (exception500.contains("NullPointerException")) {
+							String response500Body = (String) responseItem.get("body");
+							if (response500Body.contains("NullPointerException")) {
 								logger.info("Possible optimistic lock exception, retrying in a short while");
 								logger.debug("Current Idempotency-Key HTTP header expired, a new one is generated");
 								idempotencyPostfix++;
