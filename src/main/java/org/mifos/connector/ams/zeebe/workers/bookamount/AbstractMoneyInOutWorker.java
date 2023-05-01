@@ -124,26 +124,37 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 				int statusCode = (Integer) responseItem.get("statusCode");
 				allOk &= (statusCode == 200);
 				if (!allOk) {
-					// If it's 403 due to optimistic lock exception, we're retrying in a short while
-					if (statusCode == 403) {
-						LinkedHashMap<String, Object> responseItemBody = (LinkedHashMap<String, Object>) responseItem.get("body");
-						String defaultUserMessage = (String) responseItemBody.get("defaultUserMessage");
-						if (defaultUserMessage.contains("OptimisticLockException")) {
-							// The current Idempotency key header expires, a new one is required
-							idempotencyPostfix++;
-							retryCount--;
-							continue retry;
-						}
-					} else {
-						if (statusCode == 409) {
-							// If it's 409 due to the transaction already being in progress
+					switch (statusCode) {
+						case 403:
+							LinkedHashMap<String, Object> response403Body = (LinkedHashMap<String, Object>) responseItem.get("body");
+							String defaultUserMessage403 = (String) response403Body.get("defaultUserMessage");
+							if (defaultUserMessage403.contains("OptimisticLockException")) {
+								logger.info("Optimistic lock exception detected, retrying in a short while");
+								logger.debug("Current Idempotency-Key HTTP header expired, a new one is generated");
+								idempotencyPostfix++;
+								retryCount--;
+								continue retry;
+							}
+							break;
+						case 500:
+							// If it's 500 due to optimistic lock exception, we're retrying in a short while
+							LinkedHashMap<String, Object> response500Body = (LinkedHashMap<String, Object>) responseItem.get("body");
+							String exception500 = (String) response500Body.get("Exception");
+							if (exception500.contains("NullPointerException")) {
+								logger.info("Possible optimistic lock exception, retrying in a short while");
+								logger.debug("Current Idempotency-Key HTTP header expired, a new one is generated");
+								idempotencyPostfix++;
+								retryCount--;
+								continue retry;
+							}
+							break;
+						case 409:
 							logger.warn("Transaction is already executing, has not completed yet");
 							return;
-						}
+							
+						default:
+							throw new RuntimeException("An unexpected error occurred");
 					}
-					
-					// Otherwise something else happened. The Zeebe flow will take care of it.
-					throw new RuntimeException("An unexpected error occurred");
 				}
 			}
 			
