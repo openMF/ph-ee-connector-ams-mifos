@@ -118,9 +118,12 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 			// Do we have an optimistic lock exception?
 			List<LinkedHashMap<String, Object>> responseBody = (List<LinkedHashMap<String, Object>>) response.getBody();
 			
+			boolean allOk = true;
+			
 			for (LinkedHashMap<String, Object> responseItem : responseBody) {
 				int statusCode = (Integer) responseItem.get("statusCode");
-				if (statusCode != 200) {
+				allOk &= (statusCode == 200);
+				if (!allOk) {
 					// If it's 403 due to optimistic lock exception, we're retrying in a short while
 					if (statusCode == 403) {
 						LinkedHashMap<String, Object> responseItemBody = (LinkedHashMap<String, Object>) responseItem.get("body");
@@ -128,6 +131,7 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 						if (defaultUserMessage.contains("OptimisticLockException")) {
 							// The current Idempotency key header expires, a new one is required
 							idempotencyPostfix++;
+							retryCount--;
 							continue retry;
 						}
 					} else {
@@ -142,8 +146,10 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 					throw new RuntimeException("An unexpected error occurred");
 				}
 			}
-				
-			retryCount--;
+			
+			if (allOk) {
+				return;
+			}
 		}
 		
 		logger.error("Failed to execute transaction in {} tries.", idempotencyRetryCount);
