@@ -157,6 +157,8 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 			if (allOk) {
 				return;
 			}
+			
+			logger.info("{} more attempts", retryCount);
 		}
 		
 		logger.error("Failed to execute transaction in {} tries.", idempotencyRetryCount);
