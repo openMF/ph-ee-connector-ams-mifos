@@ -110,6 +110,9 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 				// Some other exception occurred, one which is not related to timeout
 				logger.error(e.getMessage(), e);
 				throw e;
+			} catch (Throwable t) {
+				logger.error(t.getMessage(), t);
+				throw new RuntimeException(t);
 			}
 			
 			// Do we have an optimistic lock exception?
