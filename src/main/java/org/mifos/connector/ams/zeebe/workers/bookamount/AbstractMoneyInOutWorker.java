@@ -119,12 +119,15 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 			boolean allOk = true;
 			
 			for (LinkedHashMap<String, Object> responseItem : responseBody) {
+				logger.debug("Investigating {}", responseItem);
 				int statusCode = (Integer) responseItem.get("statusCode");
+				logger.debug("Got {} for status code", statusCode);
 				allOk &= (statusCode == 200);
 				if (!allOk) {
 					switch (statusCode) {
 						case 403:
 							LinkedHashMap<String, Object> response403Body = (LinkedHashMap<String, Object>) responseItem.get("body");
+							logger.debug("Got response body {}", response403Body);
 							String defaultUserMessage403 = (String) response403Body.get("defaultUserMessage");
 							if (defaultUserMessage403.contains("OptimisticLockException")) {
 								logger.info("Optimistic lock exception detected, retrying in a short while");
@@ -136,6 +139,7 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 							break;
 						case 500:
 							String response500Body = (String) responseItem.get("body");
+							logger.debug("Got response body {}", response500Body);
 							if (response500Body.contains("NullPointerException")) {
 								logger.info("Possible optimistic lock exception, retrying in a short while");
 								logger.debug("Current Idempotency-Key HTTP header expired, a new one is generated");
