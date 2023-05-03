@@ -92,12 +92,18 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 			try {
 				response = restTemplate.exchange(urlTemplate, HttpMethod.POST, entity, Object.class);
 				wireLogger.receiving(response.toString());
+				logger.debug("Response is " + (response == null ? "" : "not ") + "null");
 			} catch (ResourceAccessException e) {
 				if (e.getCause() instanceof SocketTimeoutException
 						|| e.getCause() instanceof ConnectException) {
-					logger.warn("Communication with Fineract timed out, retrying transaction {} more times with idempotency header value {}", retryCount, internalCorrelationId);
+					logger.warn("Communication with Fineract timed out");
+					retryCount--;
+					if (retryCount > 0) {
+						logger.warn("Retrying transaction {} more times with idempotency header value {}", retryCount, internalCorrelationId);
+					}
 				} else {
 					logger.error(e.getMessage(), e);
+					throw e;
 				}
 				try {
 					Thread.sleep(idempotencyRetryInterval);
