@@ -111,6 +111,7 @@ public abstract class AbstractMoneyInOutWorker implements JobHandler {
 					logger.error(ie.getMessage(), ie);
 					throw new RuntimeException(ie);
 				}
+				continue retry;
 			} catch (RestClientException e) {
 				// Some other exception occurred, one not related to timeout
 				logger.error(e.getMessage(), e);
