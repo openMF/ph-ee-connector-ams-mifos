@@ -105,7 +105,7 @@
         <dependency>
             <groupId>io.camunda</groupId>
             <artifactId>zeebe-client-java</artifactId>
-            <version>8.2.2</version>
+            <version>8.0.6</version>
         </dependency>
         <dependency>
             <groupId>commons-validator</groupId>
