@@ -137,36 +137,9 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 	    		
 	    		camt052Body = om.writeValueAsString(td);
 	    		biBuilder.add(items, camt052RelativeUrl, camt052Body, true);
-			}
-			
-			paymentTypeId = paymentTypeConfig.findPaymentTypeByOperation(String.format("%s.%s", paymentScheme, "transferTheAmountBetweenDisposalAccounts.Creditor.DisposalAccount.DepositTransactionAmount"));
-		    		
-    		body = new TransactionBody(
-    				interbankSettlementDate,
-    				amount,
-    				paymentTypeId,
-    				"",
-    				FORMAT,
-    				locale);
-		    		
-    		bodyItem = om.writeValueAsString(body);
-    		
-    		String creditorDisposalDepositRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), creditorDisposalAccountAmsId, "deposit");
+
 	    		
-    		biBuilder.add(items, creditorDisposalDepositRelativeUrl, bodyItem, false);
-	    	
-    		camt052RelativeUrl = String.format("datatables/transaction_details/%d", creditorDisposalAccountAmsId);
-    		td = new TransactionDetails(
-    				"$.resourceId",
-    				internalCorrelationId,
-    				camt052,
-    				transactionGroupId,
-    				transactionCategoryPurposeCode);
-    		
-    		camt052Body = om.writeValueAsString(td);
-    		biBuilder.add(items, camt052RelativeUrl, camt052Body, true);
-			
-			if (!BigDecimal.ZERO.equals(feeAmount)) {
+	    		
 				paymentTypeId = paymentTypeConfig.findPaymentTypeByOperation(String.format("%s.%s", paymentScheme, "transferTheAmountBetweenDisposalAccounts.Debtor.ConversionAccount.DepositTransactionFee"));
 	    		
 	    		body = new TransactionBody(
@@ -194,9 +167,37 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 	    		
 	    		camt052Body = om.writeValueAsString(td);
 	    		biBuilder.add(items, camt052RelativeUrl, camt052Body, true);
+			}
+			
+			paymentTypeId = paymentTypeConfig.findPaymentTypeByOperation(String.format("%s.%s", paymentScheme, "transferTheAmountBetweenDisposalAccounts.Creditor.DisposalAccount.DepositTransactionAmount"));
+    		
+    		body = new TransactionBody(
+    				interbankSettlementDate,
+    				amount,
+    				paymentTypeId,
+    				"",
+    				FORMAT,
+    				locale);
+		    		
+    		bodyItem = om.writeValueAsString(body);
+    		
+    		String creditorDisposalDepositRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), creditorDisposalAccountAmsId, "deposit");
 	    		
+    		biBuilder.add(items, creditorDisposalDepositRelativeUrl, bodyItem, false);
+	    	
+    		camt052RelativeUrl = String.format("datatables/transaction_details/%d", creditorDisposalAccountAmsId);
+    		td = new TransactionDetails(
+    				"$.resourceId",
+    				internalCorrelationId,
+    				camt052,
+    				transactionGroupId,
+    				transactionCategoryPurposeCode);
+    		
+    		camt052Body = om.writeValueAsString(td);
+    		biBuilder.add(items, camt052RelativeUrl, camt052Body, true);
+			
 	    		
-	    		
+			if (!BigDecimal.ZERO.equals(feeAmount)) {
 	    		paymentTypeId = paymentTypeConfig.findPaymentTypeByOperation(String.format("%s.%s", paymentScheme, "transferTheAmountBetweenDisposalAccounts.Debtor.ConversionAccount.WithdrawTransactionFee"));
 	    		
 	    		body = new TransactionBody(
