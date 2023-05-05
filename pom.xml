@@ -115,7 +115,7 @@
         <dependency>
             <groupId>org.apache.fineract</groupId>
             <artifactId>fineract-client</artifactId>
-            <version>0.0.0-7ee0d49b-SNAPSHOT</version>
+            <version>0.0.0.0-0e6f5eab9</version>
         </dependency>
         <dependency>
         	<groupId>com.squareup.retrofit2</groupId>
