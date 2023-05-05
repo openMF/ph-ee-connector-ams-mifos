@@ -74,9 +74,8 @@
 		</dependency>
 		<dependency>
     		<groupId>org.apache.camel</groupId>
-    		<artifactId>camel-core-langauges</artifactId>
+    		<artifactId>camel-csimple-joor</artifactId>
 		<version>3.18.1</version>
-		<scope>compile</scope>
 		</dependency>
         <dependency>
             <groupId>org.apache.camel</groupId>
