@@ -9,7 +9,6 @@ import java.util.Map;
 
 import org.mifos.connector.ams.fineract.PaymentTypeConfig;
 import org.mifos.connector.ams.fineract.PaymentTypeConfigFactory;
-import org.mifos.connector.ams.mapstruct.Pain001Camt052Mapper;
 import org.mifos.connector.ams.zeebe.workers.utils.BatchItemBuilder;
 import org.mifos.connector.ams.zeebe.workers.utils.TransactionBody;
 import org.mifos.connector.ams.zeebe.workers.utils.TransactionDetails;
@@ -21,9 +20,10 @@ import org.springframework.stereotype.Component;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import hu.dpc.rt.utils.mapstruct.Pain001Camt053Mapper;
 import io.camunda.zeebe.client.api.response.ActivatedJob;
 import io.camunda.zeebe.client.api.worker.JobClient;
-import iso.std.iso._20022.tech.json.camt_052_001.BankToCustomerAccountReportV08;
+import iso.std.iso._20022.tech.json.camt_053_001.BankToCustomerStatementV08;
 import iso.std.iso._20022.tech.json.pain_001_001.Pain00100110CustomerCreditTransferInitiationV10MessageSchema;
 
 @Component
@@ -32,7 +32,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 	private static final String ERROR_FAILED_CREDIT_TRANSFER = "Error_FailedCreditTransfer";
 
 	@Autowired
-	private Pain001Camt052Mapper camt052Mapper;
+	private Pain001Camt053Mapper camt053Mapper;
 	
 	@Value("${fineract.incoming-money-api}")
 	protected String incomingMoneyApi;
@@ -60,8 +60,8 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 			ObjectMapper om = new ObjectMapper();
 			Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001 = om.readValue(originalPain001, Pain00100110CustomerCreditTransferInitiationV10MessageSchema.class);
 			
-			BankToCustomerAccountReportV08 convertedCamt052 = camt052Mapper.toCamt052(pain001.getDocument());
-			String camt052 = om.writeValueAsString(convertedCamt052);
+			BankToCustomerStatementV08 convertedcamt053 = camt053Mapper.toCamt053(pain001.getDocument());
+			String camt053 = om.writeValueAsString(convertedcamt053);
 			
 			BigDecimal amount = new BigDecimal(variables.get("amount").toString());
 			Integer creditorDisposalAccountAmsId = Integer.parseInt(variables.get("creditorDisposalAccountAmsId").toString());
@@ -97,18 +97,18 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
     		
     		biBuilder.add(items, debtorDisposalWithdrawalRelativeUrl, bodyItem, false);
     	
-    		String camt052RelativeUrl = String.format("datatables/transaction_details/%d", debtorDisposalAccountAmsId);
+    		String camt053RelativeUrl = String.format("datatables/transaction_details/%d", debtorDisposalAccountAmsId);
     		
     		TransactionDetails td = new TransactionDetails(
     				"$.resourceId",
     				internalCorrelationId,
-    				camt052,
+    				camt053,
     				transactionGroupId,
     				transactionCategoryPurposeCode);
     		
-    		String camt052Body = om.writeValueAsString(td);
+    		String camt053Body = om.writeValueAsString(td);
 
-    		biBuilder.add(items, camt052RelativeUrl, camt052Body, true);
+    		biBuilder.add(items, camt053RelativeUrl, camt053Body, true);
     		
 			
 			if (!BigDecimal.ZERO.equals(feeAmount)) {
@@ -126,17 +126,17 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 	    		
 	    		biBuilder.add(items, debtorDisposalWithdrawalRelativeUrl, bodyItem, false);
 	    	
-	    		camt052RelativeUrl = String.format("datatables/transaction_details/%d", debtorDisposalAccountAmsId);
+	    		camt053RelativeUrl = String.format("datatables/transaction_details/%d", debtorDisposalAccountAmsId);
 	    		
 	    		td = new TransactionDetails(
 	    				"$.resourceId",
 	    				internalCorrelationId,
-	    				camt052,
+	    				camt053,
 	    				transactionGroupId,
 	    				transactionFeeCategoryPurposeCode);
 	    		
-	    		camt052Body = om.writeValueAsString(td);
-	    		biBuilder.add(items, camt052RelativeUrl, camt052Body, true);
+	    		camt053Body = om.writeValueAsString(td);
+	    		biBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 			}
 			
 			paymentTypeId = paymentTypeConfig.findPaymentTypeByOperation(String.format("%s.%s", paymentScheme, "transferTheAmountBetweenDisposalAccounts.Creditor.DisposalAccount.DepositTransactionAmount"));
@@ -155,16 +155,16 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 	    		
     		biBuilder.add(items, creditorDisposalDepositRelativeUrl, bodyItem, false);
 	    	
-    		camt052RelativeUrl = String.format("datatables/transaction_details/%d", creditorDisposalAccountAmsId);
+    		camt053RelativeUrl = String.format("datatables/transaction_details/%d", creditorDisposalAccountAmsId);
     		td = new TransactionDetails(
     				"$.resourceId",
     				internalCorrelationId,
-    				camt052,
+    				camt053,
     				transactionGroupId,
     				transactionCategoryPurposeCode);
     		
-    		camt052Body = om.writeValueAsString(td);
-    		biBuilder.add(items, camt052RelativeUrl, camt052Body, true);
+    		camt053Body = om.writeValueAsString(td);
+    		biBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 			
 			if (!BigDecimal.ZERO.equals(feeAmount)) {
 				paymentTypeId = paymentTypeConfig.findPaymentTypeByOperation(String.format("%s.%s", paymentScheme, "transferTheAmountBetweenDisposalAccounts.Debtor.ConversionAccount.DepositTransactionFee"));
@@ -183,17 +183,17 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 		    		
 	    		biBuilder.add(items, debtorConversionDepositRelativeUrl, bodyItem, false);
 		    	
-	    		camt052RelativeUrl = String.format("datatables/transaction_details/%d", debtorConversionAccountAmsId);
+	    		camt053RelativeUrl = String.format("datatables/transaction_details/%d", debtorConversionAccountAmsId);
 	    		
 	    		td = new TransactionDetails(
 	    				"$.resourceId",
 	    				internalCorrelationId,
-	    				camt052,
+	    				camt053,
 	    				transactionGroupId,
 	    				transactionFeeCategoryPurposeCode);
 	    		
-	    		camt052Body = om.writeValueAsString(td);
-	    		biBuilder.add(items, camt052RelativeUrl, camt052Body, true);
+	    		camt053Body = om.writeValueAsString(td);
+	    		biBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 	    		
 	    		
 	    		
@@ -213,9 +213,9 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 		    		
 	    		biBuilder.add(items, debtorConversionWithdrawRelativeUrl, bodyItem, false);
 		    	
-	    		camt052RelativeUrl = String.format("datatables/transaction_details/%d", debtorConversionAccountAmsId);
+	    		camt053RelativeUrl = String.format("datatables/transaction_details/%d", debtorConversionAccountAmsId);
 			    		
-	    		biBuilder.add(items, camt052RelativeUrl, camt052Body, true);
+	    		biBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 			}
 			
 			doBatch(items, tenantIdentifier, internalCorrelationId);

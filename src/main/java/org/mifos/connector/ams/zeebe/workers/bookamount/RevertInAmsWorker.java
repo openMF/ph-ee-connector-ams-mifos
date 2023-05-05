@@ -7,7 +7,6 @@ import java.util.Map;
 
 import org.mifos.connector.ams.fineract.PaymentTypeConfig;
 import org.mifos.connector.ams.fineract.PaymentTypeConfigFactory;
-import org.mifos.connector.ams.mapstruct.Pain001Camt052Mapper;
 import org.mifos.connector.ams.zeebe.workers.utils.BatchItemBuilder;
 import org.mifos.connector.ams.zeebe.workers.utils.TransactionBody;
 import org.mifos.connector.ams.zeebe.workers.utils.TransactionDetails;
@@ -19,9 +18,10 @@ import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import hu.dpc.rt.utils.mapstruct.Pain001Camt053Mapper;
 import io.camunda.zeebe.client.api.response.ActivatedJob;
 import io.camunda.zeebe.client.api.worker.JobClient;
-import iso.std.iso._20022.tech.json.camt_052_001.BankToCustomerAccountReportV08;
+import iso.std.iso._20022.tech.json.camt_053_001.BankToCustomerStatementV08;
 import iso.std.iso._20022.tech.json.pain_001_001.CreditTransferTransaction40;
 import iso.std.iso._20022.tech.json.pain_001_001.Pain00100110CustomerCreditTransferInitiationV10MessageSchema;
 
@@ -29,7 +29,7 @@ import iso.std.iso._20022.tech.json.pain_001_001.Pain00100110CustomerCreditTrans
 public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 	
 	@Autowired
-	private Pain001Camt052Mapper camt052Mapper;
+	private Pain001Camt053Mapper camt053Mapper;
 	
 	@Value("${fineract.incoming-money-api}")
 	protected String incomingMoneyApi;
@@ -105,21 +105,21 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 		
 		biBuilder.add(items, conversionAccountWithdrawRelativeUrl, bodyItem, false);
 		
-		BankToCustomerAccountReportV08 convertedCamt052 = camt052Mapper.toCamt052(pain001.getDocument());
-		String camt052 = om.writeValueAsString(convertedCamt052);
+		BankToCustomerStatementV08 convertedcamt053 = camt053Mapper.toCamt053(pain001.getDocument());
+		String camt053 = om.writeValueAsString(convertedcamt053);
 		
-		String camt052RelativeUrl = String.format("datatables/transaction_details/%d", conversionAccountAmsId);
+		String camt053RelativeUrl = String.format("datatables/transaction_details/%d", conversionAccountAmsId);
 		
 		TransactionDetails td = new TransactionDetails(
 				"$.resourceId",
 				internalCorrelationId,
-				camt052,
+				camt053,
 				transactionGroupId,
 				transactionCategoryPurposeCode);
 		
-		String camt052Body = om.writeValueAsString(td);
+		String camt053Body = om.writeValueAsString(td);
 
-		biBuilder.add(items, camt052RelativeUrl, camt052Body, true);
+		biBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 		
 		if (!BigDecimal.ZERO.equals(fee)) {
 			logger.debug("Withdrawing fee {} from conversion account {}", fee, conversionAccountAmsId);
@@ -141,11 +141,11 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			td = new TransactionDetails(
 					"$.resourceId",
 					internalCorrelationId,
-					camt052,
+					camt053,
 					transactionGroupId,
 					transactionFeeCategoryPurposeCode);
-			camt052Body = om.writeValueAsString(td);
-			biBuilder.add(items, camt052RelativeUrl, camt052Body, true);
+			camt053Body = om.writeValueAsString(td);
+			biBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 		}
 
 		logger.debug("Re-depositing amount {} in disposal account {}", amount, disposalAccountAmsId);
@@ -166,18 +166,18 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 		
 		biBuilder.add(items, disposalAccountDepositRelativeUrl, bodyItem, false);
 		
-		camt052RelativeUrl = String.format("datatables/transaction_details/%d", disposalAccountAmsId);
+		camt053RelativeUrl = String.format("datatables/transaction_details/%d", disposalAccountAmsId);
 		
 		td = new TransactionDetails(
 				"$.resourceId",
 				internalCorrelationId,
-				camt052,
+				camt053,
 				transactionGroupId,
 				transactionCategoryPurposeCode);
 		
-		camt052Body = om.writeValueAsString(td);
+		camt053Body = om.writeValueAsString(td);
 		
-		biBuilder.add(items, camt052RelativeUrl, camt052Body, true);
+		biBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 		
 		if (!BigDecimal.ZERO.equals(fee)) {
 			logger.debug("Re-depositing fee {} in disposal account {}", fee, disposalAccountAmsId);
@@ -199,11 +199,11 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			td = new TransactionDetails(
 					"$.resourceId",
 					internalCorrelationId,
-					camt052,
+					camt053,
 					transactionGroupId,
 					transactionFeeCategoryPurposeCode);
-			camt052Body = om.writeValueAsString(td);
-			biBuilder.add(items, camt052RelativeUrl, camt052Body, true);
+			camt053Body = om.writeValueAsString(td);
+			biBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 		}
 		
 		doBatch(items, tenantId, internalCorrelationId);
