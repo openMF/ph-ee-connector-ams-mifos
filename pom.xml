@@ -45,6 +45,11 @@
             <artifactId>jaxb-runtime</artifactId>
             <version>4.0.0</version>
         </dependency>
+        <dependency>
+        	<groupId>org.glassfish.jaxb</groupId>
+        	<artifactId>jaxb-runtime</artifactId>
+        	<version>2.3.1</version>
+        </dependency>
 
         <dependency>
             <groupId>javax.annotation</groupId>
@@ -184,6 +189,11 @@
 
     <build>
         <plugins>
+			<plugin>
+                <groupId>org.jvnet.jaxb2.maven2</groupId>
+                <artifactId>maven-jaxb2-plugin</artifactId>
+                <version>0.14.0</version>
+            </plugin>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
