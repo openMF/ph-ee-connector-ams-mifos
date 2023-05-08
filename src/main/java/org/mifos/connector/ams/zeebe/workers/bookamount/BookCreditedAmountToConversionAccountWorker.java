@@ -11,7 +11,7 @@ import javax.xml.bind.JAXBElement;
 import org.jboss.logging.MDC;
 import org.mifos.connector.ams.fineract.PaymentTypeConfig;
 import org.mifos.connector.ams.fineract.PaymentTypeConfigFactory;
-import org.mifos.connector.ams.mapstruct.Pacs008Camt052Mapper;
+import org.mifos.connector.ams.mapstruct.Pacs008Camt053Mapper;
 import org.mifos.connector.ams.zeebe.workers.utils.BatchItemBuilder;
 import org.mifos.connector.ams.zeebe.workers.utils.TransactionBody;
 import org.mifos.connector.ams.zeebe.workers.utils.TransactionDetails;
@@ -25,13 +25,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.nets.realtime247.ri_2015_10.ObjectFactory;
 import io.camunda.zeebe.client.api.response.ActivatedJob;
 import io.camunda.zeebe.client.api.worker.JobClient;
-import iso.std.iso._20022.tech.json.camt_052_001.BankToCustomerAccountReportV08;
+import iso.std.iso._20022.tech.json.camt_053_001.BankToCustomerStatementV08;
 
 @Component
 public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyInOutWorker {
 
     @Autowired
-    private Pacs008Camt052Mapper camt052Mapper;
+    private Pacs008Camt053Mapper camt053Mapper;
     
     @Value("${fineract.incoming-money-api}")
 	protected String incomingMoneyApi;
@@ -94,21 +94,21 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
     		
     		biBuilder.add(items, conversionAccountWithdrawalRelativeUrl, bodyItem, false);
     	
-    		BankToCustomerAccountReportV08 convertedCamt052 = camt052Mapper.toCamt052(pacs008);
-    		String camt052 = om.writeValueAsString(convertedCamt052);
+    		BankToCustomerStatementV08 convertedCamt053 = camt053Mapper.toCamt053(pacs008);
+    		String camt053 = om.writeValueAsString(convertedCamt053);
     		
-    		String camt052RelativeUrl = String.format("datatables/transaction_details/%d", conversionAccountAmsId);
+    		String camt053RelativeUrl = String.format("datatables/transaction_details/%d", conversionAccountAmsId);
     		
     		TransactionDetails td = new TransactionDetails(
     				"$.resourceId",
     				internalCorrelationId,
-    				camt052,
+    				camt053,
     				transactionGroupId,
     				transactionCategoryPurposeCode);
     		
-    		String camt052Body = om.writeValueAsString(td);
+    		String camt053Body = om.writeValueAsString(td);
 
-    		biBuilder.add(items, camt052RelativeUrl, camt052Body, true);
+    		biBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 
             doBatch(items, tenantId, internalCorrelationId);
             jobClient.newCompleteCommand(activatedJob.getKey()).variables(variables).send();
