@@ -6,7 +6,6 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import org.mifos.connector.ams.fineract.PaymentTypeConfig;
@@ -31,6 +30,9 @@ import com.networknt.schema.ValidationMessage;
 
 import io.camunda.zeebe.client.api.response.ActivatedJob;
 import io.camunda.zeebe.client.api.worker.JobClient;
+import io.camunda.zeebe.spring.client.annotation.JobWorker;
+import io.camunda.zeebe.spring.client.annotation.Variable;
+import io.camunda.zeebe.spring.client.exception.ZeebeBpmnError;
 import iso.std.iso._20022.tech.json.camt_053_001.BankToCustomerStatementV08;
 import iso.std.iso._20022.tech.json.pain_001_001.Pain00100110CustomerCreditTransferInitiationV10MessageSchema;
 
@@ -51,23 +53,26 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 	
 	private static final DateTimeFormatter PATTERN = DateTimeFormatter.ofPattern(FORMAT);
 
-	@Override
-	public void handle(JobClient jobClient, ActivatedJob activatedJob) throws Exception {
+	@JobWorker
+	public void transferToConversionAccountInAms(JobClient jobClient, 
+			ActivatedJob activatedJob,
+			@Variable String transactionGroupId,
+			@Variable String transactionCategoryPurposeCode,
+			@Variable String transactionFeeCategoryPurposeCode,
+			@Variable String originalPain001,
+			@Variable String internalCorrelationId,
+			@Variable BigDecimal amount,
+			@Variable BigDecimal transactionFeeAmount,
+			@Variable String paymentScheme,
+			@Variable Integer disposalAccountAmsId,
+			@Variable Integer conversionAccountAmsId,
+			@Variable String tenantIdentifier) throws Exception {
 		String transactionDate = LocalDate.now().format(PATTERN);
 		logger.debug("Debtor exchange worker starting");
-		Object amount = new Object();
-		Integer disposalAccountAmsId = null;
+		MDC.put("internalCorrelationId", internalCorrelationId);
 		try {
-			Map<String, Object> variables = activatedJob.getVariablesAsMap();
-			
-			String transactionGroupId = (String) variables.get("transactionGroupId");
-			String transactionCategoryPurposeCode = (String) variables.get("transactionCategoryPurposeCode");
-			String transactionFeeCategoryPurposeCode = (String) variables.get("transactionFeeCategoryPurposeCode");
-			
-			String originalPain001 = (String) variables.get("originalPain001");
 			ObjectMapper om = new ObjectMapper();
 			Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001 = om.readValue(originalPain001, Pain00100110CustomerCreditTransferInitiationV10MessageSchema.class);
-			
 			
 			try {
 				logger.info(">>>>>>>>>>>>>>>>>> Validating incoming pain.001 <<<<<<<<<<<<<<<<");
@@ -88,34 +93,15 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			}
 			
 			
-			String internalCorrelationId = (String) variables.get("internalCorrelationId");
-			MDC.put("internalCorrelationId", internalCorrelationId);
-			
-			String paymentScheme = (String) variables.get("paymentScheme");
-			
-			amount = variables.get("amount");
-			
-			Object feeAmount = variables.get("transactionFeeAmount");
-			BigDecimal fee = null;
-			if (feeAmount != null) {
-				fee = new BigDecimal(feeAmount.toString());
-			}
-			
 			logger.debug("Debtor exchange worker incoming variables:");
-			variables.entrySet().forEach(e -> logger.debug("{}: {} of type {}", e.getKey(), e.getValue(), e.getValue().getClass()));
 		
-			disposalAccountAmsId = (Integer) variables.get("disposalAccountAmsId");
-			Integer conversionAccountAmsId = (Integer) variables.get("conversionAccountAmsId");
+			logger.debug("Withdrawing amount {} from disposal account {}", amount, disposalAccountAmsId);
 			
-			logger.info("Withdrawing amount {} from disposal account {}", amount, disposalAccountAmsId);
-			
-			String tenantId = (String) variables.get("tenantIdentifier");
-			
-			BatchItemBuilder biBuilder = new BatchItemBuilder(tenantId);
+			BatchItemBuilder biBuilder = new BatchItemBuilder(tenantIdentifier);
 			
 			String disposalAccountWithdrawRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), disposalAccountAmsId, "withdrawal");
 			
-			PaymentTypeConfig paymentTypeConfig = paymentTypeConfigFactory.getPaymentTypeConfig(tenantId);
+			PaymentTypeConfig paymentTypeConfig = paymentTypeConfigFactory.getPaymentTypeConfig(tenantIdentifier);
 			Integer paymentTypeId = paymentTypeConfig.findPaymentTypeByOperation(String.format("%s.%s", paymentScheme, "transferToConversionAccountInAms.DisposalAccount.WithdrawTransactionAmount"));
 			
 			TransactionBody body = new TransactionBody(
@@ -148,13 +134,13 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 
 			biBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 
-			if (!BigDecimal.ZERO.equals(fee)) {
-				logger.info("Withdrawing fee {} from disposal account {}", fee, disposalAccountAmsId);
+			if (!BigDecimal.ZERO.equals(transactionFeeAmount)) {
+				logger.debug("Withdrawing fee {} from disposal account {}", transactionFeeAmount, disposalAccountAmsId);
 					Integer withdrawTransactionFeePaymentTypeId = paymentTypeConfig.findPaymentTypeByOperation(String.format("%s.%s", paymentScheme, "transferToConversionAccountInAms.DisposalAccount.WithdrawTransactionFee"));
 					
 					TransactionBody withdrawTransactionFeeBody = new TransactionBody(
 							transactionDate,
-							fee,
+							transactionFeeAmount,
 							withdrawTransactionFeePaymentTypeId,
 							"",
 							FORMAT,
@@ -204,13 +190,13 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			biBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 		
 			
-			if (!BigDecimal.ZERO.equals(fee)) {
-				logger.info("Depositing fee {} to conversion account {}", fee, conversionAccountAmsId);
+			if (!BigDecimal.ZERO.equals(transactionFeeAmount)) {
+				logger.debug("Depositing fee {} to conversion account {}", transactionFeeAmount, conversionAccountAmsId);
 				Integer depositTransactionFeePaymentTypeId = paymentTypeConfig.findPaymentTypeByOperation(String.format("%s.%s", paymentScheme, "transferToConversionAccountInAms.ConversionAccount.DepositTransactionFee"));
 				
 				TransactionBody depositTransactionFeeBody = new TransactionBody(
 						transactionDate,
-						fee,
+						transactionFeeAmount,
 						depositTransactionFeePaymentTypeId,
 						"",
 						FORMAT,
@@ -230,16 +216,10 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 				biBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 			}
 			
-			doBatch(items, tenantId, internalCorrelationId);
-		
-			jobClient.newCompleteCommand(activatedJob.getKey()).variables(variables).send();
+			doBatch(items, tenantIdentifier, internalCorrelationId);
 		} catch (Exception e) {
 			logger.error(e.getMessage(), e);
-			jobClient
-					.newThrowErrorCommand(activatedJob.getKey())
-					.errorCode("Error_InsufficientFunds")
-					.errorMessage(e.getMessage())
-					.send();
+			throw new ZeebeBpmnError("Error_InsufficientFunds", e.getMessage());
 		} finally {
 			MDC.remove("internalCorrelationId");
 		}

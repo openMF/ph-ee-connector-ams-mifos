@@ -11,9 +11,7 @@ import org.springframework.http.MediaType;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import io.camunda.zeebe.client.api.worker.JobHandler;
-
-public abstract class AbstractAmsWorker implements JobHandler {
+public abstract class AbstractAmsWorker {
 	
 	Logger logger = LoggerFactory.getLogger(AbstractAmsWorker.class);
 	

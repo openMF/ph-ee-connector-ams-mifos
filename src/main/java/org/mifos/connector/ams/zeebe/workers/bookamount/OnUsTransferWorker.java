@@ -5,7 +5,6 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import org.mifos.connector.ams.fineract.PaymentTypeConfig;
 import org.mifos.connector.ams.fineract.PaymentTypeConfigFactory;
@@ -23,6 +22,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.camunda.zeebe.client.api.response.ActivatedJob;
 import io.camunda.zeebe.client.api.worker.JobClient;
+import io.camunda.zeebe.spring.client.annotation.JobWorker;
+import io.camunda.zeebe.spring.client.annotation.Variable;
+import io.camunda.zeebe.spring.client.exception.ZeebeBpmnError;
 import iso.std.iso._20022.tech.json.camt_053_001.BankToCustomerStatementV08;
 import iso.std.iso._20022.tech.json.pain_001_001.Pain00100110CustomerCreditTransferInitiationV10MessageSchema;
 
@@ -45,34 +47,28 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 	
 	private static final DateTimeFormatter PATTERN = DateTimeFormatter.ofPattern(FORMAT);
 
-	@Override
-	public void handle(JobClient jobClient, ActivatedJob activatedJob) {
+	@JobWorker
+	public void transferTheAmountBetweenDisposalAccounts(JobClient jobClient, 
+			ActivatedJob activatedJob,
+			@Variable String internalCorrelationId,
+			@Variable String paymentScheme,
+			@Variable String originalPain001,
+			@Variable BigDecimal amount,
+			@Variable Integer creditorDisposalAccountAmsId,
+			@Variable Integer debtorDisposalAccountAmsId,
+			@Variable Integer debtorConversionAccountAmsId,
+			@Variable BigDecimal transactionFeeAmount,
+			@Variable String tenantIdentifier,
+			@Variable String transactionGroupId,
+			@Variable String transactionCategoryPurposeCode,
+			@Variable String transactionFeeCategoryPurposeCode) {
 		try {
-			Map<String, Object> variables = activatedJob.getVariablesAsMap();
 			
-			logger.info("Starting onUs transfer worker with variables {}", variables);
-			
-			String internalCorrelationId = variables.get("internalCorrelationId").toString();
-			
-			String paymentScheme = (String) variables.get("paymentScheme");
-			
-			String originalPain001 = (String) variables.get("originalPain001");
 			ObjectMapper om = new ObjectMapper();
 			Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001 = om.readValue(originalPain001, Pain00100110CustomerCreditTransferInitiationV10MessageSchema.class);
 			
 			BankToCustomerStatementV08 convertedcamt053 = camt053Mapper.toCamt053(pain001.getDocument());
 			String camt053 = om.writeValueAsString(convertedcamt053);
-			
-			BigDecimal amount = new BigDecimal(variables.get("amount").toString());
-			Integer creditorDisposalAccountAmsId = Integer.parseInt(variables.get("creditorDisposalAccountAmsId").toString());
-			Integer debtorDisposalAccountAmsId = Integer.parseInt(variables.get("debtorDisposalAccountAmsId").toString());
-			Integer debtorConversionAccountAmsId = Integer.parseInt(variables.get("debtorConversionAccountAmsId").toString());
-			BigDecimal feeAmount = new BigDecimal(variables.get("transactionFeeAmount").toString());
-			String tenantIdentifier = variables.get("tenantIdentifier").toString();
-			
-			String transactionGroupId = (String) variables.get("transactionGroupId");
-			String transactionCategoryPurposeCode = (String) variables.get("transactionCategoryPurposeCode");
-			String transactionFeeCategoryPurposeCode = (String) variables.get("transactionFeeCategoryPurposeCode");
 			
 			String interbankSettlementDate = LocalDate.now().format(PATTERN);
 			
@@ -111,12 +107,12 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
     		biBuilder.add(items, camt053RelativeUrl, camt053Body, true);
     		
 			
-			if (!BigDecimal.ZERO.equals(feeAmount)) {
+			if (!BigDecimal.ZERO.equals(transactionFeeAmount)) {
 				paymentTypeId = paymentTypeConfig.findPaymentTypeByOperation(String.format("%s.%s", paymentScheme, "transferTheAmountBetweenDisposalAccounts.Debtor.DisposalAccount.WithdrawTransactionFee"));
 	    		
 	    		body = new TransactionBody(
 	    				interbankSettlementDate,
-	    				feeAmount,
+	    				transactionFeeAmount,
 	    				paymentTypeId,
 	    				"",
 	    				FORMAT,
@@ -144,7 +140,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 	    		
 	    		body = new TransactionBody(
 	    				interbankSettlementDate,
-	    				feeAmount,
+	    				transactionFeeAmount,
 	    				paymentTypeId,
 	    				"",
 	    				FORMAT,
@@ -197,12 +193,12 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
     		biBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 			
 	    		
-			if (!BigDecimal.ZERO.equals(feeAmount)) {
+			if (!BigDecimal.ZERO.equals(transactionFeeAmount)) {
 	    		paymentTypeId = paymentTypeConfig.findPaymentTypeByOperation(String.format("%s.%s", paymentScheme, "transferTheAmountBetweenDisposalAccounts.Debtor.ConversionAccount.WithdrawTransactionFee"));
 	    		
 	    		body = new TransactionBody(
 	    				interbankSettlementDate,
-	    				feeAmount,
+	    				transactionFeeAmount,
 	    				paymentTypeId,
 	    				"",
 	    				FORMAT,
@@ -221,13 +217,12 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 			
 			doBatch(items, tenantIdentifier, internalCorrelationId);
 			
-			jobClient.newCompleteCommand(activatedJob.getKey()).variables(variables).send();
 		} catch (JsonProcessingException e) {
 			logger.error(e.getMessage(), e);
-			jobClient.newThrowErrorCommand(activatedJob.getKey()).errorCode(ERROR_FAILED_CREDIT_TRANSFER).errorMessage(e.getMessage()).send();
+			throw new ZeebeBpmnError(ERROR_FAILED_CREDIT_TRANSFER, e.getMessage());
 		} catch (Exception e) {
 			logger.error(e.getMessage(), e);
-			jobClient.newFailCommand(activatedJob.getKey()).retries(0).errorMessage(e.getMessage()).send();
+			throw new ZeebeBpmnError(activatedJob.getBpmnProcessId(), e.getMessage());
 		}
 	}
 }

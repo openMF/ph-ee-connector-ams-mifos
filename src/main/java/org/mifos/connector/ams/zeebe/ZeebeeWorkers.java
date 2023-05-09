@@ -39,15 +39,6 @@ import org.apache.camel.ProducerTemplate;
 import org.apache.camel.support.DefaultExchange;
 import org.json.JSONObject;
 import org.mifos.connector.ams.properties.TenantProperties;
-import org.mifos.connector.ams.zeebe.workers.accountdetails.AmsCreditorWorker;
-import org.mifos.connector.ams.zeebe.workers.accountdetails.AmsDebtorWorker;
-import org.mifos.connector.ams.zeebe.workers.bookamount.BookCreditedAmountToConversionAccountWorker;
-import org.mifos.connector.ams.zeebe.workers.bookamount.BookOnConversionAccountInAmsWorker;
-import org.mifos.connector.ams.zeebe.workers.bookamount.OnUsTransferWorker;
-import org.mifos.connector.ams.zeebe.workers.bookamount.RevertInAmsWorker;
-import org.mifos.connector.ams.zeebe.workers.bookamount.TransferNonTransactionalFeeInAmsWorker;
-import org.mifos.connector.ams.zeebe.workers.bookamount.TransferToConversionAccountInAmsWorker;
-import org.mifos.connector.ams.zeebe.workers.bookamount.TransferToDisposalAccountWorker;
 import org.mifos.connector.common.ams.dto.QuoteFspResponseDTO;
 import org.mifos.connector.common.channel.dto.TransactionChannelRequestDTO;
 import org.mifos.connector.common.mojaloop.dto.FspMoneyData;
@@ -99,33 +90,6 @@ public class ZeebeeWorkers {
 
     @Autowired
     private TenantProperties tenantProperties;
-
-    @Autowired
-    private AmsCreditorWorker amsCreditorWorker;
-    
-    @Autowired
-    private BookCreditedAmountToConversionAccountWorker bookCreditedAmountToConversionAccountWorker;
-    
-    @Autowired
-    private TransferToDisposalAccountWorker transferToDisposalAccountWorker;
-    
-    @Autowired
-    private AmsDebtorWorker amsDebtorWorker;
-    
-    @Autowired
-    private TransferToConversionAccountInAmsWorker transferToConversionAccountInAmsWorker;
-    
-    @Autowired
-    private BookOnConversionAccountInAmsWorker bookOnConversionAccountInAmsWorker;
-    
-    @Autowired
-    private RevertInAmsWorker revertInAmsWorker;
-    
-    @Autowired
-    private OnUsTransferWorker onUsTransferWorker;
-    
-    @Autowired
-    private TransferNonTransactionalFeeInAmsWorker transferNonTransactionalFeeInAmsWorker;
     
     @Value("${ams.local.enabled:false}")
     private boolean isAmsLocalEnabled;
@@ -238,90 +202,6 @@ public class ZeebeeWorkers {
                     .name("release-block")
                     .maxJobsActive(workerMaxJobs)
                     .open();
-            
-            zeebeClient.newWorker()
-            		.jobType("getAccountDetailsFromAms")
-            		.handler(amsCreditorWorker)
-            		.name("GetAccountDetailsFromAms")
-            		.maxJobsActive(workerMaxJobs)
-            		.open();
-            
-            zeebeClient.newWorker()
-            		.jobType("bookCreditedAmountToConversionAccount")
-            		.handler(bookCreditedAmountToConversionAccountWorker)
-            		.name("BookCreditedAmountToConversionAccount")
-            		.maxJobsActive(workerMaxJobs)
-            		.open();
-            
-            zeebeClient.newWorker()
-    		.jobType("transferToDisposalAccount")
-    		.handler(transferToDisposalAccountWorker)
-    		.name("TransferToDisposalAccount")
-    		.maxJobsActive(workerMaxJobs)
-    		.open();
-            
-            zeebeClient.newWorker()
-    		.jobType("getAccountIdsFromAms")
-    		.handler(amsDebtorWorker)
-    		.name("GetAccountIdsFromAms")
-    		.maxJobsActive(workerMaxJobs)
-    		.open();
-            
-            zeebeClient.newWorker()
-    		.jobType("transferToConversionAccountInAms")
-    		.handler(transferToConversionAccountInAmsWorker)
-    		.name("TransferToConversionAccountInAms")
-    		.maxJobsActive(workerMaxJobs)
-    		.open();
-            
-            
-            zeebeClient.newWorker()
-    		.jobType("bookOnConversionAccountInAms")
-    		.handler(bookOnConversionAccountInAmsWorker)
-    		.name("BookOnConversionAccountInAms")
-    		.maxJobsActive(workerMaxJobs)
-    		.open();
-            
-            
-            
-            zeebeClient.newWorker()
-    		.jobType("revertInAms")
-    		.handler(revertInAmsWorker)
-    		.name("RevertInAms")
-    		.maxJobsActive(workerMaxJobs)
-    		.open();
-            
-            
-            // OnUs
-            zeebeClient.newWorker()
-            .jobType("getAccountIdsFromAms")
-    		.handler(amsDebtorWorker)
-    		.name("GetDebtorAccountIdsFromAms")
-    		.maxJobsActive(workerMaxJobs)
-    		.open();
-            
-            zeebeClient.newWorker()
-            .jobType("getAccountDetailsFromAms")
-    		.handler(amsCreditorWorker)
-    		.name("GetCreditorAccountIdFromAms")
-    		.maxJobsActive(workerMaxJobs)
-    		.open();
-            
-            zeebeClient.newWorker()
-            .jobType("transferTheAmountBetweenDisposalAccounts")
-    		.handler(onUsTransferWorker)
-    		.name("TransferTheAmountBetweenDisposalAccounts")
-    		.maxJobsActive(workerMaxJobs)
-    		.open();
-            
-            zeebeClient.newWorker()
-            .jobType("transferNonTransactionalFeeInAms")
-            .handler(transferNonTransactionalFeeInAmsWorker)
-            .name("TransferNonTransactionalFeeInAms")
-            .maxJobsActive(workerMaxJobs)
-            .open();
-            
-            
             
             for (String dfspid : dfspids) {
                 logger.info("## generating " + WORKER_PAYER_LOCAL_QUOTE + "{} worker", dfspid);

@@ -3,7 +3,6 @@ package org.mifos.connector.ams.zeebe.workers.bookamount;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import org.mifos.connector.ams.fineract.PaymentTypeConfig;
 import org.mifos.connector.ams.fineract.PaymentTypeConfigFactory;
@@ -21,6 +20,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.camunda.zeebe.client.api.response.ActivatedJob;
 import io.camunda.zeebe.client.api.worker.JobClient;
+import io.camunda.zeebe.spring.client.annotation.JobWorker;
+import io.camunda.zeebe.spring.client.annotation.Variable;
 import iso.std.iso._20022.tech.json.camt_053_001.BankToCustomerStatementV08;
 import iso.std.iso._20022.tech.json.pain_001_001.Pain00100110CustomerCreditTransferInitiationV10MessageSchema;
 
@@ -39,44 +40,35 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 	@Autowired
     private PaymentTypeConfigFactory paymentTypeConfigFactory;
 	
-	@Override
-	public void handle(JobClient jobClient, ActivatedJob activatedJob) throws Exception {
-		Map<String, Object> variables = activatedJob.getVariablesAsMap();
+	@JobWorker
+	public void bookOnConversionAccountInAms(JobClient jobClient,
+			ActivatedJob activatedJob,
+			@Variable String originalPain001,
+			@Variable String internalCorrelationId,
+			@Variable String paymentScheme,
+			@Variable String transactionDate,
+			@Variable Integer conversionAccountAmsId,
+			@Variable String transactionGroupId,
+			@Variable String transactionCategoryPurposeCode,
+			@Variable String transactionFeeCategoryPurposeCode,
+			@Variable BigDecimal amount,
+			@Variable BigDecimal transactionFeeAmount,
+			@Variable String tenantIdentifier) throws Exception {
 		
-		String originalPain001 = (String) variables.get("originalPain001");
 		ObjectMapper om = new ObjectMapper();
 		Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001 = om.readValue(originalPain001, Pain00100110CustomerCreditTransferInitiationV10MessageSchema.class);
 		
-		String internalCorrelationId = (String) variables.get("internalCorrelationId");
 		MDC.put("internalCorrelationId", internalCorrelationId);
-		
-		String paymentScheme = (String) variables.get("paymentScheme");
-		
-		String transactionDate = (String) variables.get("transactionDate");
-		
-		Integer conversionAccountAmsId = (Integer) variables.get("conversionAccountAmsId");
-		
-		String transactionGroupId = (String) variables.get("transactionGroupId");
-		String transactionCategoryPurposeCode = (String) variables.get("transactionCategoryPurposeCode");
-		String transactionFeeCategoryPurposeCode = (String) variables.get("transactionFeeCategoryPurposeCode");
 		
 		logger.info("Starting book debit on fiat account worker");
 		
-		Object amount = variables.get("amount");
-		Object feeAmount = variables.get("transactionFeeAmount");
-		BigDecimal fee = null;
-		if (feeAmount != null) {
-			fee = new BigDecimal(feeAmount.toString());
-		}
+		logger.info("Withdrawing amount {} from conversion account {} of tenant {}", amount, conversionAccountAmsId, tenantIdentifier);
 		
-		String tenantId = (String) variables.get("tenantIdentifier");
-		logger.info("Withdrawing amount {} from conversion account {} of tenant {}", amount, conversionAccountAmsId, tenantId);
-		
-		BatchItemBuilder biBuilder = new BatchItemBuilder(tenantId);
+		BatchItemBuilder biBuilder = new BatchItemBuilder(tenantIdentifier);
 		
 		String conversionAccountWithdrawalRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "withdrawal");
 		
-		PaymentTypeConfig paymentTypeConfig = paymentTypeConfigFactory.getPaymentTypeConfig(tenantId);
+		PaymentTypeConfig paymentTypeConfig = paymentTypeConfigFactory.getPaymentTypeConfig(tenantIdentifier);
 		Integer paymentTypeId = paymentTypeConfig.findPaymentTypeByOperation(String.format("%s.%s", paymentScheme, "bookOnConversionAccountInAms.ConversionAccount.WithdrawTransactionAmount"));
 		
 		TransactionBody body = new TransactionBody(
@@ -109,15 +101,15 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 
 		biBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 		
-		if (!BigDecimal.ZERO.equals(fee)) {
+		if (!BigDecimal.ZERO.equals(transactionFeeAmount)) {
 				
-			logger.info("Withdrawing fee {} from conversion account {}", fee, conversionAccountAmsId);
+			logger.info("Withdrawing fee {} from conversion account {}", transactionFeeAmount, conversionAccountAmsId);
 			
 			paymentTypeId = paymentTypeConfig.findPaymentTypeByOperation(String.format("%s.%s", paymentScheme, "bookOnConversionAccountInAms.ConversionAccount.WithdrawTransactionFee"));
 			
 			body = new TransactionBody(
 					transactionDate,
-					fee,
+					transactionFeeAmount,
 					paymentTypeId,
 					"",
 					FORMAT,
@@ -137,10 +129,8 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 			biBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 		}
 		
-		doBatch(items, tenantId, internalCorrelationId);
+		doBatch(items, tenantIdentifier, internalCorrelationId);
 		
-		jobClient.newCompleteCommand(activatedJob.getKey()).variables(variables).send();
-			
 		logger.info("Book debit on fiat account has finished  successfully");
 		
 		MDC.remove("internalCorrelationId");

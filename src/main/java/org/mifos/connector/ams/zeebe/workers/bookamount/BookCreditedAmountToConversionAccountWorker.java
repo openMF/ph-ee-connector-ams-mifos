@@ -1,9 +1,9 @@
 package org.mifos.connector.ams.zeebe.workers.bookamount;
 
 import java.io.StringReader;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBElement;
@@ -25,6 +25,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.nets.realtime247.ri_2015_10.ObjectFactory;
 import io.camunda.zeebe.client.api.response.ActivatedJob;
 import io.camunda.zeebe.client.api.worker.JobClient;
+import io.camunda.zeebe.spring.client.annotation.JobWorker;
+import io.camunda.zeebe.spring.client.annotation.Variable;
+import io.camunda.zeebe.spring.client.exception.ZeebeBpmnError;
 import iso.std.iso._20022.tech.json.camt_053_001.BankToCustomerStatementV08;
 
 @Component
@@ -42,40 +45,35 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
 	@Autowired
     private PaymentTypeConfigFactory paymentTypeConfigFactory;
     
-    @Override
+	@JobWorker
     @SuppressWarnings("unchecked")
-    public void handle(JobClient jobClient, ActivatedJob activatedJob) throws Exception {
+    public void bookCreditedAmountToConversionAccount(JobClient jobClient, 
+    		ActivatedJob activatedJob,
+    		@Variable String originalPacs008,
+    		@Variable String transactionDate,
+    		@Variable String transactionCategoryPurposeCode,
+    		@Variable String transactionGroupId,
+    		@Variable String internalCorrelationId,
+    		@Variable String tenantIdentifier,
+    		@Variable String paymentScheme,
+    		@Variable BigDecimal amount,
+    		@Variable Integer conversionAccountAmsId) throws Exception {
         try {
-            Map<String, Object> variables = activatedJob.getVariablesAsMap();
-
             logger.info("Incoming money worker started with variables");
-            variables.keySet().forEach(logger::info);
 
-            String originalPacs008 = (String) variables.get("originalPacs008");
             JAXBContext jc = JAXBContext.newInstance(ObjectFactory.class,
                     iso.std.iso._20022.tech.xsd.pacs_008_001.ObjectFactory.class,
                     iso.std.iso._20022.tech.xsd.pacs_002_001.ObjectFactory.class);
             JAXBElement<iso.std.iso._20022.tech.xsd.pacs_008_001.Document> object = (JAXBElement<iso.std.iso._20022.tech.xsd.pacs_008_001.Document>) jc.createUnmarshaller().unmarshal(new StringReader(originalPacs008));
             iso.std.iso._20022.tech.xsd.pacs_008_001.Document pacs008 = object.getValue();
-            String transactionDate = (String) variables.get("transactionDate");
-            
-            String transactionCategoryPurposeCode = (String) variables.get("transactionCategoryPurposeCode");
-            String transactionGroupId = (String) variables.get("transactionGroupId");
 
-            String internalCorrelationId = (String) variables.get("internalCorrelationId");
             MDC.put("internalCorrelationId", internalCorrelationId);
-            String tenantId = (String) variables.get("tenantIdentifier");
-            String paymentScheme = (String) variables.get("paymentScheme");
 
-            Object amount = variables.get("amount");
-
-            Integer conversionAccountAmsId = (Integer) variables.get("conversionAccountAmsId");
-            
-            BatchItemBuilder biBuilder = new BatchItemBuilder(tenantId);
+            BatchItemBuilder biBuilder = new BatchItemBuilder(tenantIdentifier);
     		
     		String conversionAccountWithdrawalRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "deposit");
     		
-    		PaymentTypeConfig paymentTypeConfig = paymentTypeConfigFactory.getPaymentTypeConfig(tenantId);
+    		PaymentTypeConfig paymentTypeConfig = paymentTypeConfigFactory.getPaymentTypeConfig(tenantIdentifier);
     		Integer paymentTypeId = paymentTypeConfig.findPaymentTypeByOperation(String.format("%s.%s", paymentScheme, "bookCreditedAmountToConversionAccount.ConversionAccount.DepositTransactionAmount"));
     		
     		TransactionBody body = new TransactionBody(
@@ -110,11 +108,10 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
 
     		biBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 
-            doBatch(items, tenantId, internalCorrelationId);
-            jobClient.newCompleteCommand(activatedJob.getKey()).variables(variables).send();
+            doBatch(items, tenantIdentifier, internalCorrelationId);
         } catch (Exception e) {
             logger.error("Worker to book incoming money in AMS has failed, dispatching user task to handle fiat deposit", e);
-            jobClient.newThrowErrorCommand(activatedJob.getKey()).errorCode("Error_BookToConversionToBeHandledManually").send();
+            throw new ZeebeBpmnError("Error_BookToConversionToBeHandledManually", e.getMessage());
         } finally {
             MDC.remove("internalCorrelationId");
         }

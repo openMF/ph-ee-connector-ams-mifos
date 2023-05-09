@@ -3,7 +3,6 @@ package org.mifos.connector.ams.zeebe.workers.bookamount;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import org.mifos.connector.ams.fineract.PaymentTypeConfig;
 import org.mifos.connector.ams.fineract.PaymentTypeConfigFactory;
@@ -21,6 +20,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.camunda.zeebe.client.api.response.ActivatedJob;
 import io.camunda.zeebe.client.api.worker.JobClient;
+import io.camunda.zeebe.spring.client.annotation.JobWorker;
+import io.camunda.zeebe.spring.client.annotation.Variable;
 import iso.std.iso._20022.tech.json.camt_053_001.BankToCustomerStatementV08;
 import iso.std.iso._20022.tech.json.pain_001_001.CreditTransferTransaction40;
 import iso.std.iso._20022.tech.json.pain_001_001.Pain00100110CustomerCreditTransferInitiationV10MessageSchema;
@@ -40,34 +41,26 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 	@Autowired
     private PaymentTypeConfigFactory paymentTypeConfigFactory;
 	
-	@Override
-	public void handle(JobClient jobClient, ActivatedJob activatedJob) throws Exception {
-		Map<String, Object> variables = activatedJob.getVariablesAsMap();
-		
-		String internalCorrelationId = (String) variables.get("internalCorrelationId");
+	@JobWorker
+	public void revertInAms(JobClient jobClient, 
+			ActivatedJob activatedJob,
+			@Variable String internalCorrelationId,
+			@Variable String originalPain001,
+			@Variable Integer conversionAccountAmsId,
+			@Variable Integer disposalAccountAmsId,
+			@Variable String transactionDate,
+			@Variable String paymentScheme,
+			@Variable String transactionGroupId,
+			@Variable String transactionCategoryPurposeCode,
+			@Variable String transactionFeeCategoryPurposeCode,
+			@Variable BigDecimal transactionFeeAmount,
+			@Variable String tenantIdentifier) throws Exception {
 		MDC.put("internalCorrelationId", internalCorrelationId);
-		
-		String originalPain001 = (String) variables.get("originalPain001");
-		
-		Integer conversionAccountAmsId = (Integer) variables.get("conversionAccountAmsId");
-		
-		String transactionDate = (String) variables.get("transactionDate");
-
-		Integer disposalAccountAmsId = (Integer) variables.get("disposalAccountAmsId");
-		
-		String paymentScheme = (String) variables.get("paymentScheme");
-		
-		String transactionGroupId = (String) variables.get("transactionGroupId");
-		String transactionCategoryPurposeCode = (String) variables.get("transactionCategoryPurposeCode");
-		String transactionFeeCategoryPurposeCode = (String) variables.get("transactionFeeCategoryPurposeCode");
 		
 		ObjectMapper om = new ObjectMapper();
 		Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001 = om.readValue(originalPain001, Pain00100110CustomerCreditTransferInitiationV10MessageSchema.class);
 		
 		BigDecimal amount = BigDecimal.ZERO;
-		BigDecimal fee = variables.get("transactionFeeAmount") == null
-						? null
-						: new BigDecimal(variables.get("transactionFeeAmount").toString());
 		
 		List<CreditTransferTransaction40> creditTransferTransactionInformation = pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation();
 		
@@ -77,18 +70,11 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 		
 		logger.debug("Withdrawing amount {} from conversion account {}", amount, conversionAccountAmsId);
 		
-		String tenantId = (String) variables.get("tenantIdentifier");
-		
-		
-		
-		
-		
-		
-		BatchItemBuilder biBuilder = new BatchItemBuilder(tenantId);
+		BatchItemBuilder biBuilder = new BatchItemBuilder(tenantIdentifier);
 		
 		String conversionAccountWithdrawRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "withdrawal");
 		
-		PaymentTypeConfig paymentTypeConfig = paymentTypeConfigFactory.getPaymentTypeConfig(tenantId);
+		PaymentTypeConfig paymentTypeConfig = paymentTypeConfigFactory.getPaymentTypeConfig(tenantIdentifier);
 		Integer paymentTypeId = paymentTypeConfig.findPaymentTypeByOperation(String.format("%s.%s", paymentScheme, "revertInAms.ConversionAccount.WithdrawTransactionAmount"));
 		
 		TransactionBody body = new TransactionBody(
@@ -121,14 +107,14 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 
 		biBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 		
-		if (!BigDecimal.ZERO.equals(fee)) {
-			logger.debug("Withdrawing fee {} from conversion account {}", fee, conversionAccountAmsId);
+		if (!BigDecimal.ZERO.equals(transactionFeeAmount)) {
+			logger.debug("Withdrawing fee {} from conversion account {}", transactionFeeAmount, conversionAccountAmsId);
 			
 			paymentTypeId = paymentTypeConfig.findPaymentTypeByOperation(String.format("%s.%s", paymentScheme, "revertInAms.ConversionAccount.WithdrawTransactionFee"));
 			
 			body = new TransactionBody(
 					transactionDate,
-					fee,
+					transactionFeeAmount,
 					paymentTypeId,
 					"",
 					FORMAT,
@@ -179,14 +165,14 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 		
 		biBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 		
-		if (!BigDecimal.ZERO.equals(fee)) {
-			logger.debug("Re-depositing fee {} in disposal account {}", fee, disposalAccountAmsId);
+		if (!BigDecimal.ZERO.equals(transactionFeeAmount)) {
+			logger.debug("Re-depositing fee {} in disposal account {}", transactionFeeAmount, disposalAccountAmsId);
 			
 			paymentTypeId = paymentTypeConfig.findPaymentTypeByOperation(String.format("%s.%s", paymentScheme, "revertInAms.DisposalAccount.DepositTransactionFee"));
 			
 			body = new TransactionBody(
 					transactionDate,
-					fee,
+					transactionFeeAmount,
 					paymentTypeId,
 					"",
 					FORMAT,
@@ -206,9 +192,8 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			biBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 		}
 		
-		doBatch(items, tenantId, internalCorrelationId);
+		doBatch(items, tenantIdentifier, internalCorrelationId);
 		
-		jobClient.newCompleteCommand(activatedJob.getKey()).variables(variables).send();
 		MDC.remove("internalCorrelationId");
 	}
 

@@ -23,6 +23,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.camunda.zeebe.client.api.response.ActivatedJob;
 import io.camunda.zeebe.client.api.worker.JobClient;
+import io.camunda.zeebe.spring.client.annotation.JobWorker;
+import io.camunda.zeebe.spring.client.annotation.Variable;
+import io.camunda.zeebe.spring.client.exception.ZeebeBpmnError;
 import iso.std.iso._20022.tech.json.camt_053_001.BankToCustomerStatementV08;
 import iso.std.iso._20022.tech.json.pain_001_001.Pain00100110CustomerCreditTransferInitiationV10MessageSchema;
 
@@ -43,28 +46,28 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 	
 	private static final DateTimeFormatter PATTERN = DateTimeFormatter.ofPattern(FORMAT);
 
-	@Override
-	public void handle(JobClient jobClient, ActivatedJob activatedJob) throws Exception {
-		Map<String, Object> variables = activatedJob.getVariablesAsMap();
-		Integer conversionAccountAmsId = (Integer) variables.get("conversionAccountAmsId");
-		Integer disposalAccountAmsId = (Integer) variables.get("disposalAccountAmsId");
+	@JobWorker
+	public Map<String, Object> transferNonTransactionalFeeInAms(JobClient jobClient, 
+			ActivatedJob activatedJob,
+			@Variable Integer conversionAccountAmsId,
+			@Variable Integer disposalAccountAmsId,
+			@Variable String tenantIdentifier,
+			@Variable String paymentScheme,
+			@Variable BigDecimal amount,
+			@Variable String internalCorrelationId,
+			@Variable String transactionGroupId,
+			@Variable String categoryPurpose,
+			@Variable String originalPain001) throws Exception {
 		String disposalAccountWithdrawRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), disposalAccountAmsId, "withdrawal");
-		String tenantId = (String) variables.get("tenantIdentifier");
-		PaymentTypeConfig paymentTypeConfig = paymentTypeConfigFactory.getPaymentTypeConfig(tenantId);
-		String paymentScheme = (String) variables.get("paymentScheme");
+		PaymentTypeConfig paymentTypeConfig = paymentTypeConfigFactory.getPaymentTypeConfig(tenantIdentifier);
 		logger.debug("Got payment scheme {}", paymentScheme);
 		String transactionDate = LocalDate.now().format(PATTERN);
-		BigDecimal amount = new BigDecimal(variables.get("amount").toString());
 		ObjectMapper om = new ObjectMapper();
-		BatchItemBuilder biBuilder = new BatchItemBuilder(tenantId);
-		String internalCorrelationId = (String) variables.get("internalCorrelationId");
-		String transactionGroupId = (String) variables.get("transactionGroupId");
-		String categoryPurpose = (String) variables.get("categoryPurpose");
+		BatchItemBuilder biBuilder = new BatchItemBuilder(tenantIdentifier);
 		logger.debug("Got category purpose code {}", categoryPurpose);
 		
 		try {
 			MDC.put("internalCorrelationId", internalCorrelationId);
-			String originalPain001 = (String) variables.get("originalPain001");
 			Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001 = om.readValue(originalPain001, Pain00100110CustomerCreditTransferInitiationV10MessageSchema.class);
 			
 			Integer paymentTypeId = paymentTypeConfig.findPaymentTypeByOperation(String.format("%s.%s.%s", paymentScheme, categoryPurpose, "transferToConversionAccountInAms.DisposalAccount.WithdrawNonTransactionalFee"));
@@ -163,18 +166,12 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 			
 			logger.debug("Attempting to send {}", om.writeValueAsString(items));
 			
-			doBatch(items, tenantId, internalCorrelationId);
+			doBatch(items, tenantIdentifier, internalCorrelationId);
 			
-			variables.put("transactionDate", transactionDate);
-			
-			jobClient.newCompleteCommand(activatedJob.getKey()).variables(variables).send();
+			return Map.of("transactionDate", transactionDate);
 		} catch (Exception e) {
 			logger.error(e.getMessage(), e);
-			jobClient
-				.newThrowErrorCommand(activatedJob.getKey())
-				.errorCode("Error_InsufficientFunds")
-				.errorMessage(e.getMessage())
-				.send();
+			throw new ZeebeBpmnError("Error_InsufficientFunds", e.getMessage());
 		} finally {
 			MDC.remove("internalCorrelationId");
 		}

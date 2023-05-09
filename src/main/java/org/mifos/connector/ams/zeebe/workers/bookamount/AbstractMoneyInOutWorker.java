@@ -25,10 +25,8 @@ import org.springframework.web.util.UriComponentsBuilder;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import io.camunda.zeebe.client.api.worker.JobHandler;
-
 @Component
-public abstract class AbstractMoneyInOutWorker implements JobHandler {
+public abstract class AbstractMoneyInOutWorker {
 	
 	@Autowired
 	protected RestTemplate restTemplate;
