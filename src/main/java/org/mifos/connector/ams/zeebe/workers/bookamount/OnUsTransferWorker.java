@@ -221,6 +221,8 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 			
 			doBatch(items, tenantIdentifier, internalCorrelationId);
 			
+			variables.put("transactionDate", interbankSettlementDate);
+			
 			jobClient.newCompleteCommand(activatedJob.getKey()).variables(variables).send();
 		} catch (JsonProcessingException e) {
 			logger.error(e.getMessage(), e);
