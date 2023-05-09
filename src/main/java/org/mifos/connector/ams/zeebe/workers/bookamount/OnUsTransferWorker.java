@@ -64,6 +64,8 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 			@Variable String transactionFeeCategoryPurposeCode) {
 		try {
 			
+			logger.debug("Incoming pain.001: {}", originalPain001);
+			
 			ObjectMapper om = new ObjectMapper();
 			Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001 = om.readValue(originalPain001, Pain00100110CustomerCreditTransferInitiationV10MessageSchema.class);
 			
