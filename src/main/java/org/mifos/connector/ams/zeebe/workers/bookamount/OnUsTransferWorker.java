@@ -5,6 +5,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.mifos.connector.ams.fineract.PaymentTypeConfig;
 import org.mifos.connector.ams.fineract.PaymentTypeConfigFactory;
@@ -48,7 +49,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 	private static final DateTimeFormatter PATTERN = DateTimeFormatter.ofPattern(FORMAT);
 
 	@JobWorker
-	public void transferTheAmountBetweenDisposalAccounts(JobClient jobClient, 
+	public Map<String, Object> transferTheAmountBetweenDisposalAccounts(JobClient jobClient, 
 			ActivatedJob activatedJob,
 			@Variable String internalCorrelationId,
 			@Variable String paymentScheme,
@@ -219,6 +220,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 			
 			doBatch(items, tenantIdentifier, internalCorrelationId);
 			
+			return Map.of("transactionDate", interbankSettlementDate);
 		} catch (JsonProcessingException e) {
 			logger.error(e.getMessage(), e);
 			throw new ZeebeBpmnError(ERROR_FAILED_CREDIT_TRANSFER, e.getMessage());
