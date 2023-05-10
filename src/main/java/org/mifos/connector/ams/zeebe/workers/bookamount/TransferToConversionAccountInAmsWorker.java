@@ -1,12 +1,17 @@
 package org.mifos.connector.ams.zeebe.workers.bookamount;
 
 import java.io.InputStream;
+import java.io.StringReader;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBElement;
+import javax.xml.bind.JAXBException;
 
 import org.mifos.connector.ams.fineract.PaymentTypeConfig;
 import org.mifos.connector.ams.fineract.PaymentTypeConfigFactory;
@@ -21,6 +26,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.networknt.schema.JsonSchema;
@@ -28,6 +34,7 @@ import com.networknt.schema.JsonSchemaFactory;
 import com.networknt.schema.SpecVersion;
 import com.networknt.schema.ValidationMessage;
 
+import hu.dpc.rt.utils.converter.Camt056ToCamt053Converter;
 import io.camunda.zeebe.client.api.response.ActivatedJob;
 import io.camunda.zeebe.client.api.worker.JobClient;
 import io.camunda.zeebe.spring.client.annotation.JobWorker;
@@ -35,6 +42,8 @@ import io.camunda.zeebe.spring.client.annotation.Variable;
 import io.camunda.zeebe.spring.client.exception.ZeebeBpmnError;
 import iso.std.iso._20022.tech.json.camt_053_001.BankToCustomerStatementV08;
 import iso.std.iso._20022.tech.json.pain_001_001.Pain00100110CustomerCreditTransferInitiationV10MessageSchema;
+import iso.std.iso._20022.tech.xsd.camt_056_001.FIToFIPaymentCancellationRequestV01;
+import iso.std.iso._20022.tech.xsd.camt_056_001.UnderlyingTransaction2;
 
 @Component
 public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWorker {
@@ -222,6 +231,123 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			throw new ZeebeBpmnError("Error_InsufficientFunds", e.getMessage());
 		} finally {
 			MDC.remove("internalCorrelationId");
+		}
+	}
+	
+	@JobWorker
+	public void withdrawTheAmountFromDisposalAccountInAMS(JobClient client,
+			ActivatedJob job,
+			@Variable BigDecimal amount,
+			@Variable Integer conversionAccountAmsId,
+			@Variable Integer disposalAccountAmsId,
+			@Variable String tenantIdentifier,
+			@Variable String paymentScheme,
+			@Variable String transactionCategoryPurposeCode,
+			@Variable String camt056) {
+		
+		try {
+			String transactionDate = LocalDate.now().format(PATTERN);
+			
+			ObjectMapper om = new ObjectMapper();
+			
+			logger.debug("Withdrawing amount {} from disposal account {}", amount, disposalAccountAmsId);
+			
+			BatchItemBuilder biBuilder = new BatchItemBuilder(tenantIdentifier);
+			
+			String disposalAccountWithdrawRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), disposalAccountAmsId, "withdrawal");
+			
+			PaymentTypeConfig paymentTypeConfig = paymentTypeConfigFactory.getPaymentTypeConfig(tenantIdentifier);
+			Integer paymentTypeId = paymentTypeConfig.findPaymentTypeByOperation(String.format("%s.%s", paymentScheme, "transferToConversionAccountInAms.DisposalAccount.WithdrawTransactionAmount"));
+			
+			TransactionBody body = new TransactionBody(
+					transactionDate,
+					amount,
+					paymentTypeId,
+					"",
+					FORMAT,
+					locale);
+			
+			String bodyItem = om.writeValueAsString(body);
+			
+			List<TransactionItem> items = new ArrayList<>();
+			
+			biBuilder.add(items, disposalAccountWithdrawRelativeUrl, bodyItem, false);
+		
+			JAXBContext jc = JAXBContext.newInstance(iso.std.iso._20022.tech.xsd.camt_056_001.ObjectFactory.class,
+    				eu.nets.realtime247.ri_2015_10.ObjectFactory.class);
+    		@SuppressWarnings("unchecked")
+			iso.std.iso._20022.tech.xsd.camt_056_001.Document document = ((JAXBElement<iso.std.iso._20022.tech.xsd.camt_056_001.Document>) jc.createUnmarshaller().unmarshal(new StringReader(camt056))).getValue();
+    		Camt056ToCamt053Converter converter = new Camt056ToCamt053Converter();
+    		BankToCustomerStatementV08 statement = converter.convert(document);
+    		
+    		FIToFIPaymentCancellationRequestV01 fiToFIPmtCxlReq = document.getFIToFIPmtCxlReq();
+			UnderlyingTransaction2 underlyingTransaction = fiToFIPmtCxlReq.getUndrlyg().get(0);
+			
+			String originalDebtorBic = underlyingTransaction
+					.getTxInf().get(0)
+					.getOrgnlTxRef()
+					.getDbtrAgt()
+					.getFinInstnId()
+					.getBIC();
+    		String originalCreationDate = underlyingTransaction
+    				.getOrgnlGrpInfAndCxl()
+    				.getOrgnlCreDtTm()
+    				.toGregorianCalendar()
+    				.toZonedDateTime()
+    				.toLocalDate()
+    				.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+    		String originalTxId = underlyingTransaction
+    				.getTxInf().get(0)
+    				.getOrgnlTxId();
+    		
+    		String internalCorrelationId = String.format("%s_%s_%s", originalDebtorBic, originalCreationDate, originalTxId);
+		
+			String camt053 = om.writeValueAsString(statement);
+			
+			String camt053RelativeUrl = String.format("datatables/transaction_details/%d", disposalAccountAmsId);
+			
+			TransactionDetails td = new TransactionDetails(
+					"$.resourceId",
+					internalCorrelationId,
+					camt053,
+					internalCorrelationId,
+					transactionCategoryPurposeCode);
+			
+			String camt053Body = om.writeValueAsString(td);
+	
+			biBuilder.add(items, camt053RelativeUrl, camt053Body, true);
+			
+			String conversionAccountDepositRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "deposit");
+			
+			Integer conversionAccountDepositAmountPaymentTypeId = paymentTypeConfig.findPaymentTypeByOperation(String.format("%s.%s", paymentScheme, "transferToConversionAccountInAms.ConversionAccount.DepositTransactionAmount"));
+			
+			TransactionBody depositAmountBody = new TransactionBody(
+					transactionDate,
+					amount,
+					conversionAccountDepositAmountPaymentTypeId,
+					"",
+					FORMAT,
+					locale);
+			
+			String depositAmountBodyItem = om.writeValueAsString(depositAmountBody);
+			
+			biBuilder.add(items, conversionAccountDepositRelativeUrl, depositAmountBodyItem, false);
+			
+			camt053RelativeUrl = String.format("datatables/transaction_details/%d", conversionAccountAmsId);
+			td = new TransactionDetails(
+					"$.resourceId",
+					internalCorrelationId,
+					camt053,
+					internalCorrelationId,
+					transactionCategoryPurposeCode);
+			
+			camt053Body = om.writeValueAsString(td);
+			biBuilder.add(items, camt053RelativeUrl, camt053Body, true);
+			
+			doBatch(items, tenantIdentifier, internalCorrelationId);
+		} catch (JAXBException | JsonProcessingException e) {
+			logger.error(e.getMessage(), e);
+			throw new RuntimeException(e);
 		}
 	}
 }
