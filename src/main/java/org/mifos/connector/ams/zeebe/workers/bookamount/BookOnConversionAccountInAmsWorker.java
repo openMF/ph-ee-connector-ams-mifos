@@ -1,8 +1,15 @@
 package org.mifos.connector.ams.zeebe.workers.bookamount;
 
+import java.io.StringReader;
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBElement;
+import javax.xml.bind.JAXBException;
 
 import org.mifos.connector.ams.fineract.PaymentTypeConfig;
 import org.mifos.connector.ams.fineract.PaymentTypeConfigFactory;
@@ -16,14 +23,17 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import hu.dpc.rt.utils.converter.Camt056ToCamt053Converter;
 import io.camunda.zeebe.client.api.response.ActivatedJob;
 import io.camunda.zeebe.client.api.worker.JobClient;
 import io.camunda.zeebe.spring.client.annotation.JobWorker;
 import io.camunda.zeebe.spring.client.annotation.Variable;
 import iso.std.iso._20022.tech.json.camt_053_001.BankToCustomerStatementV08;
 import iso.std.iso._20022.tech.json.pain_001_001.Pain00100110CustomerCreditTransferInitiationV10MessageSchema;
+import iso.std.iso._20022.tech.xsd.camt_056_001.PaymentTransactionInformation31;
 
 @Component
 public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker {
@@ -134,5 +144,93 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 		logger.info("Book debit on fiat account has finished  successfully");
 		
 		MDC.remove("internalCorrelationId");
+	}
+	
+	@JobWorker
+	public void withdrawTheAmountFromConversionAccountInAms(JobClient client,
+			ActivatedJob job,
+			@Variable BigDecimal amount,
+			@Variable Integer conversionAccountAmsId,
+			@Variable String tenantIdentifier,
+			@Variable String paymentScheme,
+			@Variable String transactionCategoryPurposeCode,
+			@Variable String camt056
+			) {
+		try {
+			logger.info("Withdrawing amount {} from conversion account {} of tenant {}", amount, conversionAccountAmsId, tenantIdentifier);
+			
+			String transactionDate = LocalDate.now().format(DateTimeFormatter.ofPattern(FORMAT));
+			
+			BatchItemBuilder biBuilder = new BatchItemBuilder(tenantIdentifier);
+			
+			String conversionAccountWithdrawalRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "withdrawal");
+			
+			PaymentTypeConfig paymentTypeConfig = paymentTypeConfigFactory.getPaymentTypeConfig(tenantIdentifier);
+			Integer paymentTypeId = paymentTypeConfig.findPaymentTypeByOperation(String.format("%s.%s", paymentScheme, "bookOnConversionAccountInAms.ConversionAccount.WithdrawTransactionAmount"));
+			
+			TransactionBody body = new TransactionBody(
+					transactionDate,
+					amount,
+					paymentTypeId,
+					"",
+					FORMAT,
+					locale);
+			
+			ObjectMapper om = new ObjectMapper();
+			String bodyItem = om.writeValueAsString(body);
+			
+			List<TransactionItem> items = new ArrayList<>();
+			
+			biBuilder.add(items, conversionAccountWithdrawalRelativeUrl, bodyItem, false);
+		
+			JAXBContext jc = JAXBContext.newInstance(iso.std.iso._20022.tech.xsd.camt_056_001.ObjectFactory.class,
+					eu.nets.realtime247.ri_2015_10.ObjectFactory.class);
+			@SuppressWarnings("unchecked")
+			iso.std.iso._20022.tech.xsd.camt_056_001.Document document = ((JAXBElement<iso.std.iso._20022.tech.xsd.camt_056_001.Document>) jc.createUnmarshaller().unmarshal(new StringReader(camt056))).getValue();
+			Camt056ToCamt053Converter converter = new Camt056ToCamt053Converter();
+			BankToCustomerStatementV08 statement = converter.convert(document);
+			
+			PaymentTransactionInformation31 paymentTransactionInformation = document
+					.getFIToFIPmtCxlReq()
+					.getUndrlyg().get(0)
+					.getTxInf().get(0);
+			
+			String originalDebtorBic = paymentTransactionInformation
+					.getOrgnlTxRef()
+					.getDbtrAgt()
+					.getFinInstnId()
+					.getBIC();
+			String originalCreationDate = paymentTransactionInformation
+					.getOrgnlGrpInf()
+					.getOrgnlCreDtTm()
+					.toGregorianCalendar()
+					.toZonedDateTime()
+					.toLocalDate()
+					.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+			String originalTxId = paymentTransactionInformation
+					.getOrgnlTxId();
+			
+			String internalCorrelationId = String.format("%s_%s_%s", originalDebtorBic, originalCreationDate, originalTxId);
+			
+			String camt053 = om.writeValueAsString(statement);
+			
+			String camt053RelativeUrl = String.format("datatables/transaction_details/%d", conversionAccountAmsId);
+			
+			TransactionDetails td = new TransactionDetails(
+					"$.resourceId",
+					internalCorrelationId,
+					camt053,
+					internalCorrelationId,
+					transactionCategoryPurposeCode);
+			
+			String camt053Body = om.writeValueAsString(td);
+	
+			biBuilder.add(items, camt053RelativeUrl, camt053Body, true);
+			
+			doBatch(items, tenantIdentifier, internalCorrelationId);
+		} catch (JAXBException | JsonProcessingException e) {
+			logger.error(e.getMessage(), e);
+			throw new RuntimeException(e);
+		}
 	}
 }
