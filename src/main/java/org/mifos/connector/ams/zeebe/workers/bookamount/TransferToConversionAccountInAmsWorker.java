@@ -43,6 +43,7 @@ import io.camunda.zeebe.spring.client.exception.ZeebeBpmnError;
 import iso.std.iso._20022.tech.json.camt_053_001.BankToCustomerStatementV08;
 import iso.std.iso._20022.tech.json.pain_001_001.Pain00100110CustomerCreditTransferInitiationV10MessageSchema;
 import iso.std.iso._20022.tech.xsd.camt_056_001.FIToFIPaymentCancellationRequestV01;
+import iso.std.iso._20022.tech.xsd.camt_056_001.PaymentTransactionInformation31;
 import iso.std.iso._20022.tech.xsd.camt_056_001.UnderlyingTransaction2;
 
 @Component
@@ -280,24 +281,24 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
     		Camt056ToCamt053Converter converter = new Camt056ToCamt053Converter();
     		BankToCustomerStatementV08 statement = converter.convert(document);
     		
-    		FIToFIPaymentCancellationRequestV01 fiToFIPmtCxlReq = document.getFIToFIPmtCxlReq();
-			UnderlyingTransaction2 underlyingTransaction = fiToFIPmtCxlReq.getUndrlyg().get(0);
+    		PaymentTransactionInformation31 paymentTransactionInformation = document
+    				.getFIToFIPmtCxlReq()
+    				.getUndrlyg().get(0)
+    				.getTxInf().get(0);
 			
-			String originalDebtorBic = underlyingTransaction
-					.getTxInf().get(0)
+			String originalDebtorBic = paymentTransactionInformation
 					.getOrgnlTxRef()
 					.getDbtrAgt()
 					.getFinInstnId()
 					.getBIC();
-    		String originalCreationDate = underlyingTransaction
-    				.getOrgnlGrpInfAndCxl()
+    		String originalCreationDate = paymentTransactionInformation
+    				.getOrgnlGrpInf()
     				.getOrgnlCreDtTm()
     				.toGregorianCalendar()
     				.toZonedDateTime()
     				.toLocalDate()
     				.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
-    		String originalTxId = underlyingTransaction
-    				.getTxInf().get(0)
+    		String originalTxId = paymentTransactionInformation
     				.getOrgnlTxId();
     		
     		String internalCorrelationId = String.format("%s_%s_%s", originalDebtorBic, originalCreationDate, originalTxId);
