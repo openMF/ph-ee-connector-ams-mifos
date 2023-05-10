@@ -297,11 +297,11 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
     				.toGregorianCalendar()
     				.toZonedDateTime()
     				.toLocalDate()
-    				.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
-    		String originalTxId = paymentTransactionInformation
-    				.getOrgnlTxId();
+    				.format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+    		String originalEndToEndId = paymentTransactionInformation
+    				.getOrgnlEndToEndId();
     		
-    		String internalCorrelationId = String.format("%s_%s_%s", originalDebtorBic, originalCreationDate, originalTxId);
+    		String internalCorrelationId = String.format("%s_%s_%s", originalDebtorBic, originalCreationDate, originalEndToEndId);
 		
 			String camt053 = om.writeValueAsString(statement);
 			
