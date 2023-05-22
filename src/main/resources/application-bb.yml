@@ -9,13 +9,16 @@ ams:
     auth:
       host: https://rhino.mifos.io:8443
     tenants:
-      - name: tn03
+      - name: "gorilla"
         user: mifos
         password: password
         authtype: basic
         fspId: in02tn03
-      - name: tn04
+      - name: "lion"
         user: mifos
         password: password
         authtype: basic
         fspId: in02tn04
+
+# Savings : S , Loan : L
+accountPrefixes: "S,L"

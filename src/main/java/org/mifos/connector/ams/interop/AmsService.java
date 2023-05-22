@@ -1,7 +1,9 @@
 package org.mifos.connector.ams.interop;
 
 import org.apache.camel.Exchange;
+import org.springframework.stereotype.Service;
 
+@Service
 public interface AmsService {
 
     void getLocalQuote(Exchange e);
@@ -13,6 +15,8 @@ public interface AmsService {
     void removeInteropIdentifier(Exchange e);
 
     void sendTransfer(Exchange e);
+
+    void repayLoan(Exchange e);
 
     void login(Exchange e);
 
@@ -27,7 +31,6 @@ public interface AmsService {
     void getClientByMobileNo(Exchange e);
 
     void getSavingsAccountsTransactions(Exchange e) ;
-
     default void getClientImage(Exchange e){}
 
 }

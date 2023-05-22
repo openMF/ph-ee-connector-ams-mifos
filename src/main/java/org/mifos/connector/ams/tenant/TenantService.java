@@ -7,6 +7,8 @@ import org.apache.camel.support.DefaultExchange;
 import org.mifos.connector.ams.properties.Tenant;
 import org.mifos.connector.ams.properties.TenantProperties;
 import org.mifos.connector.common.ams.dto.LoginFineractCnResponseDTO;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
@@ -31,7 +33,9 @@ public class TenantService {
     public static final String USER_HEADER = "User";
     public static final String FINERACT_PLATFORM_TENANT_ID_HEADER = "Fineract-Platform-TenantId";
 
-    @Autowired
+
+    private Logger logger = LoggerFactory.getLogger(this.getClass());
+
     private ProducerTemplate producerTemplate;
 
     @Autowired
@@ -46,6 +50,7 @@ public class TenantService {
     private final Map<String, CachedTenantAuth> cachedTenantAuths = new ConcurrentHashMap<>();
 
     public Map<String, Object> getHeaders(String tenantName) {
+        logger.info("Getting headers for tenant: {}", tenantName);
         Tenant tenant = tenantProperties.getTenant(tenantName);
         Map<String, Object> headers = new HashMap<>();
 

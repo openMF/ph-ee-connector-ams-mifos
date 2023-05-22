@@ -27,7 +27,15 @@ zeebe:
   broker:
     contactpoint: "camunda8-zeebe-gateway.binx-dev:26500"
 
+#ams:
+#  local:
+#    server-cert-check: false
+#    enabled: true
+
 ams:
   local:
     server-cert-check: false
     enabled: false
+
+interop-party-registration:
+  enabled: false
