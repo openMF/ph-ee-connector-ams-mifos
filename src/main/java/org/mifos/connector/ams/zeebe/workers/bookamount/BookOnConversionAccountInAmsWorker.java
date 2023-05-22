@@ -7,13 +7,13 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBElement;
-import javax.xml.bind.JAXBException;
+//import javax.xml.bind.JAXBContext;
+//import javax.xml.bind.JAXBElement;
+//import javax.xml.bind.JAXBException;
 
 import org.mifos.connector.ams.fineract.PaymentTypeConfig;
 import org.mifos.connector.ams.fineract.PaymentTypeConfigFactory;
-import org.mifos.connector.ams.mapstruct.Pain001Camt053Mapper;
+//import org.mifos.connector.ams.mapstruct.Pain001Camt053Mapper;
 import org.mifos.connector.ams.zeebe.workers.utils.BatchItemBuilder;
 import org.mifos.connector.ams.zeebe.workers.utils.TransactionBody;
 import org.mifos.connector.ams.zeebe.workers.utils.TransactionDetails;
@@ -26,20 +26,20 @@ import org.springframework.stereotype.Component;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import hu.dpc.rt.utils.converter.Camt056ToCamt053Converter;
+//import hu.dpc.rt.utils.converter.Camt056ToCamt053Converter;
 import io.camunda.zeebe.client.api.response.ActivatedJob;
 import io.camunda.zeebe.client.api.worker.JobClient;
-import io.camunda.zeebe.spring.client.annotation.JobWorker;
-import io.camunda.zeebe.spring.client.annotation.Variable;
-import iso.std.iso._20022.tech.json.camt_053_001.BankToCustomerStatementV08;
-import iso.std.iso._20022.tech.json.pain_001_001.Pain00100110CustomerCreditTransferInitiationV10MessageSchema;
-import iso.std.iso._20022.tech.xsd.camt_056_001.PaymentTransactionInformation31;
+//import io.camunda.zeebe.spring.client.annotation.JobWorker;
+//import io.camunda.zeebe.spring.client.annotation.Variable;
+//import iso.std.iso._20022.tech.json.camt_053_001.BankToCustomerStatementV08;
+//import iso.std.iso._20022.tech.json.pain_001_001.Pain00100110CustomerCreditTransferInitiationV10MessageSchema;
+//import iso.std.iso._20022.tech.xsd.camt_056_001.PaymentTransactionInformation31;
 
 @Component
 public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker {
 	
 	@Autowired
-	private Pain001Camt053Mapper camt053Mapper;
+//	private Pain001Camt053Mapper camt053Mapper;
 	
 	@Value("${fineract.incoming-money-api}")
 	protected String incomingMoneyApi;
@@ -50,7 +50,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 	@Autowired
     private PaymentTypeConfigFactory paymentTypeConfigFactory;
 	
-	@JobWorker
+//	@JobWorker
 	public void bookOnConversionAccountInAms(JobClient jobClient,
 			ActivatedJob activatedJob,
 			@Variable String originalPain001,
