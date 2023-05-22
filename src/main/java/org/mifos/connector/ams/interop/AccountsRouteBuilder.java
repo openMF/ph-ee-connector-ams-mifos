@@ -9,7 +9,6 @@ import org.mifos.connector.common.ams.dto.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-
 import java.util.List;
 
 import static org.mifos.connector.ams.camel.config.CamelProperties.CLIENT_ID;
@@ -17,7 +16,7 @@ import static org.mifos.connector.ams.zeebe.ZeebeVariables.*;
 
 @Component
 public class AccountsRouteBuilder extends RouteBuilder {
-    @Autowired
+    @Autowired(required = false)
     private AmsService amsService;
     @Value("${ams.local.version}")
     private String amsVersion;

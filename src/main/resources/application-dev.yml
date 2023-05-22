@@ -1,0 +1,66 @@
+camel:
+  server-port: 5000
+  springboot:
+    main-run-controller: true
+  dataformat:
+    json-jackson:
+      auto-discover-object-mapper: true
+
+dfspids: "DFSPID"
+
+fineract:
+  api-url: ${FINERACT_URL}
+  datatable-query-api: "/datatables/account_mapping/query"
+  column-filter: "iban"
+  result-columns: "conversion_account_id,disposal_account_id"
+  incoming-money-api: "/savingsaccounts/"
+  transaction-details-api: "/datatables/transaction_details/"
+  datatable-name: "transaction_details"
+  locale: "en"
+  auth-token: ${FINERACT_AUTH_TOKEN}
+  paymentType:
+    paymentTypeExchangeFiatCurrencyId: 5
+    paymentTypeIssuingECurrencyId: 7
+    paymentTypeExchangeECurrencyId: 8
+    paymentTypeExchangeToFiatCurrencyId: 6
+    paymentTypeFeeId: 1
+  generalLedger:
+    glLiabilityToCustomersInFiatCurrencyId: 10
+    glLiabilityAmountOnHoldId: 14
+  idempotency:
+    count: 10
+    interval: 200
+    key-header-name: "Idemptency-Key"
+
+zeebe:
+  client:
+    connection-mode: ADDRESS
+    broker:
+      gatewayAddress: camunda8-zeebe-gateway:26500
+    security:
+      plaintext: true
+
+ams:
+  local:
+    enabled: true
+    version: 1.2
+    keystore-path: keystore.jks
+    keystore-password: openmf
+    interop:
+      host: https://localhost:8443
+      base-url: /fineract-provider/api/v1
+      quotes-path: ${ams.local.interop.base-url}/interoperation/quotes
+      parties-path: ${ams.local.interop.base-url}/interoperation/parties/{idType}/{idValue}
+      transfers-path: ${ams.local.interop.base-url}/interoperation/transfers
+      accounts-path: ${ams.local.interop.base-url}/interoperation/accounts/{externalAccountId}
+    customer:
+      host: https://localhost:8443
+      base-url: /fineract-provider/api/v1
+      path: ${ams.local.customer.base-url}/clients/{clientId}
+      image: ${ams.local.customer.base-url}/clients/{clientId}/images
+    account:
+      host: https://localhost:8443
+      base-url: /fineract-provider/api/v1
+      savingsaccounts-path: ${ams.local.account.base-url}/savingsaccounts
+    auth:
+      host: https://localhost:8443

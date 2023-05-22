@@ -1,21 +1,27 @@
 package org.mifos.connector.ams.interop;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.camunda.zeebe.client.ZeebeClient;
 import org.apache.camel.Exchange;
 import org.apache.camel.LoggingLevel;
 import org.apache.camel.Processor;
 import org.apache.camel.model.dataformat.JsonLibrary;
 import org.json.JSONObject;
+import org.mifos.connector.ams.errorhandler.ErrorTranslator;
 import org.mifos.connector.ams.tenant.TenantNotExistException;
+import org.mifos.connector.ams.utils.Utils;
+import org.mifos.connector.ams.zeebe.ZeebeUtil;
 import org.mifos.connector.common.ams.dto.ClientData;
 import org.mifos.connector.common.ams.dto.Customer;
 import org.mifos.connector.common.ams.dto.InteropAccountDTO;
+import org.mifos.connector.common.ams.dto.LoanRepaymentDTO;
 import org.mifos.connector.common.ams.dto.LoginFineractCnResponseDTO;
 import org.mifos.connector.common.ams.dto.PartyFspResponseDTO;
 import org.mifos.connector.common.ams.dto.ProductDefinition;
 import org.mifos.connector.common.ams.dto.ProductInstance;
 import org.mifos.connector.common.camel.ErrorHandlerRouteBuilder;
 import org.mifos.connector.common.channel.dto.TransactionChannelRequestDTO;
+import org.mifos.connector.common.exception.PaymentHubError;
 import org.mifos.connector.common.mojaloop.dto.TransactionType;
 import org.mifos.connector.common.mojaloop.type.InitiatorType;
 import org.mifos.connector.common.mojaloop.type.Scenario;
@@ -27,29 +33,16 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.stereotype.Component;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
 import static java.util.Spliterator.ORDERED;
 import static java.util.Spliterators.spliteratorUnknownSize;
 import static java.util.stream.StreamSupport.stream;
-import static org.mifos.connector.ams.camel.config.CamelProperties.CLIENT_ID;
-import static org.mifos.connector.ams.camel.config.CamelProperties.CONTINUE_PROCESSING;
-import static org.mifos.connector.ams.camel.config.CamelProperties.DEFINITON_ID;
-import static org.mifos.connector.ams.camel.config.CamelProperties.EXISTING_EXTERNAL_ACCOUNT_ID;
-import static org.mifos.connector.ams.camel.config.CamelProperties.INTEROP_ACCOUNT_TO_REGISTER;
-import static org.mifos.connector.ams.camel.config.CamelProperties.PROCESS_TYPE;
-import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSACTION_ROLE;
-import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSFER_ACTION;
-import static org.mifos.connector.ams.zeebe.ZeebeVariables.ACCOUNT;
-import static org.mifos.connector.ams.zeebe.ZeebeVariables.ACCOUNT_CURRENCY;
-import static org.mifos.connector.ams.zeebe.ZeebeVariables.ACCOUNT_ID;
-import static org.mifos.connector.ams.zeebe.ZeebeVariables.CHANNEL_REQUEST;
-import static org.mifos.connector.ams.zeebe.ZeebeVariables.EXTERNAL_ACCOUNT_ID;
-import static org.mifos.connector.ams.zeebe.ZeebeVariables.PARTY_ID;
-import static org.mifos.connector.ams.zeebe.ZeebeVariables.PARTY_ID_TYPE;
-import static org.mifos.connector.ams.zeebe.ZeebeVariables.TENANT_ID;
-import static org.mifos.connector.ams.zeebe.ZeebeVariables.TRANSACTION_ID;
+import static org.mifos.connector.ams.camel.config.CamelProperties.*;
+import static org.mifos.connector.ams.zeebe.ZeebeVariables.*;
 import static org.mifos.connector.common.ams.dto.TransferActionType.CREATE;
 
 
@@ -63,7 +56,7 @@ public class InteroperationRouteBuilder extends ErrorHandlerRouteBuilder {
     @Autowired
     private Processor pojoToString;
 
-    @Autowired
+    @Autowired(required = false)
     private AmsService amsService;
 
     @Autowired
@@ -86,6 +79,12 @@ public class InteroperationRouteBuilder extends ErrorHandlerRouteBuilder {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Autowired
+    private ZeebeClient zeebeClient;
+
+    @Autowired
+    private ErrorTranslator errorTranslator;
 
     private Logger logger = LoggerFactory.getLogger(this.getClass());
 
@@ -110,9 +109,36 @@ public class InteroperationRouteBuilder extends ErrorHandlerRouteBuilder {
                 .id("get-external-account")
                 .log(LoggingLevel.INFO, "Get externalAccount with identifierType: ${exchangeProperty." + PARTY_ID_TYPE + "} with value: ${exchangeProperty."
                         + PARTY_ID + "}")
-                .process(amsService::getExternalAccount)
+                //.process(amsService::getExternalAccount)
+                .process(exchange -> {
+                    try {
+                        amsService.getExternalAccount(exchange);
+                    } catch (TenantNotExistException e) {
+                        e.printStackTrace();
+                        exchange.setProperty(ERROR_CODE, PaymentHubError.PayeeFspNotConfigured.getErrorCode());
+                        exchange.setProperty(ERROR_INFORMATION, PaymentHubError.PayeeFspNotConfigured.getErrorDescription());
+                        exchange.setProperty(ERROR_PAYLOAD, PaymentHubError.PayeeFspNotConfigured.getErrorDescription());
+                        exchange.getIn().setHeader(Exchange.HTTP_RESPONSE_CODE, 404);
+                        exchange.setProperty(IS_ERROR_SET_MANUALLY, true);
+                    }
+                })
+                .log("Response body from get-external-account: ${body}")
+                .choice()
+                // check if http status code is <= 202
+                .when(e -> e.getIn().getHeader(Exchange.HTTP_RESPONSE_CODE, Integer.class) <= 202)
                 .unmarshal().json(JsonLibrary.Jackson, PartyFspResponseDTO.class)
-                .process(e -> e.setProperty(EXTERNAL_ACCOUNT_ID, e.getIn().getBody(PartyFspResponseDTO.class).getAccountId()));
+                .process(e -> e.setProperty(EXTERNAL_ACCOUNT_ID, e.getIn().getBody(PartyFspResponseDTO.class).getAccountId()))
+                .process(exchange -> {
+                    PartyFspResponseDTO dto = exchange.getIn().getBody(PartyFspResponseDTO.class);
+
+                    logger.info("Account Id: {}", dto.getAccountId());
+                    logger.info("Http response code: {}", exchange.getIn().getHeader(Exchange.HTTP_RESPONSE_CODE, Integer.class));
+                })
+                .when(e -> e.getProperty(IS_ERROR_SET_MANUALLY, Boolean.class) == null ||
+                        !e.getProperty(IS_ERROR_SET_MANUALLY, Boolean.class))
+                .to("direct:error-handler")
+                .otherwise()
+                .endChoice();
 
         from("direct:send-local-quote")
                 .id("send-local-quote")
@@ -132,25 +158,51 @@ public class InteroperationRouteBuilder extends ErrorHandlerRouteBuilder {
                 .process(prepareTransferRequest)
                 .process(pojoToString)
                 .process(amsService::sendTransfer)
+                .to("direct:error-handler") // this route will parse and set error field if exist
+                .log("Process type: ${exchangeProperty." + PROCESS_TYPE + "}")
                 .choice()
                 .when(exchange -> exchange.getProperty(PROCESS_TYPE)!=null && exchange.getProperty(PROCESS_TYPE).equals("api"))
                     .process(exchange -> {
                         int statusCode = exchange.getIn().getHeader(Exchange.HTTP_RESPONSE_CODE, Integer.class);
                         if (statusCode > 202) {
-                            String errorMsg = String.format("Invalid responseCode %s for transfer on %s side, transactionId: %s Message: %s",
-                                    statusCode,
-                                    exchange.getProperty(TRANSFER_ACTION, String.class),
-                                    exchange.getProperty(TRANSACTION_ID),
-                                    exchange.getIn().getBody(String.class));
+                            Map<String, Object>  variables = Utils.getDefaultZeebeErrorVariable(exchange, errorTranslator);
+                            zeebeClient.newCompleteCommand(exchange.getProperty(ZEEBE_JOB_KEY, Long.class))
+                                    .variables(variables)
+                                    .send();
 
-                            logger.error(errorMsg);
+                            logger.error("{}", variables.get(ERROR_INFORMATION));
                         } else {
+                            Map<String, Object> variables = new HashMap<>();
+                            JSONObject responseJson = new JSONObject(exchange.getIn().getBody(String.class));
+                            variables.put(TRANSFER_PREPARE_FAILED,false);
+                            variables.put(TRANSFER_CREATE_FAILED,false);
+                            variables.put("payeeTenantId", exchange.getProperty("payeeTenantId"));
+                            variables.put(TRANSFER_CODE,responseJson.getString("transferCode"));
                             logger.info("API call successful. Response Body: " + exchange.getIn().getBody(String.class));
+                            zeebeClient.newCompleteCommand(exchange.getProperty(ZEEBE_JOB_KEY, Long.class))
+                                    .variables(variables)
+                                    .send();
                         }
+                        logger.info("End of process in send-transfers");
                     })
                 .otherwise()
                     .process(transfersResponseProcessor)
                 .end();
+
+        from("direct:send-transfers-loan")
+                .id("send-transfers-loan")
+                .log(LoggingLevel.DEBUG, "Sending transfer with action: ${exchangeProperty." + TRANSFER_ACTION + "} " +
+                        " for transaction: ${exchangeProperty." + TRANSACTION_ID + "}")
+                .log("Process type: ${exchangeProperty." + PROCESS_TYPE + "}")
+                .process(exchange -> {
+                    LoanRepaymentDTO loanRepaymentDTO=ZeebeUtil.setLoanRepaymentBody(exchange);
+                    String requestBody = objectMapper.writeValueAsString(loanRepaymentDTO);
+                    logger.debug("Request Body : {}", requestBody);
+                    exchange.getIn().setBody(requestBody);
+                    exchange.setProperty("accountNumber",exchange.getProperty(ACCOUNT_NUMBER));
+                })
+                .process(amsService::repayLoan);
+
 
         from("direct:fincn-oauth")
                 .id("fincn-oauth")
@@ -164,6 +216,11 @@ public class InteroperationRouteBuilder extends ErrorHandlerRouteBuilder {
                 .log(LoggingLevel.INFO, "Get party information for identifierType: ${exchangeProperty." + PARTY_ID_TYPE + "} with value: ${exchangeProperty." + PARTY_ID + "}")
                 .to("direct:get-external-account")
                 .process(e -> e.setProperty(ACCOUNT_ID, e.getProperty(EXTERNAL_ACCOUNT_ID)))
+                .choice()
+                .when(e -> e.getProperty(ACCOUNT_ID) == null)
+                .log(LoggingLevel.INFO, "AccountId is null")
+                .process(clientResponseProcessor)
+                .otherwise()
                 .process(amsService::getSavingsAccount)
                 .choice()
                     .when(e -> "1.2".equals(amsVersion))
@@ -302,6 +359,5 @@ public class InteroperationRouteBuilder extends ErrorHandlerRouteBuilder {
                     exchange.setProperty(PARTY_ID, transactionRequest.getPayee().getPartyIdInfo().getPartyIdentifier());
                 })
                 .to("direct:send-transfers");
-
     }
 }

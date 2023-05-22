@@ -10,7 +10,7 @@ dfspids: "DFSPID"
 
 zeebe:
   broker:
-    contactpoint: "127.0.0.1:26500"
+    contactpoint: "camunda8-zeebe-gateway.binx-dev:26500"
 
 ams:
   local:
@@ -36,3 +36,10 @@ ams:
       savingsaccounts-path: ${ams.local.account.base-url}/savingsaccounts
     auth:
       host: https://localhost:8443
+    loan:
+      host: http://localhost:8443
+      repayment-path: /fineract-provider/api/v1/interoperation/transactions/{accountNumber}/loanrepayment
+
+
+# Savings : S , Loan : L
+accountPrefixes: "S,L"

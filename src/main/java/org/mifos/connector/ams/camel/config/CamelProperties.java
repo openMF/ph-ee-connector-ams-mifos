@@ -18,4 +18,6 @@ public class CamelProperties {
     public static final String ZEEBE_JOB_KEY = "zeebeJobKey";
     public static final String PROCESS_TYPE = "processType";
 
+    public static final String IS_ERROR_SET_MANUALLY = "isErrorSetManually";
+
 }

@@ -1,7 +1,9 @@
-FROM openjdk:13
+FROM openjdk:17-bullseye
 EXPOSE 5000
 
-COPY target/*.jar .
-COPY target/classes/keystore.jks .
-CMD java -jar *.jar
+RUN apt-get update && apt-get install -y vim less iputils-ping telnet && apt-get autoclean
+WORKDIR /app
 
+COPY keystore.jks /app/
+COPY target/*.jar /app/
+CMD java -jar *.jar 

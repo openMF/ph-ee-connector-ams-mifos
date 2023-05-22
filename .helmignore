@@ -1,0 +1,16 @@
+.git/
+.project
+.idea/
+target/
+src/
+build.gradle
+dependencies.tree
+gradle
+gradlew
+gradlew.bat
+Jenkinsfile
+keystore.jks
+LICENSE
+pom.xml
+README.md
+settings.gradle
