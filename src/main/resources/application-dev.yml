@@ -8,9 +8,37 @@ camel:
 
 dfspids: "DFSPID"
 
+fineract:
+  api-url: ${FINERACT_URL}
+  datatable-query-api: "/datatables/account_mapping/query"
+  column-filter: "iban"
+  result-columns: "conversion_account_id,disposal_account_id"
+  incoming-money-api: "/savingsaccounts/"
+  transaction-details-api: "/datatables/transaction_details/"
+  datatable-name: "transaction_details"
+  locale: "en"
+  auth-token: ${FINERACT_AUTH_TOKEN}
+  paymentType:
+    paymentTypeExchangeFiatCurrencyId: 5
+    paymentTypeIssuingECurrencyId: 7
+    paymentTypeExchangeECurrencyId: 8
+    paymentTypeExchangeToFiatCurrencyId: 6
+    paymentTypeFeeId: 1
+  generalLedger:
+    glLiabilityToCustomersInFiatCurrencyId: 10
+    glLiabilityAmountOnHoldId: 14
+  idempotency:
+    count: 10
+    interval: 200
+    key-header-name: "Idemptency-Key"
+
 zeebe:
-  broker:
-    contactpoint: "camunda8-zeebe-gateway.binx-dev:26500"
+  client:
+    connection-mode: ADDRESS
+    broker:
+      gatewayAddress: camunda8-zeebe-gateway:26500
+    security:
+      plaintext: true
 
 ams:
   local:
@@ -36,10 +64,3 @@ ams:
       savingsaccounts-path: ${ams.local.account.base-url}/savingsaccounts
     auth:
       host: https://localhost:8443
-    loan:
-      host: http://localhost:8443
-      repayment-path: /fineract-provider/api/v1/interoperation/transactions/{accountNumber}/loanrepayment
-
-
-# Savings : S , Loan : L
-accountPrefixes: "S,L"

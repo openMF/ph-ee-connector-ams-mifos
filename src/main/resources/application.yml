@@ -8,6 +8,15 @@ camel:
 
 dfspids: "DFSPID"
 
+fineract:
+  api-url: ${FINERACT_URL}
+  datatable-query-api: "/datatables/account_mapping/query"
+  column-filter: "iban"
+  result-columns: "conversion_account_id,disposal_account_id"
+  internal-id-column: "internal_account_id"
+  incoming-money-api: "/savingsaccounts/"
+  locale: "en"
+
 zeebe:
   client:
     max-execution-threads: 1000
@@ -16,7 +25,7 @@ zeebe:
 #    number-of-workers: 8
 #    evenly-allocated-max-jobs: "#{${zeebe.client.max-execution-threads} / ${zeebe.client.number-of-workers}}"
   broker:
-    contactpoint: "127.0.0.1:26500"
+    contactpoint: "camunda8-zeebe-gateway.binx-dev:26500"
 
 #ams:
 #  local:

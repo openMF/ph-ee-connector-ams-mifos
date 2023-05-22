@@ -65,6 +65,8 @@ import static org.mifos.connector.common.ams.dto.TransferActionType.CREATE;
 import static org.mifos.connector.common.ams.dto.TransferActionType.PREPARE;
 import static org.mifos.connector.common.ams.dto.TransferActionType.RELEASE;
 
+import org.springframework.stereotype.Component;
+
 @Component
 public class ZeebeeWorkers {
 
@@ -620,4 +622,6 @@ public class ZeebeeWorkers {
         variables.put("fspCommission", fspCommission);
         return variables;
     }
+    public static final String WORKER_PARTY_ACCOUNT_LOOKUP = "party-account-lookup-";
+
 }

@@ -3,6 +3,8 @@ catalina*
 .gradle
 build/
 !gradle/wrapper/gradle-wrapper.jar
+*.log
+
 
 ### STS ###
 .apt_generated
@@ -29,5 +31,4 @@ build/
 
 ### VS Code ###
 .vscode/
-
-.DS_Store
+/bin/

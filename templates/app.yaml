@@ -1,0 +1,76 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ph-ee-connector-ams-mifos
+  labels:
+    app: ph-ee-connector-ams-mifos
+spec:
+  replicas: {{ .Values.replicas }}
+  selector:
+    matchLabels:
+      app: ph-ee-connector-ams-mifos
+  template:
+    metadata:
+      labels:
+        app: ph-ee-connector-ams-mifos
+      annotations:
+        deployTime: "{{ .Values.deployTime }}"
+    spec:
+      containers:
+        - name: ph-ee-connector-ams-mifos
+          image: 296716421908.dkr.ecr.eu-central-1.amazonaws.com/phee/connector-ams-mifos:latest
+          ports:
+              - containerPort: 8080
+                name: http
+              - containerPort: 8100
+                name: healthcheck
+          resources:
+            requests:
+              memory: "{{ .Values.pod_memory_request }}"
+              cpu: "{{ .Values.pod_cpu_request }}"
+            limits:
+              memory: "{{ .Values.pod_memory_limit }}"
+              cpu: "{{ .Values.pod_cpu_limit }}"
+          readinessProbe:
+            initialDelaySeconds: 10
+            httpGet:
+              port: 5000
+              path: /
+          startupProbe:
+            httpGet:
+              port: 5000
+              path: /
+            failureThreshold: 600
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              port: 5000
+              path: /
+          env:
+            - name: JAVA_TOOL_OPTIONS
+              value: "-XX:+UseContainerSupport -XX:MaxRAMPercentage={{ .Values.java_memory_heap_percentage }} -XX:+PrintFlagsFinal"
+            - name: SPRING_PROFILES_ACTIVE
+              value: {{ .Values.ENV }}
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: ph-ee-connector-ams-mifos
+  annotations:
+    prometheus.io/scrape: 'true'
+    prometheus.io/port: '8100'
+    prometheus.io/path: '/actuator/prometheus'
+spec:
+  selector:
+    app: ph-ee-connector-ams-mifos
+  type: NodePort
+  ports:
+    - name: http
+      port: 5000
+      protocol: TCP
+      targetPort: 5000
+    - name: healthcheck
+      port: 8100
+      protocol: TCP
+      targetPort: 8100
