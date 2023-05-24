@@ -622,6 +622,4 @@ public class ZeebeeWorkers {
         variables.put("fspCommission", fspCommission);
         return variables;
     }
-    public static final String WORKER_PARTY_ACCOUNT_LOOKUP = "party-account-lookup-";
-
 }

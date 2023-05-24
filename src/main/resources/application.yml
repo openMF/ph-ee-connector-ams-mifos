@@ -32,6 +32,11 @@ zeebe:
 #    server-cert-check: false
 #    enabled: true
 
+#ams:
+#  local:
+#    server-cert-check: false
+#    enabled: true
+
 ams:
   local:
     server-cert-check: false
