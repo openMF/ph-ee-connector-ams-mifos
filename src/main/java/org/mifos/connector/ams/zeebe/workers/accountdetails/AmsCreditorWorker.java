@@ -41,6 +41,7 @@ public class AmsCreditorWorker extends AbstractAmsWorker {
 		
 		Integer disposalAccountAmsId = null;
 		Integer conversionAccountAmsId = null;
+		Long internalAccountId = null;
 		String status = AccountAmsStatus.NOT_READY_TO_RECEIVE_MONEY.name();
 
 		try {
@@ -54,7 +55,8 @@ public class AmsCreditorWorker extends AbstractAmsWorker {
 				var responseItem = response[0];
 				Long accountFiatCurrencyId = responseItem.conversion_account_id();
 				Long accountECurrencyId = responseItem.disposal_account_id();
-	
+				internalAccountId = responseItem.internal_account_id();
+
 				try {
 					GetSavingsAccountsAccountIdResponse conversion = retrieveCurrencyIdAndStatus(accountFiatCurrencyId, tenantIdentifier);
 					GetSavingsAccountsAccountIdResponse disposal = retrieveCurrencyIdAndStatus(accountECurrencyId, tenantIdentifier);
@@ -82,7 +84,8 @@ public class AmsCreditorWorker extends AbstractAmsWorker {
 		}
 		return Map.of("disposalAccountAmsId", disposalAccountAmsId,
 				"conversionAccountAmsId", conversionAccountAmsId,
-				"accountAmsStatus", status);
+				"accountAmsStatus", status,
+				"internalAccountId", internalAccountId);
 	}
 
 	private GetSavingsAccountsAccountIdResponse retrieveCurrencyIdAndStatus(Long accountCurrencyId, String tenantId) {
