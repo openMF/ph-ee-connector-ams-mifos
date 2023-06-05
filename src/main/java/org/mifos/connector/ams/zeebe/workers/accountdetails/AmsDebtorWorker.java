@@ -43,7 +43,8 @@ public class AmsDebtorWorker extends AbstractAmsWorker {
 			AmsDataTableQueryResponse responseItem = lookupAccount[0];
 		
 			return Map.of("disposalAccountAmsId", responseItem.disposal_account_id(),
-					"conversionAccountAmsId", responseItem.conversion_account_id());
+					"conversionAccountAmsId", responseItem.conversion_account_id(),
+					"internalAccountId", responseItem.internal_account_id());
 		}
 	}
 }
