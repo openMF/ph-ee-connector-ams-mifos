@@ -48,7 +48,6 @@
     <logger name="io" level="INFO"/>
     <logger name="hu.dpc" level="TRACE"/>
     <logger name="org.mifos.connector.ams.zeebe" level="DEBUG" />
-    <logger name="org.apache.camel.component.undertow" level="TRACE"/>
 
     <root level="DEBUG">
         <appender-ref ref="CONSOLE"/>
