@@ -37,6 +37,7 @@ public class HealthCheck extends RouteBuilder {
             exchange.getMessage().setHeader(HTTP_RESPONSE_CODE, 503);
             logger.warn("health check failed with {}", results);
         }
-        exchange.getMessage().setBody(results);
+
+        // exchange.getMessage().setBody(results);   TODO return human-readable results in JSON representation, based on results
     }
 }
