@@ -50,6 +50,8 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 	@Autowired
     private PaymentTypeConfigFactory paymentTypeConfigFactory;
 	
+	private ObjectMapper om = new ObjectMapper();
+	
 	@JobWorker
 	public void bookOnConversionAccountInAms(JobClient jobClient,
 			ActivatedJob activatedJob,
@@ -65,7 +67,6 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 			@Variable BigDecimal transactionFeeAmount,
 			@Variable String tenantIdentifier) throws Exception {
 		
-		ObjectMapper om = new ObjectMapper();
 		Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001 = om.readValue(originalPain001, Pain00100110CustomerCreditTransferInitiationV10MessageSchema.class);
 		
 		MDC.put("internalCorrelationId", internalCorrelationId);
@@ -176,7 +177,6 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 					FORMAT,
 					locale);
 			
-			ObjectMapper om = new ObjectMapper();
 			String bodyItem = om.writeValueAsString(body);
 			
 			List<TransactionItem> items = new ArrayList<>();

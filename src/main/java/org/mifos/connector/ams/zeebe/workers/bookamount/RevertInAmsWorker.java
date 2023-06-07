@@ -51,6 +51,8 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 	@Autowired
     private PaymentTypeConfigFactory paymentTypeConfigFactory;
 	
+	private ObjectMapper om = new ObjectMapper();
+	
 	@JobWorker
 	public void revertInAms(JobClient jobClient, 
 			ActivatedJob activatedJob,
@@ -67,7 +69,6 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			@Variable String tenantIdentifier) throws Exception {
 		MDC.put("internalCorrelationId", internalCorrelationId);
 		
-		ObjectMapper om = new ObjectMapper();
 		Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001 = om.readValue(originalPain001, Pain00100110CustomerCreditTransferInitiationV10MessageSchema.class);
 		
 		BigDecimal amount = BigDecimal.ZERO;
@@ -234,8 +235,6 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 					"",
 					FORMAT,
 					locale);
-			
-			ObjectMapper om = new ObjectMapper();
 			
 			String bodyItem = om.writeValueAsString(body);
 			
