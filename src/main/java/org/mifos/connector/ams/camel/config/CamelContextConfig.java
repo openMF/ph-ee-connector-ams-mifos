@@ -1,6 +1,9 @@
 package org.mifos.connector.ams.camel.config;
 
 import org.apache.camel.CamelContext;
+import org.apache.camel.health.HealthCheckRegistry;
+import org.apache.camel.impl.health.DefaultHealthCheckRegistry;
+import org.apache.camel.impl.health.RoutesHealthCheckRepository;
 import org.apache.camel.spi.RestConfiguration;
 import org.apache.camel.spring.boot.CamelContextConfiguration;
 import org.springframework.beans.factory.annotation.Value;
@@ -25,10 +28,14 @@ public class CamelContextConfig {
                 camelContext.setStreamCaching(true);
                 camelContext.disableJMX();
 
+                DefaultHealthCheckRegistry checkRegistry = new DefaultHealthCheckRegistry();
+                checkRegistry.register(new RoutesHealthCheckRepository());
+                camelContext.setExtension(HealthCheckRegistry.class, checkRegistry);
+
                 RestConfiguration rest = new RestConfiguration();
                 camelContext.setRestConfiguration(rest);
-                rest.setComponent("undertow");
-                rest.setProducerComponent("undertow");
+                rest.setComponent("jetty");
+                rest.setProducerComponent("jetty");
                 rest.setPort(serverPort);
                 rest.setBindingMode(RestConfiguration.RestBindingMode.json);
                 rest.setDataFormatProperties(new HashMap<>());

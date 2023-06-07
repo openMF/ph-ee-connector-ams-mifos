@@ -3,7 +3,7 @@ package org.mifos.connector.ams.zeebe.workers.accountdetails;
 import java.util.Map;
 
 import org.apache.fineract.client.models.GetSavingsAccountsAccountIdResponse;
-import org.jboss.logging.MDC;
+import org.slf4j.MDC;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
