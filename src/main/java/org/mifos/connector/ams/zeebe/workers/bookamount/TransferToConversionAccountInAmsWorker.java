@@ -1,6 +1,5 @@
 package org.mifos.connector.ams.zeebe.workers.bookamount;
 
-import java.io.InputStream;
 import java.io.StringReader;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -18,13 +17,13 @@ import org.mifos.connector.ams.fineract.PaymentTypeConfig;
 import org.mifos.connector.ams.fineract.PaymentTypeConfigFactory;
 import org.mifos.connector.ams.mapstruct.Pain001Camt053Mapper;
 import org.mifos.connector.ams.zeebe.workers.utils.BatchItemBuilder;
+import org.mifos.connector.ams.zeebe.workers.utils.JsonSchemaValidator;
 import org.mifos.connector.ams.zeebe.workers.utils.TransactionBody;
 import org.mifos.connector.ams.zeebe.workers.utils.TransactionDetails;
 import org.mifos.connector.ams.zeebe.workers.utils.TransactionItem;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -32,11 +31,8 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.networknt.schema.JsonSchema;
-import com.networknt.schema.JsonSchemaFactory;
-import com.networknt.schema.SpecVersion;
 import com.networknt.schema.ValidationMessage;
 
 import hu.dpc.rt.utils.converter.Camt056ToCamt053Converter;
@@ -63,6 +59,9 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 	
 	@Autowired
     private PaymentTypeConfigFactory paymentTypeConfigFactory;
+	
+	@Autowired
+	private JsonSchemaValidator validator;
 	
 	private static final DateTimeFormatter PATTERN = DateTimeFormatter.ofPattern(FORMAT);
 
@@ -91,19 +90,15 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			
 			try {
 				logger.info(">>>>>>>>>>>>>>>>>> Validating incoming pain.001 <<<<<<<<<<<<<<<<");
-				InputStream resource = new ClassPathResource("/services/json-schema/pain.001.001/pain.001.001.10-CustomerCreditTransferInitiationV10.Message.schema.json").getInputStream();
-				JsonSchemaFactory sf = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V202012);
-			
-				JsonNode json = om.readTree(originalPain001);
-				JsonSchema schema = sf.getSchema(resource);
-				Set<ValidationMessage> validationResult = schema.validate(json);
+				
+				Set<ValidationMessage> validationResult = validator.validate(originalPain001);
 			
 				if (validationResult.isEmpty()) {
 					logger.info(">>>>>>>>>>>>>>>> pain.001 validation successful <<<<<<<<<<<<<<<");
 				} else {
 					logger.error(validationResult.toString());
 				}
-			} catch (Exception e) {
+			} catch (JsonProcessingException e) {
 				logger.warn("Unable to validate pain.001: {}", e.getMessage());
 			}
 			
