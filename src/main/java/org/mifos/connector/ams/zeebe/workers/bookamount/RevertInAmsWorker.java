@@ -1,20 +1,18 @@
 package org.mifos.connector.ams.zeebe.workers.bookamount;
 
-import java.io.StringReader;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
 
 import org.mifos.connector.ams.fineract.PaymentTypeConfig;
 import org.mifos.connector.ams.fineract.PaymentTypeConfigFactory;
 import org.mifos.connector.ams.mapstruct.Pain001Camt053Mapper;
 import org.mifos.connector.ams.zeebe.workers.utils.BatchItemBuilder;
+import org.mifos.connector.ams.zeebe.workers.utils.JAXBUtils;
 import org.mifos.connector.ams.zeebe.workers.utils.TransactionBody;
 import org.mifos.connector.ams.zeebe.workers.utils.TransactionDetails;
 import org.mifos.connector.ams.zeebe.workers.utils.TransactionItem;
@@ -51,7 +49,10 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 	@Autowired
     private PaymentTypeConfigFactory paymentTypeConfigFactory;
 	
-	private ObjectMapper om = new ObjectMapper();
+	@Autowired
+	private JAXBUtils jaxbUtils;
+	
+	private final ObjectMapper objectMapper = new ObjectMapper();
 	
 	@JobWorker
 	public void revertInAms(JobClient jobClient, 
@@ -69,7 +70,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			@Variable String tenantIdentifier) throws Exception {
 		MDC.put("internalCorrelationId", internalCorrelationId);
 		
-		Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001 = om.readValue(originalPain001, Pain00100110CustomerCreditTransferInitiationV10MessageSchema.class);
+		Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001 = objectMapper.readValue(originalPain001, Pain00100110CustomerCreditTransferInitiationV10MessageSchema.class);
 		
 		BigDecimal amount = BigDecimal.ZERO;
 		
@@ -96,14 +97,14 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 				FORMAT,
 				locale);
 		
-		String bodyItem = om.writeValueAsString(body);
+		String bodyItem = objectMapper.writeValueAsString(body);
 		
 		List<TransactionItem> items = new ArrayList<>();
 		
 		biBuilder.add(items, conversionAccountWithdrawRelativeUrl, bodyItem, false);
 		
 		BankToCustomerStatementV08 convertedcamt053 = camt053Mapper.toCamt053(pain001.getDocument());
-		String camt053 = om.writeValueAsString(convertedcamt053);
+		String camt053 = objectMapper.writeValueAsString(convertedcamt053);
 		
 		String camt053RelativeUrl = String.format("datatables/transaction_details/%d", conversionAccountAmsId);
 		
@@ -114,7 +115,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 				transactionGroupId,
 				transactionCategoryPurposeCode);
 		
-		String camt053Body = om.writeValueAsString(td);
+		String camt053Body = objectMapper.writeValueAsString(td);
 
 		biBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 		
@@ -131,7 +132,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 					FORMAT,
 					locale);
 			
-			bodyItem = om.writeValueAsString(body);
+			bodyItem = objectMapper.writeValueAsString(body);
 			
 			biBuilder.add(items, conversionAccountWithdrawRelativeUrl, bodyItem, false);
 			
@@ -141,7 +142,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 					camt053,
 					transactionGroupId,
 					transactionFeeCategoryPurposeCode);
-			camt053Body = om.writeValueAsString(td);
+			camt053Body = objectMapper.writeValueAsString(td);
 			biBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 		}
 
@@ -159,7 +160,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 				FORMAT,
 				locale);
 		
-		bodyItem = om.writeValueAsString(body);
+		bodyItem = objectMapper.writeValueAsString(body);
 		
 		biBuilder.add(items, disposalAccountDepositRelativeUrl, bodyItem, false);
 		
@@ -172,7 +173,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 				transactionGroupId,
 				transactionCategoryPurposeCode);
 		
-		camt053Body = om.writeValueAsString(td);
+		camt053Body = objectMapper.writeValueAsString(td);
 		
 		biBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 		
@@ -189,7 +190,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 					FORMAT,
 					locale);
 			
-			bodyItem = om.writeValueAsString(body);
+			bodyItem = objectMapper.writeValueAsString(body);
 			
 			biBuilder.add(items, disposalAccountDepositRelativeUrl, bodyItem, false);
 			
@@ -199,7 +200,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 					camt053,
 					transactionGroupId,
 					transactionFeeCategoryPurposeCode);
-			camt053Body = om.writeValueAsString(td);
+			camt053Body = objectMapper.writeValueAsString(td);
 			biBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 		}
 		
@@ -236,16 +237,13 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 					FORMAT,
 					locale);
 			
-			String bodyItem = om.writeValueAsString(body);
+			String bodyItem = objectMapper.writeValueAsString(body);
 			
 			List<TransactionItem> items = new ArrayList<>();
 			
 			biBuilder.add(items, conversionAccountWithdrawRelativeUrl, bodyItem, false);
 			
-			JAXBContext jc = JAXBContext.newInstance(iso.std.iso._20022.tech.xsd.camt_056_001.ObjectFactory.class,
-					eu.nets.realtime247.ri_2015_10.ObjectFactory.class);
-			@SuppressWarnings("unchecked")
-			iso.std.iso._20022.tech.xsd.camt_056_001.Document document = ((JAXBElement<iso.std.iso._20022.tech.xsd.camt_056_001.Document>) jc.createUnmarshaller().unmarshal(new StringReader(camt056))).getValue();
+			iso.std.iso._20022.tech.xsd.camt_056_001.Document document = jaxbUtils.unmarshalCamt056(camt056);
 			Camt056ToCamt053Converter converter = new Camt056ToCamt053Converter();
 			BankToCustomerStatementV08 statement = converter.convert(document);
 			
@@ -270,7 +268,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 					.getOrgnlEndToEndId();
 			
 			String internalCorrelationId = String.format("%s_%s_%s", originalDebtorBic, originalCreationDate, originalEndToEndId);
-			String camt053 = om.writeValueAsString(statement);
+			String camt053 = objectMapper.writeValueAsString(statement);
 			
 			String camt053RelativeUrl = String.format("datatables/transaction_details/%d", conversionAccountAmsId);
 			
@@ -281,7 +279,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 					internalCorrelationId,
 					transactionCategoryPurposeCode);
 			
-			String camt053Body = om.writeValueAsString(td);
+			String camt053Body = objectMapper.writeValueAsString(td);
 
 			biBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 			
@@ -297,7 +295,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 					FORMAT,
 					locale);
 			
-			bodyItem = om.writeValueAsString(body);
+			bodyItem = objectMapper.writeValueAsString(body);
 			
 			biBuilder.add(items, disposalAccountDepositRelativeUrl, bodyItem, false);
 			
@@ -310,7 +308,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 					internalCorrelationId,
 					transactionCategoryPurposeCode);
 			
-			camt053Body = om.writeValueAsString(td);
+			camt053Body = objectMapper.writeValueAsString(td);
 			
 			biBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 			

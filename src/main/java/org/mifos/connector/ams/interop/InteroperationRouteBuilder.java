@@ -78,7 +78,7 @@ public class InteroperationRouteBuilder extends ErrorHandlerRouteBuilder {
     @Autowired
     private ZeebeClient zeebeClient;
 
-    private Logger logger = LoggerFactory.getLogger(this.getClass());
+    private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     public InteroperationRouteBuilder() {
         super.configure();

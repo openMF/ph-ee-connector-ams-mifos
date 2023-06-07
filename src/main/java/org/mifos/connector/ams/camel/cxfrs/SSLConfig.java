@@ -35,9 +35,9 @@ import java.util.stream.Stream;
 public class SSLConfig {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
-    private String keystorePassword;
-    private File keyStoreFile;
-    private boolean checkServerCert;
+    private final String keystorePassword;
+    private final File keyStoreFile;
+    private final boolean checkServerCert;
 
     public SSLConfig(@Value("${ams.local.keystore-path}") String keystorePath,
                      @Value("${ams.local.keystore-password}") String keystorePassword,

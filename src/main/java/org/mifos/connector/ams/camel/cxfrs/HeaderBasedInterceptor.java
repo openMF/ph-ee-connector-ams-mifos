@@ -17,7 +17,7 @@ public interface HeaderBasedInterceptor {
                     try {
                         Object headerValue = ((List)((Map) it).get(CXF_TRACE_HEADER)).get(0);
                         return Boolean.TRUE.equals(headerValue instanceof String ? Boolean.valueOf((String) headerValue) :
-                                (Boolean)headerValue);
+                                headerValue);
                     } catch (Exception ex) {
                         return false;
                     }

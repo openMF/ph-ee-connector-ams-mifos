@@ -135,8 +135,8 @@ public abstract class AbstractMoneyInOutWorker {
 		
 		logger.debug(">> Sending {} to {} with headers {}", items, urlTemplate, httpHeaders);
 		
-		ObjectMapper om = new ObjectMapper();
-		String body = om.writeValueAsString(items);
+		ObjectMapper objectMapper = new ObjectMapper();
+		String body = objectMapper.writeValueAsString(items);
 		
 		int retryCount = idempotencyRetryCount;
 		
@@ -144,7 +144,7 @@ public abstract class AbstractMoneyInOutWorker {
 		while (retryCount > 0) {
 			httpHeaders.remove(idempotencyKeyHeaderName);
 			httpHeaders.set(idempotencyKeyHeaderName, String.format("%s_%d", internalCorrelationId, idempotencyPostfix));
-			wireLogger.sending(body.toString());
+			wireLogger.sending(body);
 			ResponseEntity<Object> response = null;
 			try {
 				response = restTemplate.exchange(urlTemplate, HttpMethod.POST, entity, Object.class);

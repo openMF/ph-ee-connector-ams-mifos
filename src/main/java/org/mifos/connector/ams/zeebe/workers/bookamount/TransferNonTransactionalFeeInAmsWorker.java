@@ -62,13 +62,13 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 		PaymentTypeConfig paymentTypeConfig = paymentTypeConfigFactory.getPaymentTypeConfig(tenantIdentifier);
 		logger.debug("Got payment scheme {}", paymentScheme);
 		String transactionDate = LocalDate.now().format(PATTERN);
-		ObjectMapper om = new ObjectMapper();
+		ObjectMapper objectMapper = new ObjectMapper();
 		BatchItemBuilder biBuilder = new BatchItemBuilder(tenantIdentifier);
 		logger.debug("Got category purpose code {}", categoryPurpose);
 		
 		try {
 			MDC.put("internalCorrelationId", internalCorrelationId);
-			Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001 = om.readValue(originalPain001, Pain00100110CustomerCreditTransferInitiationV10MessageSchema.class);
+			Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001 = objectMapper.readValue(originalPain001, Pain00100110CustomerCreditTransferInitiationV10MessageSchema.class);
 			
 			Integer paymentTypeId = paymentTypeConfig.findPaymentTypeByOperation(String.format("%s.%s.%s", paymentScheme, categoryPurpose, "transferToConversionAccountInAms.DisposalAccount.WithdrawNonTransactionalFee"));
 			logger.debug("Looking up {}, got payment type id {}", String.format("%s.%s.%s", paymentScheme, categoryPurpose, "transferToConversionAccountInAms.DisposalAccount.WithdrawNonTransactionalFee"), paymentTypeId);
@@ -80,14 +80,14 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 					FORMAT,
 					locale);
 			
-			String bodyItem = om.writeValueAsString(body);
+			String bodyItem = objectMapper.writeValueAsString(body);
 			
 			List<TransactionItem> items = new ArrayList<>();
 			
 			biBuilder.add(items, disposalAccountWithdrawRelativeUrl, bodyItem, false);
 			
 			BankToCustomerStatementV08 convertedcamt053 = camt053Mapper.toCamt053(pain001.getDocument());
-			String camt053 = om.writeValueAsString(convertedcamt053);
+			String camt053 = objectMapper.writeValueAsString(convertedcamt053);
 			
 			String camt053RelativeUrl = String.format("datatables/transaction_details/%d", disposalAccountAmsId);
 			
@@ -98,7 +98,7 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 					transactionGroupId,
 					categoryPurpose);
 			
-			String camt053Body = om.writeValueAsString(td);
+			String camt053Body = objectMapper.writeValueAsString(td);
 
 			biBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 			
@@ -114,7 +114,7 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 					FORMAT,
 					locale);
 			
-			bodyItem = om.writeValueAsString(body);
+			bodyItem = objectMapper.writeValueAsString(body);
 			
 			String conversionAccountDepositRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "deposit");
 			
@@ -129,7 +129,7 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 					transactionGroupId,
 					categoryPurpose);
 			
-			camt053Body = om.writeValueAsString(td);
+			camt053Body = objectMapper.writeValueAsString(td);
 
 			biBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 			
@@ -145,7 +145,7 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 					FORMAT,
 					locale);
 			
-			bodyItem = om.writeValueAsString(body);
+			bodyItem = objectMapper.writeValueAsString(body);
 			
 			String conversionAccountWithdrawRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "withdrawal");
 			
@@ -160,11 +160,11 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 					transactionGroupId,
 					categoryPurpose);
 			
-			camt053Body = om.writeValueAsString(td);
+			camt053Body = objectMapper.writeValueAsString(td);
 
 			biBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 			
-			logger.debug("Attempting to send {}", om.writeValueAsString(items));
+			logger.debug("Attempting to send {}", objectMapper.writeValueAsString(items));
 			
 			doBatch(items, tenantIdentifier, internalCorrelationId);
 			

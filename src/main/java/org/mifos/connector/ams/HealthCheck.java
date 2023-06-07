@@ -15,7 +15,7 @@ import static org.apache.camel.health.HealthCheckHelper.invokeReadiness;
 
 @Component
 public class HealthCheck extends RouteBuilder {
-    private Logger logger = LoggerFactory.getLogger(this.getClass());
+    private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     @Override
     public void configure() {

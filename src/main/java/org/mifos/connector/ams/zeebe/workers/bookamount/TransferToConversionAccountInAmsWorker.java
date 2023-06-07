@@ -1,6 +1,5 @@
 package org.mifos.connector.ams.zeebe.workers.bookamount;
 
-import java.io.StringReader;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -9,14 +8,13 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Set;
 
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
 
 import org.mifos.connector.ams.fineract.PaymentTypeConfig;
 import org.mifos.connector.ams.fineract.PaymentTypeConfigFactory;
 import org.mifos.connector.ams.mapstruct.Pain001Camt053Mapper;
 import org.mifos.connector.ams.zeebe.workers.utils.BatchItemBuilder;
+import org.mifos.connector.ams.zeebe.workers.utils.JAXBUtils;
 import org.mifos.connector.ams.zeebe.workers.utils.JsonSchemaValidator;
 import org.mifos.connector.ams.zeebe.workers.utils.TransactionBody;
 import org.mifos.connector.ams.zeebe.workers.utils.TransactionDetails;
@@ -62,7 +60,10 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 	@Autowired
 	private JsonSchemaValidator validator;
 	
-	private ObjectMapper om = new ObjectMapper();
+	@Autowired
+	private JAXBUtils jaxbUtils;
+	
+	private final ObjectMapper objectMapper = new ObjectMapper();
 	
 	private static final DateTimeFormatter PATTERN = DateTimeFormatter.ofPattern(FORMAT);
 
@@ -86,7 +87,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 		logger.debug("Debtor exchange worker starting");
 		MDC.put("internalCorrelationId", internalCorrelationId);
 		try {
-			Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001 = om.readValue(originalPain001, Pain00100110CustomerCreditTransferInitiationV10MessageSchema.class);
+			Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001 = objectMapper.readValue(originalPain001, Pain00100110CustomerCreditTransferInitiationV10MessageSchema.class);
 			
 			try {
 				logger.info(">>>>>>>>>>>>>>>>>> Validating incoming pain.001 <<<<<<<<<<<<<<<<");
@@ -146,23 +147,23 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			
 			String disposalAccountWithdrawRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), disposalAccountAmsId, "withdrawal");
 			
-			withdrawAmount(amount, paymentScheme, transactionDate, om, paymentTypeConfig, biBuilder, items,
+			withdrawAmount(amount, paymentScheme, transactionDate, objectMapper, paymentTypeConfig, biBuilder, items,
 					disposalAccountWithdrawRelativeUrl);
 			
 			BankToCustomerStatementV08 convertedCamt053 = camt053Mapper.toCamt053(pain001.getDocument());
-			String camt053 = om.writeValueAsString(convertedCamt053);
+			String camt053 = objectMapper.writeValueAsString(convertedCamt053);
 			
 			String camt053RelativeUrl = String.format("datatables/transaction_details/%d", disposalAccountAmsId);
 			
 			addDetails(transactionGroupId, transactionCategoryPurposeCode,
-					internalCorrelationId, om, biBuilder, items, camt053, camt053RelativeUrl);
+					internalCorrelationId, objectMapper, biBuilder, items, camt053, camt053RelativeUrl);
 
 			if (hasFee) {
 				logger.debug("Withdrawing fee {} from disposal account {}", transactionFeeAmount, disposalAccountAmsId);
-					withdrawFee(transactionFeeAmount, paymentScheme, transactionDate, om, paymentTypeConfig, biBuilder,
+					withdrawFee(transactionFeeAmount, paymentScheme, transactionDate, objectMapper, paymentTypeConfig, biBuilder,
 							items, disposalAccountWithdrawRelativeUrl);
 					
-					addDetails(transactionGroupId, transactionFeeCategoryPurposeCode, internalCorrelationId, om,
+					addDetails(transactionGroupId, transactionFeeCategoryPurposeCode, internalCorrelationId, objectMapper,
 							biBuilder, items, camt053, camt053RelativeUrl);
 			}
 			
@@ -171,19 +172,19 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			String conversionAccountDepositRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "deposit");
 			camt053RelativeUrl = String.format("datatables/transaction_details/%d", conversionAccountAmsId);
 			
-			depositAmount(amount, paymentScheme, transactionDate, om, paymentTypeConfig, biBuilder, items,
+			depositAmount(amount, paymentScheme, transactionDate, objectMapper, paymentTypeConfig, biBuilder, items,
 					conversionAccountDepositRelativeUrl);
 			
-			addDetails(transactionGroupId, transactionCategoryPurposeCode, internalCorrelationId, om, biBuilder, items,
+			addDetails(transactionGroupId, transactionCategoryPurposeCode, internalCorrelationId, objectMapper, biBuilder, items,
 					camt053, camt053RelativeUrl);
 		
 			
 			if (hasFee) {
 				logger.debug("Depositing fee {} to conversion account {}", transactionFeeAmount, conversionAccountAmsId);
-				depositFee(transactionFeeAmount, paymentScheme, transactionDate, om, paymentTypeConfig, biBuilder, items,
+				depositFee(transactionFeeAmount, paymentScheme, transactionDate, objectMapper, paymentTypeConfig, biBuilder, items,
 						conversionAccountDepositRelativeUrl);
 				
-				addDetails(transactionGroupId, transactionFeeCategoryPurposeCode, internalCorrelationId, om, biBuilder,
+				addDetails(transactionGroupId, transactionFeeCategoryPurposeCode, internalCorrelationId, objectMapper, biBuilder,
 						items, camt053, camt053RelativeUrl);
 			}
 			
@@ -280,16 +281,13 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 					FORMAT,
 					locale);
 			
-			String bodyItem = om.writeValueAsString(body);
+			String bodyItem = objectMapper.writeValueAsString(body);
 			
 			List<TransactionItem> items = new ArrayList<>();
 			
 			biBuilder.add(items, disposalAccountWithdrawRelativeUrl, bodyItem, false);
 		
-			JAXBContext jc = JAXBContext.newInstance(iso.std.iso._20022.tech.xsd.camt_056_001.ObjectFactory.class,
-    				eu.nets.realtime247.ri_2015_10.ObjectFactory.class);
-    		@SuppressWarnings("unchecked")
-			iso.std.iso._20022.tech.xsd.camt_056_001.Document document = ((JAXBElement<iso.std.iso._20022.tech.xsd.camt_056_001.Document>) jc.createUnmarshaller().unmarshal(new StringReader(camt056))).getValue();
+			iso.std.iso._20022.tech.xsd.camt_056_001.Document document = jaxbUtils.unmarshalCamt056(camt056);
     		Camt056ToCamt053Converter converter = new Camt056ToCamt053Converter();
     		BankToCustomerStatementV08 statement = converter.convert(document);
     		
@@ -315,7 +313,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
     		
     		String internalCorrelationId = String.format("%s_%s_%s", originalDebtorBic, originalCreationDate, originalEndToEndId);
 		
-			String camt053 = om.writeValueAsString(statement);
+			String camt053 = objectMapper.writeValueAsString(statement);
 			
 			String camt053RelativeUrl = String.format("datatables/transaction_details/%d", disposalAccountAmsId);
 			
@@ -326,18 +324,18 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 					internalCorrelationId,
 					transactionCategoryPurposeCode);
 			
-			String camt053Body = om.writeValueAsString(td);
+			String camt053Body = objectMapper.writeValueAsString(td);
 	
 			biBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 			
 			String conversionAccountDepositRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "deposit");
 			
-			depositAmount(amount, paymentScheme, transactionDate, om, paymentTypeConfig, biBuilder, items,
+			depositAmount(amount, paymentScheme, transactionDate, objectMapper, paymentTypeConfig, biBuilder, items,
 					conversionAccountDepositRelativeUrl);
 			
 			camt053RelativeUrl = String.format("datatables/transaction_details/%d", conversionAccountAmsId);
 			
-			camt053Body = om.writeValueAsString(td);
+			camt053Body = objectMapper.writeValueAsString(td);
 			biBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 			
 			doBatch(items, tenantIdentifier, internalCorrelationId);

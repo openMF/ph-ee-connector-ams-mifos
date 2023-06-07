@@ -23,10 +23,10 @@ public class PaymentTypeConfiguration {
 	@Bean
 	@SuppressWarnings("unchecked")
 	public PaymentTypeConfigFactory paymentTypeConfigFactory() throws JsonProcessingException {
-		ObjectMapper om = new ObjectMapper();
-		JsonNode jsonNode = om.readTree(tenantConfigsJson);
+		ObjectMapper objectMapper = new ObjectMapper();
+		JsonNode jsonNode = objectMapper.readTree(tenantConfigsJson);
 		// Map<String, List<PaymentType>> paymentTypeConfig = new ObjectMapper().readValue(tenantConfigsJson, Map.class);
-		Map<String, List<PaymentType>> paymentTypeConfig = om.convertValue(jsonNode, new TypeReference<Map<String, List<PaymentType>>>() {});
+		Map<String, List<PaymentType>> paymentTypeConfig = objectMapper.convertValue(jsonNode, new TypeReference<Map<String, List<PaymentType>>>() {});
 		
 		Map<String, Map<String, Integer>> paymentTypeConfigMap = paymentTypeConfig
 				.entrySet()

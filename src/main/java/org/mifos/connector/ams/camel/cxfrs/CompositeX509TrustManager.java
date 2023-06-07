@@ -12,7 +12,7 @@ import java.util.stream.Stream;
 public class CompositeX509TrustManager implements X509TrustManager {
 
     private final List<X509TrustManager> trustManagers;
-    private boolean checkServerCert;
+    private final boolean checkServerCert;
 
     public CompositeX509TrustManager(List<X509TrustManager> trustManagers, boolean checkServerCert) {
         this.trustManagers = Collections.unmodifiableList(new ArrayList<>(trustManagers));

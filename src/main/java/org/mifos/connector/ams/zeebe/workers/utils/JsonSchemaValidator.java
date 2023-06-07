@@ -22,17 +22,17 @@ public class JsonSchemaValidator {
 	
 	private JsonSchema schema;
 	
-	private ObjectMapper om = new ObjectMapper();
+	private final ObjectMapper objectMapper = new ObjectMapper();
 	
 	@PostConstruct
 	public void init() throws IOException  {
-		JsonNode jsonNode = om.readTree(new ClassPathResource("/iso20022-plus-json/pain_001_001/pain.001.001.10-CustomerCreditTransferInitiationV10.Message.schema.json").getInputStream());
+		JsonNode jsonNode = objectMapper.readTree(new ClassPathResource("/iso20022-plus-json/pain_001_001/pain.001.001.10-CustomerCreditTransferInitiationV10.Message.schema.json").getInputStream());
 		JsonSchemaFactory sf = JsonSchemaFactory.getInstance(SpecVersionDetector.detect(jsonNode));
 		schema = sf.getSchema(new ClassPathResource("/iso20022-plus-json/pain_001_001/pain.001.001.10-CustomerCreditTransferInitiationV10.Message.schema.json").getInputStream());
 	}
 
-	public Set<ValidationMessage> validate(String pain001) throws JsonMappingException, JsonProcessingException {
-		JsonNode json = om.readTree(pain001);
+	public Set<ValidationMessage> validate(String pain001) throws JsonProcessingException {
+		JsonNode json = objectMapper.readTree(pain001);
 		return schema.validate(json);
 	}
 }

@@ -67,11 +67,11 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 			
 			logger.debug("Incoming pain.001: {}", originalPain001);
 			
-			ObjectMapper om = new ObjectMapper();
-			Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001 = om.readValue(originalPain001, Pain00100110CustomerCreditTransferInitiationV10MessageSchema.class);
+			ObjectMapper objectMapper = new ObjectMapper();
+			Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001 = objectMapper.readValue(originalPain001, Pain00100110CustomerCreditTransferInitiationV10MessageSchema.class);
 			
 			BankToCustomerStatementV08 convertedcamt053 = camt053Mapper.toCamt053(pain001.getDocument());
-			String camt053 = om.writeValueAsString(convertedcamt053);
+			String camt053 = objectMapper.writeValueAsString(convertedcamt053);
 			
 			String interbankSettlementDate = LocalDate.now().format(PATTERN);
 			
@@ -90,7 +90,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
     				FORMAT,
     				locale);
     		
-    		String bodyItem = om.writeValueAsString(body);
+    		String bodyItem = objectMapper.writeValueAsString(body);
     		
     		List<TransactionItem> items = new ArrayList<>();
     		
@@ -105,7 +105,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
     				transactionGroupId,
     				transactionCategoryPurposeCode);
     		
-    		String camt053Body = om.writeValueAsString(td);
+    		String camt053Body = objectMapper.writeValueAsString(td);
 
     		biBuilder.add(items, camt053RelativeUrl, camt053Body, true);
     		
@@ -121,7 +121,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 	    				FORMAT,
 	    				locale);
 	    		
-	    		bodyItem = om.writeValueAsString(body);
+	    		bodyItem = objectMapper.writeValueAsString(body);
 	    		
 	    		biBuilder.add(items, debtorDisposalWithdrawalRelativeUrl, bodyItem, false);
 	    	
@@ -134,7 +134,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 	    				transactionGroupId,
 	    				transactionFeeCategoryPurposeCode);
 	    		
-	    		camt053Body = om.writeValueAsString(td);
+	    		camt053Body = objectMapper.writeValueAsString(td);
 	    		biBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 
 	    		
@@ -149,7 +149,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 	    				FORMAT,
 	    				locale);
 			    		
-	    		bodyItem = om.writeValueAsString(body);
+	    		bodyItem = objectMapper.writeValueAsString(body);
 	    		
 	    		String debtorConversionDepositRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), debtorConversionAccountAmsId, "deposit");
 		    		
@@ -164,7 +164,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 	    				transactionGroupId,
 	    				transactionFeeCategoryPurposeCode);
 	    		
-	    		camt053Body = om.writeValueAsString(td);
+	    		camt053Body = objectMapper.writeValueAsString(td);
 	    		biBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 			}
 			
@@ -178,7 +178,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
     				FORMAT,
     				locale);
 		    		
-    		bodyItem = om.writeValueAsString(body);
+    		bodyItem = objectMapper.writeValueAsString(body);
     		
     		String creditorDisposalDepositRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), creditorDisposalAccountAmsId, "deposit");
 	    		
@@ -192,7 +192,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
     				transactionGroupId,
     				transactionCategoryPurposeCode);
     		
-    		camt053Body = om.writeValueAsString(td);
+    		camt053Body = objectMapper.writeValueAsString(td);
     		biBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 			
 	    		
@@ -207,7 +207,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 	    				FORMAT,
 	    				locale);
 			    		
-	    		bodyItem = om.writeValueAsString(body);
+	    		bodyItem = objectMapper.writeValueAsString(body);
 	    		
 	    		String debtorConversionWithdrawRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), debtorConversionAccountAmsId, "withdrawal");
 		    		

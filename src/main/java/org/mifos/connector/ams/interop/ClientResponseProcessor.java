@@ -39,7 +39,7 @@ import static org.mifos.connector.common.mojaloop.type.ErrorCode.PARTY_NOT_FOUND
 @ConditionalOnExpression("${ams.local.enabled}")
 public class ClientResponseProcessor implements Processor {
 
-    private Logger logger = LoggerFactory.getLogger(this.getClass());
+    private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     @Value("${ams.local.version}")
     private String amsVersion;

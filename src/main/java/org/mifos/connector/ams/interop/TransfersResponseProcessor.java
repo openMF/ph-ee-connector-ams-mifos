@@ -33,7 +33,7 @@ import static org.mifos.connector.common.mojaloop.type.ErrorCode.PAYER_REJECTED_
 @ConditionalOnExpression("${ams.local.enabled}")
 public class TransfersResponseProcessor implements Processor {
 
-    private Logger logger = LoggerFactory.getLogger(this.getClass());
+    private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     @Autowired(required = false)
     private ZeebeClient zeebeClient;

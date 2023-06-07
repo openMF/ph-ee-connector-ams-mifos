@@ -12,8 +12,8 @@ import java.util.Map;
 
 public class ZeebeUtil {
 
-    private static Logger logger = LoggerFactory.getLogger(ZeebeUtil.class);
-    private static ObjectMapper objectMapper = new ObjectMapper();
+    private static final Logger logger = LoggerFactory.getLogger(ZeebeUtil.class);
+    private static final ObjectMapper objectMapper = new ObjectMapper();
 
     public static void zeebeVariablesToCamelProperties(Map<String, Object> variables, Exchange exchange, String... names) {
         exchange.setProperty("zeebeVariables", variables);

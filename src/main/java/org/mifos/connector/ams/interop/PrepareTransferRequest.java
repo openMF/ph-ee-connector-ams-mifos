@@ -32,7 +32,7 @@ import static org.mifos.connector.ams.zeebe.ZeebeVariables.TRANSFER_CODE;
 @Component
 @ConditionalOnExpression("${ams.local.enabled}")
 public class PrepareTransferRequest implements Processor {
-    private Logger logger = LoggerFactory.getLogger(this.getClass());
+    private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     @Autowired
     private ObjectMapper objectMapper;

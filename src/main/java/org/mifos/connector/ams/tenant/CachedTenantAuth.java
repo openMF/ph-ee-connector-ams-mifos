@@ -5,8 +5,8 @@ import java.util.Objects;
 
 public class CachedTenantAuth {
 
-    private String token;
-    private Date accessTokenExpiration;
+    private final String token;
+    private final Date accessTokenExpiration;
 
     public CachedTenantAuth(String token, Date accessTokenExpiration) {
         this.token = token;

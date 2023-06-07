@@ -28,7 +28,7 @@ import static org.mifos.connector.common.mojaloop.type.ErrorCode.INTERNAL_SERVER
 @ConditionalOnExpression("${ams.local.enabled}")
 public class InteropPartyResponseProcessor implements Processor {
 
-    private Logger logger = LoggerFactory.getLogger(this.getClass());
+    private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     @Value("${ams.local.version}")
     private String amsVersion;

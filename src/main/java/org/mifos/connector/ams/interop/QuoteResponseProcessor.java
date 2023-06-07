@@ -32,7 +32,7 @@ import static org.mifos.connector.common.mojaloop.type.ErrorCode.PAYER_FSP_INSUF
 @ConditionalOnExpression("${ams.local.enabled}")
 public class QuoteResponseProcessor implements Processor {
 
-    private Logger logger = LoggerFactory.getLogger(this.getClass());
+    private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     @Autowired(required = false)
     private ZeebeClient zeebeClient;

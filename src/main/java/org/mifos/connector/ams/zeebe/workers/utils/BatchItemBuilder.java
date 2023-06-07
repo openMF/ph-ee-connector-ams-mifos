@@ -10,7 +10,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 
 public class BatchItemBuilder {
 
-	private String tenantId;
+	private final String tenantId;
 	
 	@Value("${fineract.auth-token}")
 	private String authToken;
