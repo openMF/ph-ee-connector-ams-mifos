@@ -31,7 +31,6 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.networknt.schema.ValidationMessage;
 
@@ -63,6 +62,8 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 	@Autowired
 	private JsonSchemaValidator validator;
 	
+	private ObjectMapper om = new ObjectMapper();
+	
 	private static final DateTimeFormatter PATTERN = DateTimeFormatter.ofPattern(FORMAT);
 
 	@SuppressWarnings("unchecked")
@@ -85,7 +86,6 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 		logger.debug("Debtor exchange worker starting");
 		MDC.put("internalCorrelationId", internalCorrelationId);
 		try {
-			ObjectMapper om = new ObjectMapper();
 			Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001 = om.readValue(originalPain001, Pain00100110CustomerCreditTransferInitiationV10MessageSchema.class);
 			
 			try {
@@ -262,8 +262,6 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 		
 		try {
 			String transactionDate = LocalDate.now().format(PATTERN);
-			
-			ObjectMapper om = new ObjectMapper();
 			
 			logger.debug("Withdrawing amount {} from disposal account {}", amount, disposalAccountAmsId);
 			
