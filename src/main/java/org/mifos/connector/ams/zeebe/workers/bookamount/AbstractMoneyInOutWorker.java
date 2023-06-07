@@ -6,6 +6,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 
 import org.mifos.connector.ams.log.IOTxLogger;
+import org.mifos.connector.ams.zeebe.workers.utils.HoldAmountBody;
 import org.mifos.connector.ams.zeebe.workers.utils.TransactionItem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,6 +59,64 @@ public abstract class AbstractMoneyInOutWorker {
 	protected Logger logger = LoggerFactory.getLogger(getClass());
 	
 	protected static final String FORMAT = "yyyyMMdd";
+	
+	protected ResponseEntity<Object> release(Integer currencyAccountAmsId, Integer holdAmountId, String tenantId) {
+		HttpHeaders httpHeaders = new HttpHeaders();
+		httpHeaders.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
+		httpHeaders.set("Authorization", "Basic " + authToken);
+		httpHeaders.set("Fineract-Platform-TenantId", tenantId);
+		var entity = new HttpEntity<>(null, httpHeaders);
+		
+		var urlTemplate = UriComponentsBuilder.fromHttpUrl(fineractApiUrl)
+				.path(incomingMoneyApi)
+				.path(String.format("%s", currencyAccountAmsId))
+				.path("/transactions")
+				.path(String.format("/%s", holdAmountId))
+				.queryParam("command", "releaseAmount")
+				.encode()
+				.toUriString();
+		
+		logger.info(">> Sending {} to {} with headers {}", null, urlTemplate, httpHeaders);
+		
+		ResponseEntity<Object> response = restTemplate.exchange(urlTemplate, HttpMethod.POST, entity, Object.class);
+		
+		logger.info("<< Received HTTP {}", response.getStatusCode());
+		
+		return response;
+	}
+	
+	protected ResponseEntity<Object> hold(Integer holdReasonId, String transactionDate, Object amount, Integer currencyAccountAmsId, String tenantId) {
+		var body = new HoldAmountBody(
+				transactionDate,
+				amount,
+				holdReasonId,
+				locale,
+				FORMAT
+				);
+		return doExchange(body, currencyAccountAmsId, "holdAmount", tenantId);
+	}
+	
+	protected <T> ResponseEntity<Object> doExchange(T body, Integer currencyAccountAmsId, String command, String tenantId) {
+		HttpHeaders httpHeaders = new HttpHeaders();
+		httpHeaders.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
+		httpHeaders.set("Authorization", "Basic " + authToken);
+		httpHeaders.set("Fineract-Platform-TenantId", tenantId);
+		var entity = new HttpEntity<>(body, httpHeaders);
+		
+		var urlTemplate = UriComponentsBuilder.fromHttpUrl(fineractApiUrl)
+				.path(incomingMoneyApi)
+				.path(String.format("%s", currencyAccountAmsId))
+				.path("/transactions")
+				.queryParam("command", command)
+				.encode()
+				.toUriString();
+		
+		logger.info(">> Sending {} to {} with headers {}", body, urlTemplate, httpHeaders);
+		
+		ResponseEntity<Object> response = restTemplate.exchange(urlTemplate, HttpMethod.POST, entity, Object.class);
+		logger.info("<< Received HTTP {}", response.getStatusCode());
+		return response;
+	}
 	
 	@SuppressWarnings("unchecked")
 	protected void doBatch(List<TransactionItem> items, String tenantId, String internalCorrelationId) throws JsonProcessingException {

@@ -6,7 +6,9 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import javax.xml.bind.JAXBContext;
@@ -16,6 +18,7 @@ import javax.xml.bind.JAXBException;
 import org.mifos.connector.ams.fineract.PaymentTypeConfig;
 import org.mifos.connector.ams.fineract.PaymentTypeConfigFactory;
 import org.mifos.connector.ams.mapstruct.Pain001Camt053Mapper;
+import org.mifos.connector.ams.zeebe.workers.accountdetails.AmsCreditorWorker;
 import org.mifos.connector.ams.zeebe.workers.utils.BatchItemBuilder;
 import org.mifos.connector.ams.zeebe.workers.utils.TransactionBody;
 import org.mifos.connector.ams.zeebe.workers.utils.TransactionDetails;
@@ -24,6 +27,10 @@ import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -42,9 +49,7 @@ import io.camunda.zeebe.spring.client.annotation.Variable;
 import io.camunda.zeebe.spring.client.exception.ZeebeBpmnError;
 import iso.std.iso._20022.tech.json.camt_053_001.BankToCustomerStatementV08;
 import iso.std.iso._20022.tech.json.pain_001_001.Pain00100110CustomerCreditTransferInitiationV10MessageSchema;
-import iso.std.iso._20022.tech.xsd.camt_056_001.FIToFIPaymentCancellationRequestV01;
 import iso.std.iso._20022.tech.xsd.camt_056_001.PaymentTransactionInformation31;
-import iso.std.iso._20022.tech.xsd.camt_056_001.UnderlyingTransaction2;
 
 @Component
 public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWorker {
@@ -61,8 +66,12 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 	@Autowired
     private PaymentTypeConfigFactory paymentTypeConfigFactory;
 	
+	@Autowired
+	private AmsCreditorWorker creditorWorker;
+	
 	private static final DateTimeFormatter PATTERN = DateTimeFormatter.ofPattern(FORMAT);
 
+	@SuppressWarnings("unchecked")
 	@JobWorker
 	public void transferToConversionAccountInAms(JobClient jobClient, 
 			ActivatedJob activatedJob,
@@ -76,7 +85,8 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			@Variable String paymentScheme,
 			@Variable Integer disposalAccountAmsId,
 			@Variable Integer conversionAccountAmsId,
-			@Variable String tenantIdentifier) throws Exception {
+			@Variable String tenantIdentifier,
+			@Variable String iban) throws Exception {
 		String transactionDate = LocalDate.now().format(PATTERN);
 		logger.debug("Debtor exchange worker starting");
 		MDC.put("internalCorrelationId", internalCorrelationId);
@@ -107,11 +117,45 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 		
 			logger.debug("Withdrawing amount {} from disposal account {}", amount, disposalAccountAmsId);
 			
+			boolean hasFee = !BigDecimal.ZERO.equals(transactionFeeAmount);
+
+			PaymentTypeConfig paymentTypeConfig = paymentTypeConfigFactory.getPaymentTypeConfig(tenantIdentifier);
+			
+			Integer outHooldReasonId = paymentTypeConfig.findPaymentTypeByOperation(String.format("%s.%s", paymentScheme, "outHoldReasonId"));
+			var holdResponse = hold(outHooldReasonId, transactionDate, hasFee ? amount.add(transactionFeeAmount) : amount, disposalAccountAmsId, tenantIdentifier).getBody();
+			Integer lastHoldTransactionId = (Integer) ((LinkedHashMap<String, Object>) holdResponse).get("resourceId");
+			
+			HttpHeaders httpHeaders = new HttpHeaders();
+			httpHeaders.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
+			httpHeaders.set("Authorization", "Basic " + authToken);
+			httpHeaders.set("Fineract-Platform-TenantId", tenantIdentifier);
+			LinkedHashMap<String, Object> accountDetails = restTemplate.exchange(
+					String.format("%s/%s%d", fineractApiUrl, incomingMoneyApi.substring(1), disposalAccountAmsId), 
+					HttpMethod.GET, 
+					new HttpEntity<>(httpHeaders), 
+					LinkedHashMap.class)
+				.getBody();
+			LinkedHashMap<String, Object> summary = (LinkedHashMap<String, Object>) accountDetails.get("summary");
+			BigDecimal availableBalance = new BigDecimal(summary.get("availableBalance").toString());
+			if (availableBalance.signum() < 0) {
+				restTemplate.exchange(
+					String.format("%s/%ssavingsaccounts/%d/transactions/%d?comamnd=releaseAmount", fineractApiUrl, incomingMoneyApi.substring(1), disposalAccountAmsId, lastHoldTransactionId),
+					HttpMethod.POST,
+					new HttpEntity<>(httpHeaders),
+					Object.class
+				);
+				throw new ZeebeBpmnError("Error_InsufficientFunds", "Insufficient funds");
+			}
+			
 			BatchItemBuilder biBuilder = new BatchItemBuilder(tenantIdentifier);
+			
+			List<TransactionItem> items = new ArrayList<>();
+			
+			String releaseTransactionUrl = String.format("%s%d/transactions/%d?command=releaseAmount", incomingMoneyApi.substring(1), disposalAccountAmsId, lastHoldTransactionId);
+			biBuilder.add(items, releaseTransactionUrl, "", false);
 			
 			String disposalAccountWithdrawRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), disposalAccountAmsId, "withdrawal");
 			
-			PaymentTypeConfig paymentTypeConfig = paymentTypeConfigFactory.getPaymentTypeConfig(tenantIdentifier);
 			Integer paymentTypeId = paymentTypeConfig.findPaymentTypeByOperation(String.format("%s.%s", paymentScheme, "transferToConversionAccountInAms.DisposalAccount.WithdrawTransactionAmount"));
 			
 			TransactionBody body = new TransactionBody(
@@ -123,8 +167,6 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 					locale);
 			
 			String bodyItem = om.writeValueAsString(body);
-			
-			List<TransactionItem> items = new ArrayList<>();
 			
 			biBuilder.add(items, disposalAccountWithdrawRelativeUrl, bodyItem, false);
 			
@@ -144,7 +186,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 
 			biBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 
-			if (!BigDecimal.ZERO.equals(transactionFeeAmount)) {
+			if (hasFee) {
 				logger.debug("Withdrawing fee {} from disposal account {}", transactionFeeAmount, disposalAccountAmsId);
 					Integer withdrawTransactionFeePaymentTypeId = paymentTypeConfig.findPaymentTypeByOperation(String.format("%s.%s", paymentScheme, "transferToConversionAccountInAms.DisposalAccount.WithdrawTransactionFee"));
 					
@@ -200,7 +242,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			biBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 		
 			
-			if (!BigDecimal.ZERO.equals(transactionFeeAmount)) {
+			if (hasFee) {
 				logger.debug("Depositing fee {} to conversion account {}", transactionFeeAmount, conversionAccountAmsId);
 				Integer depositTransactionFeePaymentTypeId = paymentTypeConfig.findPaymentTypeByOperation(String.format("%s.%s", paymentScheme, "transferToConversionAccountInAms.ConversionAccount.DepositTransactionFee"));
 				
