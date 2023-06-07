@@ -63,7 +63,7 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 		logger.debug("Got payment scheme {}", paymentScheme);
 		String transactionDate = LocalDate.now().format(PATTERN);
 		ObjectMapper objectMapper = new ObjectMapper();
-		BatchItemBuilder biBuilder = new BatchItemBuilder(tenantIdentifier);
+		BatchItemBuilder batchItemBuilder = new BatchItemBuilder(tenantIdentifier);
 		logger.debug("Got category purpose code {}", categoryPurpose);
 		
 		try {
@@ -84,7 +84,7 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 			
 			List<TransactionItem> items = new ArrayList<>();
 			
-			biBuilder.add(items, disposalAccountWithdrawRelativeUrl, bodyItem, false);
+			batchItemBuilder.add(items, disposalAccountWithdrawRelativeUrl, bodyItem, false);
 			
 			BankToCustomerStatementV08 convertedcamt053 = camt053Mapper.toCamt053(pain001.getDocument());
 			String camt053 = objectMapper.writeValueAsString(convertedcamt053);
@@ -100,7 +100,7 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 			
 			String camt053Body = objectMapper.writeValueAsString(td);
 
-			biBuilder.add(items, camt053RelativeUrl, camt053Body, true);
+			batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 			
 			
 			
@@ -118,7 +118,7 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 			
 			String conversionAccountDepositRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "deposit");
 			
-			biBuilder.add(items, conversionAccountDepositRelativeUrl, bodyItem, false);
+			batchItemBuilder.add(items, conversionAccountDepositRelativeUrl, bodyItem, false);
 			
 			camt053RelativeUrl = String.format("datatables/transaction_details/%d", conversionAccountAmsId);
 			
@@ -131,7 +131,7 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 			
 			camt053Body = objectMapper.writeValueAsString(td);
 
-			biBuilder.add(items, camt053RelativeUrl, camt053Body, true);
+			batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 			
 			
 			
@@ -149,7 +149,7 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 			
 			String conversionAccountWithdrawRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "withdrawal");
 			
-			biBuilder.add(items, conversionAccountWithdrawRelativeUrl, bodyItem, false);
+			batchItemBuilder.add(items, conversionAccountWithdrawRelativeUrl, bodyItem, false);
 			
 			camt053RelativeUrl = String.format("datatables/transaction_details/%d", conversionAccountAmsId);
 			
@@ -162,7 +162,7 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 			
 			camt053Body = objectMapper.writeValueAsString(td);
 
-			biBuilder.add(items, camt053RelativeUrl, camt053Body, true);
+			batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 			
 			logger.debug("Attempting to send {}", objectMapper.writeValueAsString(items));
 			

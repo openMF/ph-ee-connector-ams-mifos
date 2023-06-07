@@ -66,7 +66,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 
 			ObjectMapper objectMapper = new ObjectMapper();
 			
-			BatchItemBuilder biBuilder = new BatchItemBuilder(tenantIdentifier);
+			BatchItemBuilder batchItemBuilder = new BatchItemBuilder(tenantIdentifier);
 			
 			String conversionAccountWithdrawRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "withdrawal");
 			
@@ -85,7 +85,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 			
 			List<TransactionItem> items = new ArrayList<>();
 			
-			biBuilder.add(items, conversionAccountWithdrawRelativeUrl, bodyItem, false);
+			batchItemBuilder.add(items, conversionAccountWithdrawRelativeUrl, bodyItem, false);
 			
 			BankToCustomerStatementV08 convertedCamt053 = camt053Mapper.toCamt053(pacs008);
 			String camt053 = objectMapper.writeValueAsString(convertedCamt053);
@@ -101,7 +101,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 			
 			String camt053Body = objectMapper.writeValueAsString(td);
 
-			biBuilder.add(items, camt053RelativeUrl, camt053Body, true);
+			batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 			
 			
 			String disposalAccountDepositRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), disposalAccountAmsId, "deposit");
@@ -117,7 +117,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 			
 			bodyItem = objectMapper.writeValueAsString(body);
 			
-			biBuilder.add(items, disposalAccountDepositRelativeUrl, bodyItem, false);
+			batchItemBuilder.add(items, disposalAccountDepositRelativeUrl, bodyItem, false);
 			
 			camt053RelativeUrl = String.format("datatables/transaction_details/%d", disposalAccountAmsId);
 			
@@ -130,7 +130,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 			
 			camt053Body = objectMapper.writeValueAsString(td);
 			
-			biBuilder.add(items, camt053RelativeUrl, camt053Body, true);
+			batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 		
 			doBatch(items, tenantIdentifier, internalCorrelationId);
 			

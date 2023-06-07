@@ -63,7 +63,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
 
             MDC.put("internalCorrelationId", internalCorrelationId);
 
-            BatchItemBuilder biBuilder = new BatchItemBuilder(tenantIdentifier);
+            BatchItemBuilder batchItemBuilder = new BatchItemBuilder(tenantIdentifier);
     		
     		String conversionAccountWithdrawalRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "deposit");
     		
@@ -84,7 +84,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
     		
     		List<TransactionItem> items = new ArrayList<>();
     		
-    		biBuilder.add(items, conversionAccountWithdrawalRelativeUrl, bodyItem, false);
+    		batchItemBuilder.add(items, conversionAccountWithdrawalRelativeUrl, bodyItem, false);
     	
     		BankToCustomerStatementV08 convertedCamt053 = camt053Mapper.toCamt053(pacs008);
     		String camt053 = objectMapper.writeValueAsString(convertedCamt053);
@@ -100,7 +100,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
     		
     		String camt053Body = objectMapper.writeValueAsString(td);
 
-    		biBuilder.add(items, camt053RelativeUrl, camt053Body, true);
+    		batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 
             doBatch(items, tenantIdentifier, internalCorrelationId);
         } catch (Exception e) {

@@ -82,7 +82,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 		
 		logger.debug("Withdrawing amount {} from conversion account {}", amount, conversionAccountAmsId);
 		
-		BatchItemBuilder biBuilder = new BatchItemBuilder(tenantIdentifier);
+		BatchItemBuilder batchItemBuilder = new BatchItemBuilder(tenantIdentifier);
 		
 		String conversionAccountWithdrawRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "withdrawal");
 		
@@ -101,7 +101,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 		
 		List<TransactionItem> items = new ArrayList<>();
 		
-		biBuilder.add(items, conversionAccountWithdrawRelativeUrl, bodyItem, false);
+		batchItemBuilder.add(items, conversionAccountWithdrawRelativeUrl, bodyItem, false);
 		
 		BankToCustomerStatementV08 convertedcamt053 = camt053Mapper.toCamt053(pain001.getDocument());
 		String camt053 = objectMapper.writeValueAsString(convertedcamt053);
@@ -117,7 +117,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 		
 		String camt053Body = objectMapper.writeValueAsString(td);
 
-		biBuilder.add(items, camt053RelativeUrl, camt053Body, true);
+		batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 		
 		if (!BigDecimal.ZERO.equals(transactionFeeAmount)) {
 			logger.debug("Withdrawing fee {} from conversion account {}", transactionFeeAmount, conversionAccountAmsId);
@@ -134,7 +134,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			
 			bodyItem = objectMapper.writeValueAsString(body);
 			
-			biBuilder.add(items, conversionAccountWithdrawRelativeUrl, bodyItem, false);
+			batchItemBuilder.add(items, conversionAccountWithdrawRelativeUrl, bodyItem, false);
 			
 			td = new TransactionDetails(
 					"$.resourceId",
@@ -143,7 +143,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 					transactionGroupId,
 					transactionFeeCategoryPurposeCode);
 			camt053Body = objectMapper.writeValueAsString(td);
-			biBuilder.add(items, camt053RelativeUrl, camt053Body, true);
+			batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 		}
 
 		logger.debug("Re-depositing amount {} in disposal account {}", amount, disposalAccountAmsId);
@@ -162,7 +162,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 		
 		bodyItem = objectMapper.writeValueAsString(body);
 		
-		biBuilder.add(items, disposalAccountDepositRelativeUrl, bodyItem, false);
+		batchItemBuilder.add(items, disposalAccountDepositRelativeUrl, bodyItem, false);
 		
 		camt053RelativeUrl = String.format("datatables/transaction_details/%d", disposalAccountAmsId);
 		
@@ -175,7 +175,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 		
 		camt053Body = objectMapper.writeValueAsString(td);
 		
-		biBuilder.add(items, camt053RelativeUrl, camt053Body, true);
+		batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 		
 		if (!BigDecimal.ZERO.equals(transactionFeeAmount)) {
 			logger.debug("Re-depositing fee {} in disposal account {}", transactionFeeAmount, disposalAccountAmsId);
@@ -192,7 +192,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			
 			bodyItem = objectMapper.writeValueAsString(body);
 			
-			biBuilder.add(items, disposalAccountDepositRelativeUrl, bodyItem, false);
+			batchItemBuilder.add(items, disposalAccountDepositRelativeUrl, bodyItem, false);
 			
 			td = new TransactionDetails(
 					"$.resourceId",
@@ -201,7 +201,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 					transactionGroupId,
 					transactionFeeCategoryPurposeCode);
 			camt053Body = objectMapper.writeValueAsString(td);
-			biBuilder.add(items, camt053RelativeUrl, camt053Body, true);
+			batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 		}
 		
 		doBatch(items, tenantIdentifier, internalCorrelationId);
@@ -220,7 +220,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			@Variable String transactionCategoryPurposeCode,
 			@Variable String camt056) {
 		try {
-			BatchItemBuilder biBuilder = new BatchItemBuilder(tenantIdentifier);
+			BatchItemBuilder batchItemBuilder = new BatchItemBuilder(tenantIdentifier);
 			
 			String transactionDate = LocalDate.now().format(DateTimeFormatter.ofPattern(FORMAT));
 			
@@ -241,7 +241,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			
 			List<TransactionItem> items = new ArrayList<>();
 			
-			biBuilder.add(items, conversionAccountWithdrawRelativeUrl, bodyItem, false);
+			batchItemBuilder.add(items, conversionAccountWithdrawRelativeUrl, bodyItem, false);
 			
 			iso.std.iso._20022.tech.xsd.camt_056_001.Document document = jaxbUtils.unmarshalCamt056(camt056);
 			Camt056ToCamt053Converter converter = new Camt056ToCamt053Converter();
@@ -281,7 +281,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			
 			String camt053Body = objectMapper.writeValueAsString(td);
 
-			biBuilder.add(items, camt053RelativeUrl, camt053Body, true);
+			batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 			
 			String disposalAccountDepositRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), disposalAccountAmsId, "deposit");
 			
@@ -297,7 +297,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			
 			bodyItem = objectMapper.writeValueAsString(body);
 			
-			biBuilder.add(items, disposalAccountDepositRelativeUrl, bodyItem, false);
+			batchItemBuilder.add(items, disposalAccountDepositRelativeUrl, bodyItem, false);
 			
 			camt053RelativeUrl = String.format("datatables/transaction_details/%d", disposalAccountAmsId);
 			
@@ -310,7 +310,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			
 			camt053Body = objectMapper.writeValueAsString(td);
 			
-			biBuilder.add(items, camt053RelativeUrl, camt053Body, true);
+			batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 			
 			doBatch(items, tenantIdentifier, internalCorrelationId);
 		} catch (JAXBException | JsonProcessingException e) {

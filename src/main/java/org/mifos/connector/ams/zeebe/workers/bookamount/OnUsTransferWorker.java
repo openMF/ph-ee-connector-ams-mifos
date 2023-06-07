@@ -75,7 +75,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 			
 			String interbankSettlementDate = LocalDate.now().format(PATTERN);
 			
-            BatchItemBuilder biBuilder = new BatchItemBuilder(tenantIdentifier);
+            BatchItemBuilder batchItemBuilder = new BatchItemBuilder(tenantIdentifier);
     		
     		String debtorDisposalWithdrawalRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), debtorDisposalAccountAmsId, "withdrawal");
     		
@@ -94,7 +94,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
     		
     		List<TransactionItem> items = new ArrayList<>();
     		
-    		biBuilder.add(items, debtorDisposalWithdrawalRelativeUrl, bodyItem, false);
+    		batchItemBuilder.add(items, debtorDisposalWithdrawalRelativeUrl, bodyItem, false);
     	
     		String camt053RelativeUrl = String.format("datatables/transaction_details/%d", debtorDisposalAccountAmsId);
     		
@@ -107,7 +107,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
     		
     		String camt053Body = objectMapper.writeValueAsString(td);
 
-    		biBuilder.add(items, camt053RelativeUrl, camt053Body, true);
+    		batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
     		
 			
 			if (!BigDecimal.ZERO.equals(transactionFeeAmount)) {
@@ -123,7 +123,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 	    		
 	    		bodyItem = objectMapper.writeValueAsString(body);
 	    		
-	    		biBuilder.add(items, debtorDisposalWithdrawalRelativeUrl, bodyItem, false);
+	    		batchItemBuilder.add(items, debtorDisposalWithdrawalRelativeUrl, bodyItem, false);
 	    	
 	    		camt053RelativeUrl = String.format("datatables/transaction_details/%d", debtorDisposalAccountAmsId);
 	    		
@@ -135,7 +135,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 	    				transactionFeeCategoryPurposeCode);
 	    		
 	    		camt053Body = objectMapper.writeValueAsString(td);
-	    		biBuilder.add(items, camt053RelativeUrl, camt053Body, true);
+	    		batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 
 	    		
 	    		
@@ -153,7 +153,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 	    		
 	    		String debtorConversionDepositRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), debtorConversionAccountAmsId, "deposit");
 		    		
-	    		biBuilder.add(items, debtorConversionDepositRelativeUrl, bodyItem, false);
+	    		batchItemBuilder.add(items, debtorConversionDepositRelativeUrl, bodyItem, false);
 		    	
 	    		camt053RelativeUrl = String.format("datatables/transaction_details/%d", debtorConversionAccountAmsId);
 	    		
@@ -165,7 +165,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 	    				transactionFeeCategoryPurposeCode);
 	    		
 	    		camt053Body = objectMapper.writeValueAsString(td);
-	    		biBuilder.add(items, camt053RelativeUrl, camt053Body, true);
+	    		batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 			}
 			
 			paymentTypeId = paymentTypeConfig.findPaymentTypeByOperation(String.format("%s.%s", paymentScheme, "transferTheAmountBetweenDisposalAccounts.Creditor.DisposalAccount.DepositTransactionAmount"));
@@ -182,7 +182,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
     		
     		String creditorDisposalDepositRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), creditorDisposalAccountAmsId, "deposit");
 	    		
-    		biBuilder.add(items, creditorDisposalDepositRelativeUrl, bodyItem, false);
+    		batchItemBuilder.add(items, creditorDisposalDepositRelativeUrl, bodyItem, false);
 	    	
     		camt053RelativeUrl = String.format("datatables/transaction_details/%d", creditorDisposalAccountAmsId);
     		td = new TransactionDetails(
@@ -193,7 +193,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
     				transactionCategoryPurposeCode);
     		
     		camt053Body = objectMapper.writeValueAsString(td);
-    		biBuilder.add(items, camt053RelativeUrl, camt053Body, true);
+    		batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 			
 	    		
 			if (!BigDecimal.ZERO.equals(transactionFeeAmount)) {
@@ -211,11 +211,11 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 	    		
 	    		String debtorConversionWithdrawRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), debtorConversionAccountAmsId, "withdrawal");
 		    		
-	    		biBuilder.add(items, debtorConversionWithdrawRelativeUrl, bodyItem, false);
+	    		batchItemBuilder.add(items, debtorConversionWithdrawRelativeUrl, bodyItem, false);
 		    	
 	    		camt053RelativeUrl = String.format("datatables/transaction_details/%d", debtorConversionAccountAmsId);
 			    		
-	    		biBuilder.add(items, camt053RelativeUrl, camt053Body, true);
+	    		batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 			}
 			
 			doBatch(items, tenantIdentifier, internalCorrelationId);
