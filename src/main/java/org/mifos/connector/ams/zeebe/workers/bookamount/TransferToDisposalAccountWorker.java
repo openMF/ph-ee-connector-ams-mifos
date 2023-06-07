@@ -8,7 +8,7 @@ import java.util.List;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBElement;
 
-import org.jboss.logging.MDC;
+import org.slf4j.MDC;
 import org.mifos.connector.ams.fineract.PaymentTypeConfig;
 import org.mifos.connector.ams.fineract.PaymentTypeConfigFactory;
 import org.mifos.connector.ams.mapstruct.Pacs008Camt053Mapper;

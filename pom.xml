@@ -17,7 +17,7 @@
 
     <properties>
         <java.version>17</java.version>
-        <camel.version>3.18.1</camel.version>
+        <camel.version>3.20.5</camel.version>
         <zeebe.version>8.2.2</zeebe.version>
         <compiler-plugin.version>3.8.1</compiler-plugin.version>
 
@@ -63,10 +63,6 @@
         </dependency>
 
         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
-        </dependency>
-        <dependency>
             <groupId>io.camunda.spring</groupId>
             <artifactId>spring-boot-starter-camunda</artifactId>
             <version>${zeebe.version}</version>
@@ -76,6 +72,10 @@
                     <artifactId>jackson-module-scala_3</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.datatype</groupId>
@@ -111,7 +111,7 @@
         </dependency>
         <dependency>
             <groupId>org.apache.camel</groupId>
-            <artifactId>camel-undertow</artifactId>
+            <artifactId>camel-jetty</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.camel</groupId>
@@ -138,8 +138,8 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>io.camunda</groupId>
-            <artifactId>spring-zeebe-test</artifactId>
+            <groupId>io.camunda.spring</groupId>
+            <artifactId>spring-boot-starter-camunda-test</artifactId>
             <version>${zeebe.version}</version>
             <scope>test</scope>
         </dependency>

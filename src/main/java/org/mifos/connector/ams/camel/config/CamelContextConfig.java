@@ -34,8 +34,8 @@ public class CamelContextConfig {
 
                 RestConfiguration rest = new RestConfiguration();
                 camelContext.setRestConfiguration(rest);
-                rest.setComponent("undertow");
-                rest.setProducerComponent("undertow");
+                rest.setComponent("jetty");
+                rest.setProducerComponent("jetty");
                 rest.setPort(serverPort);
                 rest.setBindingMode(RestConfiguration.RestBindingMode.json);
                 rest.setDataFormatProperties(new HashMap<>());

@@ -38,6 +38,6 @@ public class HealthCheck extends RouteBuilder {
             logger.warn("health check failed with {}", results);
         }
 
-        // exchange.getMessage().setBody(results);   TODO return human-readable results in JSON representation, based on results
+        exchange.getMessage().setBody(results);
     }
 }
