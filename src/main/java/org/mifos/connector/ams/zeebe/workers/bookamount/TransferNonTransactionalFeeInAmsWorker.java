@@ -9,7 +9,7 @@ import java.util.Map;
 
 import org.mifos.connector.ams.fineract.PaymentTypeConfig;
 import org.mifos.connector.ams.fineract.PaymentTypeConfigFactory;
-import org.mifos.connector.ams.mapstruct.Pain001Camt053Mapper;
+//import org.mifos.connector.ams.mapstruct.Pain001Camt053Mapper;
 import org.mifos.connector.ams.zeebe.workers.utils.BatchItemBuilder;
 import org.mifos.connector.ams.zeebe.workers.utils.TransactionBody;
 import org.mifos.connector.ams.zeebe.workers.utils.TransactionDetails;
@@ -26,14 +26,14 @@ import io.camunda.zeebe.client.api.worker.JobClient;
 import io.camunda.zeebe.spring.client.annotation.JobWorker;
 import io.camunda.zeebe.spring.client.annotation.Variable;
 import io.camunda.zeebe.spring.client.exception.ZeebeBpmnError;
-import iso.std.iso._20022.tech.json.camt_053_001.BankToCustomerStatementV08;
-import iso.std.iso._20022.tech.json.pain_001_001.Pain00100110CustomerCreditTransferInitiationV10MessageSchema;
+//import iso.std.iso._20022.tech.json.camt_053_001.BankToCustomerStatementV08;
+//import iso.std.iso._20022.tech.json.pain_001_001.Pain00100110CustomerCreditTransferInitiationV10MessageSchema;
 
 @Component
 public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWorker {
 	
 	@Autowired
-	private Pain001Camt053Mapper camt053Mapper;
+//	private Pain001Camt053Mapper camt053Mapper;
 	
 	@Value("${fineract.incoming-money-api}")
 	protected String incomingMoneyApi;
@@ -68,8 +68,8 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 		
 		try {
 			MDC.put("internalCorrelationId", internalCorrelationId);
-			Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001 = om.readValue(originalPain001, Pain00100110CustomerCreditTransferInitiationV10MessageSchema.class);
-			
+//			Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001 = om.readValue(originalPain001, Pain00100110CustomerCreditTransferInitiationV10MessageSchema.class);
+
 			Integer paymentTypeId = paymentTypeConfig.findPaymentTypeByOperation(String.format("%s.%s.%s", paymentScheme, categoryPurpose, "transferToConversionAccountInAms.DisposalAccount.WithdrawNonTransactionalFee"));
 			logger.debug("Looking up {}, got payment type id {}", String.format("%s.%s.%s", paymentScheme, categoryPurpose, "transferToConversionAccountInAms.DisposalAccount.WithdrawNonTransactionalFee"), paymentTypeId);
 			TransactionBody body = new TransactionBody(
@@ -86,15 +86,15 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 			
 			biBuilder.add(items, disposalAccountWithdrawRelativeUrl, bodyItem, false);
 			
-			BankToCustomerStatementV08 convertedcamt053 = camt053Mapper.toCamt053(pain001.getDocument());
-			String camt053 = om.writeValueAsString(convertedcamt053);
+//			BankToCustomerStatementV08 convertedcamt053 = camt053Mapper.toCamt053(pain001.getDocument());
+//			String camt053 = om.writeValueAsString(convertedcamt053);
 			
 			String camt053RelativeUrl = String.format("datatables/transaction_details/%d", disposalAccountAmsId);
 			
 			TransactionDetails td = new TransactionDetails(
 					"$.resourceId",
 					internalCorrelationId,
-					camt053,
+					null,
 					transactionGroupId,
 					categoryPurpose);
 			
@@ -125,7 +125,7 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 			td = new TransactionDetails(
 					"$.resourceId",
 					internalCorrelationId,
-					camt053,
+					null,
 					transactionGroupId,
 					categoryPurpose);
 			
@@ -156,7 +156,7 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 			td = new TransactionDetails(
 					"$.resourceId",
 					internalCorrelationId,
-					camt053,
+					null,
 					transactionGroupId,
 					categoryPurpose);
 			

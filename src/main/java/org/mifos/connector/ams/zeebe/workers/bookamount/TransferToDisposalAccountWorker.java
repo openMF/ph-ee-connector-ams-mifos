@@ -5,13 +5,13 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBElement;
+//import javax.xml.bind.JAXBContext;
+//import javax.xml.bind.JAXBElement;
 
 import org.jboss.logging.MDC;
 import org.mifos.connector.ams.fineract.PaymentTypeConfig;
 import org.mifos.connector.ams.fineract.PaymentTypeConfigFactory;
-import org.mifos.connector.ams.mapstruct.Pacs008Camt053Mapper;
+//import org.mifos.connector.ams.mapstruct.Pacs008Camt053Mapper;
 import org.mifos.connector.ams.zeebe.workers.utils.BatchItemBuilder;
 import org.mifos.connector.ams.zeebe.workers.utils.TransactionBody;
 import org.mifos.connector.ams.zeebe.workers.utils.TransactionDetails;
@@ -22,19 +22,19 @@ import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import eu.nets.realtime247.ri_2015_10.ObjectFactory;
+//import eu.nets.realtime247.ri_2015_10.ObjectFactory;
 import io.camunda.zeebe.client.api.response.ActivatedJob;
 import io.camunda.zeebe.client.api.worker.JobClient;
 import io.camunda.zeebe.spring.client.annotation.JobWorker;
 import io.camunda.zeebe.spring.client.annotation.Variable;
 import io.camunda.zeebe.spring.client.exception.ZeebeBpmnError;
-import iso.std.iso._20022.tech.json.camt_053_001.BankToCustomerStatementV08;
+//import iso.std.iso._20022.tech.json.camt_053_001.BankToCustomerStatementV08;
 
 @Component
 public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 	
 	@Autowired
-	private Pacs008Camt053Mapper camt053Mapper;
+//	private Pacs008Camt053Mapper camt053Mapper;
 	
 	@Value("${fineract.incoming-money-api}")
 	protected String incomingMoneyApi;
@@ -60,11 +60,11 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 			@Variable Integer disposalAccountAmsId,
 			@Variable String tenantIdentifier) throws Exception {
 		try {
-			JAXBContext jc = JAXBContext.newInstance(ObjectFactory.class,
-					iso.std.iso._20022.tech.xsd.pacs_008_001.ObjectFactory.class);
-			JAXBElement<iso.std.iso._20022.tech.xsd.pacs_008_001.Document> object = (JAXBElement<iso.std.iso._20022.tech.xsd.pacs_008_001.Document>) jc.createUnmarshaller().unmarshal(new StringReader(originalPacs008));
-			iso.std.iso._20022.tech.xsd.pacs_008_001.Document pacs008 = object.getValue();
-		
+//			JAXBContext jc = JAXBContext.newInstance(ObjectFactory.class,
+//					iso.std.iso._20022.tech.xsd.pacs_008_001.ObjectFactory.class);
+//			JAXBElement<iso.std.iso._20022.tech.xsd.pacs_008_001.Document> object = (JAXBElement<iso.std.iso._20022.tech.xsd.pacs_008_001.Document>) jc.createUnmarshaller().unmarshal(new StringReader(originalPacs008));
+//			iso.std.iso._20022.tech.xsd.pacs_008_001.Document pacs008 = object.getValue();
+//
 			MDC.put("internalCorrelationId", internalCorrelationId);
 			
 			logger.info("Exchange to e-currency worker has started");
@@ -92,15 +92,15 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 			
 			biBuilder.add(items, conversionAccountWithdrawRelativeUrl, bodyItem, false);
 			
-			BankToCustomerStatementV08 convertedCamt053 = camt053Mapper.toCamt053(pacs008);
-			String camt053 = om.writeValueAsString(convertedCamt053);
+//			BankToCustomerStatementV08 convertedCamt053 = camt053Mapper.toCamt053(pacs008);
+//			String camt053 = om.writeValueAsString(convertedCamt053);
 			
 			String camt053RelativeUrl = String.format("datatables/transaction_details/%d", conversionAccountAmsId);
 			
 			TransactionDetails td = new TransactionDetails(
 					"$.resourceId",
 					internalCorrelationId,
-					camt053,
+					null,
 					transactionGroupId,
 					transactionCategoryPurposeCode);
 			
@@ -129,7 +129,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 			td = new TransactionDetails(
 					"$.resourceId",
 					internalCorrelationId,
-					camt053,
+					null,
 					transactionGroupId,
 					transactionCategoryPurposeCode);
 			

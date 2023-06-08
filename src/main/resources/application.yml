@@ -1,15 +1,19 @@
 camel:
-  server-port: 5000
+  server-port: 5006
   springboot:
     main-run-controller: true
   dataformat:
     json-jackson:
       auto-discover-object-mapper: true
 
-dfspids: "DFSPID"
+dfspids: "gorilla"
+TENANT_CONFIGS: "{\"gorilla\":[{\"Operation\":\"abc\",\"PaymentTypeCode\":\"pt1\",\"FineractId\":1}]}"
+spring:
+  profiles:
+    active: "bb,fin12,dev"
 
 fineract:
-  api-url: ${FINERACT_URL}
+  api-url: "https://fynams.sandbox.fynarfin.io/fineract-provider/api/v1"
   datatable-query-api: "/datatables/account_mapping/query"
   column-filter: "iban"
   result-columns: "conversion_account_id,disposal_account_id"
@@ -25,7 +29,7 @@ zeebe:
 #    number-of-workers: 8
 #    evenly-allocated-max-jobs: "#{${zeebe.client.max-execution-threads} / ${zeebe.client.number-of-workers}}"
   broker:
-    contactpoint: "camunda8-zeebe-gateway.binx-dev:26500"
+    contactpoint: "zeebe-zeebe-gateway:26500"
 
 #ams:
 #  local:
@@ -40,7 +44,13 @@ zeebe:
 ams:
   local:
     server-cert-check: false
-    enabled: false
+    enabled: true
 
 interop-party-registration:
   enabled: false
+
+logging:
+  level:
+    root: INFO
+  pattern:
+    console: "%clr(%d{dd-MM-yyyy HH:mm:ss.SSS}){faint} %clr(${LOG_LEVEL_PATTERN:-%5p}) %clr([%35.35t]){faint} %clr(%-28.28logger{28}){cyan} %clr(:){faint}%X{BUSINESS-LOG} %m%n${LOG_EXCEPTION_CONVERSION_WORD:-%wEx}"

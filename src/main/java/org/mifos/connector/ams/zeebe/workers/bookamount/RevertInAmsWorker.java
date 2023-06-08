@@ -7,13 +7,13 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBElement;
-import javax.xml.bind.JAXBException;
+//import javax.xml.bind.JAXBContext;
+//import javax.xml.bind.JAXBElement;
+//import javax.xml.bind.JAXBException;
 
 import org.mifos.connector.ams.fineract.PaymentTypeConfig;
 import org.mifos.connector.ams.fineract.PaymentTypeConfigFactory;
-import org.mifos.connector.ams.mapstruct.Pain001Camt053Mapper;
+//import org.mifos.connector.ams.mapstruct.Pain001Camt053Mapper;
 import org.mifos.connector.ams.zeebe.workers.utils.BatchItemBuilder;
 import org.mifos.connector.ams.zeebe.workers.utils.TransactionBody;
 import org.mifos.connector.ams.zeebe.workers.utils.TransactionDetails;
@@ -26,21 +26,21 @@ import org.springframework.stereotype.Component;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import hu.dpc.rt.utils.converter.Camt056ToCamt053Converter;
+//import hu.dpc.rt.utils.converter.Camt056ToCamt053Converter;
 import io.camunda.zeebe.client.api.response.ActivatedJob;
 import io.camunda.zeebe.client.api.worker.JobClient;
 import io.camunda.zeebe.spring.client.annotation.JobWorker;
 import io.camunda.zeebe.spring.client.annotation.Variable;
-import iso.std.iso._20022.tech.json.camt_053_001.BankToCustomerStatementV08;
-import iso.std.iso._20022.tech.json.pain_001_001.CreditTransferTransaction40;
-import iso.std.iso._20022.tech.json.pain_001_001.Pain00100110CustomerCreditTransferInitiationV10MessageSchema;
-import iso.std.iso._20022.tech.xsd.camt_056_001.PaymentTransactionInformation31;
+//import iso.std.iso._20022.tech.json.camt_053_001.BankToCustomerStatementV08;
+//import iso.std.iso._20022.tech.json.pain_001_001.CreditTransferTransaction40;
+//import iso.std.iso._20022.tech.json.pain_001_001.Pain00100110CustomerCreditTransferInitiationV10MessageSchema;
+//import iso.std.iso._20022.tech.xsd.camt_056_001.PaymentTransactionInformation31;
 
 @Component
 public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 	
 	@Autowired
-	private Pain001Camt053Mapper camt053Mapper;
+//	private Pain001Camt053Mapper camt053Mapper;
 	
 	@Value("${fineract.incoming-money-api}")
 	protected String incomingMoneyApi;
@@ -68,16 +68,16 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 		MDC.put("internalCorrelationId", internalCorrelationId);
 		
 		ObjectMapper om = new ObjectMapper();
-		Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001 = om.readValue(originalPain001, Pain00100110CustomerCreditTransferInitiationV10MessageSchema.class);
+//		Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001 = om.readValue(originalPain001, Pain00100110CustomerCreditTransferInitiationV10MessageSchema.class);
 		
 		BigDecimal amount = BigDecimal.ZERO;
 		
-		List<CreditTransferTransaction40> creditTransferTransactionInformation = pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation();
-		
-		for (CreditTransferTransaction40 ctti : creditTransferTransactionInformation) {
-			amount = new BigDecimal(ctti.getAmount().getInstructedAmount().getAmount().toString());
-		}
-		
+//		List<CreditTransferTransaction40> creditTransferTransactionInformation = pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation();
+//
+//		for (CreditTransferTransaction40 ctti : creditTransferTransactionInformation) {
+//			amount = new BigDecimal(ctti.getAmount().getInstructedAmount().getAmount().toString());
+//		}
+//
 		logger.debug("Withdrawing amount {} from conversion account {}", amount, conversionAccountAmsId);
 		
 		BatchItemBuilder biBuilder = new BatchItemBuilder(tenantIdentifier);
@@ -101,15 +101,15 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 		
 		biBuilder.add(items, conversionAccountWithdrawRelativeUrl, bodyItem, false);
 		
-		BankToCustomerStatementV08 convertedcamt053 = camt053Mapper.toCamt053(pain001.getDocument());
-		String camt053 = om.writeValueAsString(convertedcamt053);
+//		BankToCustomerStatementV08 convertedcamt053 = camt053Mapper.toCamt053(pain001.getDocument());
+//		String camt053 = om.writeValueAsString(convertedcamt053);
 		
 		String camt053RelativeUrl = String.format("datatables/transaction_details/%d", conversionAccountAmsId);
 		
 		TransactionDetails td = new TransactionDetails(
 				"$.resourceId",
 				internalCorrelationId,
-				camt053,
+				null,
 				transactionGroupId,
 				transactionCategoryPurposeCode);
 		
@@ -137,7 +137,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			td = new TransactionDetails(
 					"$.resourceId",
 					internalCorrelationId,
-					camt053,
+					null,
 					transactionGroupId,
 					transactionFeeCategoryPurposeCode);
 			camt053Body = om.writeValueAsString(td);
@@ -167,7 +167,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 		td = new TransactionDetails(
 				"$.resourceId",
 				internalCorrelationId,
-				camt053,
+				null,
 				transactionGroupId,
 				transactionCategoryPurposeCode);
 		
@@ -195,7 +195,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			td = new TransactionDetails(
 					"$.resourceId",
 					internalCorrelationId,
-					camt053,
+					null,
 					transactionGroupId,
 					transactionFeeCategoryPurposeCode);
 			camt053Body = om.writeValueAsString(td);
@@ -243,48 +243,48 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			
 			biBuilder.add(items, conversionAccountWithdrawRelativeUrl, bodyItem, false);
 			
-			JAXBContext jc = JAXBContext.newInstance(iso.std.iso._20022.tech.xsd.camt_056_001.ObjectFactory.class,
-					eu.nets.realtime247.ri_2015_10.ObjectFactory.class);
-			@SuppressWarnings("unchecked")
-			iso.std.iso._20022.tech.xsd.camt_056_001.Document document = ((JAXBElement<iso.std.iso._20022.tech.xsd.camt_056_001.Document>) jc.createUnmarshaller().unmarshal(new StringReader(camt056))).getValue();
-			Camt056ToCamt053Converter converter = new Camt056ToCamt053Converter();
-			BankToCustomerStatementV08 statement = converter.convert(document);
-			
-			PaymentTransactionInformation31 paymentTransactionInformation = document
-					.getFIToFIPmtCxlReq()
-					.getUndrlyg().get(0)
-					.getTxInf().get(0);
-			
-			String originalDebtorBic = paymentTransactionInformation
-					.getOrgnlTxRef()
-					.getDbtrAgt()
-					.getFinInstnId()
-					.getBIC();
-			String originalCreationDate = paymentTransactionInformation
-					.getOrgnlGrpInf()
-					.getOrgnlCreDtTm()
-					.toGregorianCalendar()
-					.toZonedDateTime()
-					.toLocalDate()
-					.format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-			String originalEndToEndId = paymentTransactionInformation
-					.getOrgnlEndToEndId();
-			
-			String internalCorrelationId = String.format("%s_%s_%s", originalDebtorBic, originalCreationDate, originalEndToEndId);
-			String camt053 = om.writeValueAsString(statement);
-			
-			String camt053RelativeUrl = String.format("datatables/transaction_details/%d", conversionAccountAmsId);
+//			JAXBContext jc = JAXBContext.newInstance(iso.std.iso._20022.tech.xsd.camt_056_001.ObjectFactory.class,
+//					eu.nets.realtime247.ri_2015_10.ObjectFactory.class);
+//			@SuppressWarnings("unchecked")
+//			iso.std.iso._20022.tech.xsd.camt_056_001.Document document = ((JAXBElement<iso.std.iso._20022.tech.xsd.camt_056_001.Document>) jc.createUnmarshaller().unmarshal(new StringReader(camt056))).getValue();
+//			Camt056ToCamt053Converter converter = new Camt056ToCamt053Converter();
+//			BankToCustomerStatementV08 statement = converter.convert(document);
+//
+//			PaymentTransactionInformation31 paymentTransactionInformation = document
+//					.getFIToFIPmtCxlReq()
+//					.getUndrlyg().get(0)
+//					.getTxInf().get(0);
+//
+//			String originalDebtorBic = paymentTransactionInformation
+//					.getOrgnlTxRef()
+//					.getDbtrAgt()
+//					.getFinInstnId()
+//					.getBIC();
+//			String originalCreationDate = paymentTransactionInformation
+//					.getOrgnlGrpInf()
+//					.getOrgnlCreDtTm()
+//					.toGregorianCalendar()
+//					.toZonedDateTime()
+//					.toLocalDate()
+//					.format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+//			String originalEndToEndId = paymentTransactionInformation
+//					.getOrgnlEndToEndId();
+//
+//			String internalCorrelationId = String.format("%s_%s_%s", originalDebtorBic, originalCreationDate, originalEndToEndId);
+//			String camt053 = om.writeValueAsString(statement);
+//
+//			String camt053RelativeUrl = String.format("datatables/transaction_details/%d", conversionAccountAmsId);
 			
 			TransactionDetails td = new TransactionDetails(
 					"$.resourceId",
-					internalCorrelationId,
-					camt053,
-					internalCorrelationId,
+					null,
+					null,
+					null,
 					transactionCategoryPurposeCode);
 			
 			String camt053Body = om.writeValueAsString(td);
 
-			biBuilder.add(items, camt053RelativeUrl, camt053Body, true);
+			biBuilder.add(items, null, camt053Body, true);
 			
 			String disposalAccountDepositRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), disposalAccountAmsId, "deposit");
 			
@@ -302,21 +302,21 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			
 			biBuilder.add(items, disposalAccountDepositRelativeUrl, bodyItem, false);
 			
-			camt053RelativeUrl = String.format("datatables/transaction_details/%d", disposalAccountAmsId);
+//			camt053RelativeUrl = String.format("datatables/transaction_details/%d", disposalAccountAmsId);
 			
 			td = new TransactionDetails(
 					"$.resourceId",
-					internalCorrelationId,
-					camt053,
-					internalCorrelationId,
+					null,
+					null,
+					null,
 					transactionCategoryPurposeCode);
 			
 			camt053Body = om.writeValueAsString(td);
 			
-			biBuilder.add(items, camt053RelativeUrl, camt053Body, true);
+			biBuilder.add(items, null, camt053Body, true);
 			
-			doBatch(items, tenantIdentifier, internalCorrelationId);
-		} catch (JAXBException | JsonProcessingException e) {
+			doBatch(items, tenantIdentifier, null);
+		} catch (JsonProcessingException e) {
 			logger.error(e.getMessage(), e);
 			throw new RuntimeException(e);
 		}
