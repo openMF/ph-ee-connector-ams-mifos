@@ -41,6 +41,9 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 	@Autowired
     private PaymentTypeConfigFactory paymentTypeConfigFactory;
 	
+	@Autowired
+	private BatchItemBuilder batchItemBuilder;
+	
 	private static final DateTimeFormatter PATTERN = DateTimeFormatter.ofPattern(FORMAT);
 
 	@JobWorker
@@ -60,7 +63,7 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 		logger.debug("Got payment scheme {}", paymentScheme);
 		String transactionDate = LocalDate.now().format(PATTERN);
 		ObjectMapper objectMapper = new ObjectMapper();
-		BatchItemBuilder batchItemBuilder = new BatchItemBuilder(tenantIdentifier);
+		batchItemBuilder.tenantId(tenantIdentifier);
 		logger.debug("Got category purpose code {}", categoryPurpose);
 		
 		try {

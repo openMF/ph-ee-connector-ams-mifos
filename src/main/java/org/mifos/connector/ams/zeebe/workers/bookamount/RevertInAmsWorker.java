@@ -49,6 +49,9 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 	@Autowired
 	private JAXBUtils jaxbUtils;
 	
+	@Autowired
+	private BatchItemBuilder batchItemBuilder;
+	
 	private final ObjectMapper objectMapper = new ObjectMapper();
 	
 	@JobWorker
@@ -79,7 +82,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 		
 		logger.debug("Withdrawing amount {} from conversion account {}", amount, conversionAccountAmsId);
 		
-		BatchItemBuilder batchItemBuilder = new BatchItemBuilder(tenantIdentifier);
+		batchItemBuilder.tenantId(tenantIdentifier);
 		
 		String conversionAccountWithdrawRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "withdrawal");
 		
@@ -217,7 +220,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			@Variable String transactionCategoryPurposeCode,
 			@Variable String camt056) {
 		try {
-			BatchItemBuilder batchItemBuilder = new BatchItemBuilder(tenantIdentifier);
+			batchItemBuilder.tenantId(tenantIdentifier);
 			
 			String transactionDate = LocalDate.now().format(DateTimeFormatter.ofPattern(FORMAT));
 			

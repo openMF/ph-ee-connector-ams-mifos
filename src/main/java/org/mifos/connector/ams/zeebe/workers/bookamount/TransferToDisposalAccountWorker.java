@@ -40,6 +40,9 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 	
 	@Autowired
 	private JAXBUtils jaxbUtils;
+	
+	@Autowired
+	private BatchItemBuilder batchItemBuilder;
 
 	@JobWorker
 	public void transferToDisposalAccount(JobClient jobClient, 
@@ -63,7 +66,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 
 			ObjectMapper objectMapper = new ObjectMapper();
 			
-			BatchItemBuilder batchItemBuilder = new BatchItemBuilder(tenantIdentifier);
+			batchItemBuilder.tenantId(tenantIdentifier);
 			
 			String conversionAccountWithdrawRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "withdrawal");
 			

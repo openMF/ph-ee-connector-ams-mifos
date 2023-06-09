@@ -65,6 +65,9 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 	@Autowired
 	private AuthTokenHelper authTokenHelper;
 	
+	@Autowired
+	private BatchItemBuilder batchItemBuilder;
+	
 	private final ObjectMapper objectMapper = new ObjectMapper();
 	
 	private static final DateTimeFormatter PATTERN = DateTimeFormatter.ofPattern(FORMAT);
@@ -140,7 +143,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 				throw new ZeebeBpmnError("Error_InsufficientFunds", "Insufficient funds");
 			}
 			
-			BatchItemBuilder batchItemBuilder = new BatchItemBuilder(tenantIdentifier);
+			batchItemBuilder.tenantId(tenantIdentifier);
 			
 			List<TransactionItem> items = new ArrayList<>();
 			
@@ -301,7 +304,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			
 			logger.debug("Withdrawing amount {} from disposal account {}", amount, disposalAccountAmsId);
 			
-			BatchItemBuilder batchItemBuilder = new BatchItemBuilder(tenantIdentifier);
+			batchItemBuilder.tenantId(tenantIdentifier);
 			
 			String disposalAccountWithdrawRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), disposalAccountAmsId, "withdrawal");
 			

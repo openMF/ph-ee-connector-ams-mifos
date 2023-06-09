@@ -40,6 +40,9 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
 	
 	@Autowired
 	private JAXBUtils jaxbUtils;
+	
+	@Autowired
+	private BatchItemBuilder batchItemBuilder;
     
 	@JobWorker
     public void bookCreditedAmountToConversionAccount(JobClient jobClient, 
@@ -60,7 +63,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
 
             MDC.put("internalCorrelationId", internalCorrelationId);
 
-            BatchItemBuilder batchItemBuilder = new BatchItemBuilder(tenantIdentifier);
+            batchItemBuilder.tenantId(tenantIdentifier);
     		
     		String conversionAccountWithdrawalRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "deposit");
     		

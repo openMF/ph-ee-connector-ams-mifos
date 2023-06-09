@@ -48,6 +48,9 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 	@Autowired
 	private JAXBUtils jaxbUtils;
 	
+	@Autowired
+	private BatchItemBuilder batchItemBuilder;
+	
 	private final ObjectMapper objectMapper = new ObjectMapper();
 	
 	@JobWorker
@@ -73,7 +76,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 		
 		logger.info("Withdrawing amount {} from conversion account {} of tenant {}", amount, conversionAccountAmsId, tenantIdentifier);
 		
-		BatchItemBuilder batchItemBuilder = new BatchItemBuilder(tenantIdentifier);
+		batchItemBuilder.tenantId(tenantIdentifier);
 		
 		String conversionAccountWithdrawalRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "withdrawal");
 		
@@ -160,7 +163,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 			
 			String transactionDate = LocalDate.now().format(DateTimeFormatter.ofPattern(FORMAT));
 			
-			BatchItemBuilder batchItemBuilder = new BatchItemBuilder(tenantIdentifier);
+			batchItemBuilder.tenantId(tenantIdentifier);
 			
 			String conversionAccountWithdrawalRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "withdrawal");
 			

@@ -5,18 +5,21 @@ import java.util.List;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 
+@Component
 public class BatchItemBuilder {
 
-	private final String tenantId;
+	private String tenantId;
 	
 	@Autowired
 	private AuthTokenHelper authTokenHelper;
 	
-	public BatchItemBuilder(String tenantId) {
+	public BatchItemBuilder tenantId(String tenantId) {
 		this.tenantId = tenantId;
+		return this;
 	}
 	
 	public void add(List<TransactionItem> items, String url, String body, boolean isDetails) throws JsonProcessingException {

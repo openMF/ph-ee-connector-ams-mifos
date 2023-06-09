@@ -43,6 +43,9 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 	@Autowired
     private PaymentTypeConfigFactory paymentTypeConfigFactory;
 	
+	@Autowired
+	private BatchItemBuilder batchItemBuilder;
+	
 	private static final DateTimeFormatter PATTERN = DateTimeFormatter.ofPattern(FORMAT);
 
 	@JobWorker
@@ -72,7 +75,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 			
 			String interbankSettlementDate = LocalDate.now().format(PATTERN);
 			
-            BatchItemBuilder batchItemBuilder = new BatchItemBuilder(tenantIdentifier);
+            batchItemBuilder.tenantId(tenantIdentifier);
     		
     		String debtorDisposalWithdrawalRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), debtorDisposalAccountAmsId, "withdrawal");
     		
