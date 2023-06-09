@@ -13,6 +13,7 @@ import javax.xml.bind.JAXBException;
 import org.mifos.connector.ams.fineract.PaymentTypeConfig;
 import org.mifos.connector.ams.fineract.PaymentTypeConfigFactory;
 import org.mifos.connector.ams.mapstruct.Pain001Camt053Mapper;
+import org.mifos.connector.ams.zeebe.workers.accountdetails.AbstractAmsWorker;
 import org.mifos.connector.ams.zeebe.workers.utils.BatchItemBuilder;
 import org.mifos.connector.ams.zeebe.workers.utils.JAXBUtils;
 import org.mifos.connector.ams.zeebe.workers.utils.JsonSchemaValidator;
@@ -118,7 +119,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			
 			HttpHeaders httpHeaders = new HttpHeaders();
 			httpHeaders.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
-			httpHeaders.set("Authorization", "Basic " + authToken);
+			httpHeaders.set("Authorization", AbstractAmsWorker.generateAuthToken(authToken));
 			httpHeaders.set("Fineract-Platform-TenantId", tenantIdentifier);
 			LinkedHashMap<String, Object> accountDetails = restTemplate.exchange(
 					String.format("%s/%s%d", fineractApiUrl, incomingMoneyApi.substring(1), disposalAccountAmsId), 

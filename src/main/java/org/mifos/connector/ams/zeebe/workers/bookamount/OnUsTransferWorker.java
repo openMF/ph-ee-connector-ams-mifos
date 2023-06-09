@@ -40,9 +40,6 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 	@Value("${fineract.incoming-money-api}")
 	protected String incomingMoneyApi;
 	
-	@Value("${fineract.auth-token}")
-	private String authToken;
-	
 	@Autowired
     private PaymentTypeConfigFactory paymentTypeConfigFactory;
 	

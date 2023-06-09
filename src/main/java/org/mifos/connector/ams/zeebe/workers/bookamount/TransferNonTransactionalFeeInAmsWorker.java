@@ -38,9 +38,6 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 	@Value("${fineract.incoming-money-api}")
 	protected String incomingMoneyApi;
 	
-	@Value("${fineract.auth-token}")
-	private String authToken;
-	
 	@Autowired
     private PaymentTypeConfigFactory paymentTypeConfigFactory;
 	

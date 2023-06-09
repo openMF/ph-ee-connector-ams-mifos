@@ -1,5 +1,9 @@
 package org.mifos.connector.ams.zeebe.workers.accountdetails;
 
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
+import java.util.Base64.Encoder;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,6 +18,8 @@ import org.springframework.web.util.UriComponentsBuilder;
 public abstract class AbstractAmsWorker {
 	
 	Logger logger = LoggerFactory.getLogger(AbstractAmsWorker.class);
+	
+	private static final Encoder ENCODER = Base64.getEncoder();
 	
 	@Value("${fineract.api-url}")
 	protected String fineractApiUrl;
@@ -55,7 +61,7 @@ public abstract class AbstractAmsWorker {
 	protected <T> T exchange(String urlTemplate, Class<T> responseType, String tenantId) {
 		HttpHeaders httpHeaders = new HttpHeaders();
 		httpHeaders.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
-		httpHeaders.set("Authorization", "Basic " + authToken);
+		httpHeaders.set("Authorization", generateAuthToken(authToken));
 		httpHeaders.set("Fineract-Platform-TenantId", tenantId);
 		logger.info("Sending http request with the following headers: {}", httpHeaders);
 		return restTemplate.exchange(
@@ -64,5 +70,11 @@ public abstract class AbstractAmsWorker {
 				new HttpEntity<>(httpHeaders), 
 				responseType)
 			.getBody();
+	}
+	
+	public static String generateAuthToken(String source) {
+		StringBuilder sb = new StringBuilder("Basic ");
+		sb.append(new String(ENCODER.encode(source.getBytes()), StandardCharsets.ISO_8859_1));
+		return sb.toString();
 	}
 }
