@@ -1,9 +1,6 @@
 package org.mifos.connector.ams.zeebe.workers.accountdetails;
 
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
-import java.util.Base64.Encoder;
-
+import org.mifos.connector.ams.zeebe.workers.utils.AuthTokenHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,8 +16,6 @@ public abstract class AbstractAmsWorker {
 	
 	Logger logger = LoggerFactory.getLogger(AbstractAmsWorker.class);
 	
-	private static final Encoder ENCODER = Base64.getEncoder();
-	
 	@Value("${fineract.api-url}")
 	protected String fineractApiUrl;
 	
@@ -33,14 +28,11 @@ public abstract class AbstractAmsWorker {
 	@Value("${fineract.result-columns}")
 	private String resultColumns;
 	
-	@Value("${fineract.auth-user}")
-	private String authUser;
-	
-	@Value("${fineract.auth-password}")
-	private String authPassword;
-	
 	@Autowired
 	private RestTemplate restTemplate;
+	
+	@Autowired
+	private AuthTokenHelper authTokenHelper;
 	
 	public AbstractAmsWorker() {
 	}
@@ -64,7 +56,7 @@ public abstract class AbstractAmsWorker {
 	protected <T> T exchange(String urlTemplate, Class<T> responseType, String tenantId) {
 		HttpHeaders httpHeaders = new HttpHeaders();
 		httpHeaders.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
-		httpHeaders.set("Authorization", generateAuthToken(authUser, authPassword));
+		httpHeaders.set("Authorization", authTokenHelper.generateAuthToken());
 		httpHeaders.set("Fineract-Platform-TenantId", tenantId);
 		logger.info("Sending http request with the following headers: {}", httpHeaders);
 		return restTemplate.exchange(
@@ -73,12 +65,5 @@ public abstract class AbstractAmsWorker {
 				new HttpEntity<>(httpHeaders), 
 				responseType)
 			.getBody();
-	}
-	
-	public static String generateAuthToken(String user, String password) {
-		String userPass = new StringBuilder(user).append(":").append(password).toString();
-		StringBuilder sb = new StringBuilder("Basic ");
-		sb.append(new String(ENCODER.encode(userPass.getBytes()), StandardCharsets.ISO_8859_1));
-		return sb.toString();
 	}
 }

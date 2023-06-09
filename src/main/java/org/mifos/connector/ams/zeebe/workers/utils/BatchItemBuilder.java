@@ -4,8 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import org.mifos.connector.ams.zeebe.workers.accountdetails.AbstractAmsWorker;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 
@@ -13,11 +12,8 @@ public class BatchItemBuilder {
 
 	private final String tenantId;
 	
-	@Value("${fineract.auth-user}")
-	private String authUser;
-	
-	@Value("${fineract.auth-password}")
-	private String authPassword;
+	@Autowired
+	private AuthTokenHelper authTokenHelper;
 	
 	public BatchItemBuilder(String tenantId) {
 		this.tenantId = tenantId;
@@ -37,7 +33,7 @@ public class BatchItemBuilder {
 		headers.add(new Header("Idempotency-Key", UUID.randomUUID().toString()));
 		headers.add(new Header("Content-Type", "application/json"));
 		headers.add(new Header("Fineract-Platform-TenantId", tenantId));
-		headers.add(new Header("Authorization", AbstractAmsWorker.generateAuthToken(authUser, authPassword)));
+		headers.add(new Header("Authorization", authTokenHelper.generateAuthToken()));
 		return headers;
 	}
 }

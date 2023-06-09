@@ -14,6 +14,7 @@ import org.mifos.connector.ams.fineract.PaymentTypeConfig;
 import org.mifos.connector.ams.fineract.PaymentTypeConfigFactory;
 import org.mifos.connector.ams.mapstruct.Pain001Camt053Mapper;
 import org.mifos.connector.ams.zeebe.workers.accountdetails.AbstractAmsWorker;
+import org.mifos.connector.ams.zeebe.workers.utils.AuthTokenHelper;
 import org.mifos.connector.ams.zeebe.workers.utils.BatchItemBuilder;
 import org.mifos.connector.ams.zeebe.workers.utils.JAXBUtils;
 import org.mifos.connector.ams.zeebe.workers.utils.JsonSchemaValidator;
@@ -52,12 +53,6 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 	@Value("${fineract.incoming-money-api}")
 	protected String incomingMoneyApi;
 	
-	@Value("${fineract.auth-user}")
-	private String authUser;
-	
-	@Value("${fineract.auth-password}")
-	private String authPassword;
-	
 	@Autowired
     private PaymentTypeConfigFactory paymentTypeConfigFactory;
 	
@@ -66,6 +61,9 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 	
 	@Autowired
 	private JAXBUtils jaxbUtils;
+	
+	@Autowired
+	private AuthTokenHelper authTokenHelper;
 	
 	private final ObjectMapper objectMapper = new ObjectMapper();
 	
@@ -122,7 +120,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			
 			HttpHeaders httpHeaders = new HttpHeaders();
 			httpHeaders.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
-			httpHeaders.set("Authorization", AbstractAmsWorker.generateAuthToken(authUser, authPassword));
+			httpHeaders.set("Authorization", authTokenHelper.generateAuthToken());
 			httpHeaders.set("Fineract-Platform-TenantId", tenantIdentifier);
 			LinkedHashMap<String, Object> accountDetails = restTemplate.exchange(
 					String.format("%s/%s%d", fineractApiUrl, incomingMoneyApi.substring(1), disposalAccountAmsId), 

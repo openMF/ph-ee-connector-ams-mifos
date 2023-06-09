@@ -1,9 +1,8 @@
 package org.mifos.connector.ams.fineract.query;
 
-import java.util.Base64;
 import java.util.List;
 
-import org.mifos.connector.ams.zeebe.workers.accountdetails.AbstractAmsWorker;
+import org.mifos.connector.ams.zeebe.workers.utils.AuthTokenHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,20 +36,17 @@ public class IdentifierResolver {
 	@Value("${fineract.column-filter}")
 	private String resultColumns;
 	
-	@Value("${fineract.auth-user}")
-	private String authUser;
-	
-	@Value("${fineract.auth-password}")
-	private String authPassword;
-	
 	@Autowired
 	private RestTemplate restTemplate;
+	
+	@Autowired
+	private AuthTokenHelper authTokenHelper;
 	
 	@GetMapping
 	public List<?> retrieve(@RequestHeader("internalAccountId") String internalAccountId, @RequestHeader("Fineract-Platform-TenantId") String tenantId) {
 		HttpHeaders httpHeaders = new HttpHeaders();
 		httpHeaders.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
-		httpHeaders.set("Authorization", AbstractAmsWorker.generateAuthToken(authUser, authPassword));
+		httpHeaders.set("Authorization", authTokenHelper.generateAuthToken());
 		httpHeaders.set("Fineract-Platform-TenantId", tenantId);
 		logger.info("Sending http request with the following headers: {}", httpHeaders);
 		return restTemplate.exchange(
