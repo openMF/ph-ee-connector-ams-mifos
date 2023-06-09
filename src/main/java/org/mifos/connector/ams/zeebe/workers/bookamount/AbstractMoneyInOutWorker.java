@@ -6,6 +6,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 
 import org.mifos.connector.ams.log.IOTxLogger;
+import org.mifos.connector.ams.zeebe.workers.accountdetails.AbstractAmsWorker;
 import org.mifos.connector.ams.zeebe.workers.utils.HoldAmountBody;
 import org.mifos.connector.ams.zeebe.workers.utils.TransactionItem;
 import org.slf4j.Logger;
@@ -63,7 +64,7 @@ public abstract class AbstractMoneyInOutWorker {
 	protected ResponseEntity<Object> release(Integer currencyAccountAmsId, Integer holdAmountId, String tenantId) {
 		HttpHeaders httpHeaders = new HttpHeaders();
 		httpHeaders.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
-		httpHeaders.set("Authorization", "Basic " + authToken);
+		httpHeaders.set("Authorization", AbstractAmsWorker.generateAuthToken(authToken));
 		httpHeaders.set("Fineract-Platform-TenantId", tenantId);
 		var entity = new HttpEntity<>(null, httpHeaders);
 		
@@ -99,7 +100,7 @@ public abstract class AbstractMoneyInOutWorker {
 	protected <T> ResponseEntity<Object> doExchange(T body, Integer currencyAccountAmsId, String command, String tenantId) {
 		HttpHeaders httpHeaders = new HttpHeaders();
 		httpHeaders.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
-		httpHeaders.set("Authorization", "Basic " + authToken);
+		httpHeaders.set("Authorization", AbstractAmsWorker.generateAuthToken(authToken));
 		httpHeaders.set("Fineract-Platform-TenantId", tenantId);
 		var entity = new HttpEntity<>(body, httpHeaders);
 		
@@ -122,7 +123,7 @@ public abstract class AbstractMoneyInOutWorker {
 	protected void doBatch(List<TransactionItem> items, String tenantId, String internalCorrelationId) throws JsonProcessingException {
 		HttpHeaders httpHeaders = new HttpHeaders();
 		httpHeaders.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
-		httpHeaders.set("Authorization", "Basic " + authToken);
+		httpHeaders.set("Authorization", AbstractAmsWorker.generateAuthToken(authToken));
 		httpHeaders.set("Fineract-Platform-TenantId", tenantId);
 		int idempotencyPostfix = 0;
 		var entity = new HttpEntity<>(items, httpHeaders);

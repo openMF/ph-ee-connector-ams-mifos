@@ -43,9 +43,6 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 	@Value("${fineract.incoming-money-api}")
 	protected String incomingMoneyApi;
 	
-	@Value("${fineract.auth-token}")
-	private String authToken;
-	
 	@Autowired
     private PaymentTypeConfigFactory paymentTypeConfigFactory;
 	
