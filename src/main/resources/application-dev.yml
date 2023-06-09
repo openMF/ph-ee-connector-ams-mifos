@@ -30,13 +30,13 @@ fineract:
   idempotency:
     count: 10
     interval: 200
-    key-header-name: "Idemptency-Key"
+    key-header-name: "Idempotency-Key"
 
 zeebe:
   client:
     connection-mode: ADDRESS
     broker:
-      gatewayAddress: camunda8-zeebe-gateway:26500
+      gatewayAddress: ${ZEEBE_CLIENT_BROKER_GATEWAY_ADDRESS}
     security:
       plaintext: true
 
@@ -44,8 +44,8 @@ ams:
   local:
     enabled: true
     version: 1.2
-    keystore-path: keystore.jks
-    keystore-password: openmf
+    keystore-path: ${AMS_LOCAL_KEYSTORE_PATH}
+    keystore-password: ${AMS_LOCAL_KEYSTORE_PASSWORD}
     interop:
       host: https://localhost:8443
       base-url: /fineract-provider/api/v1
