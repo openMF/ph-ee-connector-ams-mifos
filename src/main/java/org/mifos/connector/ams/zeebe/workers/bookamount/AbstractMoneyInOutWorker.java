@@ -54,8 +54,11 @@ public abstract class AbstractMoneyInOutWorker {
 	@Value("${fineract.idempotency.key-header-name}")
 	private String idempotencyKeyHeaderName;
 	
-	@Value("${fineract.auth-token}")
-	private String authToken;
+	@Value("${fineract.auth-user}")
+	private String authUser;
+	
+	@Value("${fineract.auth-password}")
+	private String authPassword;
 
 	protected Logger logger = LoggerFactory.getLogger(getClass());
 	
@@ -64,7 +67,7 @@ public abstract class AbstractMoneyInOutWorker {
 	protected ResponseEntity<Object> release(Integer currencyAccountAmsId, Integer holdAmountId, String tenantId) {
 		HttpHeaders httpHeaders = new HttpHeaders();
 		httpHeaders.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
-		httpHeaders.set("Authorization", AbstractAmsWorker.generateAuthToken(authToken));
+		httpHeaders.set("Authorization", AbstractAmsWorker.generateAuthToken(authUser, authPassword));
 		httpHeaders.set("Fineract-Platform-TenantId", tenantId);
 		var entity = new HttpEntity<>(null, httpHeaders);
 		
@@ -100,7 +103,7 @@ public abstract class AbstractMoneyInOutWorker {
 	protected <T> ResponseEntity<Object> doExchange(T body, Integer currencyAccountAmsId, String command, String tenantId) {
 		HttpHeaders httpHeaders = new HttpHeaders();
 		httpHeaders.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
-		httpHeaders.set("Authorization", AbstractAmsWorker.generateAuthToken(authToken));
+		httpHeaders.set("Authorization", AbstractAmsWorker.generateAuthToken(authUser, authPassword));
 		httpHeaders.set("Fineract-Platform-TenantId", tenantId);
 		var entity = new HttpEntity<>(body, httpHeaders);
 		
@@ -123,7 +126,7 @@ public abstract class AbstractMoneyInOutWorker {
 	protected void doBatch(List<TransactionItem> items, String tenantId, String internalCorrelationId) throws JsonProcessingException {
 		HttpHeaders httpHeaders = new HttpHeaders();
 		httpHeaders.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
-		httpHeaders.set("Authorization", AbstractAmsWorker.generateAuthToken(authToken));
+		httpHeaders.set("Authorization", AbstractAmsWorker.generateAuthToken(authUser, authPassword));
 		httpHeaders.set("Fineract-Platform-TenantId", tenantId);
 		int idempotencyPostfix = 0;
 		var entity = new HttpEntity<>(items, httpHeaders);

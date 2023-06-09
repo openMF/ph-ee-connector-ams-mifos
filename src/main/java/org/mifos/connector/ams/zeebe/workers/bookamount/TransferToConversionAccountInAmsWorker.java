@@ -52,8 +52,11 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 	@Value("${fineract.incoming-money-api}")
 	protected String incomingMoneyApi;
 	
-	@Value("${fineract.auth-token}")
-	private String authToken;
+	@Value("${fineract.auth-user}")
+	private String authUser;
+	
+	@Value("${fineract.auth-password}")
+	private String authPassword;
 	
 	@Autowired
     private PaymentTypeConfigFactory paymentTypeConfigFactory;
@@ -119,7 +122,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			
 			HttpHeaders httpHeaders = new HttpHeaders();
 			httpHeaders.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
-			httpHeaders.set("Authorization", AbstractAmsWorker.generateAuthToken(authToken));
+			httpHeaders.set("Authorization", AbstractAmsWorker.generateAuthToken(authUser, authPassword));
 			httpHeaders.set("Fineract-Platform-TenantId", tenantIdentifier);
 			LinkedHashMap<String, Object> accountDetails = restTemplate.exchange(
 					String.format("%s/%s%d", fineractApiUrl, incomingMoneyApi.substring(1), disposalAccountAmsId), 

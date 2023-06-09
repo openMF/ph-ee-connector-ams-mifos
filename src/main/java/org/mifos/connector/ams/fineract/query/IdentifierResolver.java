@@ -37,18 +37,20 @@ public class IdentifierResolver {
 	@Value("${fineract.column-filter}")
 	private String resultColumns;
 	
-	@Value("${fineract.auth-token}")
-	private String authToken;
+	@Value("${fineract.auth-user}")
+	private String authUser;
+	
+	@Value("${fineract.auth-password}")
+	private String authPassword;
 	
 	@Autowired
 	private RestTemplate restTemplate;
 	
 	@GetMapping
 	public List<?> retrieve(@RequestHeader("internalAccountId") String internalAccountId, @RequestHeader("Fineract-Platform-TenantId") String tenantId) {
-		Base64.getEncoder().encode(authToken.getBytes());
 		HttpHeaders httpHeaders = new HttpHeaders();
 		httpHeaders.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
-		httpHeaders.set("Authorization", AbstractAmsWorker.generateAuthToken(authToken));
+		httpHeaders.set("Authorization", AbstractAmsWorker.generateAuthToken(authUser, authPassword));
 		httpHeaders.set("Fineract-Platform-TenantId", tenantId);
 		logger.info("Sending http request with the following headers: {}", httpHeaders);
 		return restTemplate.exchange(

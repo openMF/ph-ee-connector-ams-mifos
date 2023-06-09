@@ -13,8 +13,11 @@ public class BatchItemBuilder {
 
 	private final String tenantId;
 	
-	@Value("${fineract.auth-token}")
-	private String authToken;
+	@Value("${fineract.auth-user}")
+	private String authUser;
+	
+	@Value("${fineract.auth-password}")
+	private String authPassword;
 	
 	public BatchItemBuilder(String tenantId) {
 		this.tenantId = tenantId;
@@ -34,7 +37,7 @@ public class BatchItemBuilder {
 		headers.add(new Header("Idempotency-Key", UUID.randomUUID().toString()));
 		headers.add(new Header("Content-Type", "application/json"));
 		headers.add(new Header("Fineract-Platform-TenantId", tenantId));
-		headers.add(new Header("Authorization", AbstractAmsWorker.generateAuthToken(authToken)));
+		headers.add(new Header("Authorization", AbstractAmsWorker.generateAuthToken(authUser, authPassword)));
 		return headers;
 	}
 }

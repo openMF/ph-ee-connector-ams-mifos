@@ -33,8 +33,11 @@ public abstract class AbstractAmsWorker {
 	@Value("${fineract.result-columns}")
 	private String resultColumns;
 	
-	@Value("${fineract.auth-token}")
-	private String authToken;
+	@Value("${fineract.auth-user}")
+	private String authUser;
+	
+	@Value("${fineract.auth-password}")
+	private String authPassword;
 	
 	@Autowired
 	private RestTemplate restTemplate;
@@ -61,7 +64,7 @@ public abstract class AbstractAmsWorker {
 	protected <T> T exchange(String urlTemplate, Class<T> responseType, String tenantId) {
 		HttpHeaders httpHeaders = new HttpHeaders();
 		httpHeaders.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
-		httpHeaders.set("Authorization", generateAuthToken(authToken));
+		httpHeaders.set("Authorization", generateAuthToken(authUser, authPassword));
 		httpHeaders.set("Fineract-Platform-TenantId", tenantId);
 		logger.info("Sending http request with the following headers: {}", httpHeaders);
 		return restTemplate.exchange(
@@ -72,9 +75,10 @@ public abstract class AbstractAmsWorker {
 			.getBody();
 	}
 	
-	public static String generateAuthToken(String source) {
+	public static String generateAuthToken(String user, String password) {
+		String userPass = new StringBuilder(user).append(":").append(password).toString();
 		StringBuilder sb = new StringBuilder("Basic ");
-		sb.append(new String(ENCODER.encode(source.getBytes()), StandardCharsets.ISO_8859_1));
+		sb.append(new String(ENCODER.encode(userPass.getBytes()), StandardCharsets.ISO_8859_1));
 		return sb.toString();
 	}
 }

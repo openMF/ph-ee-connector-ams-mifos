@@ -17,7 +17,8 @@ fineract:
   transaction-details-api: "/datatables/transaction_details/"
   datatable-name: "transaction_details"
   locale: "en"
-  auth-token: ${FINERACT_AUTH_TOKEN}
+  auth-user: ${FINERACT_AUTH_USER}
+  auth-password: ${FINERACT_AUTH_PASSWORD}
   paymentType:
     paymentTypeExchangeFiatCurrencyId: 5
     paymentTypeIssuingECurrencyId: 7
