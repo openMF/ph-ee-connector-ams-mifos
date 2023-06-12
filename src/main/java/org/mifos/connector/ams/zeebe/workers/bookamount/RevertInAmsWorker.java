@@ -30,7 +30,6 @@ import io.camunda.zeebe.client.api.worker.JobClient;
 import io.camunda.zeebe.spring.client.annotation.JobWorker;
 import io.camunda.zeebe.spring.client.annotation.Variable;
 import iso.std.iso._20022.tech.json.camt_053_001.BankToCustomerStatementV08;
-import iso.std.iso._20022.tech.json.pain_001_001.CreditTransferTransaction40;
 import iso.std.iso._20022.tech.json.pain_001_001.Pain00100110CustomerCreditTransferInitiationV10MessageSchema;
 import iso.std.iso._20022.tech.xsd.camt_056_001.PaymentTransactionInformation31;
 
@@ -65,20 +64,13 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			@Variable String paymentScheme,
 			@Variable String transactionGroupId,
 			@Variable String transactionCategoryPurposeCode,
+			@Variable BigDecimal amount,
 			@Variable String transactionFeeCategoryPurposeCode,
 			@Variable BigDecimal transactionFeeAmount,
 			@Variable String tenantIdentifier) throws Exception {
 		MDC.put("internalCorrelationId", internalCorrelationId);
 		
 		Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001 = objectMapper.readValue(originalPain001, Pain00100110CustomerCreditTransferInitiationV10MessageSchema.class);
-		
-		BigDecimal amount = BigDecimal.ZERO;
-		
-		List<CreditTransferTransaction40> creditTransferTransactionInformation = pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation();
-		
-		for (CreditTransferTransaction40 ctti : creditTransferTransactionInformation) {
-			amount = new BigDecimal(ctti.getAmount().getInstructedAmount().getAmount().toString());
-		}
 		
 		logger.debug("Withdrawing amount {} from conversion account {}", amount, conversionAccountAmsId);
 		
