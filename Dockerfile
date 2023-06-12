@@ -1,4 +1,4 @@
-FROM openjdk:17-bullseye
+FROM azul/zulu-openjdk-alpine:17
 EXPOSE 5000
 
 COPY build/libs/*.jar .
