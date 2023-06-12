@@ -30,7 +30,7 @@ import iso.std.iso._20022.tech.json.camt_053_001.BankToCustomerStatementV08;
 import iso.std.iso._20022.tech.json.pain_001_001.Pain00100110CustomerCreditTransferInitiationV10MessageSchema;
 
 @Component
-public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
+public class OnUsTransferWorker extends MoneyInOutHelperWorker {
 	
 	private static final String ERROR_FAILED_CREDIT_TRANSFER = "Error_FailedCreditTransfer";
 

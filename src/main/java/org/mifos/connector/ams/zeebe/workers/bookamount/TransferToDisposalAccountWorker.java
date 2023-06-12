@@ -27,7 +27,7 @@ import io.camunda.zeebe.spring.client.exception.ZeebeBpmnError;
 import iso.std.iso._20022.tech.json.camt_053_001.BankToCustomerStatementV08;
 
 @Component
-public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
+public class TransferToDisposalAccountWorker extends MoneyInOutHelperWorker {
 	
 	@Autowired
 	private Pacs008Camt053Mapper camt053Mapper;

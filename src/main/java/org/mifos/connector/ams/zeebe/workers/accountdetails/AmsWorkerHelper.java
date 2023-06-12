@@ -9,12 +9,14 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
+import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
-public abstract class AbstractAmsWorker {
+@Component
+public class AmsWorkerHelper {
 	
-	Logger logger = LoggerFactory.getLogger(AbstractAmsWorker.class);
+	Logger logger = LoggerFactory.getLogger(AmsWorkerHelper.class);
 	
 	@Value("${fineract.api-url}")
 	protected String fineractApiUrl;
@@ -33,13 +35,6 @@ public abstract class AbstractAmsWorker {
 	
 	@Autowired
 	private AuthTokenHelper authTokenHelper;
-	
-	public AbstractAmsWorker() {
-	}
-
-	public AbstractAmsWorker(RestTemplate restTemplate) {
-		this.restTemplate = restTemplate;
-	}
 	
 	protected AmsDataTableQueryResponse[] lookupAccount(String iban, String tenantId) {
 		return exchange(UriComponentsBuilder

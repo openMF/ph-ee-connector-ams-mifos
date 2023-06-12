@@ -4,8 +4,8 @@ import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestTemplate;
 
 import io.camunda.zeebe.client.api.response.ActivatedJob;
 import io.camunda.zeebe.client.api.worker.JobClient;
@@ -14,16 +14,12 @@ import io.camunda.zeebe.spring.client.annotation.Variable;
 import io.camunda.zeebe.spring.client.exception.ZeebeBpmnError;
 
 @Component
-public class AmsDebtorWorker extends AbstractAmsWorker {
+public class AmsDebtorWorker {
 
 	Logger logger = LoggerFactory.getLogger(AmsDebtorWorker.class);
 	
-	public AmsDebtorWorker() {
-	}
-	
-	public AmsDebtorWorker(RestTemplate restTemplate) {
-		super(restTemplate);
-	}
+	@Autowired
+	private AmsWorkerHelper amsWorkerHelper;
 
 	@JobWorker
 	public Map<String, Object> getAccountIdsFromAms(JobClient jobClient, 
@@ -34,7 +30,7 @@ public class AmsDebtorWorker extends AbstractAmsWorker {
 
 		logger.debug(">>>>>>>>>>>>>>>>>>> looking up debtor iban {} for tenant {} <<<<<<<<<<<<<<<<<<", debtorIban, tenantIdentifier);
 		
-		AmsDataTableQueryResponse[] lookupAccount = lookupAccount(debtorIban, tenantIdentifier);
+		AmsDataTableQueryResponse[] lookupAccount = amsWorkerHelper.lookupAccount(debtorIban, tenantIdentifier);
 		
 		if (lookupAccount.length == 0) {
 			logger.error("####################  No entry found for iban {} !!!  #########################", debtorIban);

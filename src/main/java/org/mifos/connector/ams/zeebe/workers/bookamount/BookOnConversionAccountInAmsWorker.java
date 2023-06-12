@@ -16,6 +16,8 @@ import org.mifos.connector.ams.zeebe.workers.utils.JAXBUtils;
 import org.mifos.connector.ams.zeebe.workers.utils.TransactionBody;
 import org.mifos.connector.ams.zeebe.workers.utils.TransactionDetails;
 import org.mifos.connector.ams.zeebe.workers.utils.TransactionItem;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -34,13 +36,18 @@ import iso.std.iso._20022.tech.json.pain_001_001.Pain00100110CustomerCreditTrans
 import iso.std.iso._20022.tech.xsd.camt_056_001.PaymentTransactionInformation31;
 
 @Component
-public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker {
+public class BookOnConversionAccountInAmsWorker {
+	
+	private Logger logger = LoggerFactory.getLogger(getClass());
 	
 	@Autowired
 	private Pain001Camt053Mapper camt053Mapper;
 	
 	@Value("${fineract.incoming-money-api}")
-	protected String incomingMoneyApi;
+	private String incomingMoneyApi;
+	
+	@Value("${fineract.locale}")
+	private String locale;
 	
 	@Autowired
     private PaymentTypeConfigFactory paymentTypeConfigFactory;
@@ -50,6 +57,9 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 	
 	@Autowired
 	private BatchItemBuilder batchItemBuilder;
+	
+	@Autowired
+	private MoneyInOutHelperWorker moneyInOutHelperWorker;
 	
 	private final ObjectMapper objectMapper = new ObjectMapper();
 	
@@ -88,7 +98,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 				amount,
 				paymentTypeId,
 				"",
-				FORMAT,
+				MoneyInOutHelperWorker.FORMAT,
 				locale);
 		
 		String bodyItem = objectMapper.writeValueAsString(body);
@@ -124,7 +134,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 					transactionFeeAmount,
 					paymentTypeId,
 					"",
-					FORMAT,
+					MoneyInOutHelperWorker.FORMAT,
 					locale);
 			
 			bodyItem = objectMapper.writeValueAsString(body);
@@ -141,7 +151,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 			batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 		}
 		
-		doBatch(items, tenantIdentifier, internalCorrelationId);
+		moneyInOutHelperWorker.doBatch(items, tenantIdentifier, internalCorrelationId);
 		
 		logger.info("Book debit on fiat account has finished  successfully");
 		
@@ -161,7 +171,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 		try {
 			logger.info("Withdrawing amount {} from conversion account {} of tenant {}", amount, conversionAccountAmsId, tenantIdentifier);
 			
-			String transactionDate = LocalDate.now().format(DateTimeFormatter.ofPattern(FORMAT));
+			String transactionDate = LocalDate.now().format(DateTimeFormatter.ofPattern(MoneyInOutHelperWorker.FORMAT));
 			
 			batchItemBuilder.tenantId(tenantIdentifier);
 			
@@ -175,7 +185,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 					amount,
 					paymentTypeId,
 					"",
-					FORMAT,
+					MoneyInOutHelperWorker.FORMAT,
 					locale);
 			
 			String bodyItem = objectMapper.writeValueAsString(body);
@@ -225,7 +235,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 	
 			batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 			
-			doBatch(items, tenantIdentifier, internalCorrelationId);
+			moneyInOutHelperWorker.doBatch(items, tenantIdentifier, internalCorrelationId);
 		} catch (JAXBException | JsonProcessingException e) {
 			logger.error(e.getMessage(), e);
 			throw new RuntimeException(e);

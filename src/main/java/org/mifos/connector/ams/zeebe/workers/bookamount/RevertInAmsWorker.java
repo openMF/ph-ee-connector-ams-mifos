@@ -34,7 +34,7 @@ import iso.std.iso._20022.tech.json.pain_001_001.Pain00100110CustomerCreditTrans
 import iso.std.iso._20022.tech.xsd.camt_056_001.PaymentTransactionInformation31;
 
 @Component
-public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
+public class RevertInAmsWorker extends MoneyInOutHelperWorker {
 	
 	@Autowired
 	private Pain001Camt053Mapper camt053Mapper;

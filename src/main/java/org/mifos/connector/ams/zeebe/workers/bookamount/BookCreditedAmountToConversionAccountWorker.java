@@ -12,6 +12,8 @@ import org.mifos.connector.ams.zeebe.workers.utils.JAXBUtils;
 import org.mifos.connector.ams.zeebe.workers.utils.TransactionBody;
 import org.mifos.connector.ams.zeebe.workers.utils.TransactionDetails;
 import org.mifos.connector.ams.zeebe.workers.utils.TransactionItem;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -27,13 +29,18 @@ import io.camunda.zeebe.spring.client.exception.ZeebeBpmnError;
 import iso.std.iso._20022.tech.json.camt_053_001.BankToCustomerStatementV08;
 
 @Component
-public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyInOutWorker {
+public class BookCreditedAmountToConversionAccountWorker {
+	
+	private Logger logger = LoggerFactory.getLogger(getClass());
 
     @Autowired
     private Pacs008Camt053Mapper camt053Mapper;
     
     @Value("${fineract.incoming-money-api}")
-	protected String incomingMoneyApi;
+	private String incomingMoneyApi;
+    
+    @Value("${fineract.locale}")
+	private String locale;
 	
 	@Autowired
     private PaymentTypeConfigFactory paymentTypeConfigFactory;
@@ -43,6 +50,9 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
 	
 	@Autowired
 	private BatchItemBuilder batchItemBuilder;
+	
+	@Autowired
+	private MoneyInOutHelperWorker moneyInOutHelperWorker;
     
 	@JobWorker
     public void bookCreditedAmountToConversionAccount(JobClient jobClient, 
@@ -63,6 +73,10 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
 
             MDC.put("internalCorrelationId", internalCorrelationId);
 
+            ObjectMapper objectMapper = new ObjectMapper();
+            BankToCustomerStatementV08 convertedCamt053 = camt053Mapper.toCamt053(pacs008);
+            String camt053 = objectMapper.writeValueAsString(convertedCamt053);
+
             batchItemBuilder.tenantId(tenantIdentifier);
     		
     		String conversionAccountWithdrawalRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "deposit");
@@ -75,10 +89,9 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
     				amount,
     				paymentTypeId,
     				"",
-    				FORMAT,
+    				MoneyInOutHelperWorker.FORMAT,
     				locale);
     		
-    		ObjectMapper objectMapper = new ObjectMapper();
     		
     		String bodyItem = objectMapper.writeValueAsString(body);
     		
@@ -86,8 +99,6 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
     		
     		batchItemBuilder.add(items, conversionAccountWithdrawalRelativeUrl, bodyItem, false);
     	
-    		BankToCustomerStatementV08 convertedCamt053 = camt053Mapper.toCamt053(pacs008);
-    		String camt053 = objectMapper.writeValueAsString(convertedCamt053);
     		
     		String camt053RelativeUrl = String.format("datatables/transaction_details/%d", conversionAccountAmsId);
     		
@@ -102,7 +113,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
 
     		batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 
-            doBatch(items, tenantIdentifier, internalCorrelationId);
+    		moneyInOutHelperWorker.doBatch(items, tenantIdentifier, internalCorrelationId);
         } catch (Exception e) {
             logger.error("Worker to book incoming money in AMS has failed, dispatching user task to handle fiat deposit", e);
             throw new ZeebeBpmnError("Error_BookToConversionToBeHandledManually", e.getMessage());

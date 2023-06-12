@@ -13,7 +13,6 @@ import javax.xml.bind.JAXBException;
 import org.mifos.connector.ams.fineract.PaymentTypeConfig;
 import org.mifos.connector.ams.fineract.PaymentTypeConfigFactory;
 import org.mifos.connector.ams.mapstruct.Pain001Camt053Mapper;
-import org.mifos.connector.ams.zeebe.workers.accountdetails.AbstractAmsWorker;
 import org.mifos.connector.ams.zeebe.workers.utils.AuthTokenHelper;
 import org.mifos.connector.ams.zeebe.workers.utils.BatchItemBuilder;
 import org.mifos.connector.ams.zeebe.workers.utils.JAXBUtils;
@@ -45,7 +44,7 @@ import iso.std.iso._20022.tech.json.pain_001_001.Pain00100110CustomerCreditTrans
 import iso.std.iso._20022.tech.xsd.camt_056_001.PaymentTransactionInformation31;
 
 @Component
-public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWorker {
+public class TransferToConversionAccountInAmsWorker extends MoneyInOutHelperWorker {
 	
 	@Autowired
 	private Pain001Camt053Mapper camt053Mapper;

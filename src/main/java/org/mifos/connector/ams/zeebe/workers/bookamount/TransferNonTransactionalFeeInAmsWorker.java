@@ -30,7 +30,7 @@ import iso.std.iso._20022.tech.json.camt_053_001.BankToCustomerStatementV08;
 import iso.std.iso._20022.tech.json.pain_001_001.Pain00100110CustomerCreditTransferInitiationV10MessageSchema;
 
 @Component
-public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWorker {
+public class TransferNonTransactionalFeeInAmsWorker extends MoneyInOutHelperWorker {
 	
 	@Autowired
 	private Pain001Camt053Mapper camt053Mapper;

@@ -6,7 +6,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 
 import org.mifos.connector.ams.log.IOTxLogger;
-import org.mifos.connector.ams.zeebe.workers.accountdetails.AbstractAmsWorker;
 import org.mifos.connector.ams.zeebe.workers.utils.AuthTokenHelper;
 import org.mifos.connector.ams.zeebe.workers.utils.HoldAmountBody;
 import org.mifos.connector.ams.zeebe.workers.utils.TransactionItem;
@@ -29,7 +28,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Component
-public abstract class AbstractMoneyInOutWorker {
+public class MoneyInOutHelperWorker {
 	
 	@Autowired
 	protected RestTemplate restTemplate;
@@ -38,13 +37,13 @@ public abstract class AbstractMoneyInOutWorker {
 	private IOTxLogger wireLogger;
 
     @Value("${fineract.api-url}")
-	protected String fineractApiUrl;
+    private String fineractApiUrl;
 
 	@Value("${fineract.incoming-money-api}")
-	protected String incomingMoneyApi;
+	private String incomingMoneyApi;
 	
 	@Value("${fineract.locale}")
-	protected String locale;
+	private String locale;
 	
 	@Value("${fineract.idempotency.count}")
 	private int idempotencyRetryCount;
@@ -58,9 +57,9 @@ public abstract class AbstractMoneyInOutWorker {
 	@Autowired
 	private AuthTokenHelper authTokenHelper;
 
-	protected Logger logger = LoggerFactory.getLogger(getClass());
+	private Logger logger = LoggerFactory.getLogger(getClass());
 	
-	protected static final String FORMAT = "yyyyMMdd";
+	public static final String FORMAT = "yyyyMMdd";
 	
 	protected ResponseEntity<Object> release(Integer currencyAccountAmsId, Integer holdAmountId, String tenantId) {
 		HttpHeaders httpHeaders = new HttpHeaders();
