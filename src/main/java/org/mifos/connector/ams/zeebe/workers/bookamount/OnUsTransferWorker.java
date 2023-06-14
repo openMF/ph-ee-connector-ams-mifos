@@ -133,7 +133,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 	    		
 	    		td = new TransactionDetails(
 	    				"$.resourceId",
-	    				internalCorrelationId,
+	    				transactionFeeInternalCorrelationId,
 	    				camt053,
 	    				transactionGroupId,
 	    				transactionFeeCategoryPurposeCode);
@@ -163,7 +163,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 	    		
 	    		td = new TransactionDetails(
 	    				"$.resourceId",
-	    				internalCorrelationId,
+	    				transactionFeeInternalCorrelationId,
 	    				camt053,
 	    				transactionGroupId,
 	    				transactionFeeCategoryPurposeCode);
@@ -195,7 +195,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 			
     		td = new TransactionDetails(
     				"$.resourceId",
-    				internalCorrelationId,
+    				transactionFeeInternalCorrelationId,
     				camt053,
     				transactionGroupId,
     				transactionCategoryPurposeCode);
@@ -228,7 +228,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 				
 				td = new TransactionDetails(
 	    				"$.resourceId",
-	    				internalCorrelationId,
+	    				transactionFeeInternalCorrelationId,
 	    				camt053,
 	    				transactionGroupId,
 	    				transactionFeeCategoryPurposeCode);
