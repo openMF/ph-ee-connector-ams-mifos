@@ -85,7 +85,8 @@ public class AmsCreditorWorker extends AbstractAmsWorker {
 		return Map.of("disposalAccountAmsId", disposalAccountAmsId,
 				"conversionAccountAmsId", conversionAccountAmsId,
 				"accountAmsStatus", status,
-				"internalAccountId", internalAccountId);
+				"internalAccountId", internalAccountId,
+				"disposalAccountAmsStatusType", "");
 	}
 
 	private GetSavingsAccountsAccountIdResponse retrieveCurrencyIdAndStatus(Long accountCurrencyId, String tenantId) {
