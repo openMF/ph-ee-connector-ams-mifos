@@ -195,7 +195,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 			
     		td = new TransactionDetails(
     				"$.resourceId",
-    				transactionFeeInternalCorrelationId,
+    				internalCorrelationId,
     				camt053,
     				transactionGroupId,
     				transactionCategoryPurposeCode);
