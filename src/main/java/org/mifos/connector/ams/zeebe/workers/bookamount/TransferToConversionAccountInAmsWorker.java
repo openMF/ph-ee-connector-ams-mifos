@@ -346,10 +346,10 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
     				.toZonedDateTime()
     				.toLocalDate()
     				.format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-    		String originalEndToEndId = paymentTransactionInformation
-    				.getOrgnlEndToEndId();
+    		String originalTxId = paymentTransactionInformation
+    				.getOrgnlTxId();
     		
-    		String internalCorrelationId = String.format("%s_%s_%s", originalDebtorBic, originalCreationDate, originalEndToEndId);
+    		String internalCorrelationId = String.format("%s_%s_%s", originalDebtorBic, originalCreationDate, originalTxId);
 		
 			String camt053 = objectMapper.writeValueAsString(statement);
 			
