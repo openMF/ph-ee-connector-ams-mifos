@@ -60,6 +60,9 @@ public class AmsCreditorWorker extends AbstractAmsWorker {
 				try {
 					GetSavingsAccountsAccountIdResponse conversion = retrieveCurrencyIdAndStatus(accountFiatCurrencyId, tenantIdentifier);
 					GetSavingsAccountsAccountIdResponse disposal = retrieveCurrencyIdAndStatus(accountECurrencyId, tenantIdentifier);
+					
+					logger.debug("Conversion account details: {}", conversion);
+					logger.debug("Disposal account details: {}", disposal);
 	
 					if (currency.equalsIgnoreCase(conversion.getCurrency().getCode())
 							&& conversion.getStatus().getId() == 300 
