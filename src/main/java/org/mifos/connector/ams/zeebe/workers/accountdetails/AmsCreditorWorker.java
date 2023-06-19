@@ -17,6 +17,7 @@ import io.camunda.zeebe.client.api.response.ActivatedJob;
 import io.camunda.zeebe.client.api.worker.JobClient;
 import io.camunda.zeebe.spring.client.annotation.JobWorker;
 import io.camunda.zeebe.spring.client.annotation.Variable;
+import io.camunda.zeebe.spring.client.exception.ZeebeBpmnError;
 
 @Component
 public class AmsCreditorWorker extends AbstractAmsWorker {
@@ -45,7 +46,7 @@ public class AmsCreditorWorker extends AbstractAmsWorker {
 		Integer conversionAccountAmsId = null;
 		Long internalAccountId = null;
 		String status = AccountAmsStatus.NOT_READY_TO_RECEIVE_MONEY.name();
-		String[] flags = null;
+		String flags = null;
 		SavingsAccountStatusType statusType = null;
 
 		try {
@@ -76,7 +77,8 @@ public class AmsCreditorWorker extends AbstractAmsWorker {
 						conversionAccountAmsId = conversion.getId();
 					}
 					
-					flags = lookupFlags(accountECurrencyId, tenantIdentifier);
+					String[] lookedUpFlags = lookupFlags(accountECurrencyId, tenantIdentifier);
+					flags = lookedUpFlags.length == 0 ? "" : String.join(",", lookedUpFlags);
 
 					for (SavingsAccountStatusType statType : SavingsAccountStatusType.values()) {
 						if (Objects.equals(statType.getValue(), disposal.getStatus().getId())) {
@@ -87,6 +89,7 @@ public class AmsCreditorWorker extends AbstractAmsWorker {
 	
 				} catch (Exception e) {
 					logger.error(e.getMessage(), e);
+					throw e;
 				}
 			}
 	
@@ -97,6 +100,7 @@ public class AmsCreditorWorker extends AbstractAmsWorker {
 			
 		} catch (Throwable t) {
 			logger.error(t.getMessage(), t);
+			throw new ZeebeBpmnError("Error_AccountNotFound", t.getMessage());
 		}
 		return Map.of("disposalAccountAmsId", disposalAccountAmsId,
 				"conversionAccountAmsId", conversionAccountAmsId,
