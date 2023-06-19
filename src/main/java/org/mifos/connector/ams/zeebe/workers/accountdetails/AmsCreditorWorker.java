@@ -3,6 +3,7 @@ package org.mifos.connector.ams.zeebe.workers.accountdetails;
 import java.util.Map;
 
 import org.apache.fineract.client.models.GetSavingsAccountsAccountIdResponse;
+import org.mifos.connector.common.ams.dto.SavingsAccountStatusType;
 import org.slf4j.MDC;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,6 +44,8 @@ public class AmsCreditorWorker extends AbstractAmsWorker {
 		Integer conversionAccountAmsId = null;
 		Long internalAccountId = null;
 		String status = AccountAmsStatus.NOT_READY_TO_RECEIVE_MONEY.name();
+		String[] flags = null;
+		SavingsAccountStatusType statusType = null;
 
 		try {
 			MDC.put("internalCorrelationId", internalCorrelationId);
@@ -71,6 +74,14 @@ public class AmsCreditorWorker extends AbstractAmsWorker {
 						disposalAccountAmsId = disposal.getId();
 						conversionAccountAmsId = conversion.getId();
 					}
+					
+					flags = lookupFlags(accountECurrencyId, tenantIdentifier);
+					for (SavingsAccountStatusType statType : SavingsAccountStatusType.values()) {
+						if (statType.getValue() == disposal.getStatus().getId()) {
+							statusType = statType;
+							break;
+						}
+					}
 	
 				} catch (Exception e) {
 					logger.error(e.getMessage(), e);
@@ -88,7 +99,9 @@ public class AmsCreditorWorker extends AbstractAmsWorker {
 		return Map.of("disposalAccountAmsId", disposalAccountAmsId,
 				"conversionAccountAmsId", conversionAccountAmsId,
 				"accountAmsStatus", status,
-				"internalAccountId", internalAccountId);
+				"internalAccountId", internalAccountId,
+				"disposalAccountFlags", flags,
+				"disposalAccountAmsStatusType", statusType);
 	}
 
 	private GetSavingsAccountsAccountIdResponse retrieveCurrencyIdAndStatus(Long accountCurrencyId, String tenantId) {
