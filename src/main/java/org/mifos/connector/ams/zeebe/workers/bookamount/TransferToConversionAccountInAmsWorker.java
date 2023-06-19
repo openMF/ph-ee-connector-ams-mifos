@@ -8,7 +8,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Set;
 
-import javax.xml.bind.JAXBException;
+import jakarta.xml.bind.JAXBException;
 
 import org.mifos.connector.ams.fineract.PaymentTypeConfig;
 import org.mifos.connector.ams.fineract.PaymentTypeConfigFactory;

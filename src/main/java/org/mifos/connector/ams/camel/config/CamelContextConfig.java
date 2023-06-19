@@ -30,7 +30,7 @@ public class CamelContextConfig {
 
                 DefaultHealthCheckRegistry checkRegistry = new DefaultHealthCheckRegistry();
                 checkRegistry.register(new RoutesHealthCheckRepository());
-                camelContext.setExtension(HealthCheckRegistry.class, checkRegistry);
+                camelContext.getCamelContextExtension().addContextPlugin(HealthCheckRegistry.class, checkRegistry);
 
                 RestConfiguration rest = new RestConfiguration();
                 camelContext.setRestConfiguration(rest);

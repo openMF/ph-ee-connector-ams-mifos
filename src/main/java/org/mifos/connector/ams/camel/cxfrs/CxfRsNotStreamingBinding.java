@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 import java.io.InputStream;
 
 @Component
-public class CfxRsNotStreamingBinding extends DefaultCxfRsBinding {
+public class CxfRsNotStreamingBinding extends DefaultCxfRsBinding {
 
     @Override
     public Object bindResponseToCamelBody(Object response, Exchange camelExchange) throws Exception {
