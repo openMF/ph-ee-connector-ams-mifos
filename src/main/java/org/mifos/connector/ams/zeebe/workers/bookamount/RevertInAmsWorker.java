@@ -202,6 +202,127 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 	}
 	
 	@JobWorker
+	public void revertWithoutFeeInAms(JobClient jobClient, 
+			ActivatedJob activatedJob,
+			@Variable String internalCorrelationId,
+			@Variable String originalPain001,
+			@Variable Integer conversionAccountAmsId,
+			@Variable Integer disposalAccountAmsId,
+			@Variable String transactionDate,
+			@Variable String paymentScheme,
+			@Variable String transactionGroupId,
+			@Variable String transactionCategoryPurposeCode,
+			@Variable BigDecimal amount,
+			@Variable String transactionFeeCategoryPurposeCode,
+			@Variable BigDecimal transactionFeeAmount,
+			@Variable String tenantIdentifier) throws Exception {
+		MDC.put("internalCorrelationId", internalCorrelationId);
+		
+		Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001 = objectMapper.readValue(originalPain001, Pain00100110CustomerCreditTransferInitiationV10MessageSchema.class);
+		
+		logger.debug("Withdrawing amount {} from conversion account {}", amount, conversionAccountAmsId);
+		
+		batchItemBuilder.tenantId(tenantIdentifier);
+		
+		String conversionAccountWithdrawRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "withdrawal");
+		
+		PaymentTypeConfig paymentTypeConfig = paymentTypeConfigFactory.getPaymentTypeConfig(tenantIdentifier);
+		Integer paymentTypeId = paymentTypeConfig.findPaymentTypeByOperation(String.format("%s.%s", paymentScheme, "revertInAms.ConversionAccount.WithdrawTransactionAmount"));
+		
+		TransactionBody body = new TransactionBody(
+				transactionDate,
+				amount,
+				paymentTypeId,
+				"",
+				FORMAT,
+				locale);
+		
+		String bodyItem = objectMapper.writeValueAsString(body);
+		
+		List<TransactionItem> items = new ArrayList<>();
+		
+		batchItemBuilder.add(items, conversionAccountWithdrawRelativeUrl, bodyItem, false);
+		
+		BankToCustomerStatementV08 convertedcamt053 = camt053Mapper.toCamt053(pain001.getDocument());
+		String camt053 = objectMapper.writeValueAsString(convertedcamt053);
+		
+		String camt053RelativeUrl = String.format("datatables/transaction_details/%d", conversionAccountAmsId);
+		
+		TransactionDetails td = new TransactionDetails(
+				"$.resourceId",
+				internalCorrelationId,
+				camt053,
+				transactionGroupId,
+				transactionCategoryPurposeCode);
+		
+		String camt053Body = objectMapper.writeValueAsString(td);
+
+		batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
+		
+		if (!BigDecimal.ZERO.equals(transactionFeeAmount)) {
+			logger.debug("Withdrawing fee {} from conversion account {}", transactionFeeAmount, conversionAccountAmsId);
+			
+			paymentTypeId = paymentTypeConfig.findPaymentTypeByOperation(String.format("%s.%s", paymentScheme, "revertInAms.ConversionAccount.WithdrawTransactionFee"));
+			
+			body = new TransactionBody(
+					transactionDate,
+					transactionFeeAmount,
+					paymentTypeId,
+					"",
+					FORMAT,
+					locale);
+			
+			bodyItem = objectMapper.writeValueAsString(body);
+			
+			batchItemBuilder.add(items, conversionAccountWithdrawRelativeUrl, bodyItem, false);
+			
+			td = new TransactionDetails(
+					"$.resourceId",
+					internalCorrelationId,
+					camt053,
+					transactionGroupId,
+					transactionFeeCategoryPurposeCode);
+			camt053Body = objectMapper.writeValueAsString(td);
+			batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
+		}
+
+		logger.debug("Re-depositing amount {} in disposal account {}", amount, disposalAccountAmsId);
+		
+		String disposalAccountDepositRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), disposalAccountAmsId, "deposit");
+		
+		paymentTypeId = paymentTypeConfig.findPaymentTypeByOperation(String.format("%s.%s", paymentScheme, "revertInAms.DisposalAccount.DepositTransactionAmount"));
+		
+		body = new TransactionBody(
+				transactionDate,
+				amount,
+				paymentTypeId,
+				"",
+				FORMAT,
+				locale);
+		
+		bodyItem = objectMapper.writeValueAsString(body);
+		
+		batchItemBuilder.add(items, disposalAccountDepositRelativeUrl, bodyItem, false);
+		
+		camt053RelativeUrl = String.format("datatables/transaction_details/%d", disposalAccountAmsId);
+		
+		td = new TransactionDetails(
+				"$.resourceId",
+				internalCorrelationId,
+				camt053,
+				transactionGroupId,
+				transactionCategoryPurposeCode);
+		
+		camt053Body = objectMapper.writeValueAsString(td);
+		
+		batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
+		
+		doBatch(items, tenantIdentifier, internalCorrelationId);
+		
+		MDC.remove("internalCorrelationId");
+	}
+	
+	@JobWorker
 	public void depositTheAmountOnDisposalInAms(JobClient client,
 			ActivatedJob job,
 			@Variable BigDecimal amount,
