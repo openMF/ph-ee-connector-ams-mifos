@@ -1,6 +1,7 @@
 package org.mifos.connector.ams.zeebe.workers.accountdetails;
 
 import java.util.Map;
+import java.util.Objects;
 
 import org.apache.fineract.client.models.GetSavingsAccountsAccountIdResponse;
 import org.mifos.connector.common.ams.dto.SavingsAccountStatusType;
@@ -76,8 +77,9 @@ public class AmsCreditorWorker extends AbstractAmsWorker {
 					}
 					
 					flags = lookupFlags(accountECurrencyId, tenantIdentifier);
+
 					for (SavingsAccountStatusType statType : SavingsAccountStatusType.values()) {
-						if (statType.getValue() == disposal.getStatus().getId()) {
+						if (Objects.equals(statType.getValue(), disposal.getStatus().getId())) {
 							statusType = statType;
 							break;
 						}
