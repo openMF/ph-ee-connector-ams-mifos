@@ -47,8 +47,7 @@
         <dependency>
             <groupId>hu.dpc.rt</groupId>
             <artifactId>payment-schemas</artifactId>
-<!--            <version>1.3.17.1</version>-->
-            <version>1.3.17-jakarta-SNAPSHOT</version>
+            <version>1.4.0-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>org.mifos</groupId>
