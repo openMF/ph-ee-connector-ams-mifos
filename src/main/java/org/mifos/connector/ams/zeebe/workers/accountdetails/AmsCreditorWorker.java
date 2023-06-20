@@ -69,12 +69,13 @@ public class AmsCreditorWorker extends AbstractAmsWorker {
 					logger.debug("Conversion account details: {}", conversion);
 					logger.debug("Disposal account details: {}", disposal);
 	
+					disposalAccountAmsId = disposal.getId();
+					conversionAccountAmsId = conversion.getId();
+					
 					if (currency.equalsIgnoreCase(conversion.getCurrency().getCode())
 							&& conversion.getStatus().getId() == 300 
 							&& disposal.getStatus().getId() == 300) {
 						status = AccountAmsStatus.READY_TO_RECEIVE_MONEY.name();
-						disposalAccountAmsId = disposal.getId();
-						conversionAccountAmsId = conversion.getId();
 					}
 					
 					String[] lookedUpFlags = lookupFlags(accountECurrencyId, tenantIdentifier);
