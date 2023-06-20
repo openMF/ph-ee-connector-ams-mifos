@@ -62,7 +62,7 @@ public abstract class AbstractAmsWorker {
 				tenantId);
 	}
 	
-	protected String[] lookupFlags(Long accountId, String tenantId) {
+	protected Object lookupFlags(Long accountId, String tenantId) {
 		return exchange(UriComponentsBuilder
 				.fromHttpUrl(fineractApiUrl)
 				.path(flagsQueryApi)
@@ -70,7 +70,7 @@ public abstract class AbstractAmsWorker {
 				.queryParam("valueFilter", accountId)
 				.queryParam("resultColumns", flagsResultColumns)
 				.encode().toUriString(),
-				String[].class,
+				Object.class,
 				tenantId);
 	}
 

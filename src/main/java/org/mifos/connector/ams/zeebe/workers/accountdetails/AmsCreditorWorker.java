@@ -46,7 +46,7 @@ public class AmsCreditorWorker extends AbstractAmsWorker {
 		Integer conversionAccountAmsId = null;
 		Long internalAccountId = null;
 		String status = AccountAmsStatus.NOT_READY_TO_RECEIVE_MONEY.name();
-		String flags = null;
+		Object flags = null;
 		SavingsAccountStatusType statusType = null;
 
 		try {
@@ -78,8 +78,7 @@ public class AmsCreditorWorker extends AbstractAmsWorker {
 						status = AccountAmsStatus.READY_TO_RECEIVE_MONEY.name();
 					}
 					
-					String[] lookedUpFlags = lookupFlags(accountECurrencyId, tenantIdentifier);
-					flags = lookedUpFlags.length == 0 ? "" : String.join(",", lookedUpFlags);
+					flags = lookupFlags(accountECurrencyId, tenantIdentifier);
 
 					for (SavingsAccountStatusType statType : SavingsAccountStatusType.values()) {
 						if (Objects.equals(statType.getValue(), disposal.getStatus().getId())) {
