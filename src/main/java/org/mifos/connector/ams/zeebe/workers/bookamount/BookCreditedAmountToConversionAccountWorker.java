@@ -110,4 +110,72 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
             MDC.remove("internalCorrelationId");
         }
     }
+	
+	@JobWorker
+    public void bookCreditedAmountToConversionAccountInRecall(JobClient jobClient, 
+    		ActivatedJob activatedJob,
+    		@Variable String originalPacs008,
+    		@Variable String transactionDate,
+    		@Variable String transactionCategoryPurposeCode,
+    		@Variable String transactionGroupId,
+    		@Variable String internalCorrelationId,
+    		@Variable String tenantIdentifier,
+    		@Variable String paymentScheme,
+    		@Variable BigDecimal amount,
+    		@Variable Integer conversionAccountAmsId,
+    		@Variable String pacs004) throws Exception {
+        try {
+            logger.info("Incoming money worker started with variables");
+
+            iso.std.iso._20022.tech.xsd.pacs_008_001.Document pacs008 = jaxbUtils.unmarshalPacs008(originalPacs008);
+
+            MDC.put("internalCorrelationId", internalCorrelationId);
+
+            batchItemBuilder.tenantId(tenantIdentifier);
+    		
+    		String conversionAccountWithdrawalRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "deposit");
+    		
+    		PaymentTypeConfig paymentTypeConfig = paymentTypeConfigFactory.getPaymentTypeConfig(tenantIdentifier);
+    		Integer paymentTypeId = paymentTypeConfig.findPaymentTypeByOperation(String.format("%s.%s", paymentScheme, "bookCreditedAmountToConversionAccount.ConversionAccount.DepositTransactionAmount"));
+    		
+    		TransactionBody body = new TransactionBody(
+    				transactionDate,
+    				amount,
+    				paymentTypeId,
+    				"",
+    				FORMAT,
+    				locale);
+    		
+    		ObjectMapper objectMapper = new ObjectMapper();
+    		
+    		String bodyItem = objectMapper.writeValueAsString(body);
+    		
+    		List<TransactionItem> items = new ArrayList<>();
+    		
+    		batchItemBuilder.add(items, conversionAccountWithdrawalRelativeUrl, bodyItem, false);
+    	
+    		BankToCustomerStatementV08 convertedCamt053 = camt053Mapper.toCamt053(pacs008);
+    		String camt053 = objectMapper.writeValueAsString(convertedCamt053);
+    		
+    		String camt053RelativeUrl = String.format("datatables/transaction_details/%d", conversionAccountAmsId);
+    		
+    		TransactionDetails td = new TransactionDetails(
+    				"$.resourceId",
+    				internalCorrelationId,
+    				camt053,
+    				transactionGroupId,
+    				transactionCategoryPurposeCode);
+    		
+    		String camt053Body = objectMapper.writeValueAsString(td);
+
+    		batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
+
+            doBatch(items, tenantIdentifier, internalCorrelationId);
+        } catch (Exception e) {
+            logger.error("Worker to book incoming money in AMS has failed, dispatching user task to handle fiat deposit", e);
+            throw new ZeebeBpmnError("Error_BookToConversionToBeHandledManually", e.getMessage());
+        } finally {
+            MDC.remove("internalCorrelationId");
+        }
+    }
 }
