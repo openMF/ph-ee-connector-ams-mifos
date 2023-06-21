@@ -8,12 +8,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Set;
 
-import javax.xml.bind.JAXBException;
-
 import org.mifos.connector.ams.fineract.PaymentTypeConfig;
 import org.mifos.connector.ams.fineract.PaymentTypeConfigFactory;
 import org.mifos.connector.ams.mapstruct.Pain001Camt053Mapper;
-import org.mifos.connector.ams.zeebe.workers.accountdetails.AbstractAmsWorker;
 import org.mifos.connector.ams.zeebe.workers.utils.AuthTokenHelper;
 import org.mifos.connector.ams.zeebe.workers.utils.BatchItemBuilder;
 import org.mifos.connector.ams.zeebe.workers.utils.JAXBUtils;
@@ -43,6 +40,7 @@ import io.camunda.zeebe.spring.client.exception.ZeebeBpmnError;
 import iso.std.iso._20022.tech.json.camt_053_001.BankToCustomerStatementV08;
 import iso.std.iso._20022.tech.json.pain_001_001.Pain00100110CustomerCreditTransferInitiationV10MessageSchema;
 import iso.std.iso._20022.tech.xsd.camt_056_001.PaymentTransactionInformation31;
+import jakarta.xml.bind.JAXBException;
 
 @Component
 public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWorker {
@@ -87,7 +85,8 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			@Variable Integer disposalAccountAmsId,
 			@Variable Integer conversionAccountAmsId,
 			@Variable String tenantIdentifier,
-			@Variable String iban) {
+			@Variable String iban,
+			@Variable String transactionFeeInternalCorrelationId) {
 		String transactionDate = LocalDate.now().format(PATTERN);
 		logger.debug("Debtor exchange worker starting");
 		MDC.put("internalCorrelationId", internalCorrelationId);
@@ -168,6 +167,9 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 					withdrawFee(transactionFeeAmount, paymentScheme, transactionDate, objectMapper, paymentTypeConfig, batchItemBuilder,
 							items, disposalAccountWithdrawRelativeUrl);
 					
+					convertedCamt053.getStatement().get(0).getEntry().get(0).getEntryDetails().get(0).getTransactionDetails().get(0).getSupplementaryData().get(0).getEnvelope().setAdditionalProperty("InternalCorrelationId", transactionFeeInternalCorrelationId);
+					camt053 = objectMapper.writeValueAsString(convertedCamt053);
+					
 					addDetails(transactionGroupId, transactionFeeCategoryPurposeCode, internalCorrelationId, objectMapper,
 							batchItemBuilder, items, camt053, camt053RelativeUrl);
 			}
@@ -180,6 +182,9 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			depositAmount(amount, paymentScheme, transactionDate, objectMapper, paymentTypeConfig, batchItemBuilder, items,
 					conversionAccountDepositRelativeUrl);
 			
+			convertedCamt053.getStatement().get(0).getEntry().get(0).getEntryDetails().get(0).getTransactionDetails().get(0).getSupplementaryData().get(0).getEnvelope().setAdditionalProperty("InternalCorrelationId", internalCorrelationId);
+			camt053 = objectMapper.writeValueAsString(convertedCamt053);
+			
 			addDetails(transactionGroupId, transactionCategoryPurposeCode, internalCorrelationId, objectMapper, batchItemBuilder, items,
 					camt053, camt053RelativeUrl);
 		
@@ -188,6 +193,9 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 				logger.debug("Depositing fee {} to conversion account {}", transactionFeeAmount, conversionAccountAmsId);
 				depositFee(transactionFeeAmount, paymentScheme, transactionDate, objectMapper, paymentTypeConfig, batchItemBuilder, items,
 						conversionAccountDepositRelativeUrl);
+				
+				convertedCamt053.getStatement().get(0).getEntry().get(0).getEntryDetails().get(0).getTransactionDetails().get(0).getSupplementaryData().get(0).getEnvelope().setAdditionalProperty("InternalCorrelationId", transactionFeeInternalCorrelationId);
+				camt053 = objectMapper.writeValueAsString(convertedCamt053);
 				
 				addDetails(transactionGroupId, transactionFeeCategoryPurposeCode, internalCorrelationId, objectMapper, batchItemBuilder,
 						items, camt053, camt053RelativeUrl);

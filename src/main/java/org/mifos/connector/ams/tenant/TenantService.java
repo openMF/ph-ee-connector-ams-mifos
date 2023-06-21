@@ -1,5 +1,6 @@
 package org.mifos.connector.ams.tenant;
 
+import jakarta.ws.rs.core.HttpHeaders;
 import org.apache.camel.CamelContext;
 import org.apache.camel.Exchange;
 import org.apache.camel.ProducerTemplate;
@@ -12,7 +13,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.stereotype.Component;
 
-import javax.ws.rs.core.HttpHeaders;
 import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;

@@ -28,6 +28,15 @@ public abstract class AbstractAmsWorker {
 	@Value("${fineract.result-columns}")
 	private String resultColumns;
 	
+	@Value("${fineract.flags-query-api}")
+	private String flagsQueryApi;
+	
+	@Value("${fineract.flags-column-filter}")
+	private String flagsColumnFilter;
+	
+	@Value("${fineract.flags-result-columns}")
+	private String flagsResultColumns;
+	
 	@Autowired
 	private RestTemplate restTemplate;
 	
@@ -50,6 +59,18 @@ public abstract class AbstractAmsWorker {
 				.queryParam("resultColumns", resultColumns)
 				.encode().toUriString(),
 				AmsDataTableQueryResponse[].class,
+				tenantId);
+	}
+	
+	protected Object lookupFlags(Long accountId, String tenantId) {
+		return exchange(UriComponentsBuilder
+				.fromHttpUrl(fineractApiUrl)
+				.path(flagsQueryApi)
+				.queryParam("columnFilter", flagsColumnFilter)
+				.queryParam("valueFilter", accountId)
+				.queryParam("resultColumns", flagsResultColumns)
+				.encode().toUriString(),
+				Object.class,
 				tenantId);
 	}
 

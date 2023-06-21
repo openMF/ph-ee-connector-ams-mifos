@@ -1,8 +1,10 @@
 package org.mifos.connector.ams.zeebe.workers.accountdetails;
 
 import java.util.Map;
+import java.util.Objects;
 
 import org.apache.fineract.client.models.GetSavingsAccountsAccountIdResponse;
+import org.mifos.connector.common.ams.dto.SavingsAccountStatusType;
 import org.slf4j.MDC;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,6 +17,7 @@ import io.camunda.zeebe.client.api.response.ActivatedJob;
 import io.camunda.zeebe.client.api.worker.JobClient;
 import io.camunda.zeebe.spring.client.annotation.JobWorker;
 import io.camunda.zeebe.spring.client.annotation.Variable;
+import io.camunda.zeebe.spring.client.exception.ZeebeBpmnError;
 
 @Component
 public class AmsCreditorWorker extends AbstractAmsWorker {
@@ -43,6 +46,8 @@ public class AmsCreditorWorker extends AbstractAmsWorker {
 		Integer conversionAccountAmsId = null;
 		Long internalAccountId = null;
 		String status = AccountAmsStatus.NOT_READY_TO_RECEIVE_MONEY.name();
+		Object flags = null;
+		SavingsAccountStatusType statusType = null;
 
 		try {
 			MDC.put("internalCorrelationId", internalCorrelationId);
@@ -60,17 +65,31 @@ public class AmsCreditorWorker extends AbstractAmsWorker {
 				try {
 					GetSavingsAccountsAccountIdResponse conversion = retrieveCurrencyIdAndStatus(accountFiatCurrencyId, tenantIdentifier);
 					GetSavingsAccountsAccountIdResponse disposal = retrieveCurrencyIdAndStatus(accountECurrencyId, tenantIdentifier);
+					
+					logger.debug("Conversion account details: {}", conversion);
+					logger.debug("Disposal account details: {}", disposal);
 	
+					disposalAccountAmsId = disposal.getId();
+					conversionAccountAmsId = conversion.getId();
+					
 					if (currency.equalsIgnoreCase(conversion.getCurrency().getCode())
 							&& conversion.getStatus().getId() == 300 
 							&& disposal.getStatus().getId() == 300) {
 						status = AccountAmsStatus.READY_TO_RECEIVE_MONEY.name();
-						disposalAccountAmsId = disposal.getId();
-						conversionAccountAmsId = conversion.getId();
+					}
+					
+					flags = lookupFlags(accountECurrencyId, tenantIdentifier);
+
+					for (SavingsAccountStatusType statType : SavingsAccountStatusType.values()) {
+						if (Objects.equals(statType.getValue(), disposal.getStatus().getId())) {
+							statusType = statType;
+							break;
+						}
 					}
 	
 				} catch (Exception e) {
 					logger.error(e.getMessage(), e);
+					throw e;
 				}
 			}
 	
@@ -81,11 +100,14 @@ public class AmsCreditorWorker extends AbstractAmsWorker {
 			
 		} catch (Throwable t) {
 			logger.error(t.getMessage(), t);
+			throw new ZeebeBpmnError("Error_AccountNotFound", t.getMessage());
 		}
 		return Map.of("disposalAccountAmsId", disposalAccountAmsId,
 				"conversionAccountAmsId", conversionAccountAmsId,
 				"accountAmsStatus", status,
-				"internalAccountId", internalAccountId);
+				"internalAccountId", internalAccountId,
+				"disposalAccountFlags", flags,
+				"disposalAccountAmsStatusType", statusType);
 	}
 
 	private GetSavingsAccountsAccountIdResponse retrieveCurrencyIdAndStatus(Long accountCurrencyId, String tenantId) {
