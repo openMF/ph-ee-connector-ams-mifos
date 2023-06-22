@@ -7,8 +7,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.mifos.connector.ams.fineract.PaymentTypeConfig;
-import org.mifos.connector.ams.fineract.PaymentTypeConfigFactory;
+import org.mifos.connector.ams.fineract.Config;
+import org.mifos.connector.ams.fineract.ConfigFactory;
 import org.mifos.connector.ams.mapstruct.Pain001Camt053Mapper;
 import org.mifos.connector.ams.zeebe.workers.utils.BatchItemBuilder;
 import org.mifos.connector.ams.zeebe.workers.utils.TransactionBody;
@@ -39,7 +39,7 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 	protected String incomingMoneyApi;
 	
 	@Autowired
-    private PaymentTypeConfigFactory paymentTypeConfigFactory;
+    private ConfigFactory paymentTypeConfigFactory;
 	
 	@Autowired
 	private BatchItemBuilder batchItemBuilder;
@@ -59,7 +59,7 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 			@Variable String categoryPurpose,
 			@Variable String originalPain001) throws Exception {
 		String disposalAccountWithdrawRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), disposalAccountAmsId, "withdrawal");
-		PaymentTypeConfig paymentTypeConfig = paymentTypeConfigFactory.getPaymentTypeConfig(tenantIdentifier);
+		Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
 		logger.debug("Got payment scheme {}", paymentScheme);
 		String transactionDate = LocalDate.now().format(PATTERN);
 		ObjectMapper objectMapper = new ObjectMapper();
@@ -70,7 +70,7 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 			MDC.put("internalCorrelationId", internalCorrelationId);
 			Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001 = objectMapper.readValue(originalPain001, Pain00100110CustomerCreditTransferInitiationV10MessageSchema.class);
 			
-			Integer paymentTypeId = paymentTypeConfig.findPaymentTypeByOperation(String.format("%s.%s.%s", paymentScheme, categoryPurpose, "transferToConversionAccountInAms.DisposalAccount.WithdrawNonTransactionalFee"));
+			Integer paymentTypeId = paymentTypeConfig.findByOperation(String.format("%s.%s.%s", paymentScheme, categoryPurpose, "transferToConversionAccountInAms.DisposalAccount.WithdrawNonTransactionalFee"));
 			logger.debug("Looking up {}, got payment type id {}", String.format("%s.%s.%s", paymentScheme, categoryPurpose, "transferToConversionAccountInAms.DisposalAccount.WithdrawNonTransactionalFee"), paymentTypeId);
 			TransactionBody body = new TransactionBody(
 					transactionDate,
@@ -104,7 +104,7 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 			
 			
 			
-			paymentTypeId = paymentTypeConfig.findPaymentTypeByOperation(String.format("%s.%s.%s", paymentScheme, categoryPurpose, "transferToConversionAccountInAms.ConversionAccount.DepositNonTransactionalFee"));
+			paymentTypeId = paymentTypeConfig.findByOperation(String.format("%s.%s.%s", paymentScheme, categoryPurpose, "transferToConversionAccountInAms.ConversionAccount.DepositNonTransactionalFee"));
 			logger.debug("Looking up {}, got payment type id {}", String.format("%s.%s.%s", paymentScheme, categoryPurpose, "transferToConversionAccountInAms.ConversionAccount.DepositNonTransactionalFee"), paymentTypeId);
 			body = new TransactionBody(
 					transactionDate,
@@ -135,7 +135,7 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 			
 			
 			
-			paymentTypeId = paymentTypeConfig.findPaymentTypeByOperation(String.format("%s.%s.%s", paymentScheme, categoryPurpose, "transferToConversionAccountInAms.ConversionAccount.WithdrawNonTransactionalFee"));
+			paymentTypeId = paymentTypeConfig.findByOperation(String.format("%s.%s.%s", paymentScheme, categoryPurpose, "transferToConversionAccountInAms.ConversionAccount.WithdrawNonTransactionalFee"));
 			logger.debug("Looking up {}, got payment type id {}", String.format("%s.%s.%s", paymentScheme, categoryPurpose, "transferToConversionAccountInAms.ConversionAccount.WithdrawNonTransactionalFee"), paymentTypeId);
 			body = new TransactionBody(
 					transactionDate,

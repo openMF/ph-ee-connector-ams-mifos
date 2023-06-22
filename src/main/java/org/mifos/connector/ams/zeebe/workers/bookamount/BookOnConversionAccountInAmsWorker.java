@@ -8,8 +8,8 @@ import java.util.List;
 
 import jakarta.xml.bind.JAXBException;
 
-import org.mifos.connector.ams.fineract.PaymentTypeConfig;
-import org.mifos.connector.ams.fineract.PaymentTypeConfigFactory;
+import org.mifos.connector.ams.fineract.Config;
+import org.mifos.connector.ams.fineract.ConfigFactory;
 import org.mifos.connector.ams.mapstruct.Pain001Camt053Mapper;
 import org.mifos.connector.ams.zeebe.workers.utils.BatchItemBuilder;
 import org.mifos.connector.ams.zeebe.workers.utils.JAXBUtils;
@@ -43,7 +43,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 	protected String incomingMoneyApi;
 	
 	@Autowired
-    private PaymentTypeConfigFactory paymentTypeConfigFactory;
+    private ConfigFactory paymentTypeConfigFactory;
 	
 	@Autowired
 	private JAXBUtils jaxbUtils;
@@ -80,8 +80,8 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 		
 		String conversionAccountWithdrawalRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "withdrawal");
 		
-		PaymentTypeConfig paymentTypeConfig = paymentTypeConfigFactory.getPaymentTypeConfig(tenantIdentifier);
-		Integer paymentTypeId = paymentTypeConfig.findPaymentTypeByOperation(String.format("%s.%s", paymentScheme, "bookOnConversionAccountInAms.ConversionAccount.WithdrawTransactionAmount"));
+		Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
+		Integer paymentTypeId = paymentTypeConfig.findByOperation(String.format("%s.%s", paymentScheme, "bookOnConversionAccountInAms.ConversionAccount.WithdrawTransactionAmount"));
 		
 		TransactionBody body = new TransactionBody(
 				transactionDate,
@@ -117,7 +117,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 				
 			logger.info("Withdrawing fee {} from conversion account {}", transactionFeeAmount, conversionAccountAmsId);
 			
-			paymentTypeId = paymentTypeConfig.findPaymentTypeByOperation(String.format("%s.%s", paymentScheme, "bookOnConversionAccountInAms.ConversionAccount.WithdrawTransactionFee"));
+			paymentTypeId = paymentTypeConfig.findByOperation(String.format("%s.%s", paymentScheme, "bookOnConversionAccountInAms.ConversionAccount.WithdrawTransactionFee"));
 			
 			body = new TransactionBody(
 					transactionDate,
@@ -167,8 +167,8 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 			
 			String conversionAccountWithdrawalRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "withdrawal");
 			
-			PaymentTypeConfig paymentTypeConfig = paymentTypeConfigFactory.getPaymentTypeConfig(tenantIdentifier);
-			Integer paymentTypeId = paymentTypeConfig.findPaymentTypeByOperation(String.format("%s.%s", paymentScheme, "bookOnConversionAccountInAms.ConversionAccount.WithdrawTransactionAmount"));
+			Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
+			Integer paymentTypeId = paymentTypeConfig.findByOperation(String.format("%s.%s", paymentScheme, "bookOnConversionAccountInAms.ConversionAccount.WithdrawTransactionAmount"));
 			
 			TransactionBody body = new TransactionBody(
 					transactionDate,

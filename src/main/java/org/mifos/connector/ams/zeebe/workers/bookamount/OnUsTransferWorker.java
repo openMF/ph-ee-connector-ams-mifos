@@ -7,8 +7,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.mifos.connector.ams.fineract.PaymentTypeConfig;
-import org.mifos.connector.ams.fineract.PaymentTypeConfigFactory;
+import org.mifos.connector.ams.fineract.Config;
+import org.mifos.connector.ams.fineract.ConfigFactory;
 import org.mifos.connector.ams.mapstruct.Pain001Camt053Mapper;
 import org.mifos.connector.ams.zeebe.workers.utils.BatchItemBuilder;
 import org.mifos.connector.ams.zeebe.workers.utils.TransactionBody;
@@ -41,7 +41,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 	protected String incomingMoneyApi;
 	
 	@Autowired
-    private PaymentTypeConfigFactory paymentTypeConfigFactory;
+    private ConfigFactory paymentTypeConfigFactory;
 	
 	@Autowired
 	private BatchItemBuilder batchItemBuilder;
@@ -80,8 +80,8 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
     		
     		String debtorDisposalWithdrawalRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), debtorDisposalAccountAmsId, "withdrawal");
     		
-    		PaymentTypeConfig paymentTypeConfig = paymentTypeConfigFactory.getPaymentTypeConfig(tenantIdentifier);
-    		Integer paymentTypeId = paymentTypeConfig.findPaymentTypeByOperation(String.format("%s.%s", paymentScheme, "transferTheAmountBetweenDisposalAccounts.Debtor.DisposalAccount.WithdrawTransactionAmount"));
+    		Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
+    		Integer paymentTypeId = paymentTypeConfig.findByOperation(String.format("%s.%s", paymentScheme, "transferTheAmountBetweenDisposalAccounts.Debtor.DisposalAccount.WithdrawTransactionAmount"));
     		
     		TransactionBody body = new TransactionBody(
     				interbankSettlementDate,
@@ -112,7 +112,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
     		
 			
 			if (!BigDecimal.ZERO.equals(transactionFeeAmount)) {
-				paymentTypeId = paymentTypeConfig.findPaymentTypeByOperation(String.format("%s.%s", paymentScheme, "transferTheAmountBetweenDisposalAccounts.Debtor.DisposalAccount.WithdrawTransactionFee"));
+				paymentTypeId = paymentTypeConfig.findByOperation(String.format("%s.%s", paymentScheme, "transferTheAmountBetweenDisposalAccounts.Debtor.DisposalAccount.WithdrawTransactionFee"));
 	    		
 	    		body = new TransactionBody(
 	    				interbankSettlementDate,
@@ -143,7 +143,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 
 	    		
 	    		
-				paymentTypeId = paymentTypeConfig.findPaymentTypeByOperation(String.format("%s.%s", paymentScheme, "transferTheAmountBetweenDisposalAccounts.Debtor.ConversionAccount.DepositTransactionFee"));
+				paymentTypeId = paymentTypeConfig.findByOperation(String.format("%s.%s", paymentScheme, "transferTheAmountBetweenDisposalAccounts.Debtor.ConversionAccount.DepositTransactionFee"));
 	    		
 	    		body = new TransactionBody(
 	    				interbankSettlementDate,
@@ -172,7 +172,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 	    		batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 			}
 			
-			paymentTypeId = paymentTypeConfig.findPaymentTypeByOperation(String.format("%s.%s", paymentScheme, "transferTheAmountBetweenDisposalAccounts.Creditor.DisposalAccount.DepositTransactionAmount"));
+			paymentTypeId = paymentTypeConfig.findByOperation(String.format("%s.%s", paymentScheme, "transferTheAmountBetweenDisposalAccounts.Creditor.DisposalAccount.DepositTransactionAmount"));
     		
     		body = new TransactionBody(
     				interbankSettlementDate,
@@ -205,7 +205,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 			
 	    		
 			if (!BigDecimal.ZERO.equals(transactionFeeAmount)) {
-	    		paymentTypeId = paymentTypeConfig.findPaymentTypeByOperation(String.format("%s.%s", paymentScheme, "transferTheAmountBetweenDisposalAccounts.Debtor.ConversionAccount.WithdrawTransactionFee"));
+	    		paymentTypeId = paymentTypeConfig.findByOperation(String.format("%s.%s", paymentScheme, "transferTheAmountBetweenDisposalAccounts.Debtor.ConversionAccount.WithdrawTransactionFee"));
 	    		
 	    		body = new TransactionBody(
 	    				interbankSettlementDate,

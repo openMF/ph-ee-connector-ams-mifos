@@ -8,8 +8,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Set;
 
-import org.mifos.connector.ams.fineract.PaymentTypeConfig;
-import org.mifos.connector.ams.fineract.PaymentTypeConfigFactory;
+import org.mifos.connector.ams.fineract.Config;
+import org.mifos.connector.ams.fineract.ConfigFactory;
 import org.mifos.connector.ams.mapstruct.Pain001Camt053Mapper;
 import org.mifos.connector.ams.zeebe.workers.utils.AuthTokenHelper;
 import org.mifos.connector.ams.zeebe.workers.utils.BatchItemBuilder;
@@ -52,7 +52,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 	protected String incomingMoneyApi;
 	
 	@Autowired
-    private PaymentTypeConfigFactory paymentTypeConfigFactory;
+    private ConfigFactory paymentTypeConfigFactory;
 	
 	@Autowired
 	private JsonSchemaValidator validator;
@@ -114,9 +114,9 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			
 			boolean hasFee = !BigDecimal.ZERO.equals(transactionFeeAmount);
 
-			PaymentTypeConfig paymentTypeConfig = paymentTypeConfigFactory.getPaymentTypeConfig(tenantIdentifier);
+			Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
 			
-			Integer outHoldReasonId = paymentTypeConfig.findPaymentTypeByOperation(String.format("%s.%s", paymentScheme, "outHoldReasonId"));
+			Integer outHoldReasonId = paymentTypeConfig.findByOperation(String.format("%s.%s", paymentScheme, "outHoldReasonId"));
 			var holdResponse = hold(outHoldReasonId, transactionDate, hasFee ? amount.add(transactionFeeAmount) : amount, disposalAccountAmsId, tenantIdentifier).getBody();
 			Integer lastHoldTransactionId = (Integer) ((LinkedHashMap<String, Object>) holdResponse).get("resourceId");
 			
@@ -214,7 +214,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			String paymentScheme, 
 			String transactionDate, 
 			ObjectMapper om,
-			PaymentTypeConfig paymentTypeConfig, 
+			Config paymentTypeConfig, 
 			BatchItemBuilder batchItemBuilder, 
 			List<TransactionItem> items,
 			String disposalAccountWithdrawRelativeUrl) throws JsonProcessingException {
@@ -225,7 +225,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			String paymentScheme, 
 			String transactionDate,
 			ObjectMapper om, 
-			PaymentTypeConfig paymentTypeConfig, 
+			Config paymentTypeConfig, 
 			BatchItemBuilder batchItemBuilder,
 			List<TransactionItem> items, 
 			String disposalAccountWithdrawRelativeUrl) throws JsonProcessingException {
@@ -236,12 +236,12 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			String paymentScheme, 
 			String transactionDate, 
 			ObjectMapper om, 
-			PaymentTypeConfig paymentTypeConfig, 
+			Config paymentTypeConfig, 
 			BatchItemBuilder batchItemBuilder, 
 			List<TransactionItem> items, 
 			String relativeUrl, 
 			String paymentTypeOperation) throws JsonProcessingException {
-		Integer paymentTypeId = paymentTypeConfig.findPaymentTypeByOperation(String.format("%s.%s", paymentScheme, paymentTypeOperation));
+		Integer paymentTypeId = paymentTypeConfig.findByOperation(String.format("%s.%s", paymentScheme, paymentTypeOperation));
 		
 		TransactionBody transactionBody = new TransactionBody(
 				transactionDate,
@@ -259,7 +259,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			String paymentScheme, 
 			String transactionDate, 
 			ObjectMapper om,
-			PaymentTypeConfig paymentTypeConfig, 
+			Config paymentTypeConfig, 
 			BatchItemBuilder batchItemBuilder, 
 			List<TransactionItem> items,
 			String conversionAccountDepositRelativeUrl) throws JsonProcessingException {
@@ -270,7 +270,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			String paymentScheme, 
 			String transactionDate, 
 			ObjectMapper om,
-			PaymentTypeConfig paymentTypeConfig, 
+			Config paymentTypeConfig, 
 			BatchItemBuilder batchItemBuilder, 
 			List<TransactionItem> items,
 			String conversionAccountDepositRelativeUrl) throws JsonProcessingException {
@@ -316,8 +316,8 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			
 			String disposalAccountWithdrawRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), disposalAccountAmsId, "withdrawal");
 			
-			PaymentTypeConfig paymentTypeConfig = paymentTypeConfigFactory.getPaymentTypeConfig(tenantIdentifier);
-			Integer paymentTypeId = paymentTypeConfig.findPaymentTypeByOperation(String.format("%s.%s", paymentScheme, "transferToConversionAccountInAms.DisposalAccount.WithdrawTransactionAmount"));
+			Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
+			Integer paymentTypeId = paymentTypeConfig.findByOperation(String.format("%s.%s", paymentScheme, "transferToConversionAccountInAms.DisposalAccount.WithdrawTransactionAmount"));
 			
 			TransactionBody body = new TransactionBody(
 					transactionDate,

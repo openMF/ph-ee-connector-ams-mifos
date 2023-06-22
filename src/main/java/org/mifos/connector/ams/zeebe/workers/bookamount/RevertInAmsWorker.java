@@ -8,8 +8,8 @@ import java.util.List;
 
 import jakarta.xml.bind.JAXBException;
 
-import org.mifos.connector.ams.fineract.PaymentTypeConfig;
-import org.mifos.connector.ams.fineract.PaymentTypeConfigFactory;
+import org.mifos.connector.ams.fineract.Config;
+import org.mifos.connector.ams.fineract.ConfigFactory;
 import org.mifos.connector.ams.mapstruct.Pain001Camt053Mapper;
 import org.mifos.connector.ams.zeebe.workers.utils.BatchItemBuilder;
 import org.mifos.connector.ams.zeebe.workers.utils.JAXBUtils;
@@ -43,7 +43,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 	protected String incomingMoneyApi;
 	
 	@Autowired
-    private PaymentTypeConfigFactory paymentTypeConfigFactory;
+    private ConfigFactory paymentTypeConfigFactory;
 	
 	@Autowired
 	private JAXBUtils jaxbUtils;
@@ -78,8 +78,8 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 		
 		String conversionAccountWithdrawRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "withdrawal");
 		
-		PaymentTypeConfig paymentTypeConfig = paymentTypeConfigFactory.getPaymentTypeConfig(tenantIdentifier);
-		Integer paymentTypeId = paymentTypeConfig.findPaymentTypeByOperation(String.format("%s.%s", paymentScheme, "revertInAms.ConversionAccount.WithdrawTransactionAmount"));
+		Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
+		Integer paymentTypeId = paymentTypeConfig.findByOperation(String.format("%s.%s", paymentScheme, "revertInAms.ConversionAccount.WithdrawTransactionAmount"));
 		
 		TransactionBody body = new TransactionBody(
 				transactionDate,
@@ -114,7 +114,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 		if (!BigDecimal.ZERO.equals(transactionFeeAmount)) {
 			logger.debug("Withdrawing fee {} from conversion account {}", transactionFeeAmount, conversionAccountAmsId);
 			
-			paymentTypeId = paymentTypeConfig.findPaymentTypeByOperation(String.format("%s.%s", paymentScheme, "revertInAms.ConversionAccount.WithdrawTransactionFee"));
+			paymentTypeId = paymentTypeConfig.findByOperation(String.format("%s.%s", paymentScheme, "revertInAms.ConversionAccount.WithdrawTransactionFee"));
 			
 			body = new TransactionBody(
 					transactionDate,
@@ -142,7 +142,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 		
 		String disposalAccountDepositRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), disposalAccountAmsId, "deposit");
 		
-		paymentTypeId = paymentTypeConfig.findPaymentTypeByOperation(String.format("%s.%s", paymentScheme, "revertInAms.DisposalAccount.DepositTransactionAmount"));
+		paymentTypeId = paymentTypeConfig.findByOperation(String.format("%s.%s", paymentScheme, "revertInAms.DisposalAccount.DepositTransactionAmount"));
 		
 		body = new TransactionBody(
 				transactionDate,
@@ -172,7 +172,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 		if (!BigDecimal.ZERO.equals(transactionFeeAmount)) {
 			logger.debug("Re-depositing fee {} in disposal account {}", transactionFeeAmount, disposalAccountAmsId);
 			
-			paymentTypeId = paymentTypeConfig.findPaymentTypeByOperation(String.format("%s.%s", paymentScheme, "revertInAms.DisposalAccount.DepositTransactionFee"));
+			paymentTypeId = paymentTypeConfig.findByOperation(String.format("%s.%s", paymentScheme, "revertInAms.DisposalAccount.DepositTransactionFee"));
 			
 			body = new TransactionBody(
 					transactionDate,
@@ -226,8 +226,8 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 		
 		String conversionAccountWithdrawRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "withdrawal");
 		
-		PaymentTypeConfig paymentTypeConfig = paymentTypeConfigFactory.getPaymentTypeConfig(tenantIdentifier);
-		Integer paymentTypeId = paymentTypeConfig.findPaymentTypeByOperation(String.format("%s.%s", paymentScheme, "revertInAms.ConversionAccount.WithdrawTransactionAmount"));
+		Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
+		Integer paymentTypeId = paymentTypeConfig.findByOperation(String.format("%s.%s", paymentScheme, "revertInAms.ConversionAccount.WithdrawTransactionAmount"));
 		
 		TransactionBody body = new TransactionBody(
 				transactionDate,
@@ -262,7 +262,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 		if (!BigDecimal.ZERO.equals(transactionFeeAmount)) {
 			logger.debug("Withdrawing fee {} from conversion account {}", transactionFeeAmount, conversionAccountAmsId);
 			
-			paymentTypeId = paymentTypeConfig.findPaymentTypeByOperation(String.format("%s.%s", paymentScheme, "revertInAms.ConversionAccount.WithdrawTransactionFee"));
+			paymentTypeId = paymentTypeConfig.findByOperation(String.format("%s.%s", paymentScheme, "revertInAms.ConversionAccount.WithdrawTransactionFee"));
 			
 			body = new TransactionBody(
 					transactionDate,
@@ -290,7 +290,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 		
 		String disposalAccountDepositRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), disposalAccountAmsId, "deposit");
 		
-		paymentTypeId = paymentTypeConfig.findPaymentTypeByOperation(String.format("%s.%s", paymentScheme, "revertInAms.DisposalAccount.DepositTransactionAmount"));
+		paymentTypeId = paymentTypeConfig.findByOperation(String.format("%s.%s", paymentScheme, "revertInAms.DisposalAccount.DepositTransactionAmount"));
 		
 		body = new TransactionBody(
 				transactionDate,
@@ -339,8 +339,8 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			
 			String conversionAccountWithdrawRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "withdrawal");
 			
-			PaymentTypeConfig paymentTypeConfig = paymentTypeConfigFactory.getPaymentTypeConfig(tenantIdentifier);
-			Integer paymentTypeId = paymentTypeConfig.findPaymentTypeByOperation(String.format("%s.%s", paymentScheme, "revertInAms.ConversionAccount.WithdrawTransactionAmount"));
+			Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
+			Integer paymentTypeId = paymentTypeConfig.findByOperation(String.format("%s.%s", paymentScheme, "revertInAms.ConversionAccount.WithdrawTransactionAmount"));
 			
 			TransactionBody body = new TransactionBody(
 					transactionDate,
@@ -398,7 +398,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			
 			String disposalAccountDepositRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), disposalAccountAmsId, "deposit");
 			
-			paymentTypeId = paymentTypeConfig.findPaymentTypeByOperation(String.format("%s.%s", paymentScheme, "revertInAms.DisposalAccount.DepositTransactionAmount"));
+			paymentTypeId = paymentTypeConfig.findByOperation(String.format("%s.%s", paymentScheme, "revertInAms.DisposalAccount.DepositTransactionAmount"));
 			
 			body = new TransactionBody(
 					transactionDate,
