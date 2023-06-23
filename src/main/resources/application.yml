@@ -1,10 +1,26 @@
 camel:
+  health:
+    enabled: true
   server-port: 5000
   springboot:
     main-run-controller: true
   dataformat:
     json-jackson:
       auto-discover-object-mapper: true
+
+management:
+  endpoint:
+    health:
+      show-details: always
+      group:
+        liveness:
+          include:
+            - camelHealth
+            # zeebeClient will not get included in the liveness state
+        readiness:
+          include:
+            - camelHealth
+            - zeebeClient
 
 dfspids: "DFSPID"
 
@@ -31,3 +47,4 @@ ams:
   local:
     server-cert-check: false
     enabled: false
+
