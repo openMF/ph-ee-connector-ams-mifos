@@ -80,7 +80,10 @@ public class BookCreditedAmountToTechnicalAccountWorker extends AbstractMoneyInO
             batchItemBuilder.tenantId(tenantIdentifier);
             
             Config technicalAccountConfig = technicalAccountConfigFactory.getConfig(tenantIdentifier);
-            Integer recallTechnicalAccountId = technicalAccountConfig.findByOperation(String.format("%s.%S", paymentScheme, caseIdentifier));
+            
+            String taLookup = String.format("%s.%s", paymentScheme, caseIdentifier);
+            logger.debug("Looking up account id for {}", taLookup);
+			Integer recallTechnicalAccountId = technicalAccountConfig.findByOperation(taLookup);
     		
     		String conversionAccountWithdrawalRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), recallTechnicalAccountId, "deposit");
     		
