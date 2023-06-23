@@ -1,13 +1,14 @@
 package org.mifos.connector.ams.zeebe.workers.accountdetails;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
 import org.apache.fineract.client.models.GetSavingsAccountsAccountIdResponse;
 import org.mifos.connector.common.ams.dto.SavingsAccountStatusType;
-import org.slf4j.MDC;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
@@ -46,7 +47,7 @@ public class AmsCreditorWorker extends AbstractAmsWorker {
 		Integer conversionAccountAmsId = null;
 		Long internalAccountId = null;
 		String status = AccountAmsStatus.NOT_READY_TO_RECEIVE_MONEY.name();
-		Object flags = null;
+		List<Object> flags = null;
 		SavingsAccountStatusType statusType = null;
 
 		try {

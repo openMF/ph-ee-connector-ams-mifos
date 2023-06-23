@@ -1,5 +1,9 @@
 package org.mifos.connector.ams.zeebe.workers.accountdetails;
 
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.mifos.connector.ams.zeebe.workers.utils.AuthTokenHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -62,16 +66,18 @@ public abstract class AbstractAmsWorker {
 				tenantId);
 	}
 	
-	protected Object lookupFlags(Long accountId, String tenantId) {
-		return exchange(UriComponentsBuilder
+	@SuppressWarnings("unchecked")
+	protected List<Object> lookupFlags(Long accountId, String tenantId) {
+		List<LinkedHashMap<String, Object>> flags = exchange(UriComponentsBuilder
 				.fromHttpUrl(fineractApiUrl)
 				.path(flagsQueryApi)
 				.queryParam("columnFilter", flagsColumnFilter)
 				.queryParam("valueFilter", accountId)
 				.queryParam("resultColumns", flagsResultColumns)
 				.encode().toUriString(),
-				Object.class,
+				List.class,
 				tenantId);
+		return flags.stream().map(flagResult -> flagResult.get(flagsResultColumns)).collect(Collectors.toList());
 	}
 
 	protected <T> T exchange(String urlTemplate, Class<T> responseType, String tenantId) {
