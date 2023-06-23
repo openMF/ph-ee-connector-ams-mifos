@@ -45,6 +45,8 @@
     </logger>
 
     <logger name="org" level="INFO"/>
+    <logger name="org.apache.camel.health" level="INFO"/>
+    <logger name="org.apache.camel.impl.health" level="INFO"/>
     <logger name="io" level="INFO"/>
     <logger name="hu.dpc" level="TRACE"/>
     <logger name="org.mifos.connector.ams.zeebe" level="DEBUG" />
