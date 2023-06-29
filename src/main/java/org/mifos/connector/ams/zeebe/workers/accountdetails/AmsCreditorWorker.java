@@ -92,6 +92,8 @@ public class AmsCreditorWorker extends AbstractAmsWorker {
 					logger.error(e.getMessage(), e);
 					throw e;
 				}
+			} else {
+				throw new ZeebeBpmnError("Error_AccountNotFound", "Error_AccountNotFound");
 			}
 	
 			
