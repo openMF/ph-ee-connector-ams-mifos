@@ -13,6 +13,7 @@ public class ZeebeVariables {
     public static final String ACCOUNT_CURRENCY = "accountCurrency";
     public static final String ACCOUNT_ID = "accountId";
     public static final String CHANNEL_REQUEST = "channelRequest";
+    public static final String GSMA_CHANNEL_REQUEST = "gsmaChannelRequest";
     public static final String ERROR_INFORMATION = "errorInformation";
     public static final String EXTERNAL_ACCOUNT_ID = "externalAccountId";
     public static final String INTEROP_REGISTRATION_FAILED = "interopRegistrationFailed";

@@ -46,6 +46,7 @@ import static org.mifos.connector.ams.zeebe.ZeebeVariables.ACCOUNT_NUMBER;
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.BOOK_TRANSACTION_ID;
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.CHANNEL_REQUEST;
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.EXTERNAL_ACCOUNT_ID;
+import static org.mifos.connector.ams.zeebe.ZeebeVariables.GSMA_CHANNEL_REQUEST;
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.INTEROP_REGISTRATION_FAILED;
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.LOCAL_QUOTE_FAILED;
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.LOCAL_QUOTE_RESPONSE;
@@ -565,7 +566,7 @@ public class ZeebeeWorkers {
                             if (isAmsLocalEnabled) {
                                 Exchange ex = new DefaultExchange(camelContext);
                                 Map<String, Object> variables = job.getVariablesAsMap();
-                                GsmaTransfer gsmaTransfer = objectMapper.readValue((String) variables.get(CHANNEL_REQUEST), GsmaTransfer.class);
+                                GsmaTransfer gsmaTransfer = objectMapper.readValue((String) variables.get(GSMA_CHANNEL_REQUEST), GsmaTransfer.class);
                                 logger.debug("GSMA Transfer Body:{}",gsmaTransfer);
                                 String accountNo = gsmaTransfer.getPayee().get(0).getPartyIdIdentifier();
                                 Exchange e = zeebeUtil.setAccountTypeAndNumber(ex, accountNo);
