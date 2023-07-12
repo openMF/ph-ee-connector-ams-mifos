@@ -65,7 +65,7 @@ public class AmsCommonService {
         headers.put(CXF_TRACE_HEADER, true);
         headers.put(HTTP_METHOD, "GET");
         headers.put(HTTP_PATH, amsInteropPartiesPath.replace("{idType}", e.getProperty(PARTY_ID_TYPE, String.class))
-                .replace("{idValue}", e.getProperty(PARTY_ID, String.class)));
+                .replace("{idValue}","SA"+e.getProperty(PARTY_ID, String.class)));
         headers.putAll(tenantService.getHeaders(e.getProperty(TENANT_ID, String.class)));
         cxfrsUtil.sendInOut("cxfrs:bean:ams.local.interop", e, headers, null);
     }
