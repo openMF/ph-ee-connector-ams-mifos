@@ -7,7 +7,9 @@ camel:
       auto-discover-object-mapper: true
 
 dfspids: "DFSPID"
-
+spring:
+  profiles:
+    active: "bb,fin12,dev"
 zeebe:
   client:
     max-execution-threads: 1000
