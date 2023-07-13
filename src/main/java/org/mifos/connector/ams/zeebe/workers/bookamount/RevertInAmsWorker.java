@@ -208,7 +208,6 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			@Variable String originalPain001,
 			@Variable Integer conversionAccountAmsId,
 			@Variable Integer disposalAccountAmsId,
-			@Variable String transactionDate,
 			@Variable String paymentScheme,
 			@Variable String transactionGroupId,
 			@Variable String transactionCategoryPurposeCode,
@@ -217,6 +216,8 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			@Variable BigDecimal transactionFeeAmount,
 			@Variable String tenantIdentifier) throws Exception {
 		MDC.put("internalCorrelationId", internalCorrelationId);
+		
+		String transactionDate = LocalDate.now().format(DateTimeFormatter.ofPattern(FORMAT));
 		
 		Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001 = objectMapper.readValue(originalPain001, Pain00100110CustomerCreditTransferInitiationV10MessageSchema.class);
 		
