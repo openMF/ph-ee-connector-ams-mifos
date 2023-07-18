@@ -69,6 +69,8 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 			@Variable BigDecimal transactionFeeAmount,
 			@Variable String tenantIdentifier) throws Exception {
 		
+		transactionDate = transactionDate.replaceAll("-", "");
+		
 		Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001 = objectMapper.readValue(originalPain001, Pain00100110CustomerCreditTransferInitiationV10MessageSchema.class);
 		
 		MDC.put("internalCorrelationId", internalCorrelationId);
