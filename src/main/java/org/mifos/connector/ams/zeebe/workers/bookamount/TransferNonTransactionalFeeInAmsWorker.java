@@ -26,7 +26,7 @@ import io.camunda.zeebe.client.api.worker.JobClient;
 import io.camunda.zeebe.spring.client.annotation.JobWorker;
 import io.camunda.zeebe.spring.client.annotation.Variable;
 import io.camunda.zeebe.spring.client.exception.ZeebeBpmnError;
-import iso.std.iso._20022.tech.json.camt_053_001.BankToCustomerStatementV08;
+import iso.std.iso._20022.tech.json.camt_053_001.ReportEntry10;
 import iso.std.iso._20022.tech.json.pain_001_001.Pain00100110CustomerCreditTransferInitiationV10MessageSchema;
 
 @Component
@@ -86,15 +86,15 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 			
 			batchItemBuilder.add(items, disposalAccountWithdrawRelativeUrl, bodyItem, false);
 			
-			BankToCustomerStatementV08 convertedcamt053 = camt053Mapper.toCamt053(pain001.getDocument());
-			String camt053 = objectMapper.writeValueAsString(convertedcamt053);
+			ReportEntry10 convertedcamt053 = camt053Mapper.toCamt053Entry(pain001.getDocument());
+			String camt053Entry = objectMapper.writeValueAsString(convertedcamt053);
 			
 			String camt053RelativeUrl = String.format("datatables/transaction_details/%d", disposalAccountAmsId);
 			
 			TransactionDetails td = new TransactionDetails(
 					"$.resourceId",
 					internalCorrelationId,
-					camt053,
+					camt053Entry,
 					transactionGroupId,
 					categoryPurpose);
 			
@@ -125,7 +125,7 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 			td = new TransactionDetails(
 					"$.resourceId",
 					internalCorrelationId,
-					camt053,
+					camt053Entry,
 					transactionGroupId,
 					categoryPurpose);
 			
@@ -156,7 +156,7 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 			td = new TransactionDetails(
 					"$.resourceId",
 					internalCorrelationId,
-					camt053,
+					camt053Entry,
 					transactionGroupId,
 					categoryPurpose);
 			

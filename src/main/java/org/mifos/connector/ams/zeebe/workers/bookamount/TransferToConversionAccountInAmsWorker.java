@@ -38,6 +38,7 @@ import io.camunda.zeebe.spring.client.annotation.JobWorker;
 import io.camunda.zeebe.spring.client.annotation.Variable;
 import io.camunda.zeebe.spring.client.exception.ZeebeBpmnError;
 import iso.std.iso._20022.tech.json.camt_053_001.BankToCustomerStatementV08;
+import iso.std.iso._20022.tech.json.camt_053_001.ReportEntry10;
 import iso.std.iso._20022.tech.json.pain_001_001.Pain00100110CustomerCreditTransferInitiationV10MessageSchema;
 import iso.std.iso._20022.tech.xsd.camt_056_001.PaymentTransactionInformation31;
 import jakarta.xml.bind.JAXBException;
@@ -154,24 +155,24 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			withdrawAmount(amount, paymentScheme, transactionDate, objectMapper, paymentTypeConfig, batchItemBuilder, items,
 					disposalAccountWithdrawRelativeUrl);
 			
-			BankToCustomerStatementV08 convertedCamt053 = camt053Mapper.toCamt053(pain001.getDocument());
-			String camt053 = objectMapper.writeValueAsString(convertedCamt053);
+			ReportEntry10 convertedCamt053Entry = camt053Mapper.toCamt053Entry(pain001.getDocument());
+			String camt053Entry = objectMapper.writeValueAsString(convertedCamt053Entry);
 			
 			String camt053RelativeUrl = String.format("datatables/transaction_details/%d", disposalAccountAmsId);
 			
 			addDetails(transactionGroupId, transactionCategoryPurposeCode,
-					internalCorrelationId, objectMapper, batchItemBuilder, items, camt053, camt053RelativeUrl);
+					internalCorrelationId, objectMapper, batchItemBuilder, items, camt053Entry, camt053RelativeUrl);
 
 			if (hasFee) {
 				logger.debug("Withdrawing fee {} from disposal account {}", transactionFeeAmount, disposalAccountAmsId);
 					withdrawFee(transactionFeeAmount, paymentScheme, transactionDate, objectMapper, paymentTypeConfig, batchItemBuilder,
 							items, disposalAccountWithdrawRelativeUrl);
 					
-					convertedCamt053.getStatement().get(0).getEntry().get(0).getEntryDetails().get(0).getTransactionDetails().get(0).getSupplementaryData().get(0).getEnvelope().setAdditionalProperty("InternalCorrelationId", transactionFeeInternalCorrelationId);
-					camt053 = objectMapper.writeValueAsString(convertedCamt053);
+					convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getSupplementaryData().get(0).getEnvelope().setAdditionalProperty("InternalCorrelationId", transactionFeeInternalCorrelationId);
+					camt053Entry = objectMapper.writeValueAsString(convertedCamt053Entry);
 					
 					addDetails(transactionGroupId, transactionFeeCategoryPurposeCode, internalCorrelationId, objectMapper,
-							batchItemBuilder, items, camt053, camt053RelativeUrl);
+							batchItemBuilder, items, camt053Entry, camt053RelativeUrl);
 			}
 			
 			logger.info("Depositing amount {} to conversion account {}", amount, conversionAccountAmsId);
@@ -182,11 +183,11 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			depositAmount(amount, paymentScheme, transactionDate, objectMapper, paymentTypeConfig, batchItemBuilder, items,
 					conversionAccountDepositRelativeUrl);
 			
-			convertedCamt053.getStatement().get(0).getEntry().get(0).getEntryDetails().get(0).getTransactionDetails().get(0).getSupplementaryData().get(0).getEnvelope().setAdditionalProperty("InternalCorrelationId", internalCorrelationId);
-			camt053 = objectMapper.writeValueAsString(convertedCamt053);
+			convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getSupplementaryData().get(0).getEnvelope().setAdditionalProperty("InternalCorrelationId", internalCorrelationId);
+			camt053Entry = objectMapper.writeValueAsString(convertedCamt053Entry);
 			
 			addDetails(transactionGroupId, transactionCategoryPurposeCode, internalCorrelationId, objectMapper, batchItemBuilder, items,
-					camt053, camt053RelativeUrl);
+					camt053Entry, camt053RelativeUrl);
 		
 			
 			if (hasFee) {
@@ -194,11 +195,11 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 				depositFee(transactionFeeAmount, paymentScheme, transactionDate, objectMapper, paymentTypeConfig, batchItemBuilder, items,
 						conversionAccountDepositRelativeUrl);
 				
-				convertedCamt053.getStatement().get(0).getEntry().get(0).getEntryDetails().get(0).getTransactionDetails().get(0).getSupplementaryData().get(0).getEnvelope().setAdditionalProperty("InternalCorrelationId", transactionFeeInternalCorrelationId);
-				camt053 = objectMapper.writeValueAsString(convertedCamt053);
+				convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getSupplementaryData().get(0).getEnvelope().setAdditionalProperty("InternalCorrelationId", transactionFeeInternalCorrelationId);
+				camt053Entry = objectMapper.writeValueAsString(convertedCamt053Entry);
 				
 				addDetails(transactionGroupId, transactionFeeCategoryPurposeCode, internalCorrelationId, objectMapper, batchItemBuilder,
-						items, camt053, camt053RelativeUrl);
+						items, camt053Entry, camt053RelativeUrl);
 			}
 			
 			doBatch(items, tenantIdentifier, internalCorrelationId);

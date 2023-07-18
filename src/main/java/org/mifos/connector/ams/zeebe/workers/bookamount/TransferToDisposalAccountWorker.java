@@ -24,7 +24,7 @@ import io.camunda.zeebe.client.api.worker.JobClient;
 import io.camunda.zeebe.spring.client.annotation.JobWorker;
 import io.camunda.zeebe.spring.client.annotation.Variable;
 import io.camunda.zeebe.spring.client.exception.ZeebeBpmnError;
-import iso.std.iso._20022.tech.json.camt_053_001.BankToCustomerStatementV08;
+import iso.std.iso._20022.tech.json.camt_053_001.ReportEntry10;
 
 @Component
 public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
@@ -87,15 +87,15 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 			
 			batchItemBuilder.add(items, conversionAccountWithdrawRelativeUrl, bodyItem, false);
 			
-			BankToCustomerStatementV08 convertedCamt053 = camt053Mapper.toCamt053(pacs008);
-			String camt053 = objectMapper.writeValueAsString(convertedCamt053);
+			ReportEntry10 convertedCamt053Entry = camt053Mapper.toCamt053Entry(pacs008);
+			String camt053Entry = objectMapper.writeValueAsString(convertedCamt053Entry);
 			
 			String camt053RelativeUrl = String.format("datatables/transaction_details/%d", conversionAccountAmsId);
 			
 			TransactionDetails td = new TransactionDetails(
 					"$.resourceId",
 					internalCorrelationId,
-					camt053,
+					camt053Entry,
 					transactionGroupId,
 					transactionCategoryPurposeCode);
 			
@@ -124,7 +124,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 			td = new TransactionDetails(
 					"$.resourceId",
 					internalCorrelationId,
-					camt053,
+					camt053Entry,
 					transactionGroupId,
 					transactionCategoryPurposeCode);
 			
@@ -187,15 +187,15 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 			
 			batchItemBuilder.add(items, conversionAccountWithdrawRelativeUrl, bodyItem, false);
 			
-			BankToCustomerStatementV08 convertedCamt053 = camt053Mapper.toCamt053(pacs008);
-			String camt053 = objectMapper.writeValueAsString(convertedCamt053);
+			ReportEntry10 convertedCamt053Entry = camt053Mapper.toCamt053Entry(pacs008);
+			String camt053Entry = objectMapper.writeValueAsString(convertedCamt053Entry);
 			
 			String camt053RelativeUrl = String.format("datatables/transaction_details/%d", conversionAccountAmsId);
 			
 			TransactionDetails td = new TransactionDetails(
 					"$.resourceId",
 					internalCorrelationId,
-					camt053,
+					camt053Entry,
 					transactionGroupId,
 					transactionCategoryPurposeCode);
 			
@@ -224,7 +224,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 			td = new TransactionDetails(
 					"$.resourceId",
 					internalCorrelationId,
-					camt053,
+					camt053Entry,
 					transactionGroupId,
 					transactionCategoryPurposeCode);
 			
