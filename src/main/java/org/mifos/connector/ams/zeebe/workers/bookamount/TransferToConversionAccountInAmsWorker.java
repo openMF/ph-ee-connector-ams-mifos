@@ -157,7 +157,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 					disposalAccountWithdrawRelativeUrl);
 			
 			ReportEntry10 convertedCamt053Entry = camt053Mapper.toCamt053Entry(pain001.getDocument());
-			convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.DBIT);
+			convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.DBIT);
 			String camt053Entry = objectMapper.writeValueAsString(convertedCamt053Entry);
 			
 			String camt053RelativeUrl = String.format("datatables/transaction_details/%d", disposalAccountAmsId);
