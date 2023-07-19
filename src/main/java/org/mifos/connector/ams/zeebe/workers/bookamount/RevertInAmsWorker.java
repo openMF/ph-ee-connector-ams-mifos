@@ -31,6 +31,7 @@ import io.camunda.zeebe.spring.client.annotation.JobWorker;
 import io.camunda.zeebe.spring.client.annotation.Variable;
 import iso.std.iso._20022.tech.json.camt_053_001.BankToCustomerStatementV08;
 import iso.std.iso._20022.tech.json.camt_053_001.ReportEntry10;
+import iso.std.iso._20022.tech.json.camt_053_001.ActiveOrHistoricCurrencyAndAmountRange2.CreditDebitCode;
 import iso.std.iso._20022.tech.json.pain_001_001.Pain00100110CustomerCreditTransferInitiationV10MessageSchema;
 import iso.std.iso._20022.tech.xsd.camt_056_001.PaymentTransactionInformation31;
 
@@ -97,6 +98,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 		batchItemBuilder.add(items, conversionAccountWithdrawRelativeUrl, bodyItem, false);
 		
 		ReportEntry10 convertedcamt053Entry = camt053Mapper.toCamt053Entry(pain001.getDocument());
+		convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.DBIT);
 		String camt053Entry = objectMapper.writeValueAsString(convertedcamt053Entry);
 		
 		String camt053RelativeUrl = String.format("datatables/transaction_details/%d", conversionAccountAmsId);
@@ -246,6 +248,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 		batchItemBuilder.add(items, conversionAccountWithdrawRelativeUrl, bodyItem, false);
 		
 		ReportEntry10 convertedcamt053Entry = camt053Mapper.toCamt053Entry(pain001.getDocument());
+		convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.DBIT);
 		String camt053Entry = objectMapper.writeValueAsString(convertedcamt053Entry);
 		
 		String camt053RelativeUrl = String.format("datatables/transaction_details/%d", conversionAccountAmsId);

@@ -26,6 +26,7 @@ import io.camunda.zeebe.spring.client.annotation.JobWorker;
 import io.camunda.zeebe.spring.client.annotation.Variable;
 import io.camunda.zeebe.spring.client.exception.ZeebeBpmnError;
 import iso.std.iso._20022.tech.json.camt_053_001.ReportEntry10;
+import iso.std.iso._20022.tech.json.camt_053_001.ActiveOrHistoricCurrencyAndAmountRange2.CreditDebitCode;
 
 @Component
 public class BookCreditedAmountToTechnicalAccountWorker extends AbstractMoneyInOutWorker {
@@ -107,6 +108,7 @@ public class BookCreditedAmountToTechnicalAccountWorker extends AbstractMoneyInO
     		batchItemBuilder.add(items, conversionAccountWithdrawalRelativeUrl, bodyItem, false);
     	
     		ReportEntry10 convertedCamt053Entry = camt053Mapper.toCamt053Entry(pacs008);
+    		convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.CRDT);
     		String camt053Entry = objectMapper.writeValueAsString(convertedCamt053Entry);
     		
     		String camt053RelativeUrl = String.format("datatables/transaction_details/%d", recallTechnicalAccountId);
