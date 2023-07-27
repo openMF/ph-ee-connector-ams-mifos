@@ -89,7 +89,7 @@ public class BookCreditedAmountFromTechnicalAccountWorker extends AbstractMoneyI
             logger.debug("Looking up account id for {}", taLookup);
 			Integer recallTechnicalAccountId = technicalAccountConfig.findByOperation(taLookup);
     		
-    		String technicalAccountWithdrawalRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), recallTechnicalAccountId, "withdraw");
+    		String technicalAccountWithdrawalRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), recallTechnicalAccountId, "withdrawal");
     		
     		Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
     		Integer paymentTypeId = paymentTypeConfig.findByOperation(String.format("%s.%s.%s", paymentScheme, "bookFromTechnicalAccount", caseIdentifier));
