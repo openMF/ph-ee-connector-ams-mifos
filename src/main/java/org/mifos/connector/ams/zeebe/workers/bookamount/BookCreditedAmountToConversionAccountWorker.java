@@ -104,7 +104,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
 
             doBatch(items, tenantIdentifier, internalCorrelationId);
         } catch (Exception e) {
-            logger.error("Worker to book incoming money in AMS has failed, dispatching user task to handle fiat deposit", e);
+            logger.error("Worker to book incoming money in AMS has failed, dispatching user task to handle conversion account deposit", e);
             throw new ZeebeBpmnError("Error_BookToConversionToBeHandledManually", e.getMessage());
         } finally {
             MDC.remove("internalCorrelationId");
@@ -172,7 +172,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
 
             doBatch(items, tenantIdentifier, internalCorrelationId);
         } catch (Exception e) {
-            logger.error("Worker to book incoming money in AMS has failed, dispatching user task to handle fiat deposit", e);
+            logger.error("Worker to book incoming money in AMS has failed, dispatching user task to handle conversion account deposit", e);
             throw new ZeebeBpmnError("Error_BookToConversionToBeHandledManually", e.getMessage());
         } finally {
             MDC.remove("internalCorrelationId");

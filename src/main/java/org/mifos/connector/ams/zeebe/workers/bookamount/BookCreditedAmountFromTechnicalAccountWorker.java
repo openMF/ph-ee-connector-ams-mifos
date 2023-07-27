@@ -124,7 +124,7 @@ public class BookCreditedAmountFromTechnicalAccountWorker extends AbstractMoneyI
 
             doBatch(items, tenantIdentifier, internalCorrelationId);
         } catch (JsonProcessingException | JAXBException e) {
-            logger.error("Worker to book incoming money in AMS has failed, dispatching user task to handle fiat deposit", e);
+            logger.error("Worker to book incoming money in AMS has failed, dispatching user task to handle conversion account deposit", e);
             throw new ZeebeBpmnError("Error_BookToConversionToBeHandledManually", e.getMessage());
         } finally {
             MDC.remove("internalCorrelationId");

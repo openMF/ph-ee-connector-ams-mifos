@@ -62,7 +62,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 		
 			MDC.put("internalCorrelationId", internalCorrelationId);
 			
-			logger.info("Exchange to e-currency worker has started");
+			logger.info("Exchange to disposal worker has started");
 
 			ObjectMapper objectMapper = new ObjectMapper();
 			
@@ -134,9 +134,9 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 		
 			doBatch(items, tenantIdentifier, internalCorrelationId);
 			
-			logger.info("Exchange to e-currency worker has finished successfully");
+			logger.info("Exchange to disposal worker has finished successfully");
 		} catch (Exception e) {
-			logger.error("Exchange to e-currency worker has failed, dispatching user task to handle exchange", e);
+			logger.error("Exchange to disposal worker has failed, dispatching user task to handle exchange", e);
 			throw new ZeebeBpmnError("Error_TransferToDisposalToBeHandledManually", e.getMessage());
 		} finally {
 			MDC.remove("internalCorrelationId");
@@ -162,7 +162,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 		
 			MDC.put("internalCorrelationId", internalCorrelationId);
 			
-			logger.info("Exchange to e-currency worker has started");
+			logger.info("Exchange to disposal worker has started");
 
 			ObjectMapper objectMapper = new ObjectMapper();
 			
@@ -234,9 +234,9 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 		
 			doBatch(items, tenantIdentifier, internalCorrelationId);
 			
-			logger.info("Exchange to e-currency worker has finished successfully");
+			logger.info("Exchange to disposal worker has finished successfully");
 		} catch (Exception e) {
-			logger.error("Exchange to e-currency worker has failed, dispatching user task to handle exchange", e);
+			logger.error("Exchange to disposal worker has failed, dispatching user task to handle exchange", e);
 			throw new ZeebeBpmnError("Error_TransferToDisposalToBeHandledManually", e.getMessage());
 		} finally {
 			MDC.remove("internalCorrelationId");

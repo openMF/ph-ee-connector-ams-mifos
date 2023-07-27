@@ -75,7 +75,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 		
 		MDC.put("internalCorrelationId", internalCorrelationId);
 		
-		logger.info("Starting book debit on fiat account worker");
+		logger.info("Starting book debit on conversion account worker");
 		
 		logger.info("Withdrawing amount {} from conversion account {} of tenant {}", amount, conversionAccountAmsId, tenantIdentifier);
 		
@@ -146,7 +146,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 		
 		doBatch(items, tenantIdentifier, internalCorrelationId);
 		
-		logger.info("Book debit on fiat account has finished  successfully");
+		logger.info("Book debit on conversion account has finished  successfully");
 		
 		MDC.remove("internalCorrelationId");
 	}
