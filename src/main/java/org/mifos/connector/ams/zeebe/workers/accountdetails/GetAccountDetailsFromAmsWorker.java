@@ -21,17 +21,17 @@ import io.camunda.zeebe.spring.client.annotation.Variable;
 import io.camunda.zeebe.spring.client.exception.ZeebeBpmnError;
 
 @Component
-public class AmsCreditorWorker extends AbstractAmsWorker {
+public class GetAccountDetailsFromAmsWorker extends AbstractAmsWorker {
 
 	@Value("${fineract.incoming-money-api}")
 	private String incomingMoneyApi;
 
-	Logger logger = LoggerFactory.getLogger(AmsCreditorWorker.class);
+	Logger logger = LoggerFactory.getLogger(GetAccountDetailsFromAmsWorker.class);
 	
-	public AmsCreditorWorker() {
+	public GetAccountDetailsFromAmsWorker() {
 	}
 
-	public AmsCreditorWorker(RestTemplate restTemplate) {
+	public GetAccountDetailsFromAmsWorker(RestTemplate restTemplate) {
 		super(restTemplate);
 	}
 
