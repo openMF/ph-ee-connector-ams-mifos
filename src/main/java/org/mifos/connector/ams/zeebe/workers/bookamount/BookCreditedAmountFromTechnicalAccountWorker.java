@@ -18,6 +18,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.camunda.zeebe.client.api.response.ActivatedJob;
@@ -26,6 +27,7 @@ import io.camunda.zeebe.spring.client.annotation.JobWorker;
 import io.camunda.zeebe.spring.client.annotation.Variable;
 import io.camunda.zeebe.spring.client.exception.ZeebeBpmnError;
 import iso.std.iso._20022.tech.json.camt_053_001.ReportEntry10;
+import jakarta.xml.bind.JAXBException;
 
 @Component
 public class BookCreditedAmountFromTechnicalAccountWorker extends AbstractMoneyInOutWorker {
@@ -67,13 +69,10 @@ public class BookCreditedAmountFromTechnicalAccountWorker extends AbstractMoneyI
 			@Variable String internalCorrelationId,
 			@Variable String transactionGroupId,
 			@Variable String transactionCategoryPurposeCode,
-			@Variable String caseIdentifier,
-			@Variable Integer conversionAccountAmsId
+			@Variable String caseIdentifier
 			) {
 		
 		try {
-            logger.info("Incoming money worker started with variables");
-            
             ObjectMapper objectMapper = new ObjectMapper();
             
             List<TransactionItem> items = new ArrayList<>();
@@ -122,43 +121,9 @@ public class BookCreditedAmountFromTechnicalAccountWorker extends AbstractMoneyI
     		String camt053Body = objectMapper.writeValueAsString(td);
 
     		batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
-    		
-    		
-    		
-    		String conversionAccountDepositRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "deposit");
-    		
-    		paymentTypeId = paymentTypeConfig.findByOperation(String.format("%s.%s.%s", paymentScheme, "bookCreditedAmountToConversionAccount", "ConversionAccount.DepositTransactionAmount"));
-    		
-    		body = new TransactionBody(
-    				transactionDate,
-    				amount,
-    				paymentTypeId,
-    				"",
-    				FORMAT,
-    				locale);
-    		
-    		bodyItem = objectMapper.writeValueAsString(body);
-    		
-    		batchItemBuilder.add(items, conversionAccountDepositRelativeUrl, bodyItem, false);
-    	
-    		convertedCamt053Entry = camt053Mapper.toCamt053Entry(pacs008);
-    		camt053Entry = objectMapper.writeValueAsString(convertedCamt053Entry);
-    		
-    		camt053RelativeUrl = String.format("datatables/transaction_details/%d", conversionAccountAmsId);
-    		
-    		td = new TransactionDetails(
-    				"$.resourceId",
-    				internalCorrelationId,
-    				camt053Entry,
-    				transactionGroupId,
-    				transactionCategoryPurposeCode);
-    		
-    		camt053Body = objectMapper.writeValueAsString(td);
-
-    		batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 
             doBatch(items, tenantIdentifier, internalCorrelationId);
-        } catch (Exception e) {
+        } catch (JsonProcessingException | JAXBException e) {
             logger.error("Worker to book incoming money in AMS has failed, dispatching user task to handle fiat deposit", e);
             throw new ZeebeBpmnError("Error_BookToConversionToBeHandledManually", e.getMessage());
         } finally {
