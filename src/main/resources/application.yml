@@ -1,3 +1,10 @@
+server:
+  shutdown: "graceful"
+
+spring:
+  lifecycle:
+    timeout-per-shutdown-phase: "20s"
+
 camel:
   health:
     enabled: true

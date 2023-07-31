@@ -4,17 +4,18 @@ FROM amazoncorretto:17-al2023-headless
 ARG CACHEBUST=1
 
 # Upgrade the system
-RUN dnf -y upgrade && \
+RUN dnf -y --releasever=latest --setopt=install_weak_deps=False upgrade && \
 # Add less, vi, nano, ps, ping, netstat, ss, traceroute, telnet (curl is already included in the image)
-    dnf -y install less vim nano procps-ng iputils net-tools iproute traceroute telnet && \
+    dnf -y --releasever=latest --setopt=install_weak_deps=False install less vim nano procps-ng iputils net-tools iproute traceroute telnet && \
 # Create the non-root user to run the application
-    dnf -y install shadow-utils && \
+    dnf -y --releasever=latest --setopt=install_weak_deps=False install shadow-utils && \
     groupadd --system --gid 1000 javagroup && \
     useradd --uid 1000 --gid javagroup --no-user-group --home-dir /app --create-home --shell /bin/bash javauser && \
     chown -R javauser:javagroup /app && \
     dnf -y remove shadow-utils && \
 # Clean up the yum cache
-    dnf -y clean all
+    dnf -y clean all && \
+    rm -rf /var/cache/dnf
 
 # Expose the application's listening port
 EXPOSE 5000 8080
