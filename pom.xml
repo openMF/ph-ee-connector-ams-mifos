@@ -76,6 +76,10 @@
                     <groupId>com.fasterxml.jackson.module</groupId>
                     <artifactId>jackson-module-scala_3</artifactId>
                 </exclusion>
+                <exclusion>
+					<groupId>org.yaml</groupId>
+					<artifactId>snakeyaml</artifactId>
+				</exclusion>
             </exclusions>
         </dependency>
         <dependency>
@@ -142,7 +146,23 @@
             <groupId>com.networknt</groupId>
             <artifactId>json-schema-validator</artifactId>
             <version>1.0.84</version>
+            <exclusions>
+				<exclusion>
+					<groupId>org.yaml</groupId>
+					<artifactId>snakeyaml</artifactId>
+				</exclusion>
+			</exclusions>
         </dependency>
+        <dependency>
+			<groupId>org.yaml</groupId>
+			<artifactId>snakeyaml</artifactId>
+			<version>2.0</version>
+		</dependency>
+        <dependency>
+			<groupId>com.google.guava</groupId>
+			<artifactId>guava</artifactId>
+			<version>32.0.1-jre</version>
+		</dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
@@ -159,6 +179,12 @@
             <artifactId>zeebe-process-test-extension</artifactId>
             <version>${zeebe.version}</version>
             <scope>test</scope>
+            <exclusions>
+				<exclusion>
+					<groupId>com.google.guava</groupId>
+					<artifactId>guava</artifactId>
+				</exclusion>
+			</exclusions>
         </dependency>
     </dependencies>
 
