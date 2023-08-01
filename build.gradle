@@ -43,7 +43,7 @@ dependencies {
 
 group = 'org.mifos'
 version = '1.0.0-SNAPSHOT'
-sourceCompatibility = '1.8'
+sourceCompatibility = '11'
 
 publishing {
     publications {
