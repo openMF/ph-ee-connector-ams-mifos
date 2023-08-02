@@ -22,7 +22,7 @@ repositories {
 }
 
 dependencies {
-    implementation 'org.mifos:ph-ee-connector-common:1.2.2-SNAPSHOT'
+    implementation 'org.mifos:ph-ee-connector-common:1.5.1-SNAPSHOT'
     implementation 'com.sun.xml.ws:jaxws-ri:2.3.2'
     implementation 'org.apache.camel.springboot:camel-spring-boot-starter:3.4.0'
     implementation 'org.apache.camel:camel-endpointdsl:3.4.0'
@@ -43,7 +43,7 @@ dependencies {
 
 group = 'org.mifos'
 version = '1.0.0-SNAPSHOT'
-sourceCompatibility = '1.8'
+sourceCompatibility = '11'
 
 publishing {
     publications {
