@@ -18,6 +18,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.camunda.zeebe.client.api.response.ActivatedJob;
@@ -99,6 +100,8 @@ public class BookCreditedAmountToTechnicalAccountWorker extends AbstractMoneyInO
     				locale);
     		
     		ObjectMapper objectMapper = new ObjectMapper();
+    		
+    		objectMapper.setSerializationInclusion(Include.NON_NULL);
     		
     		String bodyItem = objectMapper.writeValueAsString(body);
     		

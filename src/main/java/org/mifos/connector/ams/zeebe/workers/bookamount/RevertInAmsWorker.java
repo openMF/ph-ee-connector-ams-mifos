@@ -6,8 +6,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
-import jakarta.xml.bind.JAXBException;
-
 import org.mifos.connector.ams.fineract.Config;
 import org.mifos.connector.ams.fineract.ConfigFactory;
 import org.mifos.connector.ams.mapstruct.Pain001Camt053Mapper;
@@ -21,6 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -33,6 +32,7 @@ import iso.std.iso._20022.tech.json.camt_053_001.BankToCustomerStatementV08;
 import iso.std.iso._20022.tech.json.camt_053_001.ReportEntry10;
 import iso.std.iso._20022.tech.json.pain_001_001.Pain00100110CustomerCreditTransferInitiationV10MessageSchema;
 import iso.std.iso._20022.tech.xsd.camt_056_001.PaymentTransactionInformation31;
+import jakarta.xml.bind.JAXBException;
 
 @Component
 public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
@@ -90,6 +90,8 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 				"",
 				FORMAT,
 				locale);
+		
+		objectMapper.setSerializationInclusion(Include.NON_NULL);
 		
 		String bodyItem = objectMapper.writeValueAsString(body);
 		
@@ -232,6 +234,8 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 		
 		String transactionDate = LocalDate.now().format(DateTimeFormatter.ofPattern(FORMAT));
 		
+		objectMapper.setSerializationInclusion(Include.NON_NULL);
+		
 		Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001 = objectMapper.readValue(originalPain001, Pain00100110CustomerCreditTransferInitiationV10MessageSchema.class);
 		
 		logger.debug("Withdrawing amount {} from conversion account {}", amount, conversionAccountAmsId);
@@ -371,6 +375,8 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 					"",
 					FORMAT,
 					locale);
+			
+			objectMapper.setSerializationInclusion(Include.NON_NULL);
 			
 			String bodyItem = objectMapper.writeValueAsString(body);
 			

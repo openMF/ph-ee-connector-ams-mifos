@@ -17,6 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.camunda.zeebe.client.api.response.ActivatedJob;
@@ -66,6 +67,8 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 			logger.info("Exchange to disposal worker has started");
 
 			ObjectMapper objectMapper = new ObjectMapper();
+			
+			objectMapper.setSerializationInclusion(Include.NON_NULL);
 			
 			batchItemBuilder.tenantId(tenantIdentifier);
 			
@@ -171,6 +174,8 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 			logger.info("Exchange to disposal worker has started");
 
 			ObjectMapper objectMapper = new ObjectMapper();
+			
+			objectMapper.setSerializationInclusion(Include.NON_NULL);
 			
 			batchItemBuilder.tenantId(tenantIdentifier);
 			

@@ -27,6 +27,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.networknt.schema.ValidationMessage;
@@ -92,6 +93,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 		logger.debug("Debtor exchange worker starting");
 		MDC.put("internalCorrelationId", internalCorrelationId);
 		try {
+			objectMapper.setSerializationInclusion(Include.NON_NULL);
 			Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001 = objectMapper.readValue(originalPain001, Pain00100110CustomerCreditTransferInitiationV10MessageSchema.class);
 			
 			try {
@@ -332,6 +334,8 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 					"",
 					FORMAT,
 					locale);
+			
+			objectMapper.setSerializationInclusion(Include.NON_NULL);
 			
 			String bodyItem = objectMapper.writeValueAsString(body);
 			
