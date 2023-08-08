@@ -99,10 +99,9 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 		ReportEntry10 convertedcamt053Entry = camt053Mapper.toCamt053Entry(pain001.getDocument());
 		String camt053Entry = objectMapper.writeValueAsString(convertedcamt053Entry);
 		
-		String camt053RelativeUrl = String.format("datatables/transaction_details/%d", conversionAccountAmsId);
+		String camt053RelativeUrl = "datatables/transaction_details/$.resourceId";
 		
 		TransactionDetails td = new TransactionDetails(
-				"$.resourceId",
 				internalCorrelationId,
 				camt053Entry,
 				transactionGroupId,
@@ -130,7 +129,6 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			batchItemBuilder.add(items, conversionAccountWithdrawRelativeUrl, bodyItem, false);
 			
 			td = new TransactionDetails(
-					"$.resourceId",
 					internalCorrelationId,
 					camt053Entry,
 					transactionGroupId,
@@ -157,10 +155,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 		
 		batchItemBuilder.add(items, disposalAccountDepositRelativeUrl, bodyItem, false);
 		
-		camt053RelativeUrl = String.format("datatables/transaction_details/%d", disposalAccountAmsId);
-		
 		td = new TransactionDetails(
-				"$.resourceId",
 				internalCorrelationId,
 				camt053Entry,
 				transactionGroupId,
@@ -188,7 +183,6 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			batchItemBuilder.add(items, disposalAccountDepositRelativeUrl, bodyItem, false);
 			
 			td = new TransactionDetails(
-					"$.resourceId",
 					internalCorrelationId,
 					camt053Entry,
 					transactionGroupId,
@@ -248,10 +242,9 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 		ReportEntry10 convertedcamt053Entry = camt053Mapper.toCamt053Entry(pain001.getDocument());
 		String camt053Entry = objectMapper.writeValueAsString(convertedcamt053Entry);
 		
-		String camt053RelativeUrl = String.format("datatables/transaction_details/%d", conversionAccountAmsId);
+		String camt053RelativeUrl = "datatables/transaction_details/$.resourceId";
 		
 		TransactionDetails td = new TransactionDetails(
-				"$.resourceId",
 				internalCorrelationId,
 				camt053Entry,
 				transactionGroupId,
@@ -279,7 +272,6 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			batchItemBuilder.add(items, conversionAccountWithdrawRelativeUrl, bodyItem, false);
 			
 			td = new TransactionDetails(
-					"$.resourceId",
 					internalCorrelationId,
 					camt053Entry,
 					transactionGroupId,
@@ -306,10 +298,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 		
 		batchItemBuilder.add(items, disposalAccountDepositRelativeUrl, bodyItem, false);
 		
-		camt053RelativeUrl = String.format("datatables/transaction_details/%d", disposalAccountAmsId);
-		
 		td = new TransactionDetails(
-				"$.resourceId",
 				internalCorrelationId,
 				camt053Entry,
 				transactionGroupId,
@@ -385,10 +374,9 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			String internalCorrelationId = String.format("%s_%s_%s", originalDebtorBic, originalCreationDate, originalEndToEndId);
 			String camt053 = objectMapper.writeValueAsString(statement);
 			
-			String camt053RelativeUrl = String.format("datatables/transaction_details/%d", conversionAccountAmsId);
+			String camt053RelativeUrl = "datatables/transaction_details/$.resourceId";
 			
 			TransactionDetails td = new TransactionDetails(
-					"$.resourceId",
 					internalCorrelationId,
 					camt053,
 					internalCorrelationId,
@@ -414,10 +402,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			
 			batchItemBuilder.add(items, disposalAccountDepositRelativeUrl, bodyItem, false);
 			
-			camt053RelativeUrl = String.format("datatables/transaction_details/%d", disposalAccountAmsId);
-			
 			td = new TransactionDetails(
-					"$.resourceId",
 					internalCorrelationId,
 					camt053,
 					internalCorrelationId,

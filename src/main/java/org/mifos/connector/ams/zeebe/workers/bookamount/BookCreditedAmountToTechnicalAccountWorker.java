@@ -109,10 +109,9 @@ public class BookCreditedAmountToTechnicalAccountWorker extends AbstractMoneyInO
     		ReportEntry10 convertedCamt053Entry = camt053Mapper.toCamt053Entry(pacs008);
     		String camt053Entry = objectMapper.writeValueAsString(convertedCamt053Entry);
     		
-    		String camt053RelativeUrl = String.format("datatables/transaction_details/%d", recallTechnicalAccountId);
+    		String camt053RelativeUrl = "datatables/transaction_details/$.resourceId";
     		
     		TransactionDetails td = new TransactionDetails(
-    				"$.resourceId",
     				internalCorrelationId,
     				camt053Entry,
     				transactionGroupId,

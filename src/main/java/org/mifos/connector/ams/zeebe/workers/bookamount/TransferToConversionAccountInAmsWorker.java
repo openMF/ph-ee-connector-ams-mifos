@@ -158,7 +158,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			ReportEntry10 convertedCamt053Entry = camt053Mapper.toCamt053Entry(pain001.getDocument());
 			String camt053Entry = objectMapper.writeValueAsString(convertedCamt053Entry);
 			
-			String camt053RelativeUrl = String.format("datatables/transaction_details/%d", disposalAccountAmsId);
+			String camt053RelativeUrl = "datatables/transaction_details/$.resourceId";
 			
 			addDetails(transactionGroupId, transactionCategoryPurposeCode,
 					internalCorrelationId, objectMapper, batchItemBuilder, items, camt053Entry, camt053RelativeUrl);
@@ -178,7 +178,6 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			logger.info("Depositing amount {} to conversion account {}", amount, conversionAccountAmsId);
 			
 			String conversionAccountDepositRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "deposit");
-			camt053RelativeUrl = String.format("datatables/transaction_details/%d", conversionAccountAmsId);
 			
 			depositAmount(amount, paymentScheme, transactionDate, objectMapper, paymentTypeConfig, batchItemBuilder, items,
 					conversionAccountDepositRelativeUrl);
@@ -287,7 +286,6 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			String camt053, 
 			String camt053RelativeUrl) throws JsonProcessingException {
 		TransactionDetails td = new TransactionDetails(
-				"$.resourceId",
 				internalCorrelationId,
 				camt053,
 				transactionGroupId,
@@ -362,10 +360,9 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 		
 			String camt053 = objectMapper.writeValueAsString(statement);
 			
-			String camt053RelativeUrl = String.format("datatables/transaction_details/%d", disposalAccountAmsId);
+			String camt053RelativeUrl = "datatables/transaction_details/$.resourceId";
 			
 			TransactionDetails td = new TransactionDetails(
-					"$.resourceId",
 					internalCorrelationId,
 					camt053,
 					internalCorrelationId,
@@ -379,8 +376,6 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			
 			depositAmount(amount, paymentScheme, transactionDate, objectMapper, paymentTypeConfig, batchItemBuilder, items,
 					conversionAccountDepositRelativeUrl);
-			
-			camt053RelativeUrl = String.format("datatables/transaction_details/%d", conversionAccountAmsId);
 			
 			camt053Body = objectMapper.writeValueAsString(td);
 			batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);

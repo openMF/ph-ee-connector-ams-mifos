@@ -103,10 +103,9 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 		ReportEntry10 convertedcamt053Entry = camt053Mapper.toCamt053Entry(pain001.getDocument());
 		String camt053Entry = objectMapper.writeValueAsString(convertedcamt053Entry);
 		
-		String camt053RelativeUrl = String.format("datatables/transaction_details/%d", conversionAccountAmsId);
+		String camt053RelativeUrl = "datatables/transaction_details/$.resourceId";
 		
 		TransactionDetails td = new TransactionDetails(
-				"$.resourceId",
 				internalCorrelationId,
 				camt053Entry,
 				transactionGroupId,
@@ -135,7 +134,6 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 			batchItemBuilder.add(items, conversionAccountWithdrawalRelativeUrl, bodyItem, false);
 		
 			td = new TransactionDetails(
-					"$.resourceId",
 					internalCorrelationId,
 					camt053Entry,
 					transactionGroupId,
@@ -215,10 +213,9 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 			
 			String camt053 = objectMapper.writeValueAsString(statement);
 			
-			String camt053RelativeUrl = String.format("datatables/transaction_details/%d", conversionAccountAmsId);
+			String camt053RelativeUrl = "datatables/transaction_details/$.resourceId";
 			
 			TransactionDetails td = new TransactionDetails(
-					"$.resourceId",
 					internalCorrelationId,
 					camt053,
 					internalCorrelationId,

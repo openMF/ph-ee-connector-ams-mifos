@@ -89,10 +89,9 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 			ReportEntry10 convertedcamt053 = camt053Mapper.toCamt053Entry(pain001.getDocument());
 			String camt053Entry = objectMapper.writeValueAsString(convertedcamt053);
 			
-			String camt053RelativeUrl = String.format("datatables/transaction_details/%d", disposalAccountAmsId);
+			String camt053RelativeUrl = "datatables/transaction_details/$.resourceId";
 			
 			TransactionDetails td = new TransactionDetails(
-					"$.resourceId",
 					internalCorrelationId,
 					camt053Entry,
 					transactionGroupId,
@@ -120,10 +119,7 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 			
 			batchItemBuilder.add(items, conversionAccountDepositRelativeUrl, bodyItem, false);
 			
-			camt053RelativeUrl = String.format("datatables/transaction_details/%d", conversionAccountAmsId);
-			
 			td = new TransactionDetails(
-					"$.resourceId",
 					internalCorrelationId,
 					camt053Entry,
 					transactionGroupId,
@@ -151,10 +147,7 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 			
 			batchItemBuilder.add(items, conversionAccountWithdrawRelativeUrl, bodyItem, false);
 			
-			camt053RelativeUrl = String.format("datatables/transaction_details/%d", conversionAccountAmsId);
-			
 			td = new TransactionDetails(
-					"$.resourceId",
 					internalCorrelationId,
 					camt053Entry,
 					transactionGroupId,
