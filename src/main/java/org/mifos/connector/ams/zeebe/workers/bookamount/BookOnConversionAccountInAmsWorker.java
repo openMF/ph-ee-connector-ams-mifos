@@ -67,7 +67,8 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 			@Variable String transactionFeeCategoryPurposeCode,
 			@Variable BigDecimal amount,
 			@Variable BigDecimal transactionFeeAmount,
-			@Variable String tenantIdentifier) throws Exception {
+			@Variable String tenantIdentifier,
+			@Variable String debtorIban) throws Exception {
 		
 		transactionDate = transactionDate.replaceAll("-", "");
 		
@@ -108,6 +109,10 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 		TransactionDetails td = new TransactionDetails(
 				internalCorrelationId,
 				camt053Entry,
+				debtorIban,
+				transactionDate,
+				FORMAT,
+				locale,
 				transactionGroupId,
 				transactionCategoryPurposeCode);
 		
@@ -136,6 +141,10 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 			td = new TransactionDetails(
 					internalCorrelationId,
 					camt053Entry,
+					debtorIban,
+					transactionDate,
+					FORMAT,
+					locale,
 					transactionGroupId,
 					transactionFeeCategoryPurposeCode);
 			camt053Body = objectMapper.writeValueAsString(td);
@@ -157,8 +166,8 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 			@Variable String tenantIdentifier,
 			@Variable String paymentScheme,
 			@Variable String transactionCategoryPurposeCode,
-			@Variable String camt056
-			) {
+			@Variable String camt056,
+			@Variable String debtorIban) {
 		try {
 			logger.info("Withdrawing amount {} from conversion account {} of tenant {}", amount, conversionAccountAmsId, tenantIdentifier);
 			
@@ -218,6 +227,10 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 			TransactionDetails td = new TransactionDetails(
 					internalCorrelationId,
 					camt053,
+					debtorIban,
+					transactionDate,
+					FORMAT,
+					locale,
 					internalCorrelationId,
 					transactionCategoryPurposeCode);
 			

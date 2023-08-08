@@ -114,6 +114,10 @@ public class BookCreditedAmountFromTechnicalAccountWorker extends AbstractMoneyI
     		TransactionDetails td = new TransactionDetails(
     				internalCorrelationId,
     				camt053Entry,
+    				null,
+    				transactionDate,
+    				FORMAT,
+    				locale,
     				transactionGroupId,
     				transactionCategoryPurposeCode);
     		

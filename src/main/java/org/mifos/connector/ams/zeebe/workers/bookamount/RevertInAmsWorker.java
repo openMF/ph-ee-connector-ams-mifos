@@ -68,7 +68,8 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			@Variable BigDecimal amount,
 			@Variable String transactionFeeCategoryPurposeCode,
 			@Variable BigDecimal transactionFeeAmount,
-			@Variable String tenantIdentifier) throws Exception {
+			@Variable String tenantIdentifier,
+			@Variable String debtorIban) throws Exception {
 		MDC.put("internalCorrelationId", internalCorrelationId);
 		
 		Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001 = objectMapper.readValue(originalPain001, Pain00100110CustomerCreditTransferInitiationV10MessageSchema.class);
@@ -104,6 +105,10 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 		TransactionDetails td = new TransactionDetails(
 				internalCorrelationId,
 				camt053Entry,
+				debtorIban,
+				transactionDate,
+				FORMAT,
+				locale,
 				transactionGroupId,
 				transactionCategoryPurposeCode);
 		
@@ -131,6 +136,10 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			td = new TransactionDetails(
 					internalCorrelationId,
 					camt053Entry,
+					debtorIban,
+					transactionDate,
+					FORMAT,
+					locale,
 					transactionGroupId,
 					transactionFeeCategoryPurposeCode);
 			camt053Body = objectMapper.writeValueAsString(td);
@@ -158,6 +167,10 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 		td = new TransactionDetails(
 				internalCorrelationId,
 				camt053Entry,
+				debtorIban,
+				transactionDate,
+				FORMAT,
+				locale,
 				transactionGroupId,
 				transactionCategoryPurposeCode);
 		
@@ -185,6 +198,10 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			td = new TransactionDetails(
 					internalCorrelationId,
 					camt053Entry,
+					debtorIban,
+					transactionDate,
+					FORMAT,
+					locale,
 					transactionGroupId,
 					transactionFeeCategoryPurposeCode);
 			camt053Body = objectMapper.writeValueAsString(td);
@@ -209,7 +226,8 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			@Variable BigDecimal amount,
 			@Variable String transactionFeeCategoryPurposeCode,
 			@Variable BigDecimal transactionFeeAmount,
-			@Variable String tenantIdentifier) throws Exception {
+			@Variable String tenantIdentifier,
+			@Variable String debtorIban) throws Exception {
 		MDC.put("internalCorrelationId", internalCorrelationId);
 		
 		String transactionDate = LocalDate.now().format(DateTimeFormatter.ofPattern(FORMAT));
@@ -247,6 +265,10 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 		TransactionDetails td = new TransactionDetails(
 				internalCorrelationId,
 				camt053Entry,
+				debtorIban,
+				transactionDate,
+				FORMAT,
+				locale,
 				transactionGroupId,
 				transactionCategoryPurposeCode);
 		
@@ -274,6 +296,10 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			td = new TransactionDetails(
 					internalCorrelationId,
 					camt053Entry,
+					debtorIban,
+					transactionDate,
+					FORMAT,
+					locale,
 					transactionGroupId,
 					transactionFeeCategoryPurposeCode);
 			camt053Body = objectMapper.writeValueAsString(td);
@@ -301,6 +327,10 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 		td = new TransactionDetails(
 				internalCorrelationId,
 				camt053Entry,
+				debtorIban,
+				transactionDate,
+				FORMAT,
+				locale,
 				transactionGroupId,
 				transactionCategoryPurposeCode);
 		
@@ -322,7 +352,8 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			@Variable String tenantIdentifier,
 			@Variable String paymentScheme,
 			@Variable String transactionCategoryPurposeCode,
-			@Variable String camt056) {
+			@Variable String camt056,
+			@Variable String debtorIban) {
 		try {
 			batchItemBuilder.tenantId(tenantIdentifier);
 			
@@ -379,6 +410,10 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			TransactionDetails td = new TransactionDetails(
 					internalCorrelationId,
 					camt053,
+					debtorIban,
+					transactionDate,
+					FORMAT,
+					locale,
 					internalCorrelationId,
 					transactionCategoryPurposeCode);
 			
@@ -405,6 +440,10 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			td = new TransactionDetails(
 					internalCorrelationId,
 					camt053,
+					debtorIban,
+					transactionDate,
+					FORMAT,
+					locale,
 					internalCorrelationId,
 					transactionCategoryPurposeCode);
 			

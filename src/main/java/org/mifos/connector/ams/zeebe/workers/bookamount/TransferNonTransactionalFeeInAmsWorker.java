@@ -57,7 +57,8 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 			@Variable String internalCorrelationId,
 			@Variable String transactionGroupId,
 			@Variable String categoryPurpose,
-			@Variable String originalPain001) throws Exception {
+			@Variable String originalPain001,
+			@Variable String debtorIban) throws Exception {
 		String disposalAccountWithdrawRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), disposalAccountAmsId, "withdrawal");
 		Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
 		logger.debug("Got payment scheme {}", paymentScheme);
@@ -94,6 +95,10 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 			TransactionDetails td = new TransactionDetails(
 					internalCorrelationId,
 					camt053Entry,
+					debtorIban,
+					transactionDate,
+					FORMAT,
+					locale,
 					transactionGroupId,
 					categoryPurpose);
 			
@@ -122,6 +127,10 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 			td = new TransactionDetails(
 					internalCorrelationId,
 					camt053Entry,
+					debtorIban,
+					transactionDate,
+					FORMAT,
+					locale,
 					transactionGroupId,
 					categoryPurpose);
 			
@@ -150,6 +159,10 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 			td = new TransactionDetails(
 					internalCorrelationId,
 					camt053Entry,
+					debtorIban,
+					transactionDate,
+					FORMAT,
+					locale,
 					transactionGroupId,
 					categoryPurpose);
 			

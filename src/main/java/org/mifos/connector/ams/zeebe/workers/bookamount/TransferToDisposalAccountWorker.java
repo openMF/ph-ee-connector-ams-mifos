@@ -56,7 +56,8 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 			@Variable BigDecimal amount,
 			@Variable Integer conversionAccountAmsId,
 			@Variable Integer disposalAccountAmsId,
-			@Variable String tenantIdentifier) throws Exception {
+			@Variable String tenantIdentifier,
+			@Variable String creditorIban) throws Exception {
 		try {
 			iso.std.iso._20022.tech.xsd.pacs_008_001.Document pacs008 = jaxbUtils.unmarshalPacs008(originalPacs008);
 		
@@ -95,6 +96,10 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 			TransactionDetails td = new TransactionDetails(
 					internalCorrelationId,
 					camt053Entry,
+					creditorIban,
+					transactionDate,
+					FORMAT,
+					locale,
 					transactionGroupId,
 					transactionCategoryPurposeCode);
 			
@@ -121,6 +126,10 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 			td = new TransactionDetails(
 					internalCorrelationId,
 					camt053Entry,
+					creditorIban,
+					transactionDate,
+					FORMAT,
+					locale,
 					transactionGroupId,
 					transactionCategoryPurposeCode);
 			
@@ -152,7 +161,8 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 			@Variable Integer conversionAccountAmsId,
 			@Variable Integer disposalAccountAmsId,
 			@Variable String tenantIdentifier,
-			@Variable String pacs004) throws Exception {
+			@Variable String pacs004,
+			@Variable String creditorIban) throws Exception {
 		try {
 			iso.std.iso._20022.tech.xsd.pacs_008_001.Document pacs008 = jaxbUtils.unmarshalPacs008(originalPacs008);
 		
@@ -191,6 +201,10 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 			TransactionDetails td = new TransactionDetails(
 					internalCorrelationId,
 					camt053Entry,
+					creditorIban,
+					transactionDate,
+					FORMAT,
+					locale,
 					transactionGroupId,
 					transactionCategoryPurposeCode);
 			
@@ -217,6 +231,10 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 			td = new TransactionDetails(
 					internalCorrelationId,
 					camt053Entry,
+					creditorIban,
+					transactionDate,
+					FORMAT,
+					locale,
 					transactionGroupId,
 					transactionCategoryPurposeCode);
 			

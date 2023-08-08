@@ -63,7 +63,9 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 			@Variable String transactionGroupId,
 			@Variable String transactionCategoryPurposeCode,
 			@Variable String transactionFeeCategoryPurposeCode,
-			@Variable String transactionFeeInternalCorrelationId) {
+			@Variable String transactionFeeInternalCorrelationId,
+			@Variable String creditorIban,
+			@Variable String debtorIban) {
 		try {
 			
 			logger.debug("Incoming pain.001: {}", originalPain001);
@@ -102,6 +104,10 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
     		TransactionDetails td = new TransactionDetails(
     				internalCorrelationId,
     				camt053Entry,
+    				debtorIban,
+    				interbankSettlementDate,
+    				FORMAT,
+    				locale,
     				transactionGroupId,
     				transactionCategoryPurposeCode);
     		
@@ -131,6 +137,10 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 	    		td = new TransactionDetails(
 	    				transactionFeeInternalCorrelationId,
 	    				camt053Entry,
+	    				debtorIban,
+	    				interbankSettlementDate,
+	    				FORMAT,
+	    				locale,
 	    				transactionGroupId,
 	    				transactionFeeCategoryPurposeCode);
 	    		
@@ -158,6 +168,10 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 	    		td = new TransactionDetails(
 	    				transactionFeeInternalCorrelationId,
 	    				camt053Entry,
+	    				creditorIban,
+	    				interbankSettlementDate,
+	    				FORMAT,
+	    				locale,
 	    				transactionGroupId,
 	    				transactionFeeCategoryPurposeCode);
 	    		
@@ -187,6 +201,10 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
     		td = new TransactionDetails(
     				transactionFeeInternalCorrelationId,
     				camt053Entry,
+    				creditorIban,
+    				interbankSettlementDate,
+    				FORMAT,
+    				locale,
     				transactionGroupId,
     				transactionCategoryPurposeCode);
     		
@@ -217,6 +235,10 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 				td = new TransactionDetails(
 	    				transactionFeeInternalCorrelationId,
 	    				camt053Entry,
+	    				debtorIban,
+	    				interbankSettlementDate,
+	    				FORMAT,
+	    				locale,
 	    				transactionGroupId,
 	    				transactionFeeCategoryPurposeCode);
 	    		
