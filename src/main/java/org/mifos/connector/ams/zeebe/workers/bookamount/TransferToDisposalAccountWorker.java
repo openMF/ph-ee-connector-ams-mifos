@@ -290,7 +290,8 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 												  @Variable BigDecimal amount,
 												  @Variable Integer conversionAccountAmsId,
 												  @Variable Integer disposalAccountAmsId,
-												  @Variable String tenantIdentifier) throws Exception {
+												  @Variable String tenantIdentifier,
+												  @Variable String creditorIban) throws Exception {
 		try {
 			MDC.put("internalCorrelationId", internalCorrelationId);
 			logger.info("transfer to disposal account in return (pacs.004) {} started for {} on {} ", internalCorrelationId, paymentScheme, tenantIdentifier);
@@ -336,12 +337,15 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 
 			String camt053Entry = objectMapper.writeValueAsString(convertedCamt053Entry);
 
-			String camt053RelativeUrl = String.format("datatables/transaction_details/%d", conversionAccountAmsId);
+			String camt053RelativeUrl = "datatables/transaction_details/$.resourceId";
 
 			TransactionDetails td = new TransactionDetails(
-					"$.resourceId",
 					internalCorrelationId,
 					camt053Entry,
+					creditorIban,
+					transactionDate,
+					FORMAT,
+					locale,
 					transactionGroupId,
 					transactionCategoryPurposeCode);
 
@@ -365,12 +369,15 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 
 			batchItemBuilder.add(items, disposalAccountDepositRelativeUrl, bodyItem, false);
 
-			camt053RelativeUrl = String.format("datatables/transaction_details/%d", disposalAccountAmsId);
+			camt053RelativeUrl = "datatables/transaction_details/$.resourceId";
 
 			td = new TransactionDetails(
-					"$.resourceId",
 					internalCorrelationId,
 					camt053Entry,
+					creditorIban,
+					transactionDate,
+					FORMAT,
+					locale,
 					transactionGroupId,
 					transactionCategoryPurposeCode);
 
