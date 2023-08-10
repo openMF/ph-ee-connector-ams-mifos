@@ -41,6 +41,18 @@ public class AmsCommonService {
     @Value("${ams.local.loan.repayment-path}")
     private String amsLoanRepaymentPath;
 
+    @Value("${mock-service.run-on-mock}")
+    private Boolean runOnMock;
+
+    @Value("${mock-service.local.loan.repayment-path}")
+    private String mockServiceLoanRepaymentPath;
+
+    @Value("${mock-service.local.interop.transfers-path}")
+    private String mockServiceInteropTransfersPath;
+
+    @Value("${mock-service.local.interop.parties-path}")
+    private String mockServiceInteropPartiesPath;
+
     @Autowired
     private TenantService tenantService;
 
@@ -67,7 +79,12 @@ public class AmsCommonService {
         headers.put(HTTP_PATH, amsInteropPartiesPath.replace("{idType}", e.getProperty(PARTY_ID_TYPE, String.class))
                 .replace("{idValue}", e.getProperty(PARTY_ID, String.class)));
         headers.putAll(tenantService.getHeaders(e.getProperty(TENANT_ID, String.class)));
-        cxfrsUtil.sendInOut("cxfrs:bean:ams.local.interop", e, headers, null);
+        if(runOnMock){
+            headers.put(HTTP_PATH, mockServiceInteropPartiesPath);
+            cxfrsUtil.sendInOut("cxfrs:bean:mock-service.local.interop", e, headers, null);
+        }else {
+            cxfrsUtil.sendInOut("cxfrs:bean:ams.local.interop", e, headers, null);
+        }
     }
 
     public void sendTransfer(Exchange e) {
@@ -81,7 +98,13 @@ public class AmsCommonService {
         headers.put(CxfConstants.CAMEL_CXF_RS_QUERY_MAP, queryMap);
         headers.put("Content-Type", "application/json");
         headers.putAll(tenantService.getHeaders(e.getProperty(TENANT_ID, String.class)));
-        cxfrsUtil.sendInOut("cxfrs:bean:ams.local.interop", e, headers, e.getIn().getBody());
+        if(runOnMock){
+            logger.info("-------------- Calling Mock Interop Transfers APIs --------------");
+            headers.put(HTTP_PATH, mockServiceInteropTransfersPath);
+            cxfrsUtil.sendInOut("cxfrs:bean:mock-service.local.interop", e, headers, e.getIn().getBody().toString());
+        }else {
+            cxfrsUtil.sendInOut("cxfrs:bean:ams.local.interop", e, headers, e.getIn().getBody());
+        }
     }
     public void repayLoan(Exchange e) {
         Map<String, Object> headers = new HashMap<>();
@@ -91,7 +114,13 @@ public class AmsCommonService {
         logger.debug("Loan Repayment Body: {}", e.getIn().getBody());
         headers.put("Content-Type", APPLICATION_TYPE);
         headers.putAll(tenantService.getHeaders(e.getProperty(TENANT_ID, String.class)));
-        cxfrsUtil.sendInOut("cxfrs:bean:ams.local.loan", e, headers, e.getIn().getBody());
+        if(runOnMock){
+            logger.info("-------------- Calling Mock Loan repayment APIs --------------");
+            headers.put(HTTP_PATH, mockServiceLoanRepaymentPath);
+            cxfrsUtil.sendInOut("cxfrs:bean:mock-service.local.loan", e, headers, e.getIn().getBody().toString());
+        }else {
+            cxfrsUtil.sendInOut("cxfrs:bean:ams.local.loan", e, headers, e.getIn().getBody());
+        }
     }
 
 
@@ -103,7 +132,11 @@ public class AmsCommonService {
                 .replace("{idValue}", e.getProperty(PARTY_ID, String.class)));
         headers.put("Content-Type", "application/json");
         headers.putAll(tenantService.getHeaders(e.getProperty(TENANT_ID, String.class)));
-        cxfrsUtil.sendInOut("cxfrs:bean:ams.local.interop", e, headers, e.getIn().getBody());
+        if(runOnMock){
+            cxfrsUtil.sendInOut("cxfrs:bean:mock-service.local.interop", e, headers, e.getIn().getBody());
+        }else{
+            cxfrsUtil.sendInOut("cxfrs:bean:ams.local.interop", e, headers, e.getIn().getBody());
+        }
     }
 
     public void removeInteropIdentifier(Exchange e) {

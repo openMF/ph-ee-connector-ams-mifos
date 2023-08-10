@@ -1,12 +1,12 @@
 camel:
-  server-port: 5000
+  server-port: 5008
   springboot:
     main-run-controller: true
   dataformat:
     json-jackson:
       auto-discover-object-mapper: true
 
-dfspids: "DFSPID"
+dfspids: "gorilla"
 
 zeebe:
   client:
@@ -30,3 +30,22 @@ ams:
 
 interop-party-registration:
   enabled: false
+
+spring:
+  profiles:
+    active: "bb,fin12"
+  jackson:
+    date-format: org.mifos.connector.fineractstub.RFC3339DateFormat
+    serialization:
+      WRITE_DATES_AS_TIMESTAMPS: false
+
+
+springfox:
+  documentation:
+    open-api:
+      v3:
+        path: /api-docs
+server:
+  servlet:
+    contextPath: /fineract
+  port: 7070
