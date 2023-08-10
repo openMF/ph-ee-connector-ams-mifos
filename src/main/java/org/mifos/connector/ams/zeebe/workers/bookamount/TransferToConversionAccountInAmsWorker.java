@@ -27,6 +27,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.networknt.schema.ValidationMessage;
@@ -92,6 +93,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 		logger.debug("Debtor exchange worker starting");
 		MDC.put("internalCorrelationId", internalCorrelationId);
 		try {
+			objectMapper.setSerializationInclusion(Include.NON_NULL);
 			Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001 = objectMapper.readValue(originalPain001, Pain00100110CustomerCreditTransferInitiationV10MessageSchema.class);
 			
 			try {
@@ -158,10 +160,10 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			ReportEntry10 convertedCamt053Entry = camt053Mapper.toCamt053Entry(pain001.getDocument());
 			String camt053Entry = objectMapper.writeValueAsString(convertedCamt053Entry);
 			
-			String camt053RelativeUrl = String.format("datatables/transaction_details/%d", disposalAccountAmsId);
+			String camt053RelativeUrl = "datatables/transaction_details/$.resourceId";
 			
 			addDetails(transactionGroupId, transactionCategoryPurposeCode,
-					internalCorrelationId, objectMapper, batchItemBuilder, items, camt053Entry, camt053RelativeUrl);
+					internalCorrelationId, objectMapper, batchItemBuilder, items, camt053Entry, camt053RelativeUrl, iban, transactionDate);
 
 			if (hasFee) {
 				logger.debug("Withdrawing fee {} from disposal account {}", transactionFeeAmount, disposalAccountAmsId);
@@ -172,13 +174,12 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 					camt053Entry = objectMapper.writeValueAsString(convertedCamt053Entry);
 					
 					addDetails(transactionGroupId, transactionFeeCategoryPurposeCode, internalCorrelationId, objectMapper,
-							batchItemBuilder, items, camt053Entry, camt053RelativeUrl);
+							batchItemBuilder, items, camt053Entry, camt053RelativeUrl, iban, transactionDate);
 			}
 			
 			logger.info("Depositing amount {} to conversion account {}", amount, conversionAccountAmsId);
 			
 			String conversionAccountDepositRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "deposit");
-			camt053RelativeUrl = String.format("datatables/transaction_details/%d", conversionAccountAmsId);
 			
 			depositAmount(amount, paymentScheme, transactionDate, objectMapper, paymentTypeConfig, batchItemBuilder, items,
 					conversionAccountDepositRelativeUrl);
@@ -187,7 +188,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			camt053Entry = objectMapper.writeValueAsString(convertedCamt053Entry);
 			
 			addDetails(transactionGroupId, transactionCategoryPurposeCode, internalCorrelationId, objectMapper, batchItemBuilder, items,
-					camt053Entry, camt053RelativeUrl);
+					camt053Entry, camt053RelativeUrl, iban, transactionDate);
 		
 			
 			if (hasFee) {
@@ -199,7 +200,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 				camt053Entry = objectMapper.writeValueAsString(convertedCamt053Entry);
 				
 				addDetails(transactionGroupId, transactionFeeCategoryPurposeCode, internalCorrelationId, objectMapper, batchItemBuilder,
-						items, camt053Entry, camt053RelativeUrl);
+						items, camt053Entry, camt053RelativeUrl, iban, transactionDate);
 			}
 			
 			doBatch(items, tenantIdentifier, internalCorrelationId);
@@ -285,11 +286,16 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			BatchItemBuilder batchItemBuilder, 
 			List<TransactionItem> items,
 			String camt053, 
-			String camt053RelativeUrl) throws JsonProcessingException {
+			String camt053RelativeUrl,
+			String accountIban,
+			String transactionDate) throws JsonProcessingException {
 		TransactionDetails td = new TransactionDetails(
-				"$.resourceId",
 				internalCorrelationId,
 				camt053,
+				accountIban,
+				transactionDate,
+				FORMAT,
+				locale,
 				transactionGroupId,
 				transactionFeeCategoryPurposeCode);
 		
@@ -306,7 +312,8 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			@Variable String tenantIdentifier,
 			@Variable String paymentScheme,
 			@Variable String transactionCategoryPurposeCode,
-			@Variable String camt056) {
+			@Variable String camt056,
+			@Variable String iban) {
 		
 		try {
 			String transactionDate = LocalDate.now().format(PATTERN);
@@ -327,6 +334,8 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 					"",
 					FORMAT,
 					locale);
+			
+			objectMapper.setSerializationInclusion(Include.NON_NULL);
 			
 			String bodyItem = objectMapper.writeValueAsString(body);
 			
@@ -362,12 +371,15 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 		
 			String camt053 = objectMapper.writeValueAsString(statement);
 			
-			String camt053RelativeUrl = String.format("datatables/transaction_details/%d", disposalAccountAmsId);
+			String camt053RelativeUrl = "datatables/transaction_details/$.resourceId";
 			
 			TransactionDetails td = new TransactionDetails(
-					"$.resourceId",
 					internalCorrelationId,
 					camt053,
+					iban,
+					transactionDate,
+					FORMAT,
+					locale,
 					internalCorrelationId,
 					transactionCategoryPurposeCode);
 			
@@ -379,8 +391,6 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			
 			depositAmount(amount, paymentScheme, transactionDate, objectMapper, paymentTypeConfig, batchItemBuilder, items,
 					conversionAccountDepositRelativeUrl);
-			
-			camt053RelativeUrl = String.format("datatables/transaction_details/%d", conversionAccountAmsId);
 			
 			camt053Body = objectMapper.writeValueAsString(td);
 			batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);

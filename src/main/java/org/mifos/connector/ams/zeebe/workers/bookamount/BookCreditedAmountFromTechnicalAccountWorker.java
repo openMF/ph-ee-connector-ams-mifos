@@ -18,6 +18,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -75,6 +76,8 @@ public class BookCreditedAmountFromTechnicalAccountWorker extends AbstractMoneyI
 		try {
             ObjectMapper objectMapper = new ObjectMapper();
             
+            objectMapper.setSerializationInclusion(Include.NON_NULL);
+            
             List<TransactionItem> items = new ArrayList<>();
 
             iso.std.iso._20022.tech.xsd.pacs_008_001.Document pacs008 = jaxbUtils.unmarshalPacs008(originalPacs008);
@@ -109,12 +112,15 @@ public class BookCreditedAmountFromTechnicalAccountWorker extends AbstractMoneyI
     		ReportEntry10 convertedCamt053Entry = camt053Mapper.toCamt053Entry(pacs008);
     		String camt053Entry = objectMapper.writeValueAsString(convertedCamt053Entry);
     		
-    		String camt053RelativeUrl = String.format("datatables/transaction_details/%d", recallTechnicalAccountId);
+    		String camt053RelativeUrl = "datatables/transaction_details/$.resourceId";
     		
     		TransactionDetails td = new TransactionDetails(
-    				"$.resourceId",
     				internalCorrelationId,
     				camt053Entry,
+    				null,
+    				transactionDate,
+    				FORMAT,
+    				locale,
     				transactionGroupId,
     				transactionCategoryPurposeCode);
     		

@@ -19,6 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.camunda.zeebe.client.api.response.ActivatedJob;
@@ -57,12 +58,14 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 			@Variable String internalCorrelationId,
 			@Variable String transactionGroupId,
 			@Variable String categoryPurpose,
-			@Variable String originalPain001) throws Exception {
+			@Variable String originalPain001,
+			@Variable String debtorIban) throws Exception {
 		String disposalAccountWithdrawRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), disposalAccountAmsId, "withdrawal");
 		Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
 		logger.debug("Got payment scheme {}", paymentScheme);
 		String transactionDate = LocalDate.now().format(PATTERN);
 		ObjectMapper objectMapper = new ObjectMapper();
+		objectMapper.setSerializationInclusion(Include.NON_NULL);
 		batchItemBuilder.tenantId(tenantIdentifier);
 		logger.debug("Got category purpose code {}", categoryPurpose);
 		
@@ -89,12 +92,15 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 			ReportEntry10 convertedcamt053 = camt053Mapper.toCamt053Entry(pain001.getDocument());
 			String camt053Entry = objectMapper.writeValueAsString(convertedcamt053);
 			
-			String camt053RelativeUrl = String.format("datatables/transaction_details/%d", disposalAccountAmsId);
+			String camt053RelativeUrl = "datatables/transaction_details/$.resourceId";
 			
 			TransactionDetails td = new TransactionDetails(
-					"$.resourceId",
 					internalCorrelationId,
 					camt053Entry,
+					debtorIban,
+					transactionDate,
+					FORMAT,
+					locale,
 					transactionGroupId,
 					categoryPurpose);
 			
@@ -120,12 +126,13 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 			
 			batchItemBuilder.add(items, conversionAccountDepositRelativeUrl, bodyItem, false);
 			
-			camt053RelativeUrl = String.format("datatables/transaction_details/%d", conversionAccountAmsId);
-			
 			td = new TransactionDetails(
-					"$.resourceId",
 					internalCorrelationId,
 					camt053Entry,
+					debtorIban,
+					transactionDate,
+					FORMAT,
+					locale,
 					transactionGroupId,
 					categoryPurpose);
 			
@@ -151,12 +158,13 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 			
 			batchItemBuilder.add(items, conversionAccountWithdrawRelativeUrl, bodyItem, false);
 			
-			camt053RelativeUrl = String.format("datatables/transaction_details/%d", conversionAccountAmsId);
-			
 			td = new TransactionDetails(
-					"$.resourceId",
 					internalCorrelationId,
 					camt053Entry,
+					debtorIban,
+					transactionDate,
+					FORMAT,
+					locale,
 					transactionGroupId,
 					categoryPurpose);
 			

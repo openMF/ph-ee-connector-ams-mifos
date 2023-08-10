@@ -19,6 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.camunda.zeebe.client.api.response.ActivatedJob;
@@ -58,7 +59,8 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 			@Variable BigDecimal amount,
 			@Variable Integer conversionAccountAmsId,
 			@Variable Integer disposalAccountAmsId,
-			@Variable String tenantIdentifier) throws Exception {
+			@Variable String tenantIdentifier,
+			@Variable String creditorIban) throws Exception {
 		try {
 			MDC.put("internalCorrelationId", internalCorrelationId);
 			logger.info("transfer to disposal account in payment (pacs.008) {} started for {} on {} ", internalCorrelationId, paymentScheme, tenantIdentifier);
@@ -76,6 +78,8 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 			iso.std.iso._20022.tech.xsd.pacs_008_001.Document pacs008 = jaxbUtils.unmarshalPacs008(originalPacs008);
 
 			ObjectMapper objectMapper = new ObjectMapper();
+			
+			objectMapper.setSerializationInclusion(Include.NON_NULL);
 			
 			batchItemBuilder.tenantId(tenantIdentifier);
 			
@@ -101,12 +105,15 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 			ReportEntry10 convertedCamt053Entry = camt053Mapper.toCamt053Entry(pacs008);
 			String camt053Entry = objectMapper.writeValueAsString(convertedCamt053Entry);
 			
-			String camt053RelativeUrl = String.format("datatables/transaction_details/%d", conversionAccountAmsId);
+			String camt053RelativeUrl = "datatables/transaction_details/$.resourceId";
 			
 			TransactionDetails td = new TransactionDetails(
-					"$.resourceId",
 					internalCorrelationId,
 					camt053Entry,
+					creditorIban,
+					transactionDate,
+					FORMAT,
+					locale,
 					transactionGroupId,
 					transactionCategoryPurposeCode);
 			
@@ -130,12 +137,13 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 			
 			batchItemBuilder.add(items, disposalAccountDepositRelativeUrl, bodyItem, false);
 			
-			camt053RelativeUrl = String.format("datatables/transaction_details/%d", disposalAccountAmsId);
-			
 			td = new TransactionDetails(
-					"$.resourceId",
 					internalCorrelationId,
 					camt053Entry,
+					creditorIban,
+					transactionDate,
+					FORMAT,
+					locale,
 					transactionGroupId,
 					transactionCategoryPurposeCode);
 			
@@ -167,7 +175,8 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 			@Variable Integer conversionAccountAmsId,
 			@Variable Integer disposalAccountAmsId,
 			@Variable String tenantIdentifier,
-			@Variable String pacs004) throws Exception {
+			@Variable String pacs004,
+			@Variable String creditorIban) throws Exception {
 		try {
 			MDC.put("internalCorrelationId", internalCorrelationId);
 			logger.info("transfer to disposal account in recall (pacs.004) {} started for {} on {} ", internalCorrelationId, paymentScheme, tenantIdentifier);
@@ -185,6 +194,8 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 			iso.std.iso._20022.tech.xsd.pacs_008_001.Document pacs008 = jaxbUtils.unmarshalPacs008(originalPacs008);
 		
 			ObjectMapper objectMapper = new ObjectMapper();
+			
+			objectMapper.setSerializationInclusion(Include.NON_NULL);
 			
 			batchItemBuilder.tenantId(tenantIdentifier);
 			
@@ -210,12 +221,15 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 			ReportEntry10 convertedCamt053Entry = camt053Mapper.toCamt053Entry(pacs008);
 			String camt053Entry = objectMapper.writeValueAsString(convertedCamt053Entry);
 			
-			String camt053RelativeUrl = String.format("datatables/transaction_details/%d", conversionAccountAmsId);
+			String camt053RelativeUrl = "datatables/transaction_details/$.resourceId";
 			
 			TransactionDetails td = new TransactionDetails(
-					"$.resourceId",
 					internalCorrelationId,
 					camt053Entry,
+					creditorIban,
+					transactionDate,
+					FORMAT,
+					locale,
 					transactionGroupId,
 					transactionCategoryPurposeCode);
 			
@@ -239,12 +253,13 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 			
 			batchItemBuilder.add(items, disposalAccountDepositRelativeUrl, bodyItem, false);
 			
-			camt053RelativeUrl = String.format("datatables/transaction_details/%d", disposalAccountAmsId);
-			
 			td = new TransactionDetails(
-					"$.resourceId",
 					internalCorrelationId,
 					camt053Entry,
+					creditorIban,
+					transactionDate,
+					FORMAT,
+					locale,
 					transactionGroupId,
 					transactionCategoryPurposeCode);
 			
