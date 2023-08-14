@@ -18,6 +18,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import com.baasflow.events.EventService;
+import com.baasflow.events.EventStatus;
+import com.baasflow.events.EventType;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -46,6 +49,9 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 	
 	@Autowired
 	private BatchItemBuilder batchItemBuilder;
+	
+	@Autowired
+	private EventService eventService;
 	
 	private static final DateTimeFormatter PATTERN = DateTimeFormatter.ofPattern(FORMAT);
 
@@ -251,12 +257,51 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 			
 			doBatch(items, tenantIdentifier, internalCorrelationId);
 			
+			eventService.sendEvent(
+					"ams_connector", 
+					"transferTheAmountBetweenDisposalAccounts has finished", 
+					EventType.audit, 
+					EventStatus.success, 
+					null,
+					null,
+					Map.of(
+							"processInstanceKey", "" + activatedJob.getProcessInstanceKey(),
+							"internalCorrelationId", internalCorrelationId,
+							"transactionGroupId", transactionGroupId
+							));
+			
 			return Map.of("transactionDate", interbankSettlementDate);
 		} catch (JsonProcessingException e) {
 			logger.error(e.getMessage(), e);
+			
+			eventService.sendEvent(
+					"ams_connector", 
+					"transferTheAmountBetweenDisposalAccounts has finished", 
+					EventType.audit, 
+					EventStatus.failure, 
+					null,
+					null,
+					Map.of(
+							"processInstanceKey", "" + activatedJob.getProcessInstanceKey(),
+							"internalCorrelationId", internalCorrelationId,
+							"transactionGroupId", transactionGroupId
+							));
 			throw new ZeebeBpmnError(ERROR_FAILED_CREDIT_TRANSFER, e.getMessage());
 		} catch (Exception e) {
 			logger.error(e.getMessage(), e);
+			
+			eventService.sendEvent(
+					"ams_connector", 
+					"transferTheAmountBetweenDisposalAccounts has finished", 
+					EventType.audit, 
+					EventStatus.failure, 
+					null,
+					null,
+					Map.of(
+							"processInstanceKey", "" + activatedJob.getProcessInstanceKey(),
+							"internalCorrelationId", internalCorrelationId,
+							"transactionGroupId", transactionGroupId
+							));
 			throw new ZeebeBpmnError(activatedJob.getBpmnProcessId(), e.getMessage());
 		}
 	}

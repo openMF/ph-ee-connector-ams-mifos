@@ -5,6 +5,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.mifos.connector.ams.fineract.Config;
 import org.mifos.connector.ams.fineract.ConfigFactory;
@@ -19,6 +20,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import com.baasflow.events.EventService;
+import com.baasflow.events.EventStatus;
+import com.baasflow.events.EventType;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -51,6 +55,9 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 	
 	@Autowired
 	private BatchItemBuilder batchItemBuilder;
+	
+	@Autowired
+	private EventService eventService;
 	
 	private final ObjectMapper objectMapper = new ObjectMapper();
 	
@@ -212,6 +219,19 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 		
 		doBatch(items, tenantIdentifier, internalCorrelationId);
 		
+		eventService.sendEvent(
+				"ams_connector", 
+				"revertInAms has finished", 
+				EventType.audit, 
+				EventStatus.success, 
+				null,
+				null,
+				Map.of(
+						"processInstanceKey", "" + activatedJob.getProcessInstanceKey(),
+						"internalCorrelationId", internalCorrelationId,
+						"transactionGroupId", transactionGroupId
+						));
+		
 		MDC.remove("internalCorrelationId");
 	}
 	
@@ -344,6 +364,19 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 		
 		doBatch(items, tenantIdentifier, internalCorrelationId);
 		
+		eventService.sendEvent(
+				"ams_connector", 
+				"revertInAms has finished", 
+				EventType.audit, 
+				EventStatus.success, 
+				null,
+				null,
+				Map.of(
+						"processInstanceKey", "" + activatedJob.getProcessInstanceKey(),
+						"internalCorrelationId", internalCorrelationId,
+						"transactionGroupId", transactionGroupId
+						));
+		
 		MDC.remove("internalCorrelationId");
 	}
 	
@@ -458,8 +491,30 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 			
 			doBatch(items, tenantIdentifier, internalCorrelationId);
+			
+			eventService.sendEvent(
+					"ams_connector", 
+					"transferTheAmountBetweenDisposalAccounts has finished", 
+					EventType.audit, 
+					EventStatus.success, 
+					null,
+					null,
+					Map.of(
+							"processInstanceKey", "" + job.getProcessInstanceKey()
+							));
 		} catch (JAXBException | JsonProcessingException e) {
 			logger.error(e.getMessage(), e);
+			
+			eventService.sendEvent(
+					"ams_connector", 
+					"revertInAms has finished", 
+					EventType.audit, 
+					EventStatus.failure, 
+					null,
+					null,
+					Map.of(
+							"processInstanceKey", "" + job.getProcessInstanceKey()
+							));
 			throw new RuntimeException(e);
 		}
 	}

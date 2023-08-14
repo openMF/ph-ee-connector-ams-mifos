@@ -24,6 +24,7 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         
         <git-commit-id-maven-plugin.version>6.0.0</git-commit-id-maven-plugin.version>
+        <baasflow-events-spring-boot-starter.version>1.0.0-SNAPSHOT</baasflow-events-spring-boot-starter.version>
     </properties>
 
     <dependencyManagement>
@@ -68,6 +69,11 @@
             <artifactId>fineract-client</artifactId>
             <version>0.0.0.0-0e6f5eab9</version>
         </dependency>
+        <dependency>
+      		<groupId>com.baasflow.events</groupId>
+      		<artifactId>baasflow-events-spring-boot-starter</artifactId>
+      		<version>${baasflow-events-spring-boot-starter.version}</version>
+    	</dependency>
 
         <dependency>
             <groupId>io.camunda.spring</groupId>

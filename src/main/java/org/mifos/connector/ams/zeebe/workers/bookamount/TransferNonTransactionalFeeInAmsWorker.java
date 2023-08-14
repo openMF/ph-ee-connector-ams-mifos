@@ -19,6 +19,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import com.baasflow.events.EventService;
+import com.baasflow.events.EventStatus;
+import com.baasflow.events.EventType;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -44,6 +47,9 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 	
 	@Autowired
 	private BatchItemBuilder batchItemBuilder;
+	
+	@Autowired
+	private EventService eventService;
 	
 	private static final DateTimeFormatter PATTERN = DateTimeFormatter.ofPattern(FORMAT);
 
@@ -176,9 +182,35 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 			
 			doBatch(items, tenantIdentifier, internalCorrelationId);
 			
+			eventService.sendEvent(
+					"ams_connector", 
+					"transferNonTransactionalFeeInAms has finished", 
+					EventType.audit, 
+					EventStatus.success, 
+					null,
+					null,
+					Map.of(
+							"processInstanceKey", "" + activatedJob.getProcessInstanceKey(),
+							"internalCorrelationId", internalCorrelationId,
+							"transactionGroupId", transactionGroupId
+							));
+			
 			return Map.of("transactionDate", transactionDate);
 		} catch (Exception e) {
 			logger.error(e.getMessage(), e);
+			
+			eventService.sendEvent(
+					"ams_connector", 
+					"transferNonTransactionalFeeInAms has finished", 
+					EventType.audit, 
+					EventStatus.failure, 
+					null,
+					null,
+					Map.of(
+							"processInstanceKey", "" + activatedJob.getProcessInstanceKey(),
+							"internalCorrelationId", internalCorrelationId,
+							"transactionGroupId", transactionGroupId
+							));
 			throw new ZeebeBpmnError("Error_InsufficientFunds", e.getMessage());
 		} finally {
 			MDC.remove("internalCorrelationId");

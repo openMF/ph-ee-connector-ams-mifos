@@ -6,6 +6,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.mifos.connector.ams.fineract.Config;
@@ -27,6 +28,9 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 
+import com.baasflow.events.EventService;
+import com.baasflow.events.EventStatus;
+import com.baasflow.events.EventType;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -67,6 +71,9 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 	
 	@Autowired
 	private BatchItemBuilder batchItemBuilder;
+	
+	@Autowired
+	private EventService eventService;
 	
 	private final ObjectMapper objectMapper = new ObjectMapper();
 	
@@ -204,8 +211,34 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			}
 			
 			doBatch(items, tenantIdentifier, internalCorrelationId);
+			
+			eventService.sendEvent(
+					"ams_connector", 
+					"transferToConversionAccountInAms has finished", 
+					EventType.audit, 
+					EventStatus.success, 
+					null,
+					null,
+					Map.of(
+							"processInstanceKey", "" + activatedJob.getProcessInstanceKey(),
+							"internalCorrelationId", internalCorrelationId,
+							"transactionGroupId", transactionGroupId
+							));
 		} catch (Exception e) {
 			logger.error(e.getMessage(), e);
+			
+			eventService.sendEvent(
+					"ams_connector", 
+					"transferToConversionAccountInAms has finished", 
+					EventType.audit, 
+					EventStatus.failure, 
+					null,
+					null,
+					Map.of(
+							"processInstanceKey", "" + activatedJob.getProcessInstanceKey(),
+							"internalCorrelationId", internalCorrelationId,
+							"transactionGroupId", transactionGroupId
+							));
 			throw new ZeebeBpmnError("Error_InsufficientFunds", e.getMessage());
 		} finally {
 			MDC.remove("internalCorrelationId");
@@ -396,8 +429,30 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 			
 			doBatch(items, tenantIdentifier, internalCorrelationId);
+			
+			eventService.sendEvent(
+					"ams_connector", 
+					"withdrawTheAmountFromDisposalAccountInAMS has finished", 
+					EventType.audit, 
+					EventStatus.success, 
+					null,
+					null,
+					Map.of(
+							"processInstanceKey", "" + job.getProcessInstanceKey()
+							));
 		} catch (JAXBException | JsonProcessingException e) {
 			logger.error(e.getMessage(), e);
+			
+			eventService.sendEvent(
+					"ams_connector", 
+					"withdrawTheAmountFromDisposalAccountInAMS has finished", 
+					EventType.audit, 
+					EventStatus.failure, 
+					null,
+					null,
+					Map.of(
+							"processInstanceKey", "" + job.getProcessInstanceKey()
+							));
 			throw new RuntimeException(e);
 		}
 	}

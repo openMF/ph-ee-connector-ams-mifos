@@ -3,6 +3,7 @@ package org.mifos.connector.ams.zeebe.workers.bookamount;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.mifos.connector.ams.fineract.Config;
 import org.mifos.connector.ams.fineract.ConfigFactory;
@@ -17,6 +18,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import com.baasflow.events.EventService;
+import com.baasflow.events.EventStatus;
+import com.baasflow.events.EventType;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -44,6 +48,9 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
 	
 	@Autowired
 	private BatchItemBuilder batchItemBuilder;
+	
+	@Autowired
+	private EventService eventService;
     
 	@JobWorker
     public void bookCreditedAmountToConversionAccount(JobClient jobClient, 
@@ -110,8 +117,34 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
     		batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 
             doBatch(items, tenantIdentifier, internalCorrelationId);
+            
+            eventService.sendEvent(
+    				"ams_connector", 
+    				"bookCreditedAmountToConversionAccount has finished", 
+    				EventType.audit, 
+    				EventStatus.success, 
+    				null,
+    				null,
+    				Map.of(
+    						"processInstanceKey", "" + activatedJob.getProcessInstanceKey(),
+    						"internalCorrelationId", internalCorrelationId,
+    						"transactionGroupId", transactionGroupId
+    						));
         } catch (Exception e) {
             logger.error("Worker to book incoming money in AMS has failed, dispatching user task to handle conversion account deposit", e);
+            
+            eventService.sendEvent(
+    				"ams_connector", 
+    				"bookCreditedAmountToConversionAccount has finished", 
+    				EventType.audit, 
+    				EventStatus.failure, 
+    				null,
+    				null,
+    				Map.of(
+    						"processInstanceKey", "" + activatedJob.getProcessInstanceKey(),
+    						"internalCorrelationId", internalCorrelationId,
+    						"transactionGroupId", transactionGroupId
+    						));
             throw new ZeebeBpmnError("Error_BookToConversionToBeHandledManually", e.getMessage());
         } finally {
             MDC.remove("internalCorrelationId");
@@ -184,8 +217,34 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
     		batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 
             doBatch(items, tenantIdentifier, internalCorrelationId);
+            
+            eventService.sendEvent(
+    				"ams_connector", 
+    				"bookCreditedAmountToConversionAccountInRecall has finished", 
+    				EventType.audit, 
+    				EventStatus.success, 
+    				null,
+    				null,
+    				Map.of(
+    						"processInstanceKey", "" + activatedJob.getProcessInstanceKey(),
+    						"internalCorrelationId", internalCorrelationId,
+    						"transactionGroupId", transactionGroupId
+    						));
         } catch (Exception e) {
             logger.error("Worker to book incoming money in AMS has failed, dispatching user task to handle conversion account deposit", e);
+            
+            eventService.sendEvent(
+    				"ams_connector", 
+    				"bookCreditedAmountToConversionAccountInRecall has finished", 
+    				EventType.audit, 
+    				EventStatus.failure, 
+    				null,
+    				null,
+    				Map.of(
+    						"processInstanceKey", "" + activatedJob.getProcessInstanceKey(),
+    						"internalCorrelationId", internalCorrelationId,
+    						"transactionGroupId", transactionGroupId
+    						));
             throw new ZeebeBpmnError("Error_BookToConversionToBeHandledManually", e.getMessage());
         } finally {
             MDC.remove("internalCorrelationId");
