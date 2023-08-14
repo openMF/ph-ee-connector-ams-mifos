@@ -8,9 +8,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
-import com.baasflow.events.EventService;
-import com.baasflow.events.EventStatus;
-import com.baasflow.events.EventType;
+import com.baasflow.commons.events.EventService;
+import com.baasflow.commons.events.EventStatus;
+import com.baasflow.commons.events.EventType;
 
 import io.camunda.zeebe.client.api.response.ActivatedJob;
 import io.camunda.zeebe.client.api.worker.JobClient;

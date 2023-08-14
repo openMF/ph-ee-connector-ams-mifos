@@ -28,9 +28,9 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 
-import com.baasflow.events.EventService;
-import com.baasflow.events.EventStatus;
-import com.baasflow.events.EventType;
+import com.baasflow.commons.events.EventService;
+import com.baasflow.commons.events.EventStatus;
+import com.baasflow.commons.events.EventType;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
