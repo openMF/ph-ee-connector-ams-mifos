@@ -12,7 +12,7 @@ import springfox.documentation.service.ApiInfo;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.info.License;
-
+@SuppressWarnings("checkstyle:Dynamic")
 @javax.annotation.Generated(value = "io.swagger.codegen.v3.generators.java.SpringCodegen", date = "2023-08-10T10:13:07.472376795Z[GMT]")
 @Configuration
 public class SwaggerDocumentationConfig {

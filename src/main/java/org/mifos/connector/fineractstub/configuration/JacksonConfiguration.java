@@ -7,7 +7,7 @@ import org.springframework.context.annotation.Configuration;
 import org.threeten.bp.Instant;
 import org.threeten.bp.OffsetDateTime;
 import org.threeten.bp.ZonedDateTime;
-
+@SuppressWarnings("checkstyle:Dynamic")
 @Configuration
 public class JacksonConfiguration {
 

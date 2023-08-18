@@ -3,7 +3,7 @@ package org.mifos.connector.fineractstub.configuration;
 import org.springframework.core.convert.converter.Converter;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-
+@SuppressWarnings("checkstyle:Dynamic")
 public class LocalDateTimeConverter implements Converter<String, LocalDateTime> {
     private final DateTimeFormatter formatter;
 

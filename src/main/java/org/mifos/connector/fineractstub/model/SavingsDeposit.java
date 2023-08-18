@@ -10,6 +10,7 @@ import javax.validation.constraints.*;
 /**
  * SavingsDeposit
  */
+@SuppressWarnings("checkstyle:Dynamic")
 @Validated
 @javax.annotation.Generated(value = "io.swagger.codegen.v3.generators.java.SpringCodegen", date = "2023-08-10T10:13:07.472376795Z[GMT]")
 

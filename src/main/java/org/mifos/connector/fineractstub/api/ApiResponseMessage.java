@@ -1,7 +1,7 @@
 package org.mifos.connector.fineractstub.api;
 
 import javax.xml.bind.annotation.XmlTransient;
-
+@SuppressWarnings("checkstyle:Dynamic")
 @javax.annotation.Generated(value = "io.swagger.codegen.v3.generators.java.SpringCodegen", date = "2023-08-10T10:13:07.472376795Z[GMT]")
 @javax.xml.bind.annotation.XmlRootElement
 public class ApiResponseMessage {

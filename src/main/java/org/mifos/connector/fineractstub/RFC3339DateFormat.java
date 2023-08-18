@@ -6,7 +6,7 @@ import com.fasterxml.jackson.databind.util.ISO8601Utils;
 import java.text.FieldPosition;
 import java.util.Date;
 
-
+@SuppressWarnings("checkstyle:Dynamic")
 public class RFC3339DateFormat extends ISO8601DateFormat {
 
   private static final long serialVersionUID = 1L;
