@@ -14,12 +14,13 @@ import iso.std.iso._20022.tech.json.pain_001_001.Pain00100110CustomerCreditTrans
 import org.mifos.connector.ams.fineract.Config;
 import org.mifos.connector.ams.fineract.ConfigFactory;
 import org.mifos.connector.ams.log.EventLogUtil;
+import org.mifos.connector.ams.log.LogInternalCorrelationId;
+import org.mifos.connector.ams.log.TraceZeebeArguments;
 import org.mifos.connector.ams.mapstruct.Pain001Camt053Mapper;
 import org.mifos.connector.ams.zeebe.workers.utils.BatchItemBuilder;
 import org.mifos.connector.ams.zeebe.workers.utils.TransactionBody;
 import org.mifos.connector.ams.zeebe.workers.utils.TransactionDetails;
 import org.mifos.connector.ams.zeebe.workers.utils.TransactionItem;
-import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -54,6 +55,8 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
     private static final DateTimeFormatter PATTERN = DateTimeFormatter.ofPattern(FORMAT);
 
     @JobWorker
+    @LogInternalCorrelationId
+    @TraceZeebeArguments
     public Map<String, Object> transferTheAmountBetweenDisposalAccounts(JobClient jobClient,
                                                                         ActivatedJob activatedJob,
                                                                         @Variable String internalCorrelationId,
@@ -71,29 +74,25 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
                                                                         @Variable String transactionFeeInternalCorrelationId,
                                                                         @Variable String creditorIban,
                                                                         @Variable String debtorIban) {
-        MDC.put("internalCorrelationId", internalCorrelationId);
-        try {
-            return eventService.auditedEvent(
-                    eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "transferTheAmountBetweenDisposalAccounts", eventBuilder),
-                    eventBuilder -> transferTheAmountBetweenDisposalAccounts(internalCorrelationId,
-                            paymentScheme,
-                            originalPain001,
-                            amount,
-                            creditorDisposalAccountAmsId,
-                            debtorDisposalAccountAmsId,
-                            debtorConversionAccountAmsId,
-                            transactionFeeAmount,
-                            tenantIdentifier,
-                            transactionGroupId,
-                            transactionCategoryPurposeCode,
-                            transactionFeeCategoryPurposeCode,
-                            transactionFeeInternalCorrelationId,
-                            creditorIban,
-                            debtorIban,
-                            eventBuilder));
-        } finally {
-            MDC.remove("internalCorrelationId");
-        }
+        logger.info("transferTheAmountBetweenDisposalAccounts");
+        return eventService.auditedEvent(
+                eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "transferTheAmountBetweenDisposalAccounts", internalCorrelationId, transactionGroupId, eventBuilder),
+                eventBuilder -> transferTheAmountBetweenDisposalAccounts(internalCorrelationId,
+                        paymentScheme,
+                        originalPain001,
+                        amount,
+                        creditorDisposalAccountAmsId,
+                        debtorDisposalAccountAmsId,
+                        debtorConversionAccountAmsId,
+                        transactionFeeAmount,
+                        tenantIdentifier,
+                        transactionGroupId,
+                        transactionCategoryPurposeCode,
+                        transactionFeeCategoryPurposeCode,
+                        transactionFeeInternalCorrelationId,
+                        creditorIban,
+                        debtorIban,
+                        eventBuilder));
     }
 
     private Map<String, Object> transferTheAmountBetweenDisposalAccounts(String internalCorrelationId,
@@ -112,11 +111,6 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
                                                                          String creditorIban,
                                                                          String debtorIban,
                                                                          Event.Builder eventBuilder) {
-        logger.info("transferTheAmountBetweenDisposalAccounts");
-        logger.debug("Incoming pain.001: {}", originalPain001);
-        eventBuilder.getCorrelationIds().put("internalCorrelationId", internalCorrelationId);
-        eventBuilder.getCorrelationIds().put("transactionGroupId", transactionGroupId);
-
         try {
             ObjectMapper objectMapper = new ObjectMapper();
             objectMapper.setSerializationInclusion(Include.NON_NULL);
@@ -300,6 +294,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
             return Map.of("transactionDate", interbankSettlementDate);
 
         } catch (JsonProcessingException e) {
+            // TODO technical error handling
             throw new RuntimeException("failed to create camt.053", e);
         }
     }

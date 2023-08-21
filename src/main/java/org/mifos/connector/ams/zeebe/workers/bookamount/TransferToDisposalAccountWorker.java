@@ -13,9 +13,10 @@ import iso.std.iso._20022.tech.json.camt_053_001.ReportEntry10;
 import org.mifos.connector.ams.fineract.Config;
 import org.mifos.connector.ams.fineract.ConfigFactory;
 import org.mifos.connector.ams.log.EventLogUtil;
+import org.mifos.connector.ams.log.LogInternalCorrelationId;
+import org.mifos.connector.ams.log.TraceZeebeArguments;
 import org.mifos.connector.ams.mapstruct.Pacs008Camt053Mapper;
 import org.mifos.connector.ams.zeebe.workers.utils.*;
-import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -46,6 +47,8 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
     private EventService eventService;
 
     @JobWorker
+    @LogInternalCorrelationId
+    @TraceZeebeArguments
     public void transferToDisposalAccount(JobClient jobClient,
                                           ActivatedJob activatedJob,
                                           @Variable String originalPacs008,
@@ -59,25 +62,21 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
                                           @Variable Integer disposalAccountAmsId,
                                           @Variable String tenantIdentifier,
                                           @Variable String creditorIban) {
-        MDC.put("internalCorrelationId", internalCorrelationId);
-        try {
-            eventService.auditedEvent(
-                    eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "transferToDisposalAccount", eventBuilder),
-                    eventBuilder -> transferToDisposalAccount(originalPacs008,
-                            internalCorrelationId,
-                            paymentScheme,
-                            transactionDate,
-                            transactionGroupId,
-                            transactionCategoryPurposeCode,
-                            amount,
-                            conversionAccountAmsId,
-                            disposalAccountAmsId,
-                            tenantIdentifier,
-                            creditorIban,
-                            eventBuilder));
-        } finally {
-            MDC.remove("internalCorrelationId");
-        }
+        logger.info("transferToDisposalAccount");
+        eventService.auditedEvent(
+                eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "transferToDisposalAccount", internalCorrelationId, transactionGroupId, eventBuilder),
+                eventBuilder -> transferToDisposalAccount(originalPacs008,
+                        internalCorrelationId,
+                        paymentScheme,
+                        transactionDate,
+                        transactionGroupId,
+                        transactionCategoryPurposeCode,
+                        amount,
+                        conversionAccountAmsId,
+                        disposalAccountAmsId,
+                        tenantIdentifier,
+                        creditorIban,
+                        eventBuilder));
     }
 
     private Void transferToDisposalAccount(String originalPacs008,
@@ -92,11 +91,6 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
                                            String tenantIdentifier,
                                            String creditorIban,
                                            Event.Builder eventBuilder) {
-        logger.info("transferToDisposalAccount");
-        logger.debug("{} {} {}}", paymentScheme, transactionCategoryPurposeCode, amount);
-        eventBuilder.getCorrelationIds().put("internalCorrelationId", internalCorrelationId);
-        eventBuilder.getCorrelationIds().put("transactionGroupId", transactionGroupId);
-
         try {
             iso.std.iso._20022.tech.xsd.pacs_008_001.Document pacs008 = jaxbUtils.unmarshalPacs008(originalPacs008);
 
@@ -176,6 +170,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
             doBatch(items, tenantIdentifier, internalCorrelationId);
 
         } catch (Exception e) {
+            // TODO technical error handling
             logger.error("Exchange to disposal worker has failed, dispatching user task to handle exchange", e);
             throw new ZeebeBpmnError("Error_TransferToDisposalToBeHandledManually", e.getMessage());
         }
@@ -183,6 +178,8 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
     }
 
     @JobWorker
+    @LogInternalCorrelationId
+    @TraceZeebeArguments
     public void transferToDisposalAccountInRecall(JobClient jobClient,
                                                   ActivatedJob activatedJob,
                                                   @Variable String originalPacs008,
@@ -197,26 +194,22 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
                                                   @Variable String tenantIdentifier,
                                                   @Variable String pacs004,
                                                   @Variable String creditorIban) {
-        MDC.put("internalCorrelationId", internalCorrelationId);
-        try {
-            eventService.auditedEvent(
-                    eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "transferToDisposalAccount", eventBuilder),
-                    eventBuilder -> transferToDisposalAccountInRecall(originalPacs008,
-                            internalCorrelationId,
-                            paymentScheme,
-                            transactionDate,
-                            transactionGroupId,
-                            transactionCategoryPurposeCode,
-                            amount,
-                            conversionAccountAmsId,
-                            disposalAccountAmsId,
-                            tenantIdentifier,
-                            pacs004,
-                            creditorIban,
-                            eventBuilder));
-        } finally {
-            MDC.remove("internalCorrelationId");
-        }
+        logger.info("transferToDisposalAccountInRecall");
+        eventService.auditedEvent(
+                eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "transferToDisposalAccountInRecall", internalCorrelationId, transactionGroupId, eventBuilder),
+                eventBuilder -> transferToDisposalAccountInRecall(originalPacs008,
+                        internalCorrelationId,
+                        paymentScheme,
+                        transactionDate,
+                        transactionGroupId,
+                        transactionCategoryPurposeCode,
+                        amount,
+                        conversionAccountAmsId,
+                        disposalAccountAmsId,
+                        tenantIdentifier,
+                        pacs004,
+                        creditorIban,
+                        eventBuilder));
     }
 
     private Void transferToDisposalAccountInRecall(String originalPacs008,
@@ -232,11 +225,6 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
                                                    String pacs004,
                                                    String creditorIban,
                                                    Event.Builder eventBuilder) {
-        logger.info("transferToDisposalAccountInRecall");
-        logger.debug("{} {} {}", paymentScheme, transactionCategoryPurposeCode, amount);
-        eventBuilder.getCorrelationIds().put("internalCorrelationId", internalCorrelationId);
-        eventBuilder.getCorrelationIds().put("transactionGroupId", transactionGroupId);
-
         try {
             iso.std.iso._20022.tech.xsd.pacs_008_001.Document pacs008 = jaxbUtils.unmarshalPacs008(originalPacs008);
 
@@ -317,6 +305,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
             doBatch(items, tenantIdentifier, internalCorrelationId);
 
         } catch (Exception e) {
+            // TODO technical error handling
             logger.error("Exchange to disposal worker has failed, dispatching user task to handle exchange", e);
             throw new ZeebeBpmnError("Error_TransferToDisposalToBeHandledManually", e.getMessage());
         }

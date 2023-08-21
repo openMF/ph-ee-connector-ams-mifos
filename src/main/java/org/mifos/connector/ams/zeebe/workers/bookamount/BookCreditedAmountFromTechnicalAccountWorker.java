@@ -15,11 +15,12 @@ import jakarta.xml.bind.JAXBException;
 import org.mifos.connector.ams.fineract.Config;
 import org.mifos.connector.ams.fineract.ConfigFactory;
 import org.mifos.connector.ams.log.EventLogUtil;
+import org.mifos.connector.ams.log.LogInternalCorrelationId;
+import org.mifos.connector.ams.log.TraceZeebeArguments;
 import org.mifos.connector.ams.mapstruct.Pacs008Camt053Mapper;
 import org.mifos.connector.ams.zeebe.workers.utils.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -59,6 +60,8 @@ public class BookCreditedAmountFromTechnicalAccountWorker extends AbstractMoneyI
     private static final String FORMAT = "yyyyMMdd";
 
     @JobWorker
+    @LogInternalCorrelationId
+    @TraceZeebeArguments
     public void bookCreditedAmountFromTechnicalAccount(JobClient jobClient,
                                                        ActivatedJob activatedJob,
                                                        @Variable String originalPacs008,
@@ -71,24 +74,20 @@ public class BookCreditedAmountFromTechnicalAccountWorker extends AbstractMoneyI
                                                        @Variable String transactionGroupId,
                                                        @Variable String transactionCategoryPurposeCode,
                                                        @Variable String caseIdentifier) {
-        MDC.put("internalCorrelationId", internalCorrelationId);
-        try {
-            eventService.auditedEvent(
-                    eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "bookCreditedAmountFromTechnicalAccount", eventBuilder),
-                    eventBuilder -> bookCreditedAmountFromTechnicalAccount(originalPacs008,
-                            amount,
-                            tenantIdentifier,
-                            paymentScheme,
-                            transactionDate,
-                            currency,
-                            internalCorrelationId,
-                            transactionGroupId,
-                            transactionCategoryPurposeCode,
-                            caseIdentifier,
-                            eventBuilder));
-        } finally {
-            MDC.remove("internalCorrelationId");
-        }
+        logger.info("bookCreditedAmountFromTechnicalAccount");
+        eventService.auditedEvent(
+                eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "bookCreditedAmountFromTechnicalAccount", internalCorrelationId, transactionGroupId, eventBuilder),
+                eventBuilder -> bookCreditedAmountFromTechnicalAccount(originalPacs008,
+                        amount,
+                        tenantIdentifier,
+                        paymentScheme,
+                        transactionDate,
+                        currency,
+                        internalCorrelationId,
+                        transactionGroupId,
+                        transactionCategoryPurposeCode,
+                        caseIdentifier,
+                        eventBuilder));
     }
 
     private Void bookCreditedAmountFromTechnicalAccount(String originalPacs008,
@@ -102,11 +101,6 @@ public class BookCreditedAmountFromTechnicalAccountWorker extends AbstractMoneyI
                                                         String transactionCategoryPurposeCode,
                                                         String caseIdentifier,
                                                         Event.Builder eventBuilder) {
-        logger.info("bookCreditedAmountFromTechnicalAccount");
-        logger.debug("{} {}", tenantIdentifier, paymentScheme);
-        eventBuilder.getCorrelationIds().put("internalCorrelationId", internalCorrelationId);
-        eventBuilder.getCorrelationIds().put("transactionGroupId", transactionGroupId);
-
         try {
             ObjectMapper objectMapper = new ObjectMapper();
 
@@ -163,6 +157,7 @@ public class BookCreditedAmountFromTechnicalAccountWorker extends AbstractMoneyI
             doBatch(items, tenantIdentifier, internalCorrelationId);
 
         } catch (JsonProcessingException | JAXBException e) {
+            // TODO technical error handling
             logger.error("Worker to book incoming money in AMS has failed, dispatching user task to handle conversion account deposit", e);
             throw new ZeebeBpmnError("Error_BookToConversionToBeHandledManually", e.getMessage());
         }

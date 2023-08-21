@@ -18,9 +18,10 @@ import jakarta.xml.bind.JAXBException;
 import org.mifos.connector.ams.fineract.Config;
 import org.mifos.connector.ams.fineract.ConfigFactory;
 import org.mifos.connector.ams.log.EventLogUtil;
+import org.mifos.connector.ams.log.LogInternalCorrelationId;
+import org.mifos.connector.ams.log.TraceZeebeArguments;
 import org.mifos.connector.ams.mapstruct.Pain001Camt053Mapper;
 import org.mifos.connector.ams.zeebe.workers.utils.*;
-import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -55,6 +56,8 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @JobWorker
+    @LogInternalCorrelationId
+    @TraceZeebeArguments
     public void revertInAms(JobClient jobClient,
                             ActivatedJob activatedJob,
                             @Variable String internalCorrelationId,
@@ -70,27 +73,23 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                             @Variable BigDecimal transactionFeeAmount,
                             @Variable String tenantIdentifier,
                             @Variable String debtorIban) {
-        MDC.put("internalCorrelationId", internalCorrelationId);
-        try {
-            eventService.auditedEvent(
-                    eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "revertInAms", eventBuilder),
-                    eventBuilder -> revertInAms(internalCorrelationId,
-                            originalPain001,
-                            conversionAccountAmsId,
-                            disposalAccountAmsId,
-                            transactionDate,
-                            paymentScheme,
-                            transactionGroupId,
-                            transactionCategoryPurposeCode,
-                            amount,
-                            transactionFeeCategoryPurposeCode,
-                            transactionFeeAmount,
-                            tenantIdentifier,
-                            debtorIban,
-                            eventBuilder));
-        } finally {
-            MDC.remove("internalCorrelationId");
-        }
+        logger.info("revertInAms");
+        eventService.auditedEvent(
+                eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "revertInAms", internalCorrelationId, transactionGroupId, eventBuilder),
+                eventBuilder -> revertInAms(internalCorrelationId,
+                        originalPain001,
+                        conversionAccountAmsId,
+                        disposalAccountAmsId,
+                        transactionDate,
+                        paymentScheme,
+                        transactionGroupId,
+                        transactionCategoryPurposeCode,
+                        amount,
+                        transactionFeeCategoryPurposeCode,
+                        transactionFeeAmount,
+                        tenantIdentifier,
+                        debtorIban,
+                        eventBuilder));
     }
 
     private Void revertInAms(String internalCorrelationId,
@@ -107,11 +106,6 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                              String tenantIdentifier,
                              String debtorIban,
                              Event.Builder eventBuilder) {
-        logger.info("revertInAms");
-        logger.debug("Withdrawing amount {} from conversion account {}", amount, conversionAccountAmsId);
-        eventBuilder.getCorrelationIds().put("internalCorrelationId", internalCorrelationId);
-        eventBuilder.getCorrelationIds().put("transactionGroupId", transactionGroupId);
-
         try {
             Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001 = objectMapper.readValue(originalPain001, Pain00100110CustomerCreditTransferInitiationV10MessageSchema.class);
 
@@ -252,6 +246,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
             doBatch(items, tenantIdentifier, internalCorrelationId);
 
         } catch (JsonProcessingException e) {
+            // TODO technical error handling
             throw new RuntimeException("failed in revert", e);
         }
 
@@ -259,6 +254,8 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
     }
 
     @JobWorker
+    @LogInternalCorrelationId
+    @TraceZeebeArguments
     public void revertWithoutFeeInAms(JobClient jobClient,
                                       ActivatedJob activatedJob,
                                       @Variable String internalCorrelationId,
@@ -273,26 +270,22 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                                       @Variable BigDecimal transactionFeeAmount,
                                       @Variable String tenantIdentifier,
                                       @Variable String debtorIban) {
-        MDC.put("internalCorrelationId", internalCorrelationId);
-        try {
-            eventService.auditedEvent(
-                    eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "revertWithoutFeeInAms", eventBuilder),
-                    eventBuilder -> revertWithoutFeeInAms(internalCorrelationId,
-                            originalPain001,
-                            conversionAccountAmsId,
-                            disposalAccountAmsId,
-                            paymentScheme,
-                            transactionGroupId,
-                            transactionCategoryPurposeCode,
-                            amount,
-                            transactionFeeCategoryPurposeCode,
-                            transactionFeeAmount,
-                            tenantIdentifier,
-                            debtorIban,
-                            eventBuilder));
-        } finally {
-            MDC.remove("internalCorrelationId");
-        }
+        logger.info("revertWithoutFeeInAms");
+        eventService.auditedEvent(
+                eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "revertWithoutFeeInAms", internalCorrelationId, transactionGroupId, eventBuilder),
+                eventBuilder -> revertWithoutFeeInAms(internalCorrelationId,
+                        originalPain001,
+                        conversionAccountAmsId,
+                        disposalAccountAmsId,
+                        paymentScheme,
+                        transactionGroupId,
+                        transactionCategoryPurposeCode,
+                        amount,
+                        transactionFeeCategoryPurposeCode,
+                        transactionFeeAmount,
+                        tenantIdentifier,
+                        debtorIban,
+                        eventBuilder));
     }
 
     private Void revertWithoutFeeInAms(String internalCorrelationId,
@@ -308,11 +301,6 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                                        String tenantIdentifier,
                                        String debtorIban,
                                        Event.Builder eventBuilder) {
-        logger.info("revertWithoutFeeInAms");
-        logger.debug("Withdrawing amount {} from conversion account {}", amount, conversionAccountAmsId);
-        eventBuilder.getCorrelationIds().put("internalCorrelationId", internalCorrelationId);
-        eventBuilder.getCorrelationIds().put("transactionGroupId", transactionGroupId);
-
         try {
             String transactionDate = LocalDate.now().format(DateTimeFormatter.ofPattern(FORMAT));
 
@@ -425,6 +413,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
             doBatch(items, tenantIdentifier, internalCorrelationId);
 
         } catch (JsonProcessingException e) {
+            // TODO technical error handling
             throw new RuntimeException("failed in revertWithoutFeeInAms", e);
         }
 
@@ -432,6 +421,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
     }
 
     @JobWorker
+    @TraceZeebeArguments
     public void depositTheAmountOnDisposalInAms(JobClient client,
                                                 ActivatedJob activatedJob,
                                                 @Variable BigDecimal amount,
@@ -442,6 +432,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                                                 @Variable String transactionCategoryPurposeCode,
                                                 @Variable String camt056,
                                                 @Variable String debtorIban) {
+        logger.info("depositTheAmountOnDisposalInAms");
         eventService.auditedEvent(
                 eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "depositTheAmountOnDisposalInAms", eventBuilder),
                 eventBuilder -> depositTheAmountOnDisposalInAms(amount,
@@ -464,9 +455,6 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                                                  String camt056,
                                                  String debtorIban,
                                                  Event.Builder eventBuilder) {
-        logger.info("depositTheAmountOnDisposalInAms");
-        logger.debug("deposit {} from {} to {}", amount, conversionAccountAmsId, disposalAccountAmsId);
-
         try {
             batchItemBuilder.tenantId(tenantIdentifier);
 
@@ -569,6 +557,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
             doBatch(items, tenantIdentifier, internalCorrelationId);
 
         } catch (JAXBException | JsonProcessingException e) {
+            // TODO technical error handling
             throw new RuntimeException("depositTheAmountOnDisposalInAms failed", e);
         }
         return null;

@@ -18,9 +18,10 @@ import jakarta.xml.bind.JAXBException;
 import org.mifos.connector.ams.fineract.Config;
 import org.mifos.connector.ams.fineract.ConfigFactory;
 import org.mifos.connector.ams.log.EventLogUtil;
+import org.mifos.connector.ams.log.LogInternalCorrelationId;
+import org.mifos.connector.ams.log.TraceZeebeArguments;
 import org.mifos.connector.ams.mapstruct.Pain001Camt053Mapper;
 import org.mifos.connector.ams.zeebe.workers.utils.*;
-import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -55,6 +56,8 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @JobWorker
+    @LogInternalCorrelationId
+    @TraceZeebeArguments
     public void bookOnConversionAccountInAms(JobClient jobClient,
                                              ActivatedJob activatedJob,
                                              @Variable String originalPain001,
@@ -69,26 +72,22 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
                                              @Variable BigDecimal transactionFeeAmount,
                                              @Variable String tenantIdentifier,
                                              @Variable String debtorIban) {
-        MDC.put("internalCorrelationId", internalCorrelationId);
-        try {
-            eventService.auditedEvent(
-                    eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "bookOnConversionAccountInAms", eventBuilder),
-                    eventBuilder -> bookOnConversionAccountInAms(originalPain001,
-                            internalCorrelationId,
-                            paymentScheme,
-                            transactionDate,
-                            conversionAccountAmsId,
-                            transactionGroupId,
-                            transactionCategoryPurposeCode,
-                            transactionFeeCategoryPurposeCode,
-                            amount,
-                            transactionFeeAmount,
-                            tenantIdentifier,
-                            debtorIban,
-                            eventBuilder));
-        } finally {
-            MDC.remove("internalCorrelationId");
-        }
+        logger.info("bookOnConversionAccountInAms");
+        eventService.auditedEvent(
+                eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "bookOnConversionAccountInAms", internalCorrelationId, transactionGroupId, eventBuilder),
+                eventBuilder -> bookOnConversionAccountInAms(originalPain001,
+                        internalCorrelationId,
+                        paymentScheme,
+                        transactionDate,
+                        conversionAccountAmsId,
+                        transactionGroupId,
+                        transactionCategoryPurposeCode,
+                        transactionFeeCategoryPurposeCode,
+                        amount,
+                        transactionFeeAmount,
+                        tenantIdentifier,
+                        debtorIban,
+                        eventBuilder));
     }
 
     private Void bookOnConversionAccountInAms(String originalPain001,
@@ -104,11 +103,6 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
                                               String tenantIdentifier,
                                               String debtorIban,
                                               Event.Builder eventBuilder) {
-        logger.info("bookOnConversionAccountInAms");
-        logger.debug("Withdrawing amount {} from conversion account {} of tenant {}", amount, conversionAccountAmsId, tenantIdentifier);
-        eventBuilder.getCorrelationIds().put("internalCorrelationId", internalCorrelationId);
-        eventBuilder.getCorrelationIds().put("transactionGroupId", transactionGroupId);
-
         transactionDate = transactionDate.replaceAll("-", "");
 
         objectMapper.setSerializationInclusion(Include.NON_NULL);
@@ -189,6 +183,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 
             doBatch(items, tenantIdentifier, internalCorrelationId);
         } catch (JsonProcessingException e) {
+            //TODO technical error handling
             throw new RuntimeException("failed to create camt.053", e);
         }
 
@@ -196,6 +191,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
     }
 
     @JobWorker
+    @TraceZeebeArguments
     public void withdrawTheAmountFromConversionAccountInAms(JobClient client,
                                                             ActivatedJob activatedJob,
                                                             @Variable BigDecimal amount,
@@ -205,6 +201,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
                                                             @Variable String transactionCategoryPurposeCode,
                                                             @Variable String camt056,
                                                             @Variable String debtorIban) {
+        logger.info("withdrawTheAmountFromConversionAccountInAms");
         eventService.auditedEvent(
                 eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "withdrawTheAmountFromConversionAccountInAms", eventBuilder),
                 eventBuilder -> withdrawTheAmountFromConversionAccountInAms(amount,
@@ -225,9 +222,6 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
                                                              String camt056,
                                                              String debtorIban,
                                                              Event.Builder eventBuilder) {
-        logger.info("withdrawTheAmountFromConversionAccountInAms");
-        logger.debug("Withdrawing amount {} from conversion account {} of tenant {}", amount, conversionAccountAmsId, tenantIdentifier);
-
         try {
 
             String transactionDate = LocalDate.now().format(DateTimeFormatter.ofPattern(FORMAT));
@@ -301,6 +295,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 
             doBatch(items, tenantIdentifier, internalCorrelationId);
         } catch (JAXBException | JsonProcessingException e) {
+            //TODO technical error handling
             logger.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }

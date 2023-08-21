@@ -14,12 +14,13 @@ import iso.std.iso._20022.tech.json.pain_001_001.Pain00100110CustomerCreditTrans
 import org.mifos.connector.ams.fineract.Config;
 import org.mifos.connector.ams.fineract.ConfigFactory;
 import org.mifos.connector.ams.log.EventLogUtil;
+import org.mifos.connector.ams.log.LogInternalCorrelationId;
+import org.mifos.connector.ams.log.TraceZeebeArguments;
 import org.mifos.connector.ams.mapstruct.Pain001Camt053Mapper;
 import org.mifos.connector.ams.zeebe.workers.utils.BatchItemBuilder;
 import org.mifos.connector.ams.zeebe.workers.utils.TransactionBody;
 import org.mifos.connector.ams.zeebe.workers.utils.TransactionDetails;
 import org.mifos.connector.ams.zeebe.workers.utils.TransactionItem;
-import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -52,6 +53,8 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
     private static final DateTimeFormatter PATTERN = DateTimeFormatter.ofPattern(FORMAT);
 
     @JobWorker
+    @LogInternalCorrelationId
+    @TraceZeebeArguments
     public Map<String, Object> transferNonTransactionalFeeInAms(JobClient jobClient,
                                                                 ActivatedJob activatedJob,
                                                                 @Variable Integer conversionAccountAmsId,
@@ -64,24 +67,20 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
                                                                 @Variable String categoryPurpose,
                                                                 @Variable String originalPain001,
                                                                 @Variable String debtorIban) {
-        MDC.put("internalCorrelationId", internalCorrelationId);
-        try {
-            return eventService.auditedEvent(
-                    eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "bookCreditedAmountToTechnicalAccount", eventBuilder),
-                    eventBuilder -> transferNonTransactionalFeeInAms(conversionAccountAmsId,
-                            disposalAccountAmsId,
-                            tenantIdentifier,
-                            paymentScheme,
-                            amount,
-                            internalCorrelationId,
-                            transactionGroupId,
-                            categoryPurpose,
-                            originalPain001,
-                            debtorIban,
-                            eventBuilder));
-        } finally {
-            MDC.remove("internalCorrelationId");
-        }
+        logger.info("transferNonTransactionalFeeInAms");
+        return eventService.auditedEvent(
+                eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "bookCreditedAmountToTechnicalAccount", internalCorrelationId, transactionGroupId, eventBuilder),
+                eventBuilder -> transferNonTransactionalFeeInAms(conversionAccountAmsId,
+                        disposalAccountAmsId,
+                        tenantIdentifier,
+                        paymentScheme,
+                        amount,
+                        internalCorrelationId,
+                        transactionGroupId,
+                        categoryPurpose,
+                        originalPain001,
+                        debtorIban,
+                        eventBuilder));
     }
 
     private Map<String, Object> transferNonTransactionalFeeInAms(Integer conversionAccountAmsId,
@@ -95,11 +94,6 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
                                                                  String originalPain001,
                                                                  String debtorIban,
                                                                  Event.Builder eventBuilder) {
-        logger.info("transferNonTransactionalFeeInAms");
-        logger.debug("{} {}", paymentScheme, categoryPurpose);
-        eventBuilder.getCorrelationIds().put("internalCorrelationId", internalCorrelationId);
-        eventBuilder.getCorrelationIds().put("transactionGroupId", transactionGroupId);
-
         String disposalAccountWithdrawRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), disposalAccountAmsId, "withdrawal");
         Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
         logger.debug("Got payment scheme {}", paymentScheme);
@@ -214,6 +208,7 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 
             return Map.of("transactionDate", transactionDate);
         } catch (Exception e) {
+            // TODO technical error handling
             logger.error(e.getMessage(), e);
             throw new ZeebeBpmnError("Error_InsufficientFunds", e.getMessage());
         }

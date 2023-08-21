@@ -74,6 +74,10 @@
       		<artifactId>baasflow-events-spring-boot-starter</artifactId>
       		<version>${baasflow-events-spring-boot-starter.version}</version>
     	</dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>io.camunda.spring</groupId>

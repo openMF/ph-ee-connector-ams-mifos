@@ -7,12 +7,12 @@ import io.camunda.zeebe.client.api.worker.JobClient;
 import io.camunda.zeebe.spring.client.annotation.JobWorker;
 import io.camunda.zeebe.spring.client.annotation.Variable;
 import io.camunda.zeebe.spring.client.exception.ZeebeBpmnError;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.client.models.GetSavingsAccountsAccountIdResponse;
 import org.mifos.connector.ams.log.EventLogUtil;
+import org.mifos.connector.ams.log.LogInternalCorrelationId;
+import org.mifos.connector.ams.log.TraceZeebeArguments;
 import org.mifos.connector.common.ams.dto.SavingsAccountStatusType;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Objects;
 
 @Component
+@Slf4j
 public class GetAccountDetailsFromAmsWorker extends AbstractAmsWorker {
 
     @Value("${fineract.incoming-money-api}")
@@ -31,23 +32,19 @@ public class GetAccountDetailsFromAmsWorker extends AbstractAmsWorker {
     @Autowired
     private EventService eventService;
 
-    Logger logger = LoggerFactory.getLogger(GetAccountDetailsFromAmsWorker.class);
-
     @JobWorker
+    @LogInternalCorrelationId
+    @TraceZeebeArguments
     public Map<String, Object> getAccountDetailsFromAms(JobClient jobClient,
                                                         ActivatedJob activatedJob,
                                                         @Variable String internalCorrelationId,
                                                         @Variable String iban,
                                                         @Variable String tenantIdentifier,
                                                         @Variable String currency) {
-        MDC.put("internalCorrelationId", internalCorrelationId);
-        try {
-            return eventService.auditedEvent(
-                    eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "getAccountDetailsFromAms", eventBuilder),
-                    eventBuilder -> getAccountDetailsFromAms(internalCorrelationId, iban, tenantIdentifier, currency, eventBuilder));
-        } finally {
-            MDC.remove("internalCorrelationId");
-        }
+        log.info("getAccountDetailsFromAms");
+        return eventService.auditedEvent(
+                eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "getAccountDetailsFromAms", internalCorrelationId, eventBuilder),
+                eventBuilder -> getAccountDetailsFromAms(internalCorrelationId, iban, tenantIdentifier, currency, eventBuilder));
     }
 
     private Map<String, Object> getAccountDetailsFromAms(String internalCorrelationId,
@@ -55,14 +52,10 @@ public class GetAccountDetailsFromAmsWorker extends AbstractAmsWorker {
                                                          String tenantIdentifier,
                                                          String currency,
                                                          Event.Builder eventBuilder) {
-        logger.info("getAccountDetailsFromAms");
-        logger.debug("started AMS creditor worker for creditor IBAN {} and Tenant Id {}", iban, tenantIdentifier);
-        eventBuilder.getCorrelationIds().put("internalCorrelationId", internalCorrelationId);
-
         AmsDataTableQueryResponse[] response = lookupAccount(iban, tenantIdentifier);
 
         if (response.length == 0) {
-            throw new ZeebeBpmnError("Error_AccountNotFound", "Error_AccountNotFound");
+            throw new ZeebeBpmnError("Error_AccountNotFound", String.format("IBAN %s not found in AMS", iban));
         }
 
         String status = AccountAmsStatus.NOT_READY_TO_RECEIVE_MONEY.name();
@@ -73,10 +66,10 @@ public class GetAccountDetailsFromAmsWorker extends AbstractAmsWorker {
         Long internalAccountId = responseItem.internal_account_id();
 
         GetSavingsAccountsAccountIdResponse conversion = retrieveCurrencyIdAndStatus(accountConversionId, tenantIdentifier);
-        logger.debug("Conversion account details: {}", conversion);
+        log.trace("conversion account details: {}", conversion);
 
         GetSavingsAccountsAccountIdResponse disposal = retrieveCurrencyIdAndStatus(accountDisposalId, tenantIdentifier);
-        logger.debug("Disposal account details: {}", disposal);
+        log.trace("disposal account details: {}", disposal);
 
         Integer disposalAccountAmsId = disposal.getId();
         Integer conversionAccountAmsId = conversion.getId();
@@ -97,7 +90,7 @@ public class GetAccountDetailsFromAmsWorker extends AbstractAmsWorker {
             }
         }
 
-        logger.debug("AMS creditor worker for creditor IBAN {} finished with status {}", iban, status);
+        log.trace("IBAN {} status is {}", iban, status);
 
         return Map.of("disposalAccountAmsId", disposalAccountAmsId,
                 "conversionAccountAmsId", conversionAccountAmsId,

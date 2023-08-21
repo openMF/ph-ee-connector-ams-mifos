@@ -4,6 +4,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import lombok.extern.slf4j.Slf4j;
 import org.mifos.connector.ams.zeebe.workers.utils.AuthTokenHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,10 +17,9 @@ import org.springframework.http.MediaType;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
+@Slf4j
 public abstract class AbstractAmsWorker {
-	
-	Logger logger = LoggerFactory.getLogger(AbstractAmsWorker.class);
-	
+
 	@Value("${fineract.api-url}")
 	protected String fineractApiUrl;
 	
@@ -85,7 +85,7 @@ public abstract class AbstractAmsWorker {
 		httpHeaders.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
 		httpHeaders.set("Authorization", authTokenHelper.generateAuthToken());
 		httpHeaders.set("Fineract-Platform-TenantId", tenantId);
-		logger.info("Sending http request with the following headers: {}", httpHeaders);
+		log.trace("HttpHeaders: {}", httpHeaders);
 		return restTemplate.exchange(
 				urlTemplate, 
 				HttpMethod.GET, 

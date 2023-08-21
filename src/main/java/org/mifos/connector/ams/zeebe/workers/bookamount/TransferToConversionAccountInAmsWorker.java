@@ -20,9 +20,10 @@ import jakarta.xml.bind.JAXBException;
 import org.mifos.connector.ams.fineract.Config;
 import org.mifos.connector.ams.fineract.ConfigFactory;
 import org.mifos.connector.ams.log.EventLogUtil;
+import org.mifos.connector.ams.log.LogInternalCorrelationId;
+import org.mifos.connector.ams.log.TraceZeebeArguments;
 import org.mifos.connector.ams.mapstruct.Pain001Camt053Mapper;
 import org.mifos.connector.ams.zeebe.workers.utils.*;
-import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
@@ -71,6 +72,8 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
     private static final DateTimeFormatter PATTERN = DateTimeFormatter.ofPattern(FORMAT);
 
     @JobWorker
+    @LogInternalCorrelationId
+    @TraceZeebeArguments
     public void transferToConversionAccountInAms(JobClient jobClient,
                                                  ActivatedJob activatedJob,
                                                  @Variable String transactionGroupId,
@@ -86,27 +89,23 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
                                                  @Variable String tenantIdentifier,
                                                  @Variable String iban,
                                                  @Variable String transactionFeeInternalCorrelationId) {
-        MDC.put("internalCorrelationId", internalCorrelationId);
-        try {
-            eventService.auditedEvent(
-                    eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "transferToConversionAccountInAms", eventBuilder),
-                    eventBuilder -> transferToConversionAccountInAms(transactionGroupId,
-                            transactionCategoryPurposeCode,
-                            transactionFeeCategoryPurposeCode,
-                            originalPain001,
-                            internalCorrelationId,
-                            amount,
-                            transactionFeeAmount,
-                            paymentScheme,
-                            disposalAccountAmsId,
-                            conversionAccountAmsId,
-                            tenantIdentifier,
-                            iban,
-                            transactionFeeInternalCorrelationId,
-                            eventBuilder));
-        } finally {
-            MDC.remove("internalCorrelationId");
-        }
+        logger.info("transferToConversionAccountInAms");
+        eventService.auditedEvent(
+                eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "transferToConversionAccountInAms", internalCorrelationId, transactionGroupId, eventBuilder),
+                eventBuilder -> transferToConversionAccountInAms(transactionGroupId,
+                        transactionCategoryPurposeCode,
+                        transactionFeeCategoryPurposeCode,
+                        originalPain001,
+                        internalCorrelationId,
+                        amount,
+                        transactionFeeAmount,
+                        paymentScheme,
+                        disposalAccountAmsId,
+                        conversionAccountAmsId,
+                        tenantIdentifier,
+                        iban,
+                        transactionFeeInternalCorrelationId,
+                        eventBuilder));
     }
 
     @SuppressWarnings("unchecked")
@@ -124,11 +123,6 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
                                                   String iban,
                                                   String transactionFeeInternalCorrelationId,
                                                   Event.Builder eventBuilder) {
-        logger.info("transferToConversionAccountInAms");
-        logger.debug("{} {} {}", transactionCategoryPurposeCode, transactionFeeCategoryPurposeCode, paymentScheme);
-        eventBuilder.getCorrelationIds().put("internalCorrelationId", internalCorrelationId);
-        eventBuilder.getCorrelationIds().put("transactionGroupId", transactionGroupId);
-
         try {
             String transactionDate = LocalDate.now().format(PATTERN);
             objectMapper.setSerializationInclusion(Include.NON_NULL);
@@ -233,6 +227,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
             doBatch(items, tenantIdentifier, internalCorrelationId);
 
         } catch (Exception e) {
+            // TODO technical error handling
             logger.error(e.getMessage(), e);
             throw new ZeebeBpmnError("Error_InsufficientFunds", e.getMessage());
         }
@@ -331,6 +326,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
     }
 
     @JobWorker
+    @TraceZeebeArguments
     public void withdrawTheAmountFromDisposalAccountInAMS(JobClient client,
                                                           ActivatedJob activatedJob,
                                                           @Variable BigDecimal amount,
@@ -341,6 +337,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
                                                           @Variable String transactionCategoryPurposeCode,
                                                           @Variable String camt056,
                                                           @Variable String iban) {
+        logger.info("withdrawTheAmountFromDisposalAccountInAMS");
         eventService.auditedEvent(
                 eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "withdrawTheAmountFromDisposalAccountInAMS", eventBuilder),
                 eventBuilder -> withdrawTheAmountFromDisposalAccountInAMS(amount,
@@ -363,9 +360,6 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
                                                            String camt056,
                                                            String iban,
                                                            Event.Builder eventBuilder) {
-        logger.info("withdrawTheAmountFromDisposalAccountInAMS");
-        logger.debug("{} {}", paymentScheme, transactionCategoryPurposeCode);
-
         try {
             String transactionDate = LocalDate.now().format(PATTERN);
 
@@ -447,6 +441,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
             doBatch(items, tenantIdentifier, internalCorrelationId);
 
         } catch (JAXBException | JsonProcessingException e) {
+            // TODO technical error handling
             logger.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
