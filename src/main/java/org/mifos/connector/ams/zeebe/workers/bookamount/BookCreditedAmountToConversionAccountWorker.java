@@ -10,6 +10,7 @@ import io.camunda.zeebe.spring.client.annotation.JobWorker;
 import io.camunda.zeebe.spring.client.annotation.Variable;
 import io.camunda.zeebe.spring.client.exception.ZeebeBpmnError;
 import iso.std.iso._20022.tech.json.camt_053_001.ReportEntry10;
+import lombok.extern.slf4j.Slf4j;
 import org.mifos.connector.ams.fineract.Config;
 import org.mifos.connector.ams.fineract.ConfigFactory;
 import org.mifos.connector.ams.log.EventLogUtil;
@@ -26,6 +27,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Component
+@Slf4j
 public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyInOutWorker {
 
     @Autowired
@@ -61,7 +63,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
                                                       @Variable BigDecimal amount,
                                                       @Variable Integer conversionAccountAmsId,
                                                       @Variable String creditorIban) {
-        logger.info("bookCreditedAmountToConversionAccount");
+        log.info("bookCreditedAmountToConversionAccount");
         eventService.auditedEvent(
                 eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "bookCreditedAmountToConversionAccount", internalCorrelationId, transactionGroupId, eventBuilder),
                 eventBuilder -> bookCreditedAmountToConversionAccount(originalPacs008,
@@ -139,7 +141,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
 
         } catch (Exception e) {
             // TODO technical error handling
-            logger.error("Worker to book incoming money in AMS has failed, dispatching user task to handle conversion account deposit", e);
+            log.error("Worker to book incoming money in AMS has failed, dispatching user task to handle conversion account deposit", e);
             throw new ZeebeBpmnError("Error_BookToConversionToBeHandledManually", e.getMessage());
         }
         return null;
@@ -161,7 +163,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
                                                               @Variable Integer conversionAccountAmsId,
                                                               @Variable String pacs004,
                                                               @Variable String creditorIban) {
-        logger.info("bookCreditedAmountToConversionAccountInRecall");
+        log.info("bookCreditedAmountToConversionAccountInRecall");
         eventService.auditedEvent(
                 eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "bookCreditedAmountToConversionAccountInRecall", internalCorrelationId, transactionGroupId, eventBuilder),
                 eventBuilder -> bookCreditedAmountToConversionAccountInRecall(originalPacs008,
@@ -240,7 +242,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
             doBatch(items, tenantIdentifier, internalCorrelationId);
         } catch (Exception e) {
             // TODO technical error handling
-            logger.error("Worker to book incoming money in AMS has failed, dispatching user task to handle conversion account deposit", e);
+            log.error("Worker to book incoming money in AMS has failed, dispatching user task to handle conversion account deposit", e);
             throw new ZeebeBpmnError("Error_BookToConversionToBeHandledManually", e.getMessage());
         }
         return null;

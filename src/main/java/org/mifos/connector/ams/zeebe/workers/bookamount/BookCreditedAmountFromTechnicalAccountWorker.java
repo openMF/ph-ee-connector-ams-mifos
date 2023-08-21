@@ -12,6 +12,7 @@ import io.camunda.zeebe.spring.client.annotation.Variable;
 import io.camunda.zeebe.spring.client.exception.ZeebeBpmnError;
 import iso.std.iso._20022.tech.json.camt_053_001.ReportEntry10;
 import jakarta.xml.bind.JAXBException;
+import lombok.extern.slf4j.Slf4j;
 import org.mifos.connector.ams.fineract.Config;
 import org.mifos.connector.ams.fineract.ConfigFactory;
 import org.mifos.connector.ams.log.EventLogUtil;
@@ -19,8 +20,6 @@ import org.mifos.connector.ams.log.LogInternalCorrelationId;
 import org.mifos.connector.ams.log.TraceZeebeArguments;
 import org.mifos.connector.ams.mapstruct.Pacs008Camt053Mapper;
 import org.mifos.connector.ams.zeebe.workers.utils.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -29,9 +28,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Component
+@Slf4j
 public class BookCreditedAmountFromTechnicalAccountWorker extends AbstractMoneyInOutWorker {
-
-    private Logger logger = LoggerFactory.getLogger(getClass());
 
     @Value("${fineract.incoming-money-api}")
     private String incomingMoneyApi;
@@ -74,7 +72,7 @@ public class BookCreditedAmountFromTechnicalAccountWorker extends AbstractMoneyI
                                                        @Variable String transactionGroupId,
                                                        @Variable String transactionCategoryPurposeCode,
                                                        @Variable String caseIdentifier) {
-        logger.info("bookCreditedAmountFromTechnicalAccount");
+        log.info("bookCreditedAmountFromTechnicalAccount");
         eventService.auditedEvent(
                 eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "bookCreditedAmountFromTechnicalAccount", internalCorrelationId, transactionGroupId, eventBuilder),
                 eventBuilder -> bookCreditedAmountFromTechnicalAccount(originalPacs008,
@@ -115,7 +113,7 @@ public class BookCreditedAmountFromTechnicalAccountWorker extends AbstractMoneyI
             Config technicalAccountConfig = technicalAccountConfigFactory.getConfig(tenantIdentifier);
 
             String taLookup = String.format("%s.%s", paymentScheme, caseIdentifier);
-            logger.debug("Looking up account id for {}", taLookup);
+            log.debug("Looking up account id for {}", taLookup);
             Integer recallTechnicalAccountId = technicalAccountConfig.findByOperation(taLookup);
 
             String technicalAccountWithdrawalRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), recallTechnicalAccountId, "withdrawal");
@@ -158,7 +156,7 @@ public class BookCreditedAmountFromTechnicalAccountWorker extends AbstractMoneyI
 
         } catch (JsonProcessingException | JAXBException e) {
             // TODO technical error handling
-            logger.error("Worker to book incoming money in AMS has failed, dispatching user task to handle conversion account deposit", e);
+            log.error("Worker to book incoming money in AMS has failed, dispatching user task to handle conversion account deposit", e);
             throw new ZeebeBpmnError("Error_BookToConversionToBeHandledManually", e.getMessage());
         }
         return null;

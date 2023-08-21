@@ -15,6 +15,7 @@ import iso.std.iso._20022.tech.json.camt_053_001.ReportEntry10;
 import iso.std.iso._20022.tech.json.pain_001_001.Pain00100110CustomerCreditTransferInitiationV10MessageSchema;
 import iso.std.iso._20022.tech.xsd.camt_056_001.PaymentTransactionInformation31;
 import jakarta.xml.bind.JAXBException;
+import lombok.extern.slf4j.Slf4j;
 import org.mifos.connector.ams.fineract.Config;
 import org.mifos.connector.ams.fineract.ConfigFactory;
 import org.mifos.connector.ams.log.EventLogUtil;
@@ -33,6 +34,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Component
+@Slf4j
 public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker {
 
     @Autowired
@@ -72,7 +74,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
                                              @Variable BigDecimal transactionFeeAmount,
                                              @Variable String tenantIdentifier,
                                              @Variable String debtorIban) {
-        logger.info("bookOnConversionAccountInAms");
+        log.info("bookOnConversionAccountInAms");
         eventService.auditedEvent(
                 eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "bookOnConversionAccountInAms", internalCorrelationId, transactionGroupId, eventBuilder),
                 eventBuilder -> bookOnConversionAccountInAms(originalPain001,
@@ -152,7 +154,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 
             if (!BigDecimal.ZERO.equals(transactionFeeAmount)) {
 
-                logger.info("Withdrawing fee {} from conversion account {}", transactionFeeAmount, conversionAccountAmsId);
+                log.info("Withdrawing fee {} from conversion account {}", transactionFeeAmount, conversionAccountAmsId);
 
                 paymentTypeId = paymentTypeConfig.findByOperation(String.format("%s.%s", paymentScheme, "bookOnConversionAccountInAms.ConversionAccount.WithdrawTransactionFee"));
 
@@ -201,7 +203,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
                                                             @Variable String transactionCategoryPurposeCode,
                                                             @Variable String camt056,
                                                             @Variable String debtorIban) {
-        logger.info("withdrawTheAmountFromConversionAccountInAms");
+        log.info("withdrawTheAmountFromConversionAccountInAms");
         eventService.auditedEvent(
                 eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "withdrawTheAmountFromConversionAccountInAms", eventBuilder),
                 eventBuilder -> withdrawTheAmountFromConversionAccountInAms(amount,
@@ -296,7 +298,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
             doBatch(items, tenantIdentifier, internalCorrelationId);
         } catch (JAXBException | JsonProcessingException e) {
             //TODO technical error handling
-            logger.error(e.getMessage(), e);
+            log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
         return null;

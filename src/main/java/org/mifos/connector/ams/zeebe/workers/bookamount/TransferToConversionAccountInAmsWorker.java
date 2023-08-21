@@ -17,6 +17,7 @@ import iso.std.iso._20022.tech.json.camt_053_001.ReportEntry10;
 import iso.std.iso._20022.tech.json.pain_001_001.Pain00100110CustomerCreditTransferInitiationV10MessageSchema;
 import iso.std.iso._20022.tech.xsd.camt_056_001.PaymentTransactionInformation31;
 import jakarta.xml.bind.JAXBException;
+import lombok.extern.slf4j.Slf4j;
 import org.mifos.connector.ams.fineract.Config;
 import org.mifos.connector.ams.fineract.ConfigFactory;
 import org.mifos.connector.ams.log.EventLogUtil;
@@ -41,6 +42,7 @@ import java.util.List;
 import java.util.Set;
 
 @Component
+@Slf4j
 public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWorker {
 
     @Autowired
@@ -89,7 +91,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
                                                  @Variable String tenantIdentifier,
                                                  @Variable String iban,
                                                  @Variable String transactionFeeInternalCorrelationId) {
-        logger.info("transferToConversionAccountInAms");
+        log.info("transferToConversionAccountInAms");
         eventService.auditedEvent(
                 eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "transferToConversionAccountInAms", internalCorrelationId, transactionGroupId, eventBuilder),
                 eventBuilder -> transferToConversionAccountInAms(transactionGroupId,
@@ -131,10 +133,10 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
             try {
                 Set<ValidationMessage> validationResult = validator.validate(originalPain001);
                 if (!validationResult.isEmpty()) {
-                    logger.error(validationResult.toString());
+                    log.error(validationResult.toString());
                 }
             } catch (JsonProcessingException e) {
-                logger.warn("Unable to validate pain.001: {}", e.getMessage());
+                log.warn("Unable to validate pain.001: {}", e.getMessage());
             }
 
             boolean hasFee = !BigDecimal.ZERO.equals(transactionFeeAmount);
@@ -188,7 +190,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
                     internalCorrelationId, objectMapper, batchItemBuilder, items, camt053Entry, camt053RelativeUrl, iban, transactionDate);
 
             if (hasFee) {
-                logger.debug("Withdrawing fee {} from disposal account {}", transactionFeeAmount, disposalAccountAmsId);
+                log.debug("Withdrawing fee {} from disposal account {}", transactionFeeAmount, disposalAccountAmsId);
                 withdrawFee(transactionFeeAmount, paymentScheme, transactionDate, objectMapper, paymentTypeConfig, batchItemBuilder,
                         items, disposalAccountWithdrawRelativeUrl);
 
@@ -199,7 +201,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
                         batchItemBuilder, items, camt053Entry, camt053RelativeUrl, iban, transactionDate);
             }
 
-            logger.info("Depositing amount {} to conversion account {}", amount, conversionAccountAmsId);
+            log.info("Depositing amount {} to conversion account {}", amount, conversionAccountAmsId);
 
             String conversionAccountDepositRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "deposit");
 
@@ -213,7 +215,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
                     camt053Entry, camt053RelativeUrl, iban, transactionDate);
 
             if (hasFee) {
-                logger.debug("Depositing fee {} to conversion account {}", transactionFeeAmount, conversionAccountAmsId);
+                log.debug("Depositing fee {} to conversion account {}", transactionFeeAmount, conversionAccountAmsId);
                 depositFee(transactionFeeAmount, paymentScheme, transactionDate, objectMapper, paymentTypeConfig, batchItemBuilder, items,
                         conversionAccountDepositRelativeUrl);
 
@@ -228,7 +230,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 
         } catch (Exception e) {
             // TODO technical error handling
-            logger.error(e.getMessage(), e);
+            log.error(e.getMessage(), e);
             throw new ZeebeBpmnError("Error_InsufficientFunds", e.getMessage());
         }
         return null;
@@ -337,7 +339,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
                                                           @Variable String transactionCategoryPurposeCode,
                                                           @Variable String camt056,
                                                           @Variable String iban) {
-        logger.info("withdrawTheAmountFromDisposalAccountInAMS");
+        log.info("withdrawTheAmountFromDisposalAccountInAMS");
         eventService.auditedEvent(
                 eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "withdrawTheAmountFromDisposalAccountInAMS", eventBuilder),
                 eventBuilder -> withdrawTheAmountFromDisposalAccountInAMS(amount,
@@ -442,7 +444,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 
         } catch (JAXBException | JsonProcessingException e) {
             // TODO technical error handling
-            logger.error(e.getMessage(), e);
+            log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
         return null;

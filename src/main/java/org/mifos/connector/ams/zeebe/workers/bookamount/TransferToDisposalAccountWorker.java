@@ -10,6 +10,7 @@ import io.camunda.zeebe.spring.client.annotation.JobWorker;
 import io.camunda.zeebe.spring.client.annotation.Variable;
 import io.camunda.zeebe.spring.client.exception.ZeebeBpmnError;
 import iso.std.iso._20022.tech.json.camt_053_001.ReportEntry10;
+import lombok.extern.slf4j.Slf4j;
 import org.mifos.connector.ams.fineract.Config;
 import org.mifos.connector.ams.fineract.ConfigFactory;
 import org.mifos.connector.ams.log.EventLogUtil;
@@ -26,6 +27,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Component
+@Slf4j
 public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 
     @Autowired
@@ -62,7 +64,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
                                           @Variable Integer disposalAccountAmsId,
                                           @Variable String tenantIdentifier,
                                           @Variable String creditorIban) {
-        logger.info("transferToDisposalAccount");
+        log.info("transferToDisposalAccount");
         eventService.auditedEvent(
                 eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "transferToDisposalAccount", internalCorrelationId, transactionGroupId, eventBuilder),
                 eventBuilder -> transferToDisposalAccount(originalPacs008,
@@ -171,7 +173,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 
         } catch (Exception e) {
             // TODO technical error handling
-            logger.error("Exchange to disposal worker has failed, dispatching user task to handle exchange", e);
+            log.error("Exchange to disposal worker has failed, dispatching user task to handle exchange", e);
             throw new ZeebeBpmnError("Error_TransferToDisposalToBeHandledManually", e.getMessage());
         }
         return null;
@@ -194,7 +196,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
                                                   @Variable String tenantIdentifier,
                                                   @Variable String pacs004,
                                                   @Variable String creditorIban) {
-        logger.info("transferToDisposalAccountInRecall");
+        log.info("transferToDisposalAccountInRecall");
         eventService.auditedEvent(
                 eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "transferToDisposalAccountInRecall", internalCorrelationId, transactionGroupId, eventBuilder),
                 eventBuilder -> transferToDisposalAccountInRecall(originalPacs008,
@@ -306,7 +308,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 
         } catch (Exception e) {
             // TODO technical error handling
-            logger.error("Exchange to disposal worker has failed, dispatching user task to handle exchange", e);
+            log.error("Exchange to disposal worker has failed, dispatching user task to handle exchange", e);
             throw new ZeebeBpmnError("Error_TransferToDisposalToBeHandledManually", e.getMessage());
         }
         return null;

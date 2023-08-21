@@ -15,6 +15,7 @@ import iso.std.iso._20022.tech.json.camt_053_001.ReportEntry10;
 import iso.std.iso._20022.tech.json.pain_001_001.Pain00100110CustomerCreditTransferInitiationV10MessageSchema;
 import iso.std.iso._20022.tech.xsd.camt_056_001.PaymentTransactionInformation31;
 import jakarta.xml.bind.JAXBException;
+import lombok.extern.slf4j.Slf4j;
 import org.mifos.connector.ams.fineract.Config;
 import org.mifos.connector.ams.fineract.ConfigFactory;
 import org.mifos.connector.ams.log.EventLogUtil;
@@ -33,6 +34,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Component
+@Slf4j
 public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 
     @Autowired
@@ -73,7 +75,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                             @Variable BigDecimal transactionFeeAmount,
                             @Variable String tenantIdentifier,
                             @Variable String debtorIban) {
-        logger.info("revertInAms");
+        log.info("revertInAms");
         eventService.auditedEvent(
                 eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "revertInAms", internalCorrelationId, transactionGroupId, eventBuilder),
                 eventBuilder -> revertInAms(internalCorrelationId,
@@ -152,7 +154,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
             batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 
             if (!BigDecimal.ZERO.equals(transactionFeeAmount)) {
-                logger.debug("Withdrawing fee {} from conversion account {}", transactionFeeAmount, conversionAccountAmsId);
+                log.debug("Withdrawing fee {} from conversion account {}", transactionFeeAmount, conversionAccountAmsId);
 
                 paymentTypeId = paymentTypeConfig.findByOperation(String.format("%s.%s", paymentScheme, "revertInAms.ConversionAccount.WithdrawTransactionFee"));
 
@@ -181,7 +183,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                 batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
             }
 
-            logger.debug("Re-depositing amount {} in disposal account {}", amount, disposalAccountAmsId);
+            log.debug("Re-depositing amount {} in disposal account {}", amount, disposalAccountAmsId);
 
             String disposalAccountDepositRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), disposalAccountAmsId, "deposit");
 
@@ -214,7 +216,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
             batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 
             if (!BigDecimal.ZERO.equals(transactionFeeAmount)) {
-                logger.debug("Re-depositing fee {} in disposal account {}", transactionFeeAmount, disposalAccountAmsId);
+                log.debug("Re-depositing fee {} in disposal account {}", transactionFeeAmount, disposalAccountAmsId);
 
                 paymentTypeId = paymentTypeConfig.findByOperation(String.format("%s.%s", paymentScheme, "revertInAms.DisposalAccount.DepositTransactionFee"));
 
@@ -270,7 +272,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                                       @Variable BigDecimal transactionFeeAmount,
                                       @Variable String tenantIdentifier,
                                       @Variable String debtorIban) {
-        logger.info("revertWithoutFeeInAms");
+        log.info("revertWithoutFeeInAms");
         eventService.auditedEvent(
                 eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "revertWithoutFeeInAms", internalCorrelationId, transactionGroupId, eventBuilder),
                 eventBuilder -> revertWithoutFeeInAms(internalCorrelationId,
@@ -349,7 +351,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
             batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 
             if (!BigDecimal.ZERO.equals(transactionFeeAmount)) {
-                logger.debug("Withdrawing fee {} from conversion account {}", transactionFeeAmount, conversionAccountAmsId);
+                log.debug("Withdrawing fee {} from conversion account {}", transactionFeeAmount, conversionAccountAmsId);
 
                 paymentTypeId = paymentTypeConfig.findByOperation(String.format("%s.%s", paymentScheme, "revertInAms.ConversionAccount.WithdrawTransactionFee"));
 
@@ -378,7 +380,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                 batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
             }
 
-            logger.debug("Re-depositing amount {} in disposal account {}", amount, disposalAccountAmsId);
+            log.debug("Re-depositing amount {} in disposal account {}", amount, disposalAccountAmsId);
 
             String disposalAccountDepositRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), disposalAccountAmsId, "deposit");
 
@@ -432,7 +434,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                                                 @Variable String transactionCategoryPurposeCode,
                                                 @Variable String camt056,
                                                 @Variable String debtorIban) {
-        logger.info("depositTheAmountOnDisposalInAms");
+        log.info("depositTheAmountOnDisposalInAms");
         eventService.auditedEvent(
                 eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "depositTheAmountOnDisposalInAms", eventBuilder),
                 eventBuilder -> depositTheAmountOnDisposalInAms(amount,

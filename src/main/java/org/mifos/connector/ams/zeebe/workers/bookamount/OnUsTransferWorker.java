@@ -11,6 +11,7 @@ import io.camunda.zeebe.spring.client.annotation.JobWorker;
 import io.camunda.zeebe.spring.client.annotation.Variable;
 import iso.std.iso._20022.tech.json.camt_053_001.ReportEntry10;
 import iso.std.iso._20022.tech.json.pain_001_001.Pain00100110CustomerCreditTransferInitiationV10MessageSchema;
+import lombok.extern.slf4j.Slf4j;
 import org.mifos.connector.ams.fineract.Config;
 import org.mifos.connector.ams.fineract.ConfigFactory;
 import org.mifos.connector.ams.log.EventLogUtil;
@@ -33,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 
 @Component
+@Slf4j
 public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 
     private static final String ERROR_FAILED_CREDIT_TRANSFER = "Error_FailedCreditTransfer";
@@ -74,7 +76,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
                                                                         @Variable String transactionFeeInternalCorrelationId,
                                                                         @Variable String creditorIban,
                                                                         @Variable String debtorIban) {
-        logger.info("transferTheAmountBetweenDisposalAccounts");
+        log.info("transferTheAmountBetweenDisposalAccounts");
         return eventService.auditedEvent(
                 eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "transferTheAmountBetweenDisposalAccounts", internalCorrelationId, transactionGroupId, eventBuilder),
                 eventBuilder -> transferTheAmountBetweenDisposalAccounts(internalCorrelationId,

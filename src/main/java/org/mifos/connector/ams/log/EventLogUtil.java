@@ -9,6 +9,13 @@ import java.util.Map;
 
 public final class EventLogUtil {
 
+    public static Event.Builder initFineractCall(String url, Event.Builder eventBuilder) {
+        eventBuilder.setSourceModule("ams_connector");
+        eventBuilder.setEventLogLevel(EventLogLevel.INFO);
+        eventBuilder.setEvent(url);
+        return eventBuilder;
+    }
+
     public static Event.Builder initZeebeJob(ActivatedJob activatedJob,
                                              String event,
                                              Event.Builder eventBuilder) {

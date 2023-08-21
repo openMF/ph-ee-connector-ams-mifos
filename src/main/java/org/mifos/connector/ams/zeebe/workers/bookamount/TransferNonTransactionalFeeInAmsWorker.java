@@ -11,6 +11,7 @@ import io.camunda.zeebe.spring.client.annotation.Variable;
 import io.camunda.zeebe.spring.client.exception.ZeebeBpmnError;
 import iso.std.iso._20022.tech.json.camt_053_001.ReportEntry10;
 import iso.std.iso._20022.tech.json.pain_001_001.Pain00100110CustomerCreditTransferInitiationV10MessageSchema;
+import lombok.extern.slf4j.Slf4j;
 import org.mifos.connector.ams.fineract.Config;
 import org.mifos.connector.ams.fineract.ConfigFactory;
 import org.mifos.connector.ams.log.EventLogUtil;
@@ -33,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 
 @Component
+@Slf4j
 public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWorker {
 
     @Autowired
@@ -67,7 +69,7 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
                                                                 @Variable String categoryPurpose,
                                                                 @Variable String originalPain001,
                                                                 @Variable String debtorIban) {
-        logger.info("transferNonTransactionalFeeInAms");
+        log.info("transferNonTransactionalFeeInAms");
         return eventService.auditedEvent(
                 eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "bookCreditedAmountToTechnicalAccount", internalCorrelationId, transactionGroupId, eventBuilder),
                 eventBuilder -> transferNonTransactionalFeeInAms(conversionAccountAmsId,
@@ -96,18 +98,18 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
                                                                  Event.Builder eventBuilder) {
         String disposalAccountWithdrawRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), disposalAccountAmsId, "withdrawal");
         Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
-        logger.debug("Got payment scheme {}", paymentScheme);
+        log.debug("Got payment scheme {}", paymentScheme);
         String transactionDate = LocalDate.now().format(PATTERN);
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.setSerializationInclusion(Include.NON_NULL);
         batchItemBuilder.tenantId(tenantIdentifier);
-        logger.debug("Got category purpose code {}", categoryPurpose);
+        log.debug("Got category purpose code {}", categoryPurpose);
 
         try {
             Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001 = objectMapper.readValue(originalPain001, Pain00100110CustomerCreditTransferInitiationV10MessageSchema.class);
 
             Integer paymentTypeId = paymentTypeConfig.findByOperation(String.format("%s.%s.%s", paymentScheme, categoryPurpose, "transferToConversionAccountInAms.DisposalAccount.WithdrawNonTransactionalFee"));
-            logger.debug("Looking up {}, got payment type id {}", String.format("%s.%s.%s", paymentScheme, categoryPurpose, "transferToConversionAccountInAms.DisposalAccount.WithdrawNonTransactionalFee"), paymentTypeId);
+            log.debug("Looking up {}, got payment type id {}", String.format("%s.%s.%s", paymentScheme, categoryPurpose, "transferToConversionAccountInAms.DisposalAccount.WithdrawNonTransactionalFee"), paymentTypeId);
             TransactionBody body = new TransactionBody(
                     transactionDate,
                     amount,
@@ -142,7 +144,7 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
             batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 
             paymentTypeId = paymentTypeConfig.findByOperation(String.format("%s.%s.%s", paymentScheme, categoryPurpose, "transferToConversionAccountInAms.ConversionAccount.DepositNonTransactionalFee"));
-            logger.debug("Looking up {}, got payment type id {}", String.format("%s.%s.%s", paymentScheme, categoryPurpose, "transferToConversionAccountInAms.ConversionAccount.DepositNonTransactionalFee"), paymentTypeId);
+            log.debug("Looking up {}, got payment type id {}", String.format("%s.%s.%s", paymentScheme, categoryPurpose, "transferToConversionAccountInAms.ConversionAccount.DepositNonTransactionalFee"), paymentTypeId);
             body = new TransactionBody(
                     transactionDate,
                     amount,
@@ -173,7 +175,7 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 
 
             paymentTypeId = paymentTypeConfig.findByOperation(String.format("%s.%s.%s", paymentScheme, categoryPurpose, "transferToConversionAccountInAms.ConversionAccount.WithdrawNonTransactionalFee"));
-            logger.debug("Looking up {}, got payment type id {}", String.format("%s.%s.%s", paymentScheme, categoryPurpose, "transferToConversionAccountInAms.ConversionAccount.WithdrawNonTransactionalFee"), paymentTypeId);
+            log.debug("Looking up {}, got payment type id {}", String.format("%s.%s.%s", paymentScheme, categoryPurpose, "transferToConversionAccountInAms.ConversionAccount.WithdrawNonTransactionalFee"), paymentTypeId);
             body = new TransactionBody(
                     transactionDate,
                     amount,
@@ -202,14 +204,14 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 
             batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 
-            logger.debug("Attempting to send {}", objectMapper.writeValueAsString(items));
+            log.debug("Attempting to send {}", objectMapper.writeValueAsString(items));
 
             doBatch(items, tenantIdentifier, internalCorrelationId);
 
             return Map.of("transactionDate", transactionDate);
         } catch (Exception e) {
             // TODO technical error handling
-            logger.error(e.getMessage(), e);
+            log.error(e.getMessage(), e);
             throw new ZeebeBpmnError("Error_InsufficientFunds", e.getMessage());
         }
     }
