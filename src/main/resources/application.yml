@@ -46,7 +46,7 @@ zeebe:
     evenly-allocated-max-jobs: 1000
     worker:
       max-jobs-active: 32
-      threads: 5
+      threads: 50
 #    max-execution-threads: 100
 #    number-of-workers: 8
 #    evenly-allocated-max-jobs: "#{${zeebe.client.max-execution-threads} / ${zeebe.client.number-of-workers}}"
