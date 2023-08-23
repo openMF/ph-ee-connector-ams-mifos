@@ -29,6 +29,14 @@ management:
             - camelHealth
             - zeebeClient
 
+baasflow:
+  commons:
+    events:
+      audit:
+        kafka:
+          brokers: ${COMMONS_EVENTS_AUDIT_KAFKA_BROKERS}
+          topic: ${COMMONS_EVENTS_AUDIT_KAFKA_TOPIC}
+
 dfspids: "DFSPID"
 
 fineract:
@@ -57,4 +65,3 @@ ams:
   local:
     server-cert-check: false
     enabled: false
-
