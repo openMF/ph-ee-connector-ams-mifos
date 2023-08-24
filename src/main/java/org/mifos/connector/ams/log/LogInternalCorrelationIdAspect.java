@@ -30,8 +30,8 @@ public class LogInternalCorrelationIdAspect {
         }
     }
 
-    private String getInternalCorrelationId(ProceedingJoinPoint joinPoint) {
-        MethodSignature methodSignature = (MethodSignature) joinPoint.getStaticPart().getSignature();
+    public static String getInternalCorrelationId(ProceedingJoinPoint joinPoint) {
+        MethodSignature methodSignature = (MethodSignature) joinPoint.getSignature();
         Method method = methodSignature.getMethod();
         Object[] args = joinPoint.getArgs();
         Parameter[] parameters = method.getParameters();
