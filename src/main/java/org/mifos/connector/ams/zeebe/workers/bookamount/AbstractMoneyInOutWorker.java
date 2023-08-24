@@ -122,8 +122,41 @@ public abstract class AbstractMoneyInOutWorker {
                         Object.class));
     }
 
+    protected void doBatch(List<TransactionItem> items,
+                           String tenantId,
+                           Integer disposalAccountId,
+                           Integer conversionAccountId,
+                           String internalCorrelationId,
+                           String calledFrom) {
+        eventService.auditedEvent(
+                eventBuilder -> EventLogUtil.initFineractBatchCall(calledFrom,
+                        items,
+                        disposalAccountId,
+                        conversionAccountId,
+                        internalCorrelationId,
+                        eventBuilder),
+                eventBuilder -> doBatchInternal(items, tenantId, internalCorrelationId));
+    }
+
+    protected void doBatchOnUs(List<TransactionItem> items,
+                               String tenantId,
+                               Integer debtorDisposalAccountAmsId,
+                               Integer debtorConversionAccountAmsId,
+                               Integer creditorDisposalAccountAmsId,
+                               String internalCorrelationId) {
+        eventService.auditedEvent(
+                eventBuilder -> EventLogUtil.initFineractBatchCallOnUs("transferTheAmountBetweenDisposalAccounts",
+                        items,
+                        debtorDisposalAccountAmsId,
+                        debtorConversionAccountAmsId,
+                        creditorDisposalAccountAmsId,
+                        internalCorrelationId,
+                        eventBuilder),
+                eventBuilder -> doBatchInternal(items, tenantId, internalCorrelationId));
+    }
+
     @SuppressWarnings("unchecked")
-    protected void doBatch(List<TransactionItem> items, String tenantId, String internalCorrelationId) throws JsonProcessingException {
+    private Void doBatchInternal(List<TransactionItem> items, String tenantId, String internalCorrelationId) {
         HttpHeaders httpHeaders = new HttpHeaders();
         httpHeaders.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
         httpHeaders.set("Authorization", authTokenHelper.generateAuthToken());
@@ -141,7 +174,12 @@ public abstract class AbstractMoneyInOutWorker {
 
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.setSerializationInclusion(Include.NON_NULL);
-        String body = objectMapper.writeValueAsString(items);
+        String body;
+        try {
+            body = objectMapper.writeValueAsString(items);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("failed to create json from batch items", e);
+        }
 
         int retryCount = idempotencyRetryCount;
 
@@ -219,7 +257,7 @@ public abstract class AbstractMoneyInOutWorker {
                             break retry;
                         case 409:
                             log.warn("Transaction is already executing, has not completed yet");
-                            return;
+                            return null;
 
                         default:
                             throw new RuntimeException("An unexpected error occurred");
@@ -228,7 +266,7 @@ public abstract class AbstractMoneyInOutWorker {
             }
 
             if (allOk) {
-                return;
+                return null;
             }
 
             log.info("{} more attempts", retryCount);

@@ -183,7 +183,13 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
                 batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
             }
 
-            doBatch(items, tenantIdentifier, internalCorrelationId);
+            doBatch(items,
+                    tenantIdentifier,
+                    -1,
+                    conversionAccountAmsId,
+                    internalCorrelationId,
+                    "bookOnConversionAccountInAms");
+
         } catch (JsonProcessingException e) {
             //TODO technical error handling
             throw new RuntimeException("failed to create camt.053", e);
@@ -295,7 +301,13 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 
             batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 
-            doBatch(items, tenantIdentifier, internalCorrelationId);
+            doBatch(items,
+                    tenantIdentifier,
+                    -1,
+                    conversionAccountAmsId,
+                    internalCorrelationId,
+                    "withdrawTheAmountFromConversionAccountInAms");
+
         } catch (JAXBException | JsonProcessingException e) {
             //TODO technical error handling
             log.error(e.getMessage(), e);

@@ -152,7 +152,12 @@ public class BookCreditedAmountFromTechnicalAccountWorker extends AbstractMoneyI
 
             batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 
-            doBatch(items, tenantIdentifier, internalCorrelationId);
+            doBatch(items,
+                    tenantIdentifier,
+                    -1,
+                    -1,
+                    internalCorrelationId,
+                    "bookCreditedAmountFromTechnicalAccount");
 
         } catch (JsonProcessingException | JAXBException e) {
             // TODO technical error handling

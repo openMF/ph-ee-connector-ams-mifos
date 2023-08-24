@@ -169,7 +169,12 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 
             batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 
-            doBatch(items, tenantIdentifier, internalCorrelationId);
+            doBatch(items,
+                    tenantIdentifier,
+                    disposalAccountAmsId,
+                    conversionAccountAmsId,
+                    internalCorrelationId,
+                    "transferToDisposalAccount");
 
         } catch (Exception e) {
             // TODO technical error handling
@@ -304,7 +309,12 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 
             batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 
-            doBatch(items, tenantIdentifier, internalCorrelationId);
+            doBatch(items,
+                    tenantIdentifier,
+                    disposalAccountAmsId,
+                    conversionAccountAmsId,
+                    internalCorrelationId,
+                    "transferToDisposalAccountInRecall");
 
         } catch (Exception e) {
             // TODO technical error handling

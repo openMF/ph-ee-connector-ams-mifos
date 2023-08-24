@@ -291,7 +291,12 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
                 batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
             }
 
-            doBatch(items, tenantIdentifier, internalCorrelationId);
+            doBatchOnUs(items,
+                    tenantIdentifier,
+                    debtorDisposalAccountAmsId,
+                    debtorConversionAccountAmsId,
+                    creditorDisposalAccountAmsId,
+                    internalCorrelationId);
 
             return Map.of("transactionDate", interbankSettlementDate);
 

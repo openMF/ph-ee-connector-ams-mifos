@@ -66,7 +66,8 @@ public abstract class AbstractAmsWorker {
                         .queryParam("resultColumns", resultColumns)
                         .encode().toUriString(),
                 AmsDataTableQueryResponse[].class,
-                tenantId);
+                tenantId,
+                "lookupAccount");
     }
 
     @SuppressWarnings("unchecked")
@@ -79,18 +80,19 @@ public abstract class AbstractAmsWorker {
                         .queryParam("resultColumns", flagsResultColumns)
                         .encode().toUriString(),
                 List.class,
-                tenantId);
+                tenantId,
+                "lookupFlags");
         return flags.stream().map(flagResult -> flagResult.get(flagsResultColumns)).collect(Collectors.toList());
     }
 
-    protected <T> T exchange(String urlTemplate, Class<T> responseType, String tenantId) {
+    protected <T> T exchange(String urlTemplate, Class<T> responseType, String tenantId, String calledFrom) {
         HttpHeaders httpHeaders = new HttpHeaders();
         httpHeaders.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
         httpHeaders.set("Authorization", authTokenHelper.generateAuthToken());
         httpHeaders.set("Fineract-Platform-TenantId", tenantId);
         log.trace("calling {} with HttpHeaders {}", urlTemplate, httpHeaders);
         return eventService.auditedEvent(
-                eventBuilder -> EventLogUtil.initFineractCall(urlTemplate, eventBuilder),
+                eventBuilder -> EventLogUtil.initFineractCall(calledFrom, eventBuilder),
                 eventBuilder ->
                         restTemplate.exchange(
                                         urlTemplate,

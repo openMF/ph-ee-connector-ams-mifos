@@ -18,8 +18,6 @@ import org.mifos.connector.ams.log.LogInternalCorrelationId;
 import org.mifos.connector.ams.log.TraceZeebeArguments;
 import org.mifos.connector.ams.mapstruct.Pacs008Camt053Mapper;
 import org.mifos.connector.ams.zeebe.workers.utils.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -152,7 +150,12 @@ public class BookCreditedAmountToTechnicalAccountWorker extends AbstractMoneyInO
 
             batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 
-            doBatch(items, tenantIdentifier, internalCorrelationId);
+            doBatch(items,
+                    tenantIdentifier,
+                    -1,
+                    -1,
+                    internalCorrelationId,
+                    "bookCreditedAmountToTechnicalAccount");
 
         } catch (Exception e) {
             // TODO technical error handling

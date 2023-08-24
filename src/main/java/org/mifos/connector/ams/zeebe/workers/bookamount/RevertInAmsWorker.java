@@ -245,7 +245,12 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                 batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
             }
 
-            doBatch(items, tenantIdentifier, internalCorrelationId);
+            doBatch(items,
+                    tenantIdentifier,
+                    disposalAccountAmsId,
+                    conversionAccountAmsId,
+                    internalCorrelationId,
+                    "revertInAms");
 
         } catch (JsonProcessingException e) {
             // TODO technical error handling
@@ -412,7 +417,12 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 
             batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 
-            doBatch(items, tenantIdentifier, internalCorrelationId);
+            doBatch(items,
+                    tenantIdentifier,
+                    disposalAccountAmsId,
+                    conversionAccountAmsId,
+                    internalCorrelationId,
+                    "revertWithoutFeeInAms");
 
         } catch (JsonProcessingException e) {
             // TODO technical error handling
@@ -556,7 +566,12 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 
             batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 
-            doBatch(items, tenantIdentifier, internalCorrelationId);
+            doBatch(items,
+                    tenantIdentifier,
+                    disposalAccountAmsId,
+                    conversionAccountAmsId,
+                    internalCorrelationId,
+                    "depositTheAmountOnDisposalInAms");
 
         } catch (JAXBException | JsonProcessingException e) {
             // TODO technical error handling

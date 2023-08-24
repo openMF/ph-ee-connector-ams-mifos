@@ -107,6 +107,7 @@ public class GetAccountDetailsFromAmsWorker extends AbstractAmsWorker {
                         .path(String.format("%d", accountCurrencyId))
                         .encode().toUriString(),
                 GetSavingsAccountsAccountIdResponse.class,
-                tenantId);
+                tenantId,
+                "getAccountDetailsFromAms");
     }
 }

@@ -226,7 +226,12 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
                         items, camt053Entry, camt053RelativeUrl, iban, transactionDate);
             }
 
-            doBatch(items, tenantIdentifier, internalCorrelationId);
+            doBatch(items,
+                    tenantIdentifier,
+                    disposalAccountAmsId,
+                    conversionAccountAmsId,
+                    internalCorrelationId,
+                    "transferToConversionAccountInAms");
 
         } catch (Exception e) {
             // TODO technical error handling
@@ -440,7 +445,12 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
             camt053Body = objectMapper.writeValueAsString(td);
             batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 
-            doBatch(items, tenantIdentifier, internalCorrelationId);
+            doBatch(items,
+                    tenantIdentifier,
+                    disposalAccountAmsId,
+                    conversionAccountAmsId,
+                    internalCorrelationId,
+                    "withdrawTheAmountFromDisposalAccountInAMS");
 
         } catch (JAXBException | JsonProcessingException e) {
             // TODO technical error handling

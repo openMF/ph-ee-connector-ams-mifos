@@ -206,7 +206,12 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 
             log.debug("Attempting to send {}", objectMapper.writeValueAsString(items));
 
-            doBatch(items, tenantIdentifier, internalCorrelationId);
+            doBatch(items,
+                    tenantIdentifier,
+                    disposalAccountAmsId,
+                    conversionAccountAmsId,
+                    internalCorrelationId,
+                    "transferNonTransactionalFeeInAms");
 
             return Map.of("transactionDate", transactionDate);
         } catch (Exception e) {
