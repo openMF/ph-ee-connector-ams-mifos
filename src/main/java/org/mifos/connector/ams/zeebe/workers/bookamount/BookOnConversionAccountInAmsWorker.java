@@ -6,8 +6,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
-import jakarta.xml.bind.JAXBException;
-
 import org.mifos.connector.ams.fineract.Config;
 import org.mifos.connector.ams.fineract.ConfigFactory;
 import org.mifos.connector.ams.mapstruct.Pain001Camt053Mapper;
@@ -21,6 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -34,6 +33,7 @@ import iso.std.iso._20022.tech.json.camt_053_001.BankToCustomerStatementV08;
 import iso.std.iso._20022.tech.json.camt_053_001.ReportEntry10;
 import iso.std.iso._20022.tech.json.pain_001_001.Pain00100110CustomerCreditTransferInitiationV10MessageSchema;
 import iso.std.iso._20022.tech.xsd.camt_056_001.PaymentTransactionInformation31;
+import jakarta.xml.bind.JAXBException;
 
 @Component
 public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker {
@@ -68,15 +68,18 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 			@Variable String transactionFeeCategoryPurposeCode,
 			@Variable BigDecimal amount,
 			@Variable BigDecimal transactionFeeAmount,
-			@Variable String tenantIdentifier) throws Exception {
+			@Variable String tenantIdentifier,
+			@Variable String debtorIban) throws Exception {
 		
 		transactionDate = transactionDate.replaceAll("-", "");
+		
+		objectMapper.setSerializationInclusion(Include.NON_NULL);
 		
 		Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001 = objectMapper.readValue(originalPain001, Pain00100110CustomerCreditTransferInitiationV10MessageSchema.class);
 		
 		MDC.put("internalCorrelationId", internalCorrelationId);
 		
-		logger.info("Starting book debit on fiat account worker");
+		logger.info("Starting book debit on conversion account worker");
 		
 		logger.info("Withdrawing amount {} from conversion account {} of tenant {}", amount, conversionAccountAmsId, tenantIdentifier);
 		
@@ -105,12 +108,15 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 		convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.DBIT);
 		String camt053Entry = objectMapper.writeValueAsString(convertedcamt053Entry);
 		
-		String camt053RelativeUrl = String.format("datatables/transaction_details/%d", conversionAccountAmsId);
+		String camt053RelativeUrl = "datatables/transaction_details/$.resourceId";
 		
 		TransactionDetails td = new TransactionDetails(
-				"$.resourceId",
 				internalCorrelationId,
 				camt053Entry,
+				debtorIban,
+				transactionDate,
+				FORMAT,
+				locale,
 				transactionGroupId,
 				transactionCategoryPurposeCode);
 		
@@ -137,9 +143,12 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 			batchItemBuilder.add(items, conversionAccountWithdrawalRelativeUrl, bodyItem, false);
 		
 			td = new TransactionDetails(
-					"$.resourceId",
 					internalCorrelationId,
 					camt053Entry,
+					debtorIban,
+					transactionDate,
+					FORMAT,
+					locale,
 					transactionGroupId,
 					transactionFeeCategoryPurposeCode);
 			camt053Body = objectMapper.writeValueAsString(td);
@@ -148,7 +157,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 		
 		doBatch(items, tenantIdentifier, internalCorrelationId);
 		
-		logger.info("Book debit on fiat account has finished  successfully");
+		logger.info("Book debit on conversion account has finished  successfully");
 		
 		MDC.remove("internalCorrelationId");
 	}
@@ -161,8 +170,8 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 			@Variable String tenantIdentifier,
 			@Variable String paymentScheme,
 			@Variable String transactionCategoryPurposeCode,
-			@Variable String camt056
-			) {
+			@Variable String camt056,
+			@Variable String debtorIban) {
 		try {
 			logger.info("Withdrawing amount {} from conversion account {} of tenant {}", amount, conversionAccountAmsId, tenantIdentifier);
 			
@@ -182,6 +191,8 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 					"",
 					FORMAT,
 					locale);
+			
+			objectMapper.setSerializationInclusion(Include.NON_NULL);
 			
 			String bodyItem = objectMapper.writeValueAsString(body);
 			
@@ -217,12 +228,15 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 			
 			String camt053 = objectMapper.writeValueAsString(statement);
 			
-			String camt053RelativeUrl = String.format("datatables/transaction_details/%d", conversionAccountAmsId);
+			String camt053RelativeUrl = "datatables/transaction_details/$.resourceId";
 			
 			TransactionDetails td = new TransactionDetails(
-					"$.resourceId",
 					internalCorrelationId,
 					camt053,
+					debtorIban,
+					transactionDate,
+					FORMAT,
+					locale,
 					internalCorrelationId,
 					transactionCategoryPurposeCode);
 			

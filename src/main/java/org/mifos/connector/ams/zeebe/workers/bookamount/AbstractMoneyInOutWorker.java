@@ -6,7 +6,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 
 import org.mifos.connector.ams.log.IOTxLogger;
-import org.mifos.connector.ams.zeebe.workers.accountdetails.AbstractAmsWorker;
 import org.mifos.connector.ams.zeebe.workers.utils.AuthTokenHelper;
 import org.mifos.connector.ams.zeebe.workers.utils.HoldAmountBody;
 import org.mifos.connector.ams.zeebe.workers.utils.TransactionItem;
@@ -25,6 +24,7 @@ import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -138,6 +138,7 @@ public abstract class AbstractMoneyInOutWorker {
 		logger.debug(">> Sending {} to {} with headers {}", items, urlTemplate, httpHeaders);
 		
 		ObjectMapper objectMapper = new ObjectMapper();
+		objectMapper.setSerializationInclusion(Include.NON_NULL);
 		String body = objectMapper.writeValueAsString(items);
 		
 		int retryCount = idempotencyRetryCount;

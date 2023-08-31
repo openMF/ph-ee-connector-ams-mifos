@@ -19,6 +19,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.camunda.zeebe.client.api.response.ActivatedJob;
@@ -27,11 +28,11 @@ import io.camunda.zeebe.spring.client.annotation.JobWorker;
 import io.camunda.zeebe.spring.client.annotation.Variable;
 import io.camunda.zeebe.spring.client.exception.ZeebeBpmnError;
 import iso.std.iso._20022.tech.json.camt_053_001.ReportEntry10;
-import iso.std.iso._20022.tech.json.camt_053_001.ActiveOrHistoricCurrencyAndAmountRange2.CreditDebitCode;
+import jakarta.xml.bind.JAXBException;
 
 @Component
-public class BookCreditedAmountToTechnicalAccountWorker extends AbstractMoneyInOutWorker {
-	
+public class BookCreditedAmountFromTechnicalAccountWorker extends AbstractMoneyInOutWorker {
+
 	private Logger logger = LoggerFactory.getLogger(getClass());
 	
 	@Value("${fineract.incoming-money-api}")
@@ -58,7 +59,7 @@ public class BookCreditedAmountToTechnicalAccountWorker extends AbstractMoneyInO
 	private static final String FORMAT = "yyyyMMdd";
 
 	@JobWorker
-	public void bookCreditedAmountToTechnicalAccount(JobClient jobClient, 
+	public void bookCreditedAmountFromTechnicalAccount(JobClient jobClient, 
     		ActivatedJob activatedJob,
     		@Variable String originalPacs008,
 			@Variable String amount,
@@ -73,7 +74,11 @@ public class BookCreditedAmountToTechnicalAccountWorker extends AbstractMoneyInO
 			) {
 		
 		try {
-            logger.info("Incoming money worker started with variables");
+            ObjectMapper objectMapper = new ObjectMapper();
+            
+            objectMapper.setSerializationInclusion(Include.NON_NULL);
+            
+            List<TransactionItem> items = new ArrayList<>();
 
             iso.std.iso._20022.tech.xsd.pacs_008_001.Document pacs008 = jaxbUtils.unmarshalPacs008(originalPacs008);
 
@@ -87,10 +92,10 @@ public class BookCreditedAmountToTechnicalAccountWorker extends AbstractMoneyInO
             logger.debug("Looking up account id for {}", taLookup);
 			Integer recallTechnicalAccountId = technicalAccountConfig.findByOperation(taLookup);
     		
-    		String conversionAccountWithdrawalRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), recallTechnicalAccountId, "deposit");
+    		String technicalAccountWithdrawalRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), recallTechnicalAccountId, "withdrawal");
     		
     		Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
-    		Integer paymentTypeId = paymentTypeConfig.findByOperation(String.format("%s.%s.%s", paymentScheme, "bookToTechnicalAccount", caseIdentifier));
+    		Integer paymentTypeId = paymentTypeConfig.findByOperation(String.format("%s.%s.%s", paymentScheme, "bookFromTechnicalAccount", caseIdentifier));
     		
     		TransactionBody body = new TransactionBody(
     				transactionDate,
@@ -100,18 +105,11 @@ public class BookCreditedAmountToTechnicalAccountWorker extends AbstractMoneyInO
     				FORMAT,
     				locale);
     		
-    		ObjectMapper objectMapper = new ObjectMapper();
-    		
-    		objectMapper.setSerializationInclusion(Include.NON_NULL);
-    		
     		String bodyItem = objectMapper.writeValueAsString(body);
     		
-    		List<TransactionItem> items = new ArrayList<>();
-    		
-    		batchItemBuilder.add(items, conversionAccountWithdrawalRelativeUrl, bodyItem, false);
+    		batchItemBuilder.add(items, technicalAccountWithdrawalRelativeUrl, bodyItem, false);
     	
     		ReportEntry10 convertedCamt053Entry = camt053Mapper.toCamt053Entry(pacs008);
-    		convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.CRDT);
     		String camt053Entry = objectMapper.writeValueAsString(convertedCamt053Entry);
     		
     		String camt053RelativeUrl = "datatables/transaction_details/$.resourceId";
@@ -131,7 +129,7 @@ public class BookCreditedAmountToTechnicalAccountWorker extends AbstractMoneyInO
     		batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 
             doBatch(items, tenantIdentifier, internalCorrelationId);
-        } catch (Exception e) {
+        } catch (JsonProcessingException | JAXBException e) {
             logger.error("Worker to book incoming money in AMS has failed, dispatching user task to handle conversion account deposit", e);
             throw new ZeebeBpmnError("Error_BookToConversionToBeHandledManually", e.getMessage());
         } finally {

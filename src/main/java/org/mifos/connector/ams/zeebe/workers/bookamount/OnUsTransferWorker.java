@@ -18,6 +18,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -63,12 +64,15 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 			@Variable String transactionGroupId,
 			@Variable String transactionCategoryPurposeCode,
 			@Variable String transactionFeeCategoryPurposeCode,
-			@Variable String transactionFeeInternalCorrelationId) {
+			@Variable String transactionFeeInternalCorrelationId,
+			@Variable String creditorIban,
+			@Variable String debtorIban) {
 		try {
 			
 			logger.debug("Incoming pain.001: {}", originalPain001);
 			
 			ObjectMapper objectMapper = new ObjectMapper();
+			objectMapper.setSerializationInclusion(Include.NON_NULL);
 			Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001 = objectMapper.readValue(originalPain001, Pain00100110CustomerCreditTransferInitiationV10MessageSchema.class);
 			
 			ReportEntry10 convertedcamt053Entry = camt053Mapper.toCamt053Entry(pain001.getDocument());
@@ -97,12 +101,15 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
     		
     		batchItemBuilder.add(items, debtorDisposalWithdrawalRelativeUrl, bodyItem, false);
     	
-    		String camt053RelativeUrl = String.format("datatables/transaction_details/%d", debtorDisposalAccountAmsId);
+    		String camt053RelativeUrl = "datatables/transaction_details/$.resourceId";
     		
     		TransactionDetails td = new TransactionDetails(
-    				"$.resourceId",
     				internalCorrelationId,
     				camt053Entry,
+    				debtorIban,
+    				interbankSettlementDate,
+    				FORMAT,
+    				locale,
     				transactionGroupId,
     				transactionCategoryPurposeCode);
     		
@@ -126,15 +133,16 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 	    		
 	    		batchItemBuilder.add(items, debtorDisposalWithdrawalRelativeUrl, bodyItem, false);
 	    	
-	    		camt053RelativeUrl = String.format("datatables/transaction_details/%d", debtorDisposalAccountAmsId);
-	    		
 	    		convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getSupplementaryData().get(0).getEnvelope().setAdditionalProperty("InternalCorrelationId", transactionFeeInternalCorrelationId);
 				camt053Entry = objectMapper.writeValueAsString(convertedcamt053Entry);
 	    		
 	    		td = new TransactionDetails(
-	    				"$.resourceId",
 	    				transactionFeeInternalCorrelationId,
 	    				camt053Entry,
+	    				debtorIban,
+	    				interbankSettlementDate,
+	    				FORMAT,
+	    				locale,
 	    				transactionGroupId,
 	    				transactionFeeCategoryPurposeCode);
 	    		
@@ -159,12 +167,13 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 		    		
 	    		batchItemBuilder.add(items, debtorConversionDepositRelativeUrl, bodyItem, false);
 		    	
-	    		camt053RelativeUrl = String.format("datatables/transaction_details/%d", debtorConversionAccountAmsId);
-	    		
 	    		td = new TransactionDetails(
-	    				"$.resourceId",
 	    				transactionFeeInternalCorrelationId,
 	    				camt053Entry,
+	    				creditorIban,
+	    				interbankSettlementDate,
+	    				FORMAT,
+	    				locale,
 	    				transactionGroupId,
 	    				transactionFeeCategoryPurposeCode);
 	    		
@@ -188,15 +197,16 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 	    		
     		batchItemBuilder.add(items, creditorDisposalDepositRelativeUrl, bodyItem, false);
 	    	
-    		camt053RelativeUrl = String.format("datatables/transaction_details/%d", creditorDisposalAccountAmsId);
-    		
     		convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getSupplementaryData().get(0).getEnvelope().setAdditionalProperty("InternalCorrelationId", internalCorrelationId);
 			camt053Entry = objectMapper.writeValueAsString(convertedcamt053Entry);
 			
     		td = new TransactionDetails(
-    				"$.resourceId",
     				transactionFeeInternalCorrelationId,
     				camt053Entry,
+    				creditorIban,
+    				interbankSettlementDate,
+    				FORMAT,
+    				locale,
     				transactionGroupId,
     				transactionCategoryPurposeCode);
     		
@@ -221,15 +231,16 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 		    		
 	    		batchItemBuilder.add(items, debtorConversionWithdrawRelativeUrl, bodyItem, false);
 		    	
-	    		camt053RelativeUrl = String.format("datatables/transaction_details/%d", debtorConversionAccountAmsId);
-	    		
 	    		convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getSupplementaryData().get(0).getEnvelope().setAdditionalProperty("InternalCorrelationId", transactionFeeInternalCorrelationId);
 				camt053Entry = objectMapper.writeValueAsString(convertedcamt053Entry);
 				
 				td = new TransactionDetails(
-	    				"$.resourceId",
 	    				transactionFeeInternalCorrelationId,
 	    				camt053Entry,
+	    				debtorIban,
+	    				interbankSettlementDate,
+	    				FORMAT,
+	    				locale,
 	    				transactionGroupId,
 	    				transactionFeeCategoryPurposeCode);
 	    		

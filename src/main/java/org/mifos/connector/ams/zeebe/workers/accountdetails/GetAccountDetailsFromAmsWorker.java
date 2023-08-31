@@ -21,17 +21,17 @@ import io.camunda.zeebe.spring.client.annotation.Variable;
 import io.camunda.zeebe.spring.client.exception.ZeebeBpmnError;
 
 @Component
-public class AmsCreditorWorker extends AbstractAmsWorker {
+public class GetAccountDetailsFromAmsWorker extends AbstractAmsWorker {
 
 	@Value("${fineract.incoming-money-api}")
 	private String incomingMoneyApi;
 
-	Logger logger = LoggerFactory.getLogger(AmsCreditorWorker.class);
+	Logger logger = LoggerFactory.getLogger(GetAccountDetailsFromAmsWorker.class);
 	
-	public AmsCreditorWorker() {
+	public GetAccountDetailsFromAmsWorker() {
 	}
 
-	public AmsCreditorWorker(RestTemplate restTemplate) {
+	public GetAccountDetailsFromAmsWorker(RestTemplate restTemplate) {
 		super(restTemplate);
 	}
 
@@ -59,13 +59,13 @@ public class AmsCreditorWorker extends AbstractAmsWorker {
 			
 			if (response.length != 0) {
 				var responseItem = response[0];
-				Long accountFiatCurrencyId = responseItem.conversion_account_id();
-				Long accountECurrencyId = responseItem.disposal_account_id();
+				Long accountConversionId = responseItem.conversion_account_id();
+				Long accountDisposalId = responseItem.disposal_account_id();
 				internalAccountId = responseItem.internal_account_id();
 
 				try {
-					GetSavingsAccountsAccountIdResponse conversion = retrieveCurrencyIdAndStatus(accountFiatCurrencyId, tenantIdentifier);
-					GetSavingsAccountsAccountIdResponse disposal = retrieveCurrencyIdAndStatus(accountECurrencyId, tenantIdentifier);
+					GetSavingsAccountsAccountIdResponse conversion = retrieveCurrencyIdAndStatus(accountConversionId, tenantIdentifier);
+					GetSavingsAccountsAccountIdResponse disposal = retrieveCurrencyIdAndStatus(accountDisposalId, tenantIdentifier);
 					
 					logger.debug("Conversion account details: {}", conversion);
 					logger.debug("Disposal account details: {}", disposal);
@@ -79,7 +79,7 @@ public class AmsCreditorWorker extends AbstractAmsWorker {
 						status = AccountAmsStatus.READY_TO_RECEIVE_MONEY.name();
 					}
 					
-					flags = lookupFlags(accountECurrencyId, tenantIdentifier);
+					flags = lookupFlags(accountDisposalId, tenantIdentifier);
 
 					for (SavingsAccountStatusType statType : SavingsAccountStatusType.values()) {
 						if (Objects.equals(statType.getValue(), disposal.getStatus().getId())) {
