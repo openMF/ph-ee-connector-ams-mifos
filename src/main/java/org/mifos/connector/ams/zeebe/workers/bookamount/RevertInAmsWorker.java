@@ -446,7 +446,10 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                                                 @Variable String debtorIban) {
         log.info("depositTheAmountOnDisposalInAms");
         eventService.auditedEvent(
-                eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "depositTheAmountOnDisposalInAms", eventBuilder),
+                eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "depositTheAmountOnDisposalInAms",
+                        null,
+                        null,
+                        eventBuilder),
                 eventBuilder -> depositTheAmountOnDisposalInAms(amount,
                         conversionAccountAmsId,
                         disposalAccountAmsId,

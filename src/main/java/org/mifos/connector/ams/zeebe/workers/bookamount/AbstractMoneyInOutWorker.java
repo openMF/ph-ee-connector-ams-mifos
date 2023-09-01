@@ -79,7 +79,8 @@ public abstract class AbstractMoneyInOutWorker {
         log.trace("calling {} with HttpHeaders {}", urlTemplate, httpHeaders);
 
         return eventService.auditedEvent(
-                eventBuilder -> EventLogUtil.initFineractCall(urlTemplate, eventBuilder),
+                // TODO internalCorrelationId?
+                eventBuilder -> EventLogUtil.initFineractCall(urlTemplate, currencyAccountAmsId, -1, null, eventBuilder),
                 eventBuilder -> restTemplate.exchange(urlTemplate,
                         HttpMethod.POST,
                         entity,
@@ -115,7 +116,8 @@ public abstract class AbstractMoneyInOutWorker {
         log.trace("calling {} with HttpHeaders {}", urlTemplate, httpHeaders);
 
         return eventService.auditedEvent(
-                eventBuilder -> EventLogUtil.initFineractCall(urlTemplate, eventBuilder),
+                // TODO internalCorrelationId?
+                eventBuilder -> EventLogUtil.initFineractCall(urlTemplate, currencyAccountAmsId, -1, null, eventBuilder),
                 eventBuilder -> restTemplate.exchange(urlTemplate,
                         HttpMethod.POST,
                         entity,

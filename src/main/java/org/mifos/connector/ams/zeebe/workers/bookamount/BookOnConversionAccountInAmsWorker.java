@@ -211,7 +211,11 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
                                                             @Variable String debtorIban) {
         log.info("withdrawTheAmountFromConversionAccountInAms");
         eventService.auditedEvent(
-                eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "withdrawTheAmountFromConversionAccountInAms", eventBuilder),
+                eventBuilder -> EventLogUtil.initZeebeJob(activatedJob,
+                        "withdrawTheAmountFromConversionAccountInAms",
+                        null,
+                        null,
+                        eventBuilder),
                 eventBuilder -> withdrawTheAmountFromConversionAccountInAms(amount,
                         conversionAccountAmsId,
                         tenantIdentifier,

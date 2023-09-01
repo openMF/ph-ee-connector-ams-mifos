@@ -29,7 +29,7 @@ public class AmsDebtorWorker extends AbstractAmsWorker {
                                                     @Variable String debtorIban,
                                                     @Variable String tenantIdentifier) {
         return eventService.auditedEvent(
-                eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "getAccountIdsFromAms", eventBuilder),
+                eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "getAccountIdsFromAms", null, null, eventBuilder),
                 eventBuilder -> getAccountIdsFromAms(debtorIban, tenantIdentifier, eventBuilder));
     }
 

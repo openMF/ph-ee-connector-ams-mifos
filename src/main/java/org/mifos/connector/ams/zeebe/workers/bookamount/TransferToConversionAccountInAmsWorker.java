@@ -346,7 +346,10 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
                                                           @Variable String iban) {
         log.info("withdrawTheAmountFromDisposalAccountInAMS");
         eventService.auditedEvent(
-                eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "withdrawTheAmountFromDisposalAccountInAMS", eventBuilder),
+                eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "withdrawTheAmountFromDisposalAccountInAMS",
+                        null,
+                        null,
+                        eventBuilder),
                 eventBuilder -> withdrawTheAmountFromDisposalAccountInAMS(amount,
                         conversionAccountAmsId,
                         disposalAccountAmsId,

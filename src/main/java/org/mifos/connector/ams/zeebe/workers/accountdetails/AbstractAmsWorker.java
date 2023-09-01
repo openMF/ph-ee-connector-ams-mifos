@@ -92,7 +92,8 @@ public abstract class AbstractAmsWorker {
         httpHeaders.set("Fineract-Platform-TenantId", tenantId);
         log.trace("calling {} with HttpHeaders {}", urlTemplate, httpHeaders);
         return eventService.auditedEvent(
-                eventBuilder -> EventLogUtil.initFineractCall(calledFrom, eventBuilder),
+                // TODO internalCorrelationId?
+                eventBuilder -> EventLogUtil.initFineractCall(calledFrom, -1, -1, null, eventBuilder),
                 eventBuilder ->
                         restTemplate.exchange(
                                         urlTemplate,
