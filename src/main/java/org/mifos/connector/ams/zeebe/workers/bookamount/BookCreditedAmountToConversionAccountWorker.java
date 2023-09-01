@@ -1,25 +1,9 @@
 package org.mifos.connector.ams.zeebe.workers.bookamount;
 
-import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.List;
-
-import org.mifos.connector.ams.fineract.Config;
-import org.mifos.connector.ams.fineract.ConfigFactory;
-import org.mifos.connector.ams.mapstruct.Pacs008Camt053Mapper;
-import org.mifos.connector.ams.zeebe.workers.utils.BatchItemBuilder;
-import org.mifos.connector.ams.zeebe.workers.utils.JAXBUtils;
-import org.mifos.connector.ams.zeebe.workers.utils.TransactionBody;
-import org.mifos.connector.ams.zeebe.workers.utils.TransactionDetails;
-import org.mifos.connector.ams.zeebe.workers.utils.TransactionItem;
-import org.slf4j.MDC;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
-
+import com.baasflow.commons.events.Event;
+import com.baasflow.commons.events.EventService;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import io.camunda.zeebe.client.api.response.ActivatedJob;
 import io.camunda.zeebe.client.api.worker.JobClient;
 import io.camunda.zeebe.spring.client.annotation.JobWorker;
@@ -28,8 +12,24 @@ import io.camunda.zeebe.spring.client.exception.ZeebeBpmnError;
 import iso.std.iso._20022.tech.json.camt_053_001.AccountStatement9;
 import iso.std.iso._20022.tech.json.camt_053_001.BankToCustomerStatementV08;
 import iso.std.iso._20022.tech.json.camt_053_001.ReportEntry10;
+import lombok.extern.slf4j.Slf4j;
+import org.mifos.connector.ams.fineract.Config;
+import org.mifos.connector.ams.fineract.ConfigFactory;
+import org.mifos.connector.ams.log.EventLogUtil;
+import org.mifos.connector.ams.log.LogInternalCorrelationId;
+import org.mifos.connector.ams.log.TraceZeebeArguments;
+import org.mifos.connector.ams.mapstruct.Pacs008Camt053Mapper;
+import org.mifos.connector.ams.zeebe.workers.utils.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 
 @Component
+@Slf4j
 public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyInOutWorker {
 
     @Autowired
@@ -40,180 +40,230 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
 
     @Autowired
     private ConfigFactory paymentTypeConfigFactory;
-	
-	@Autowired
-	private JAXBUtils jaxbUtils;
-	
-	@Autowired
-	private BatchItemBuilder batchItemBuilder;
-    
-	@JobWorker
-    public void bookCreditedAmountToConversionAccount(JobClient jobClient, 
-    		ActivatedJob activatedJob,
-    		@Variable String originalPacs008,
-    		@Variable String transactionDate,
-    		@Variable String transactionCategoryPurposeCode,
-    		@Variable String transactionGroupId,
-    		@Variable String internalCorrelationId,
-    		@Variable String tenantIdentifier,
-    		@Variable String paymentScheme,
-    		@Variable BigDecimal amount,
-    		@Variable Integer conversionAccountAmsId,
-    		@Variable String creditorIban) throws Exception {
-        try {
-            MDC.put("internalCorrelationId", internalCorrelationId);
-            logger.info("book to conversion account in payment (pacs.008) {} started for {} on {} ", internalCorrelationId, paymentScheme, tenantIdentifier);
-            if (logger.isDebugEnabled()) {
-                logger.debug("activated job type {} with key {} at element {} of workflow {} with instance key {}\nheaders: {}\nvariables: {})",
-                        activatedJob.getType(),
-                        activatedJob.getKey(),
-                        activatedJob.getElementId(),
-                        activatedJob.getBpmnProcessId(),
-                        activatedJob.getProcessInstanceKey(),
-                        activatedJob.getCustomHeaders(),
-                        activatedJob.getVariables());
-            }
 
-            iso.std.iso._20022.tech.xsd.pacs_008_001.Document pacs008 = jaxbUtils.unmarshalPacs008(originalPacs008);
+    @Autowired
+    private JAXBUtils jaxbUtils;
 
-            batchItemBuilder.tenantId(tenantIdentifier);
-    		
-    		String conversionAccountWithdrawalRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "deposit");
-    		
-    		Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
-    		Integer paymentTypeId = paymentTypeConfig.findByOperation(String.format("%s.%s", paymentScheme, "bookCreditedAmountToConversionAccount.ConversionAccount.DepositTransactionAmount"));
-    		
-    		TransactionBody body = new TransactionBody(
-    				transactionDate,
-    				amount,
-    				paymentTypeId,
-    				"",
-    				FORMAT,
-    				locale);
-    		
-    		ObjectMapper objectMapper = new ObjectMapper();
-    		
-    		objectMapper.setSerializationInclusion(Include.NON_NULL);
-    		
-    		String bodyItem = objectMapper.writeValueAsString(body);
-    		
-    		List<TransactionItem> items = new ArrayList<>();
-    		
-    		batchItemBuilder.add(items, conversionAccountWithdrawalRelativeUrl, bodyItem, false);
-    	
-    		ReportEntry10 convertedCamt053Entry = camt053Mapper.toCamt053Entry(pacs008);
-    		String camt053Entry = objectMapper.writeValueAsString(convertedCamt053Entry);
-    		
-    		String camt053RelativeUrl = "datatables/transaction_details/$.resourceId";
-    		
-    		TransactionDetails td = new TransactionDetails(
-    				internalCorrelationId,
-    				camt053Entry,
-    				creditorIban,
-    				transactionDate,
-    				FORMAT,
-    				locale,
-    				transactionGroupId,
-    				transactionCategoryPurposeCode);
-    		
-    		String camt053Body = objectMapper.writeValueAsString(td);
+    @Autowired
+    private BatchItemBuilder batchItemBuilder;
 
-            batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
+    @Autowired
+    private EventService eventService;
 
-            doBatch(items, tenantIdentifier, internalCorrelationId);
-        } catch (Exception e) {
-            logger.error("Worker to book incoming money in AMS has failed, dispatching user task to handle conversion account deposit", e);
-            throw new ZeebeBpmnError("Error_BookToConversionToBeHandledManually", e.getMessage());
-        } finally {
-            MDC.remove("internalCorrelationId");
-        }
+    @JobWorker
+    @LogInternalCorrelationId
+    @TraceZeebeArguments
+    public void bookCreditedAmountToConversionAccount(JobClient jobClient,
+                                                      ActivatedJob activatedJob,
+                                                      @Variable String originalPacs008,
+                                                      @Variable String transactionDate,
+                                                      @Variable String transactionCategoryPurposeCode,
+                                                      @Variable String transactionGroupId,
+                                                      @Variable String internalCorrelationId,
+                                                      @Variable String tenantIdentifier,
+                                                      @Variable String paymentScheme,
+                                                      @Variable BigDecimal amount,
+                                                      @Variable Integer conversionAccountAmsId,
+                                                      @Variable String creditorIban) {
+        log.info("bookCreditedAmountToConversionAccount");
+        eventService.auditedEvent(
+                eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "bookCreditedAmountToConversionAccount", internalCorrelationId, transactionGroupId, eventBuilder),
+                eventBuilder -> bookCreditedAmountToConversionAccount(originalPacs008,
+                        transactionDate,
+                        transactionCategoryPurposeCode,
+                        transactionGroupId,
+                        internalCorrelationId,
+                        tenantIdentifier,
+                        paymentScheme,
+                        amount,
+                        conversionAccountAmsId,
+                        creditorIban,
+                        eventBuilder));
     }
-	
-	@JobWorker
-    public void bookCreditedAmountToConversionAccountInRecall(JobClient jobClient, 
-    		ActivatedJob activatedJob,
-    		@Variable String originalPacs008,
-    		@Variable String transactionDate,
-    		@Variable String transactionCategoryPurposeCode,
-    		@Variable String transactionGroupId,
-    		@Variable String internalCorrelationId,
-    		@Variable String tenantIdentifier,
-    		@Variable String paymentScheme,
-    		@Variable BigDecimal amount,
-    		@Variable Integer conversionAccountAmsId,
-    		@Variable String pacs004,
-    		@Variable String creditorIban) throws Exception {
-        try {
-            MDC.put("internalCorrelationId", internalCorrelationId);
-            logger.info("book to conversion account in recall (pacs.004) {} started for {} on {} ", internalCorrelationId, paymentScheme, tenantIdentifier);
-            if (logger.isDebugEnabled()) {
-                logger.debug("activated job type {} with key {} at element {} of workflow {} with instance key {}\nheaders: {}\nvariables: {})",
-                        activatedJob.getType(),
-                        activatedJob.getKey(),
-                        activatedJob.getElementId(),
-                        activatedJob.getBpmnProcessId(),
-                        activatedJob.getProcessInstanceKey(),
-                        activatedJob.getCustomHeaders(),
-                        activatedJob.getVariables());
-            }
 
+    private Void bookCreditedAmountToConversionAccount(String originalPacs008,
+                                                       String transactionDate,
+                                                       String transactionCategoryPurposeCode,
+                                                       String transactionGroupId,
+                                                       String internalCorrelationId,
+                                                       String tenantIdentifier,
+                                                       String paymentScheme,
+                                                       BigDecimal amount,
+                                                       Integer conversionAccountAmsId,
+                                                       String creditorIban,
+                                                       Event.Builder eventBuilder) {
+        try {
             iso.std.iso._20022.tech.xsd.pacs_008_001.Document pacs008 = jaxbUtils.unmarshalPacs008(originalPacs008);
 
-
             batchItemBuilder.tenantId(tenantIdentifier);
-    		
-    		String conversionAccountWithdrawalRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "deposit");
-    		
-    		Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
-    		Integer paymentTypeId = paymentTypeConfig.findByOperation(String.format("%s.%s", paymentScheme, "bookCreditedAmountToConversionAccount.ConversionAccount.DepositTransactionAmount"));
-    		
-    		TransactionBody body = new TransactionBody(
-    				transactionDate,
-    				amount,
-    				paymentTypeId,
-    				"",
-    				FORMAT,
-    				locale);
-    		
-    		ObjectMapper objectMapper = new ObjectMapper();
-    		
-    		objectMapper.setSerializationInclusion(Include.NON_NULL);
-    		
-    		String bodyItem = objectMapper.writeValueAsString(body);
-    		
-    		List<TransactionItem> items = new ArrayList<>();
-    		
-    		batchItemBuilder.add(items, conversionAccountWithdrawalRelativeUrl, bodyItem, false);
-    	
-    		ReportEntry10 convertedCamt053Entry = camt053Mapper.toCamt053Entry(pacs008);
-    		String camt053Entry = objectMapper.writeValueAsString(convertedCamt053Entry);
-    		
-    		String camt053RelativeUrl = "datatables/transaction_details/$.resourceId";
-    		
-    		TransactionDetails td = new TransactionDetails(
-    				internalCorrelationId,
-    				camt053Entry,
-    				creditorIban,
-    				transactionDate,
-    				FORMAT,
-    				locale,
-    				transactionGroupId,
-    				transactionCategoryPurposeCode);
-    		
-    		String camt053Body = objectMapper.writeValueAsString(td);
+
+            String conversionAccountWithdrawalRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "deposit");
+
+            Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
+            Integer paymentTypeId = paymentTypeConfig.findByOperation(String.format("%s.%s", paymentScheme, "bookCreditedAmountToConversionAccount.ConversionAccount.DepositTransactionAmount"));
+
+            TransactionBody body = new TransactionBody(
+                    transactionDate,
+                    amount,
+                    paymentTypeId,
+                    "",
+                    FORMAT,
+                    locale);
+
+            ObjectMapper objectMapper = new ObjectMapper();
+
+            objectMapper.setSerializationInclusion(Include.NON_NULL);
+
+            String bodyItem = objectMapper.writeValueAsString(body);
+
+            List<TransactionItem> items = new ArrayList<>();
+
+            batchItemBuilder.add(items, conversionAccountWithdrawalRelativeUrl, bodyItem, false);
+
+            ReportEntry10 convertedCamt053Entry = camt053Mapper.toCamt053Entry(pacs008);
+            String camt053Entry = objectMapper.writeValueAsString(convertedCamt053Entry);
+
+            String camt053RelativeUrl = "datatables/transaction_details/$.resourceId";
+
+            TransactionDetails td = new TransactionDetails(
+                    internalCorrelationId,
+                    camt053Entry,
+                    creditorIban,
+                    transactionDate,
+                    FORMAT,
+                    locale,
+                    transactionGroupId,
+                    transactionCategoryPurposeCode);
+
+            String camt053Body = objectMapper.writeValueAsString(td);
 
             batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 
-            doBatch(items, tenantIdentifier, internalCorrelationId);
+            doBatch(items,
+                    tenantIdentifier,
+                    -1,
+                    conversionAccountAmsId,
+                    internalCorrelationId,
+                    "bookCreditedAmountToConversionAccount");
+
         } catch (Exception e) {
-            logger.error("Worker to book incoming money in AMS has failed, dispatching user task to handle conversion account deposit", e);
+            // TODO technical error handling
+            log.error("Worker to book incoming money in AMS has failed, dispatching user task to handle conversion account deposit", e);
             throw new ZeebeBpmnError("Error_BookToConversionToBeHandledManually", e.getMessage());
-        } finally {
-            MDC.remove("internalCorrelationId");
         }
+        return null;
     }
 
     @JobWorker
+    @LogInternalCorrelationId
+    @TraceZeebeArguments
+    public void bookCreditedAmountToConversionAccountInRecall(JobClient jobClient,
+                                                              ActivatedJob activatedJob,
+                                                              @Variable String originalPacs008,
+                                                              @Variable String transactionDate,
+                                                              @Variable String transactionCategoryPurposeCode,
+                                                              @Variable String transactionGroupId,
+                                                              @Variable String internalCorrelationId,
+                                                              @Variable String tenantIdentifier,
+                                                              @Variable String paymentScheme,
+                                                              @Variable BigDecimal amount,
+                                                              @Variable Integer conversionAccountAmsId,
+                                                              @Variable String pacs004,
+                                                              @Variable String creditorIban) {
+        log.info("bookCreditedAmountToConversionAccountInRecall");
+        eventService.auditedEvent(
+                eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "bookCreditedAmountToConversionAccountInRecall", internalCorrelationId, transactionGroupId, eventBuilder),
+                eventBuilder -> bookCreditedAmountToConversionAccountInRecall(originalPacs008,
+                        transactionDate,
+                        transactionCategoryPurposeCode,
+                        transactionGroupId,
+                        internalCorrelationId,
+                        tenantIdentifier,
+                        paymentScheme,
+                        amount,
+                        conversionAccountAmsId,
+                        pacs004,
+                        creditorIban,
+                        eventBuilder));
+    }
+
+    private Void bookCreditedAmountToConversionAccountInRecall(String originalPacs008,
+                                                               String transactionDate,
+                                                               String transactionCategoryPurposeCode,
+                                                               String internalCorrelationId,
+                                                               String transactionGroupId,
+                                                               String tenantIdentifier,
+                                                               String paymentScheme,
+                                                               BigDecimal amount,
+                                                               Integer conversionAccountAmsId,
+                                                               String pacs004,
+                                                               String creditorIban,
+                                                               Event.Builder eventBuilder) {
+        try {
+            iso.std.iso._20022.tech.xsd.pacs_008_001.Document pacs008 = jaxbUtils.unmarshalPacs008(originalPacs008);
+
+            batchItemBuilder.tenantId(tenantIdentifier);
+
+            String conversionAccountWithdrawalRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "deposit");
+
+            Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
+            Integer paymentTypeId = paymentTypeConfig.findByOperation(String.format("%s.%s", paymentScheme, "bookCreditedAmountToConversionAccount.ConversionAccount.DepositTransactionAmount"));
+
+            TransactionBody body = new TransactionBody(
+                    transactionDate,
+                    amount,
+                    paymentTypeId,
+                    "",
+                    FORMAT,
+                    locale);
+
+            ObjectMapper objectMapper = new ObjectMapper();
+
+            objectMapper.setSerializationInclusion(Include.NON_NULL);
+
+            String bodyItem = objectMapper.writeValueAsString(body);
+
+            List<TransactionItem> items = new ArrayList<>();
+
+            batchItemBuilder.add(items, conversionAccountWithdrawalRelativeUrl, bodyItem, false);
+
+            ReportEntry10 convertedCamt053Entry = camt053Mapper.toCamt053Entry(pacs008);
+            String camt053Entry = objectMapper.writeValueAsString(convertedCamt053Entry);
+
+            String camt053RelativeUrl = "datatables/transaction_details/$.resourceId";
+
+            TransactionDetails td = new TransactionDetails(
+                    internalCorrelationId,
+                    camt053Entry,
+                    creditorIban,
+                    transactionDate,
+                    FORMAT,
+                    locale,
+                    transactionGroupId,
+                    transactionCategoryPurposeCode);
+
+            String camt053Body = objectMapper.writeValueAsString(td);
+
+            batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
+
+            doBatch(items,
+                    tenantIdentifier,
+                    -1,
+                    conversionAccountAmsId,
+                    internalCorrelationId,
+                    "bookCreditedAmountToConversionAccountInRecall");
+
+        } catch (Exception e) {
+            // TODO technical error handling
+            log.error("Worker to book incoming money in AMS has failed, dispatching user task to handle conversion account deposit", e);
+            throw new ZeebeBpmnError("Error_BookToConversionToBeHandledManually", e.getMessage());
+        }
+        return null;
+    }
+
+    @JobWorker
+    @LogInternalCorrelationId
+    @TraceZeebeArguments
     public void bookCreditedAmountToConversionAccountInReturn(JobClient jobClient,
                                                               ActivatedJob activatedJob,
                                                               @Variable String pacs004,
@@ -225,21 +275,35 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
                                                               @Variable String paymentScheme,
                                                               @Variable BigDecimal amount,
                                                               @Variable Integer conversionAccountAmsId,
-                                                              @Variable String creditorIban) throws Exception {
-        try {
-            MDC.put("internalCorrelationId", internalCorrelationId);
-            logger.info("book to conversion account in return (pacs.004) {} started for {} on {} ", internalCorrelationId, paymentScheme, tenantIdentifier);
-            if (logger.isDebugEnabled()) {
-                logger.debug("activated job type {} with key {} at element {} of workflow {} with instance key {}\nheaders: {}\nvariables: {})",
-                        activatedJob.getType(),
-                        activatedJob.getKey(),
-                        activatedJob.getElementId(),
-                        activatedJob.getBpmnProcessId(),
-                        activatedJob.getProcessInstanceKey(),
-                        activatedJob.getCustomHeaders(),
-                        activatedJob.getVariables());
-            }
+                                                              @Variable String creditorIban) {
+        log.info("bookCreditedAmountToConversionAccountInReturn");
+        eventService.auditedEvent(
+                eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "bookCreditedAmountToConversionAccountInReturn", internalCorrelationId, transactionGroupId, eventBuilder),
+                eventBuilder -> bookCreditedAmountToConversionAccountInReturn(pacs004,
+                        transactionDate,
+                        transactionCategoryPurposeCode,
+                        transactionGroupId,
+                        internalCorrelationId,
+                        tenantIdentifier,
+                        paymentScheme,
+                        amount,
+                        conversionAccountAmsId,
+                        creditorIban,
+                        eventBuilder));
+    }
 
+    private Void bookCreditedAmountToConversionAccountInReturn(String pacs004,
+                                                               String transactionDate,
+                                                               String transactionCategoryPurposeCode,
+                                                               String transactionGroupId,
+                                                               String internalCorrelationId,
+                                                               String tenantIdentifier,
+                                                               String paymentScheme,
+                                                               BigDecimal amount,
+                                                               Integer conversionAccountAmsId,
+                                                               String creditorIban,
+                                                               Event.Builder eventBuilder) {
+        try {
             batchItemBuilder.tenantId(tenantIdentifier);
 
             String conversionAccountWithdrawalRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "deposit");
@@ -277,9 +341,9 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
                     internalCorrelationId,
                     camt053Entry,
                     creditorIban,
-    				transactionDate,
-    				FORMAT,
-    				locale,
+                    transactionDate,
+                    FORMAT,
+                    locale,
                     transactionGroupId,
                     transactionCategoryPurposeCode);
 
@@ -287,12 +351,17 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
 
             batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 
-            doBatch(items, tenantIdentifier, internalCorrelationId);
+            doBatch(items,
+                    tenantIdentifier,
+                    -1,
+                    conversionAccountAmsId,
+                    internalCorrelationId,
+                    "bookCreditedAmountToConversionAccountInReturn");
         } catch (Exception e) {
-            logger.error("Worker to book incoming money in AMS has failed, dispatching user task to handle conversion account deposit", e);
+            // TODO technical error handling
+            log.error("Worker to book incoming money in AMS has failed, dispatching user task to handle conversion account deposit", e);
             throw new ZeebeBpmnError("Error_BookToConversionToBeHandledManually", e.getMessage());
-        } finally {
-            MDC.remove("internalCorrelationId");
         }
+        return null;
     }
 }
