@@ -1,20 +1,5 @@
 package org.mifos.connector.ams.interop;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import io.camunda.zeebe.client.ZeebeClient;
-import org.apache.camel.Exchange;
-import org.apache.camel.Processor;
-import org.mifos.connector.common.ams.dto.QuoteFspResponseDTO;
-import org.mifos.connector.common.mojaloop.type.TransactionRole;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
-import org.springframework.stereotype.Component;
-
-import java.util.HashMap;
-import java.util.Map;
-
 import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSACTION_ROLE;
 import static org.mifos.connector.ams.camel.config.CamelProperties.ZEEBE_JOB_KEY;
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.ERROR_INFORMATION;
@@ -27,6 +12,20 @@ import static org.mifos.connector.ams.zeebe.ZeebeVariables.TRANSACTION_ID;
 import static org.mifos.connector.common.camel.ErrorHandlerRouteBuilder.createError;
 import static org.mifos.connector.common.mojaloop.type.ErrorCode.PAYEE_FSP_REJECTED_QUOTE;
 import static org.mifos.connector.common.mojaloop.type.ErrorCode.PAYER_FSP_INSUFFICIENT_LIQUIDITY;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.camunda.zeebe.client.ZeebeClient;
+import java.util.HashMap;
+import java.util.Map;
+import org.apache.camel.Exchange;
+import org.apache.camel.Processor;
+import org.mifos.connector.common.ams.dto.QuoteFspResponseDTO;
+import org.mifos.connector.common.mojaloop.type.TransactionRole;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
+import org.springframework.stereotype.Component;
 
 @Component
 @ConditionalOnExpression("${ams.local.enabled}")
@@ -46,11 +45,8 @@ public class QuoteResponseProcessor implements Processor {
         Long jobKey = exchange.getProperty(ZEEBE_JOB_KEY, Long.class);
         String transactionRole = exchange.getProperty(TRANSACTION_ROLE, String.class);
         if (responseCode > 202) {
-            String errorMsg = String.format("Invalid responseCode %s for quote on %s side, transactionId: %s Message: %s",
-                    responseCode,
-                    transactionRole,
-                    exchange.getProperty(TRANSACTION_ID),
-                    exchange.getIn().getBody(String.class));
+            String errorMsg = String.format("Invalid responseCode %s for quote on %s side, transactionId: %s Message: %s", responseCode,
+                    transactionRole, exchange.getProperty(TRANSACTION_ID), exchange.getIn().getBody(String.class));
 
             logger.error(errorMsg);
 
@@ -68,9 +64,7 @@ public class QuoteResponseProcessor implements Processor {
             variables.put(ERROR_INFORMATION, createError(errorCode, errorMsg).toString());
             variables.put(errorKey, true);
 
-            zeebeClient.newCompleteCommand(jobKey)
-                    .variables(variables)
-                    .send();
+            zeebeClient.newCompleteCommand(jobKey).variables(variables).send();
         } else {
             Map<String, Object> variables = new HashMap<>();
             QuoteFspResponseDTO quoteResponse = objectMapper.readValue(exchange.getIn().getBody(String.class), QuoteFspResponseDTO.class);
@@ -81,9 +75,7 @@ public class QuoteResponseProcessor implements Processor {
             variables.put(TENANT_ID, exchange.getProperty(TENANT_ID));
             variables.put(transactionRole.equals(TransactionRole.PAYER.name()) ? LOCAL_QUOTE_FAILED : QUOTE_FAILED, false);
 
-            zeebeClient.newCompleteCommand(jobKey)
-                    .variables(variables)
-                    .send();
+            zeebeClient.newCompleteCommand(jobKey).variables(variables).send();
         }
     }
 }

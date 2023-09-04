@@ -1,5 +1,21 @@
 package org.mifos.connector.ams.camel.cxfrs;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateException;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.X509TrustManager;
 import org.apache.camel.support.jsse.ClientAuthentication;
 import org.apache.camel.support.jsse.KeyManagersParameters;
 import org.apache.camel.support.jsse.KeyStoreParameters;
@@ -13,23 +29,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.stereotype.Component;
 
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.TrustManagerFactory;
-import javax.net.ssl.X509TrustManager;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.cert.CertificateException;
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
 @Component
 @ConditionalOnExpression("${ams.local.enabled}")
 public class SSLConfig {
@@ -40,8 +39,8 @@ public class SSLConfig {
     private boolean checkServerCert;
 
     public SSLConfig(@Value("${ams.local.keystore-path}") String keystorePath,
-                     @Value("${ams.local.keystore-password}") String keystorePassword,
-                     @Value("${ams.local.server-cert-check}") boolean checkServerCert) {
+            @Value("${ams.local.keystore-password}") String keystorePassword,
+            @Value("${ams.local.server-cert-check}") boolean checkServerCert) {
         this.keystorePassword = keystorePassword;
         keyStoreFile = new FileSystemResource(keystorePath).getFile();
         this.checkServerCert = checkServerCert;
@@ -69,13 +68,9 @@ public class SSLConfig {
     }
 
     private CompositeX509TrustManager createCompositeTrustManager() {
-        List<X509TrustManager> trustManagers = Stream.concat(
-                Stream.of(tryToGetApplicationTrustManagerTrustManager()),
-                Stream.of(tryToGetJavaTrustManager())
-        )
-                .filter(X509TrustManager.class::isInstance)
-                .map(X509TrustManager.class::cast)
-                .collect(Collectors.toList());
+        List<X509TrustManager> trustManagers = Stream
+                .concat(Stream.of(tryToGetApplicationTrustManagerTrustManager()), Stream.of(tryToGetJavaTrustManager()))
+                .filter(X509TrustManager.class::isInstance).map(X509TrustManager.class::cast).collect(Collectors.toList());
         return new CompositeX509TrustManager(trustManagers, checkServerCert);
     }
 
@@ -92,12 +87,8 @@ public class SSLConfig {
         String defaultAlgorithm = KeyManagerFactory.getDefaultAlgorithm();
         TrustManagerFactory factory = TrustManagerFactory.getInstance(defaultAlgorithm);
         factory.init((KeyStore) null);
-        return Stream.of(factory.getTrustManagers())
-                .filter(X509TrustManager.class::isInstance)
-                .map(X509TrustManager.class::cast)
-                .findFirst()
-                .map(it -> new X509TrustManager[]{it})
-                .orElse(new X509TrustManager[0]);
+        return Stream.of(factory.getTrustManagers()).filter(X509TrustManager.class::isInstance).map(X509TrustManager.class::cast)
+                .findFirst().map(it -> new X509TrustManager[] { it }).orElse(new X509TrustManager[0]);
     }
 
     private Optional<KeyManagersParameters> getKeyManagerParameter() {
@@ -123,7 +114,8 @@ public class SSLConfig {
         }
     }
 
-    private TrustManager[] getApplicationTrustManager() throws KeyStoreException, CertificateException, NoSuchAlgorithmException, IOException, InterruptedException {
+    private TrustManager[] getApplicationTrustManager()
+            throws KeyStoreException, CertificateException, NoSuchAlgorithmException, IOException, InterruptedException {
         if (keyStoreFile == null) {
             return new TrustManager[0];
         }

@@ -1,11 +1,10 @@
 package org.mifos.connector.ams.zeebe;
 
-import org.mifos.connector.common.ams.dto.TransferActionType;
-
 import java.util.HashMap;
 import java.util.Map;
+import org.mifos.connector.common.ams.dto.TransferActionType;
 
-public class ZeebeVariables {
+public final class ZeebeVariables {
 
     public static final Map<String, String> ACTION_FAILURE_MAP = new HashMap<>();
 
@@ -32,8 +31,8 @@ public class ZeebeVariables {
     public static final String TRANSFER_PREPARE_FAILED = "transferPrepareFailed";
     public static final String TRANSFER_RELEASE_FAILED = "transferReleaseFailed";
     public static final String TRANSFER_RESPONSE_PREFIX = "transferResponse";
-    public static final String ACCOUNT_IDENTIFIER="accountIdentifier";
-    public static final String ACCOUNT_NUMBER="accountNumber";
+    public static final String ACCOUNT_IDENTIFIER = "accountIdentifier";
+    public static final String ACCOUNT_NUMBER = "accountNumber";
 
     public static final String ERROR_CODE = "errorCode";
     public static final String ERROR_PAYLOAD = "errorPayload";

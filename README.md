@@ -1,6 +1,6 @@
 # ph-ee-connector-ams-mifos
-Payment Hub Enterprise Edition connector for local AMS.  
-By default local quote is disabled and only empty Zeebe workers are started.  
+Payment Hub Enterprise Edition connector for local AMS.
+By default local quote is disabled and only empty Zeebe workers are started.
 Currently supported AMS backends: (configure corresponding yml files to modify properties)
 * Fineract 1.2 -> use spring profile fin12
 
@@ -30,3 +30,16 @@ Currently supported AMS backends: (configure corresponding yml files to modify p
 | direct:get-party        | party-lookup-local-dfspId     | debit-party-process-DFSPID.bpmn,gsma-bill-payment.bpmn,gsma-inttransfer-payer.bpmn,gsma-link-based-transfer.bpmn,gsma-p2p-wo-local-quote.bpmn,gsma-p2p.bpmn,payee-party-lookup-DFSPID.bpmn                                                                                                                                     |
 | direct:send-local-quote | payer-local-quote-dfspId      | gsma-p2p.bpmn,payer-fund-transfer-DFSPID.bpmn,payer-fund-transfer-terminate-DFSPID.bpmn,orchestration/feel/payer-transaction-request-DFSPID.bpmn                                                                                                                                                                               |
 |                         | payee-quote-dfspId            | gsma-payee-process.bpmn,payee-quote-transfer-DFSPID.bpmn                                                                                                                                                                                                                                                                       |
+
+
+## Spotless
+Use below command to execute the spotless apply.
+```shell
+./gradlew spotlessApply
+```
+
+# Checkstyle
+Use below command to execute the checkstyle test.
+```shell
+./gradlew checkstyleMain
+```

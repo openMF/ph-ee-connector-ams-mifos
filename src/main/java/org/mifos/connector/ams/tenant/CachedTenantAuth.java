@@ -23,11 +23,14 @@ public class CachedTenantAuth {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        CachedTenantAuth that = (CachedTenantAuth) o;
-        return Objects.equals(token, that.token) &&
-                Objects.equals(accessTokenExpiration, that.accessTokenExpiration);
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof CachedTenantAuth that)) {
+            return false;
+        }
+        return Objects.equals(token, that.token)
+                && Objects.equals(accessTokenExpiration.toInstant(), that.accessTokenExpiration.toInstant());
     }
 
     @Override

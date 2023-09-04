@@ -1,17 +1,23 @@
 package org.mifos.connector.ams.errorhandler;
 
+import static org.mifos.connector.ams.zeebe.ZeebeVariables.ERROR_CODE;
+import static org.mifos.connector.ams.zeebe.ZeebeVariables.ERROR_INFORMATION;
+import static org.mifos.connector.ams.zeebe.ZeebeVariables.ERROR_PAYLOAD;
+import static org.mifos.connector.ams.zeebe.ZeebeVariables.IS_ERROR_HANDLED;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.Map;
+import lombok.extern.slf4j.Slf4j;
 import org.mifos.connector.ams.interop.errordto.ErrorResponse;
 import org.mifos.connector.common.channel.dto.PhErrorDTO;
 import org.mifos.connector.common.exception.PaymentHubError;
 import org.mifos.connector.common.exception.mapper.ErrorMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import java.util.Map;
-import static org.mifos.connector.ams.zeebe.ZeebeVariables.*;
 
 @Component
+@Slf4j
 public class ErrorTranslator {
 
     @Autowired
@@ -20,7 +26,7 @@ public class ErrorTranslator {
     @Autowired
     ObjectMapper objectMapper;
 
-    public Map<String, Object> translateError(Map<String, Object> zeebeFinalVariables)  {
+    public Map<String, Object> translateError(Map<String, Object> zeebeFinalVariables) {
         checkIfErrorIsAlreadyMappedToInternal(zeebeFinalVariables);
         String errorCode = (String) zeebeFinalVariables.get(ERROR_CODE);
         if (errorCode == null) {
@@ -47,15 +53,11 @@ public class ErrorTranslator {
             ErrorResponse externalErrorObject = (ErrorResponse) zeebeFinalVariables.get(ERROR_PAYLOAD);
             phErrorDTO = new PhErrorDTO.PhErrorDTOBuilder(paymentHubError)
                     .developerMessage(objectMapper.writeValueAsString(externalErrorObject))
-                    .defaultUserMessage((String) zeebeFinalVariables.get(ERROR_INFORMATION))
-                    .build();
+                    .defaultUserMessage((String) zeebeFinalVariables.get(ERROR_INFORMATION)).build();
         } catch (Exception e) {
-            phErrorDTO = new PhErrorDTO.PhErrorDTOBuilder(paymentHubError)
-                    .developerMessage((String) zeebeFinalVariables.get(ERROR_PAYLOAD))
-                    .defaultUserMessage((String) zeebeFinalVariables.get(ERROR_INFORMATION))
-                    .build();
+            phErrorDTO = new PhErrorDTO.PhErrorDTOBuilder(paymentHubError).developerMessage((String) zeebeFinalVariables.get(ERROR_PAYLOAD))
+                    .defaultUserMessage((String) zeebeFinalVariables.get(ERROR_INFORMATION)).build();
         }
-
 
         zeebeFinalVariables.put(ERROR_CODE, phErrorDTO.getErrorCode());
         zeebeFinalVariables.put(ERROR_INFORMATION, phErrorDTO.getErrorDescription());
@@ -63,7 +65,7 @@ public class ErrorTranslator {
             zeebeFinalVariables.put(ERROR_INFORMATION, objectMapper.writeValueAsString(phErrorDTO));
             PhErrorDTO errorDTO = objectMapper.readValue((String) zeebeFinalVariables.get(ERROR_INFORMATION), PhErrorDTO.class);
         } catch (JsonProcessingException e) {
-            e.printStackTrace();
+            log.debug(e.getMessage());
             zeebeFinalVariables.put(ERROR_INFORMATION, phErrorDTO.toString());
         }
 
