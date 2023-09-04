@@ -109,6 +109,8 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                              String debtorIban,
                              Event.Builder eventBuilder) {
         try {
+            transactionDate = transactionDate.replaceAll("-", "");
+
             Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001 = objectMapper.readValue(originalPain001, Pain00100110CustomerCreditTransferInitiationV10MessageSchema.class);
 
             batchItemBuilder.tenantId(tenantIdentifier);
