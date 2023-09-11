@@ -9,5 +9,7 @@ public record DtSavingsTransactionDetails(@JsonProperty("internal_correlation_id
 		@JsonProperty("transaction_group_id") String transactionGroupId,
 		@JsonProperty("partner_name") String partnerName,
 		@JsonProperty("partner_account_iban") String partnerAccountIban,
+		@JsonProperty("partner_account_internal_account_id") String partnerAccountInternalAccountId,
+		@JsonProperty("partner_secondary_identifier") String partnerSecondaryIdentifier,
 		@JsonProperty("category_purpose_code") String categoryPurposeCode) {
 }

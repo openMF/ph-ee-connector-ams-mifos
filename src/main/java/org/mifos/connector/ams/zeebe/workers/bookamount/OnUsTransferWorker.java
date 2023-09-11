@@ -114,6 +114,8 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
     				transactionGroupId,
     				pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditor().getName(),
     				pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditorAccount().getIdentification().getIban(),
+    				null,
+    				pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditor().getContactDetails().toString(),
     				transactionCategoryPurposeCode);
     		
     		String camt053Body = objectMapper.writeValueAsString(td);
@@ -150,6 +152,8 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 	    				transactionGroupId,
 	    				pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditor().getName(),
 	    				pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditorAccount().getIdentification().getIban(),
+	    				null,
+	    				pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditor().getContactDetails().toString(),
 	    				transactionFeeCategoryPurposeCode);
 	    		
 	    		camt053Body = objectMapper.writeValueAsString(td);
@@ -184,6 +188,8 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 	    				transactionGroupId,
 	    				pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditor().getName(),
 	    				pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditorAccount().getIdentification().getIban(),
+	    				null,
+	    				pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditor().getContactDetails().toString(),
 	    				transactionFeeCategoryPurposeCode);
 	    		
 	    		camt053Body = objectMapper.writeValueAsString(td);
@@ -220,6 +226,8 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
     				transactionGroupId,
     				pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditor().getName(),
     				pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditorAccount().getIdentification().getIban(),
+    				null,
+    				pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditor().getContactDetails().toString(),
     				transactionCategoryPurposeCode);
     		
     		camt053Body = objectMapper.writeValueAsString(td);
@@ -257,6 +265,8 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 	    				transactionGroupId,
 	    				pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditor().getName(),
 	    				pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditorAccount().getIdentification().getIban(),
+	    				null,
+	    				pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditor().getContactDetails().toString(),
 	    				transactionFeeCategoryPurposeCode);
 	    		
 	    		camt053Body = objectMapper.writeValueAsString(td);

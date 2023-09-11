@@ -121,6 +121,8 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 				transactionGroupId,
 				pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditor().getName(),
 				pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditorAccount().getIdentification().getIban(),
+				null,
+				pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditor().getContactDetails().toString(),
 				transactionCategoryPurposeCode);
 		
 		String camt053Body = objectMapper.writeValueAsString(td);
@@ -156,6 +158,8 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 					transactionGroupId,
 					pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditor().getName(),
 					pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditorAccount().getIdentification().getIban(),
+					pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditor().getContactDetails().toString(),
+					null,
 					transactionFeeCategoryPurposeCode);
 			camt053Body = objectMapper.writeValueAsString(td);
 			batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
@@ -245,8 +249,10 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 					debtorIban,
 					paymentTypeCode,
 					internalCorrelationId,
-					document.getFIToFIPmtCxlReq().getAssgnmt().getAssgnr().getPty().getNm(),
+					document.getFIToFIPmtCxlReq().getUndrlyg().get(0).getTxInf().get(0).getOrgnlTxRef().getDbtr().getNm(),
 					document.getFIToFIPmtCxlReq().getUndrlyg().get(0).getTxInf().get(0).getOrgnlTxRef().getDbtrAcct().getId().getIBAN(),
+					null,
+					document.getFIToFIPmtCxlReq().getUndrlyg().get(0).getTxInf().get(0).getOrgnlTxRef().getDbtr().getCtctDtls().toString(),
 					transactionCategoryPurposeCode);
 			
 			String camt053Body = objectMapper.writeValueAsString(td);

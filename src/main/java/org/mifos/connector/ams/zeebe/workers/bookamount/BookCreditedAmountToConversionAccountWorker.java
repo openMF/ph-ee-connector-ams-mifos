@@ -119,6 +119,8 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
     				transactionGroupId,
     				pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getDbtr().getNm(),
     				pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getDbtrAcct().getId().getIBAN(),
+    				null,
+    				pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getDbtr().getCtctDtls().toString(),
     				transactionCategoryPurposeCode);
     		
     		String camt053Body = objectMapper.writeValueAsString(td);
@@ -207,6 +209,8 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
     				transactionGroupId,
     				pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getDbtr().getNm(),
     				pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getDbtrAcct().getId().getIBAN(),
+    				null,
+    				pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getDbtr().getCtctDtls().toString(),
     				transactionCategoryPurposeCode);
     		
     		String camt053Body = objectMapper.writeValueAsString(td);
@@ -295,6 +299,8 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
                     transactionGroupId,
                     pacs_004.getPmtRtr().getTxInf().get(0).getOrgnlTxRef().getCdtr().getNm(),
                     pacs_004.getPmtRtr().getTxInf().get(0).getOrgnlTxRef().getCdtrAcct().getId().getIBAN(),
+                    null,
+                    pacs_004.getPmtRtr().getTxInf().get(0).getOrgnlTxRef().getCdtr().getCtctDtls().toString(),
                     transactionCategoryPurposeCode);
 
             String camt053Body = objectMapper.writeValueAsString(td);
