@@ -104,6 +104,7 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 					paymentTypeCode,
 					transactionGroupId,
 					pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditor().getName(),
+					pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditorAccount().getIdentification().getIban(),
 					categoryPurpose);
 			
 			String camt053Body = objectMapper.writeValueAsString(td);
@@ -138,6 +139,7 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 					paymentTypeCode,
 					transactionGroupId,
 					pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditor().getName(),
+					pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditorAccount().getIdentification().getIban(),
 					categoryPurpose);
 			
 			camt053Body = objectMapper.writeValueAsString(td);
@@ -172,6 +174,7 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 					paymentTypeCode,
 					transactionGroupId,
 					pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditor().getName(),
+					pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditorAccount().getIdentification().getIban(),
 					categoryPurpose);
 			
 			camt053Body = objectMapper.writeValueAsString(td);

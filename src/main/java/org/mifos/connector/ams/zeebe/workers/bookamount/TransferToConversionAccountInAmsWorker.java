@@ -165,9 +165,10 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			String camt053RelativeUrl = "datatables/transaction_details/$.resourceId";
 			
 			String partnerName = pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditor().getName();
+			String partnerAccountIban = pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditorAccount().getIdentification().getIban();
 			
 			addDetails(transactionGroupId, transactionCategoryPurposeCode, internalCorrelationId, 
-					objectMapper, batchItemBuilder, items, camt053Entry, camt053RelativeUrl, iban, paymentTypeConfig, paymentScheme, withdrawAmountOperation, partnerName);
+					objectMapper, batchItemBuilder, items, camt053Entry, camt053RelativeUrl, iban, paymentTypeConfig, paymentScheme, withdrawAmountOperation, partnerName, partnerAccountIban);
 
 			if (hasFee) {
 				logger.debug("Withdrawing fee {} from disposal account {}", transactionFeeAmount, disposalAccountAmsId);
@@ -178,7 +179,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 					camt053Entry = objectMapper.writeValueAsString(convertedCamt053Entry);
 					
 					addDetails(transactionGroupId, transactionFeeCategoryPurposeCode, internalCorrelationId, objectMapper,
-							batchItemBuilder, items, camt053Entry, camt053RelativeUrl, iban, paymentTypeConfig, paymentScheme, withdrawFeeOperation, transactionDate);
+							batchItemBuilder, items, camt053Entry, camt053RelativeUrl, iban, paymentTypeConfig, paymentScheme, withdrawFeeOperation, partnerName, partnerAccountIban);
 			}
 			
 			logger.info("Depositing amount {} to conversion account {}", amount, conversionAccountAmsId);
@@ -192,7 +193,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			camt053Entry = objectMapper.writeValueAsString(convertedCamt053Entry);
 			
 			addDetails(transactionGroupId, transactionCategoryPurposeCode, internalCorrelationId, objectMapper, batchItemBuilder, items,
-					camt053Entry, camt053RelativeUrl, iban, paymentTypeConfig, paymentScheme, depositAmountOperation, transactionDate);
+					camt053Entry, camt053RelativeUrl, iban, paymentTypeConfig, paymentScheme, depositAmountOperation, partnerName, partnerAccountIban);
 		
 			
 			if (hasFee) {
@@ -204,7 +205,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 				camt053Entry = objectMapper.writeValueAsString(convertedCamt053Entry);
 				
 				addDetails(transactionGroupId, transactionFeeCategoryPurposeCode, internalCorrelationId, objectMapper, batchItemBuilder,
-						items, camt053Entry, camt053RelativeUrl, iban, paymentTypeConfig, paymentScheme, depositFeeOperation, transactionDate);
+						items, camt053Entry, camt053RelativeUrl, iban, paymentTypeConfig, paymentScheme, depositFeeOperation, partnerName, partnerAccountIban);
 			}
 			
 			doBatch(items, tenantIdentifier, internalCorrelationId);
@@ -251,7 +252,8 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			Config paymentTypeConfig,
 			String paymentScheme,
 			String paymentTypeOperation,
-			String partnerName) throws JsonProcessingException {
+			String partnerName,
+			String partnerAccountIban) throws JsonProcessingException {
 		String paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(String.format("%s.%s", paymentScheme, paymentTypeOperation));
 		DtSavingsTransactionDetails td = new DtSavingsTransactionDetails(
 				internalCorrelationId,
@@ -260,6 +262,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 				paymentTypeCode,
 				transactionGroupId,
 				partnerName,
+				partnerAccountIban,
 				transactionFeeCategoryPurposeCode);
 		
 		String camt053Body = om.writeValueAsString(td);
@@ -346,6 +349,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 					paymentTypeCode,
 					internalCorrelationId,
 					document.getFIToFIPmtCxlReq().getAssgnmt().getAssgnr().getPty().getNm(),
+					document.getFIToFIPmtCxlReq().getUndrlyg().get(0).getTxInf().get(0).getOrgnlTxRef().getDbtrAcct().getId().getIBAN(),
 					transactionCategoryPurposeCode);
 			
 			String camt053Body = objectMapper.writeValueAsString(td);

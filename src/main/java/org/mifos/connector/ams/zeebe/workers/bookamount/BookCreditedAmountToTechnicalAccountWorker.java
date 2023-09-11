@@ -125,6 +125,7 @@ public class BookCreditedAmountToTechnicalAccountWorker extends AbstractMoneyInO
     				paymentTypeCode,
     				transactionGroupId,
     				pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getDbtr().getNm(),
+    				pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getDbtrAcct().getId().getIBAN(),
     				transactionCategoryPurposeCode);
     		
     		String camt053Body = objectMapper.writeValueAsString(td);
