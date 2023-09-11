@@ -115,6 +115,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 				debtorIban,
 				paymentTypeCode,
 				transactionGroupId,
+				pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditor().getName(),
 				transactionCategoryPurposeCode);
 		
 		String camt053Body = objectMapper.writeValueAsString(td);
@@ -147,6 +148,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 					debtorIban,
 					paymentTypeCode,
 					transactionGroupId,
+					pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditor().getName(),
 					transactionFeeCategoryPurposeCode);
 			camt053Body = objectMapper.writeValueAsString(td);
 			batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
@@ -179,6 +181,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 				debtorIban,
 				paymentTypeCode,
 				transactionGroupId,
+				pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditor().getName(),
 				transactionCategoryPurposeCode);
 		
 		camt053Body = objectMapper.writeValueAsString(td);
@@ -211,6 +214,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 					debtorIban,
 					paymentTypeCode,
 					transactionGroupId,
+					pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditor().getName(),
 					transactionFeeCategoryPurposeCode);
 			camt053Body = objectMapper.writeValueAsString(td);
 			batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
@@ -282,6 +286,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 				debtorIban,
 				paymentTypeCode,
 				transactionGroupId,
+				pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditor().getName(),
 				transactionCategoryPurposeCode);
 		
 		String camt053Body = objectMapper.writeValueAsString(td);
@@ -314,6 +319,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 					debtorIban,
 					paymentTypeCode,
 					transactionGroupId,
+					pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditor().getName(),
 					transactionFeeCategoryPurposeCode);
 			camt053Body = objectMapper.writeValueAsString(td);
 			batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
@@ -346,6 +352,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 				debtorIban,
 				paymentTypeCode,
 				transactionGroupId,
+				pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditor().getName(),
 				transactionCategoryPurposeCode);
 		
 		camt053Body = objectMapper.writeValueAsString(td);
@@ -432,6 +439,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 					debtorIban,
 					paymentTypeCode,
 					internalCorrelationId,
+					document.getFIToFIPmtCxlReq().getAssgnmt().getAssgnr().getPty().getNm(),
 					transactionCategoryPurposeCode);
 			
 			String camt053Body = objectMapper.writeValueAsString(td);
@@ -463,6 +471,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 					debtorIban,
 					paymentTypeCode,
 					internalCorrelationId,
+					document.getFIToFIPmtCxlReq().getAssgnmt().getAssgnr().getPty().getNm(),
 					transactionCategoryPurposeCode);
 			
 			camt053Body = objectMapper.writeValueAsString(td);

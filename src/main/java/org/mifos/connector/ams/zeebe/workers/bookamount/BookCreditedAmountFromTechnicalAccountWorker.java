@@ -122,6 +122,7 @@ public class BookCreditedAmountFromTechnicalAccountWorker extends AbstractMoneyI
     				null,
     				paymentTypeCode,
     				transactionGroupId,
+    				pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getDbtr().getNm(),
     				transactionCategoryPurposeCode);
     		
     		String camt053Body = objectMapper.writeValueAsString(td);

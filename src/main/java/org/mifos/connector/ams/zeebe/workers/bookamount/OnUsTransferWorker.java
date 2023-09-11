@@ -112,6 +112,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
     				debtorIban,
     				paymentTypeCode,
     				transactionGroupId,
+    				pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditor().getName(),
     				transactionCategoryPurposeCode);
     		
     		String camt053Body = objectMapper.writeValueAsString(td);
@@ -146,6 +147,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 	    				debtorIban,
 	    				paymentTypeCode,
 	    				transactionGroupId,
+	    				pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditor().getName(),
 	    				transactionFeeCategoryPurposeCode);
 	    		
 	    		camt053Body = objectMapper.writeValueAsString(td);
@@ -178,6 +180,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 	    				creditorIban,
 	    				paymentTypeCode,
 	    				transactionGroupId,
+	    				pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditor().getName(),
 	    				transactionFeeCategoryPurposeCode);
 	    		
 	    		camt053Body = objectMapper.writeValueAsString(td);
@@ -212,6 +215,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
     				creditorIban,
     				paymentTypeCode,
     				transactionGroupId,
+    				pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditor().getName(),
     				transactionCategoryPurposeCode);
     		
     		camt053Body = objectMapper.writeValueAsString(td);
@@ -247,6 +251,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 	    				debtorIban,
 	    				paymentTypeCode,
 	    				transactionGroupId,
+	    				pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditor().getName(),
 	    				transactionFeeCategoryPurposeCode);
 	    		
 	    		camt053Body = objectMapper.writeValueAsString(td);

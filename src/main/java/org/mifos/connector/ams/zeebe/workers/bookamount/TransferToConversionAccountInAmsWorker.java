@@ -164,8 +164,10 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			
 			String camt053RelativeUrl = "datatables/transaction_details/$.resourceId";
 			
+			String partnerName = pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditor().getName();
+			
 			addDetails(transactionGroupId, transactionCategoryPurposeCode, internalCorrelationId, 
-					objectMapper, batchItemBuilder, items, camt053Entry, camt053RelativeUrl, iban, paymentTypeConfig, paymentScheme, withdrawAmountOperation, transactionDate);
+					objectMapper, batchItemBuilder, items, camt053Entry, camt053RelativeUrl, iban, paymentTypeConfig, paymentScheme, withdrawAmountOperation, partnerName);
 
 			if (hasFee) {
 				logger.debug("Withdrawing fee {} from disposal account {}", transactionFeeAmount, disposalAccountAmsId);
@@ -249,7 +251,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			Config paymentTypeConfig,
 			String paymentScheme,
 			String paymentTypeOperation,
-			String transactionDate) throws JsonProcessingException {
+			String partnerName) throws JsonProcessingException {
 		String paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(String.format("%s.%s", paymentScheme, paymentTypeOperation));
 		DtSavingsTransactionDetails td = new DtSavingsTransactionDetails(
 				internalCorrelationId,
@@ -257,6 +259,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 				accountIban,
 				paymentTypeCode,
 				transactionGroupId,
+				partnerName,
 				transactionFeeCategoryPurposeCode);
 		
 		String camt053Body = om.writeValueAsString(td);
@@ -342,6 +345,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 					iban,
 					paymentTypeCode,
 					internalCorrelationId,
+					document.getFIToFIPmtCxlReq().getAssgnmt().getAssgnr().getPty().getNm(),
 					transactionCategoryPurposeCode);
 			
 			String camt053Body = objectMapper.writeValueAsString(td);

@@ -32,4 +32,9 @@ public class JAXBUtils {
     public iso.std.iso._20022.tech.xsd.pacs_008_001.Document unmarshalPacs008(String pacs008) throws JAXBException {
         return ((JAXBElement<iso.std.iso._20022.tech.xsd.pacs_008_001.Document>) unmarshaller.unmarshal(new StringReader(pacs008))).getValue();
     }
+    
+    @SuppressWarnings("unchecked")
+    public iso.std.iso._20022.tech.xsd.pacs_004_001.Document unmarshalPacs004(String pacs004) throws JAXBException {
+        return ((JAXBElement<iso.std.iso._20022.tech.xsd.pacs_004_001.Document>) unmarshaller.unmarshal(new StringReader(pacs004))).getValue();
+    }
 }

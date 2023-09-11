@@ -117,6 +117,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
     				creditorIban,
     				paymentTypeCode,
     				transactionGroupId,
+    				pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getDbtr().getNm(),
     				transactionCategoryPurposeCode);
     		
     		String camt053Body = objectMapper.writeValueAsString(td);
@@ -203,6 +204,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
     				creditorIban,
     				paymentTypeCode,
     				transactionGroupId,
+    				pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getDbtr().getNm(),
     				transactionCategoryPurposeCode);
     		
     		String camt053Body = objectMapper.writeValueAsString(td);
@@ -254,6 +256,8 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
 			String configOperationKey = String.format("%s.%s", paymentScheme, depositAmountOperation);
 			Integer paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(configOperationKey);
 			String paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(configOperationKey);
+			
+			iso.std.iso._20022.tech.xsd.pacs_004_001.Document pacs_004 = jaxbUtils.unmarshalPacs004(pacs004);
 
             TransactionBody body = new TransactionBody(
                     transactionDate,
@@ -287,6 +291,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
                     creditorIban,
                     paymentTypeCode,
                     transactionGroupId,
+                    pacs_004.getPmtRtr().getTxInf().get(0).getOrgnlTxRef().getCdtr().getNm(),
                     transactionCategoryPurposeCode);
 
             String camt053Body = objectMapper.writeValueAsString(td);
