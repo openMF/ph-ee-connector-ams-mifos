@@ -122,6 +122,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 					pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getDbtrAcct().getId().getIBAN(),
 					null,
 					pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getDbtr().getCtctDtls().toString(),
+					pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getRmtInf().getUstrd().toString(),
 					transactionCategoryPurposeCode);
 			
 			String camt053Body = objectMapper.writeValueAsString(td);
@@ -157,6 +158,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 					pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getDbtrAcct().getId().getIBAN(),
 					null,
 					pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getDbtr().getCtctDtls().toString(),
+					pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getRmtInf().getUstrd().toString(),
 					transactionCategoryPurposeCode);
 			
 			camt053Body = objectMapper.writeValueAsString(td);
@@ -249,6 +251,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 					pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getDbtrAcct().getId().getIBAN(),
 					null,
 					pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getDbtr().getCtctDtls().toString(),
+					pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getRmtInf().getUstrd().toString(),
 					transactionCategoryPurposeCode);
 			
 			String camt053Body = objectMapper.writeValueAsString(td);
@@ -284,6 +287,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 					pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getDbtrAcct().getId().getIBAN(),
 					null,
 					pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getDbtr().getCtctDtls().toString(),
+					pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getRmtInf().getUstrd().toString(),
 					transactionCategoryPurposeCode);
 			
 			camt053Body = objectMapper.writeValueAsString(td);
@@ -377,6 +381,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 					pacs_004.getPmtRtr().getTxInf().get(0).getOrgnlTxRef().getCdtrAcct().getId().getIBAN(),
 					null,
 					pacs_004.getPmtRtr().getTxInf().get(0).getOrgnlTxRef().getCdtr().getCtctDtls().toString(),
+					pacs_004.getPmtRtr().getTxInf().get(0).getOrgnlTxRef().getRmtInf().getUstrd().toString(),
 					transactionCategoryPurposeCode);
 
 			String camt053Body = objectMapper.writeValueAsString(td);
@@ -414,6 +419,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 					pacs_004.getPmtRtr().getTxInf().get(0).getOrgnlTxRef().getCdtrAcct().getId().getIBAN(),
 					null,
 					pacs_004.getPmtRtr().getTxInf().get(0).getOrgnlTxRef().getCdtr().getCtctDtls().toString(),
+					pacs_004.getPmtRtr().getTxInf().get(0).getOrgnlTxRef().getRmtInf().getUstrd().toString(),
 					transactionCategoryPurposeCode);
 
 			camt053Body = objectMapper.writeValueAsString(td);
