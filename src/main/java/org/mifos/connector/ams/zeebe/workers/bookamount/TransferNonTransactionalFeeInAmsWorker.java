@@ -12,7 +12,7 @@ import org.mifos.connector.ams.fineract.ConfigFactory;
 import org.mifos.connector.ams.mapstruct.Pain001Camt053Mapper;
 import org.mifos.connector.ams.zeebe.workers.utils.BatchItemBuilder;
 import org.mifos.connector.ams.zeebe.workers.utils.TransactionBody;
-import org.mifos.connector.ams.zeebe.workers.utils.TransactionDetails;
+import org.mifos.connector.ams.zeebe.workers.utils.DtSavingsTransactionDetails;
 import org.mifos.connector.ams.zeebe.workers.utils.TransactionItem;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -73,8 +73,11 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 			MDC.put("internalCorrelationId", internalCorrelationId);
 			Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001 = objectMapper.readValue(originalPain001, Pain00100110CustomerCreditTransferInitiationV10MessageSchema.class);
 			
-			Integer paymentTypeId = paymentTypeConfig.findByOperation(String.format("%s.%s.%s", paymentScheme, categoryPurpose, "transferToConversionAccountInAms.DisposalAccount.WithdrawNonTransactionalFee"));
-			logger.debug("Looking up {}, got payment type id {}", String.format("%s.%s.%s", paymentScheme, categoryPurpose, "transferToConversionAccountInAms.DisposalAccount.WithdrawNonTransactionalFee"), paymentTypeId);
+			String withdrawNonTxFeeDisposalOperation = "transferToConversionAccountInAms.DisposalAccount.WithdrawNonTransactionalFee";
+			String withdrawNonTxDisposalConfigOperationKey = String.format("%s.%s.%s", paymentScheme, categoryPurpose, withdrawNonTxFeeDisposalOperation);
+			Integer paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(withdrawNonTxDisposalConfigOperationKey);
+			String paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(withdrawNonTxDisposalConfigOperationKey);
+			logger.debug("Looking up {}, got payment type id {}", withdrawNonTxDisposalConfigOperationKey, paymentTypeId);
 			TransactionBody body = new TransactionBody(
 					transactionDate,
 					amount,
@@ -94,13 +97,11 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 			
 			String camt053RelativeUrl = "datatables/transaction_details/$.resourceId";
 			
-			TransactionDetails td = new TransactionDetails(
+			DtSavingsTransactionDetails td = new DtSavingsTransactionDetails(
 					internalCorrelationId,
 					camt053Entry,
 					debtorIban,
-					transactionDate,
-					FORMAT,
-					locale,
+					paymentTypeCode,
 					transactionGroupId,
 					categoryPurpose);
 			
@@ -110,8 +111,11 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 			
 			
 			
-			paymentTypeId = paymentTypeConfig.findByOperation(String.format("%s.%s.%s", paymentScheme, categoryPurpose, "transferToConversionAccountInAms.ConversionAccount.DepositNonTransactionalFee"));
-			logger.debug("Looking up {}, got payment type id {}", String.format("%s.%s.%s", paymentScheme, categoryPurpose, "transferToConversionAccountInAms.ConversionAccount.DepositNonTransactionalFee"), paymentTypeId);
+			String depositNonTxFeeOperation = "transferToConversionAccountInAms.ConversionAccount.DepositNonTransactionalFee";
+			String depositNonTxFeeConfigOperationKey = String.format("%s.%s.%s", paymentScheme, categoryPurpose, depositNonTxFeeOperation);
+			paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(depositNonTxFeeConfigOperationKey);
+			paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(depositNonTxFeeConfigOperationKey);
+			logger.debug("Looking up {}, got payment type id {}", depositNonTxFeeConfigOperationKey, paymentTypeId);
 			body = new TransactionBody(
 					transactionDate,
 					amount,
@@ -126,13 +130,11 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 			
 			batchItemBuilder.add(items, conversionAccountDepositRelativeUrl, bodyItem, false);
 			
-			td = new TransactionDetails(
+			td = new DtSavingsTransactionDetails(
 					internalCorrelationId,
 					camt053Entry,
 					debtorIban,
-					transactionDate,
-					FORMAT,
-					locale,
+					paymentTypeCode,
 					transactionGroupId,
 					categoryPurpose);
 			
@@ -142,8 +144,11 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 			
 			
 			
-			paymentTypeId = paymentTypeConfig.findByOperation(String.format("%s.%s.%s", paymentScheme, categoryPurpose, "transferToConversionAccountInAms.ConversionAccount.WithdrawNonTransactionalFee"));
-			logger.debug("Looking up {}, got payment type id {}", String.format("%s.%s.%s", paymentScheme, categoryPurpose, "transferToConversionAccountInAms.ConversionAccount.WithdrawNonTransactionalFee"), paymentTypeId);
+			String withdrawNonTxFeeConversionOperation = "transferToConversionAccountInAms.ConversionAccount.WithdrawNonTransactionalFee";
+			String withdrawNonTxFeeConversionConfigOperationKey = String.format("%s.%s.%s", paymentScheme, categoryPurpose, withdrawNonTxFeeConversionOperation);
+			paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(withdrawNonTxFeeConversionConfigOperationKey);
+			paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(withdrawNonTxFeeConversionConfigOperationKey);
+			logger.debug("Looking up {}, got payment type id {}", withdrawNonTxFeeConversionConfigOperationKey, paymentTypeId);
 			body = new TransactionBody(
 					transactionDate,
 					amount,
@@ -158,13 +163,11 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 			
 			batchItemBuilder.add(items, conversionAccountWithdrawRelativeUrl, bodyItem, false);
 			
-			td = new TransactionDetails(
+			td = new DtSavingsTransactionDetails(
 					internalCorrelationId,
 					camt053Entry,
 					debtorIban,
-					transactionDate,
-					FORMAT,
-					locale,
+					paymentTypeCode,
 					transactionGroupId,
 					categoryPurpose);
 			

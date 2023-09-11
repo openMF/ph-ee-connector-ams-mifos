@@ -26,26 +26,29 @@ public class PaymentTypeConfiguration {
 	public ConfigFactory paymentTypeConfigFactory() throws JsonProcessingException {
 		Map<String, Map<String, List<LinkedHashMap<String, Object>>>> tenantConfigs = readTenantConfigs();
 		
-		Map<String, Map<String, Integer>> paymentTypeConfigMap = new HashMap<>();
+		Map<String, Map<String, Integer>> paymentTypeIdConfigMap = new HashMap<>();
+		Map<String, Map<String, String>> paymentTypeCodeConfigMap = new HashMap<>();
 		for (Entry<String, Map<String, List<LinkedHashMap<String, Object>>>> tenantEntry : tenantConfigs.entrySet()) {
-			populateConfigMap(paymentTypeConfigMap, tenantEntry, "paymentTypeConfigs", "Operation", "FineractId");
+			populateConfigMap(paymentTypeIdConfigMap, tenantEntry, "paymentTypeConfigs", "Operation", "FineractId");
+			populateConfigMap(paymentTypeCodeConfigMap, tenantEntry, "paymentTypeConfigs", "Operation", "ResourceCode");
 		}
 		
-		return new ConfigFactory(paymentTypeConfigMap);
+		return new ConfigFactory(paymentTypeIdConfigMap, paymentTypeCodeConfigMap);
 	}
 
-	private void populateConfigMap(Map<String, Map<String, Integer>> paymentTypeConfigMap,
+	@SuppressWarnings("unchecked")
+	private <T> void populateConfigMap(Map<String, Map<String, T>> paymentTypeConfigMap,
 			Entry<String, Map<String, List<LinkedHashMap<String, Object>>>> tenantEntry, 
 			String configName,
 			String keyName, 
-			String valueName) {
-		Map<String, Integer> paymentTypeMap = tenantEntry.getValue().get(configName)
+			String paymentTypeValueName) {
+		Map<String, T> paymentTypeIdMap = tenantEntry.getValue().get(configName)
 				.stream()
 				.collect(
 						Collectors.toMap(
 								config -> (String) config.get(keyName),
-								config -> (Integer) config.get(valueName)));
-		paymentTypeConfigMap.put(tenantEntry.getKey(), paymentTypeMap);
+								config -> (T) config.get(paymentTypeValueName)));
+		paymentTypeConfigMap.put(tenantEntry.getKey(), paymentTypeIdMap);
 	}
 
 	private Map<String, Map<String, List<LinkedHashMap<String, Object>>>> readTenantConfigs()
@@ -64,6 +67,6 @@ public class PaymentTypeConfiguration {
 			populateConfigMap(paymentTypeConfigMap, tenantEntry, "technicalAccountConfigs", "Operation", "AccountId");
 		}
 		
-		return new ConfigFactory(paymentTypeConfigMap);
+		return new ConfigFactory(paymentTypeConfigMap, null);
 	}
 }

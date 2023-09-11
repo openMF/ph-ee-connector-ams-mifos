@@ -10,7 +10,7 @@ import org.mifos.connector.ams.mapstruct.Pacs008Camt053Mapper;
 import org.mifos.connector.ams.zeebe.workers.utils.BatchItemBuilder;
 import org.mifos.connector.ams.zeebe.workers.utils.JAXBUtils;
 import org.mifos.connector.ams.zeebe.workers.utils.TransactionBody;
-import org.mifos.connector.ams.zeebe.workers.utils.TransactionDetails;
+import org.mifos.connector.ams.zeebe.workers.utils.DtSavingsTransactionDetails;
 import org.mifos.connector.ams.zeebe.workers.utils.TransactionItem;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -82,7 +82,10 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
     		String conversionAccountWithdrawalRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "deposit");
     		
     		Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
-    		Integer paymentTypeId = paymentTypeConfig.findByOperation(String.format("%s.%s", paymentScheme, "bookCreditedAmountToConversionAccount.ConversionAccount.DepositTransactionAmount"));
+    		String depositAmountOperation = "bookCreditedAmountToConversionAccount.ConversionAccount.DepositTransactionAmount";
+			String configOperationKey = String.format("%s.%s", paymentScheme, depositAmountOperation);
+			Integer paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(configOperationKey);
+			String paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(configOperationKey);
     		
     		TransactionBody body = new TransactionBody(
     				transactionDate,
@@ -108,13 +111,11 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
     		
     		String camt053RelativeUrl = "datatables/transaction_details/$.resourceId";
     		
-    		TransactionDetails td = new TransactionDetails(
+    		DtSavingsTransactionDetails td = new DtSavingsTransactionDetails(
     				internalCorrelationId,
     				camt053Entry,
     				creditorIban,
-    				transactionDate,
-    				FORMAT,
-    				locale,
+    				paymentTypeCode,
     				transactionGroupId,
     				transactionCategoryPurposeCode);
     		
@@ -167,7 +168,10 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
     		String conversionAccountWithdrawalRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "deposit");
     		
     		Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
-    		Integer paymentTypeId = paymentTypeConfig.findByOperation(String.format("%s.%s", paymentScheme, "bookCreditedAmountToConversionAccount.ConversionAccount.DepositTransactionAmount"));
+    		String depositAmountOperation = "bookCreditedAmountToConversionAccount.ConversionAccount.DepositTransactionAmount";
+			String configOperationKey = String.format("%s.%s", paymentScheme, depositAmountOperation);
+			Integer paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(configOperationKey);
+			String paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(configOperationKey);
     		
     		TransactionBody body = new TransactionBody(
     				transactionDate,
@@ -193,13 +197,11 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
     		
     		String camt053RelativeUrl = "datatables/transaction_details/$.resourceId";
     		
-    		TransactionDetails td = new TransactionDetails(
+    		DtSavingsTransactionDetails td = new DtSavingsTransactionDetails(
     				internalCorrelationId,
     				camt053Entry,
     				creditorIban,
-    				transactionDate,
-    				FORMAT,
-    				locale,
+    				paymentTypeCode,
     				transactionGroupId,
     				transactionCategoryPurposeCode);
     		
@@ -248,7 +250,10 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
             String conversionAccountWithdrawalRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "deposit");
 
             Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
-            Integer paymentTypeId = paymentTypeConfig.findByOperation(String.format("%s.%s", paymentScheme, "bookCreditedAmountToConversionAccount.ConversionAccount.DepositTransactionAmount"));
+            String depositAmountOperation = "bookCreditedAmountToConversionAccount.ConversionAccount.DepositTransactionAmount";
+			String configOperationKey = String.format("%s.%s", paymentScheme, depositAmountOperation);
+			Integer paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(configOperationKey);
+			String paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(configOperationKey);
 
             TransactionBody body = new TransactionBody(
                     transactionDate,
@@ -276,13 +281,11 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
 
             String camt053RelativeUrl = "datatables/transaction_details/$.resourceId";
 
-            TransactionDetails td = new TransactionDetails(
+            DtSavingsTransactionDetails td = new DtSavingsTransactionDetails(
                     internalCorrelationId,
                     camt053Entry,
                     creditorIban,
-    				transactionDate,
-    				FORMAT,
-    				locale,
+                    paymentTypeCode,
                     transactionGroupId,
                     transactionCategoryPurposeCode);
 

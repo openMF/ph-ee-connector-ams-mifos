@@ -12,7 +12,7 @@ import org.mifos.connector.ams.mapstruct.Pacs008Camt053Mapper;
 import org.mifos.connector.ams.zeebe.workers.utils.BatchItemBuilder;
 import org.mifos.connector.ams.zeebe.workers.utils.JAXBUtils;
 import org.mifos.connector.ams.zeebe.workers.utils.TransactionBody;
-import org.mifos.connector.ams.zeebe.workers.utils.TransactionDetails;
+import org.mifos.connector.ams.zeebe.workers.utils.DtSavingsTransactionDetails;
 import org.mifos.connector.ams.zeebe.workers.utils.TransactionItem;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -87,7 +87,10 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 			String conversionAccountWithdrawRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "withdrawal");
 			
 			Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
-			Integer paymentTypeId = paymentTypeConfig.findByOperation(String.format("%s.%s", paymentScheme, "transferToDisposalAccount.ConversionAccount.WithdrawTransactionAmount"));
+			String withdrawAmountOperation = "transferToDisposalAccount.ConversionAccount.WithdrawTransactionAmount";
+			String withdrawAmountConfigOperationKey = String.format("%s.%s", paymentScheme, withdrawAmountOperation);
+			Integer paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(withdrawAmountConfigOperationKey);
+			String paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(withdrawAmountConfigOperationKey);
 			
 			TransactionBody body = new TransactionBody(
 					transactionDate,
@@ -109,13 +112,11 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 			
 			String camt053RelativeUrl = "datatables/transaction_details/$.resourceId";
 			
-			TransactionDetails td = new TransactionDetails(
+			DtSavingsTransactionDetails td = new DtSavingsTransactionDetails(
 					internalCorrelationId,
 					camt053Entry,
 					creditorIban,
-					transactionDate,
-					FORMAT,
-					locale,
+					paymentTypeCode,
 					transactionGroupId,
 					transactionCategoryPurposeCode);
 			
@@ -125,7 +126,10 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 			
 			
 			String disposalAccountDepositRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), disposalAccountAmsId, "deposit");
-			paymentTypeId = paymentTypeConfig.findByOperation(String.format("%s.%s", paymentScheme, "transferToDisposalAccount.DisposalAccount.DepositTransactionAmount"));
+			String depositAmountOperation = "transferToDisposalAccount.DisposalAccount.DepositTransactionAmount";
+			String depositAmountConfigOperationKey = String.format("%s.%s", paymentScheme, depositAmountOperation);
+			paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(depositAmountConfigOperationKey);
+			paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(depositAmountConfigOperationKey);
 			
 			body = new TransactionBody(
 					transactionDate,
@@ -139,13 +143,11 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 			
 			batchItemBuilder.add(items, disposalAccountDepositRelativeUrl, bodyItem, false);
 			
-			td = new TransactionDetails(
+			td = new DtSavingsTransactionDetails(
 					internalCorrelationId,
 					camt053Entry,
 					creditorIban,
-					transactionDate,
-					FORMAT,
-					locale,
+					paymentTypeCode,
 					transactionGroupId,
 					transactionCategoryPurposeCode);
 			
@@ -204,7 +206,10 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 			String conversionAccountWithdrawRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "withdrawal");
 			
 			Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
-			Integer paymentTypeId = paymentTypeConfig.findByOperation(String.format("%s.%s", paymentScheme, "transferToDisposalAccount.ConversionAccount.WithdrawTransactionAmount"));
+			String withdrawAmountOperation = "transferToDisposalAccount.ConversionAccount.WithdrawTransactionAmount";
+			String withdrawAmountConfigOperationKey = String.format("%s.%s", paymentScheme, withdrawAmountOperation);
+			Integer paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(withdrawAmountConfigOperationKey);
+			String paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(withdrawAmountConfigOperationKey);
 			
 			TransactionBody body = new TransactionBody(
 					transactionDate,
@@ -226,13 +231,11 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 			
 			String camt053RelativeUrl = "datatables/transaction_details/$.resourceId";
 			
-			TransactionDetails td = new TransactionDetails(
+			DtSavingsTransactionDetails td = new DtSavingsTransactionDetails(
 					internalCorrelationId,
 					camt053Entry,
 					creditorIban,
-					transactionDate,
-					FORMAT,
-					locale,
+					paymentTypeCode,
 					transactionGroupId,
 					transactionCategoryPurposeCode);
 			
@@ -242,7 +245,10 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 			
 			
 			String disposalAccountDepositRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), disposalAccountAmsId, "deposit");
-			paymentTypeId = paymentTypeConfig.findByOperation(String.format("%s.%s", paymentScheme, "transferToDisposalAccount.DisposalAccount.DepositTransactionAmount"));
+			String depositAmountOperation = "transferToDisposalAccount.DisposalAccount.DepositTransactionAmount";
+			String depositAmountConfigOperationKey = String.format("%s.%s", paymentScheme, depositAmountOperation);
+			paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(depositAmountConfigOperationKey);
+			paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(depositAmountConfigOperationKey);
 			
 			body = new TransactionBody(
 					transactionDate,
@@ -256,13 +262,11 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 			
 			batchItemBuilder.add(items, disposalAccountDepositRelativeUrl, bodyItem, false);
 			
-			td = new TransactionDetails(
+			td = new DtSavingsTransactionDetails(
 					internalCorrelationId,
 					camt053Entry,
 					creditorIban,
-					transactionDate,
-					FORMAT,
-					locale,
+					paymentTypeCode,
 					transactionGroupId,
 					transactionCategoryPurposeCode);
 			
@@ -316,7 +320,10 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 			String conversionAccountWithdrawRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "withdrawal");
 
 			Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
-			Integer paymentTypeId = paymentTypeConfig.findByOperation(String.format("%s.%s", paymentScheme, "transferToDisposalAccount.ConversionAccount.WithdrawTransactionAmount"));
+			String withdrawAmountOperation = "transferToDisposalAccount.ConversionAccount.WithdrawTransactionAmount";
+			String withdrawAmountConfigOperationKey = String.format("%s.%s", paymentScheme, withdrawAmountOperation);
+			Integer paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(withdrawAmountConfigOperationKey);
+			String paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(withdrawAmountConfigOperationKey);
 
 			TransactionBody body = new TransactionBody(
 					transactionDate,
@@ -342,13 +349,11 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 
 			String camt053RelativeUrl = "datatables/transaction_details/$.resourceId";
 
-			TransactionDetails td = new TransactionDetails(
+			DtSavingsTransactionDetails td = new DtSavingsTransactionDetails(
 					internalCorrelationId,
 					camt053Entry,
 					creditorIban,
-					transactionDate,
-					FORMAT,
-					locale,
+					paymentTypeCode,
 					transactionGroupId,
 					transactionCategoryPurposeCode);
 
@@ -358,7 +363,10 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 
 
 			String disposalAccountDepositRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), disposalAccountAmsId, "deposit");
-			paymentTypeId = paymentTypeConfig.findByOperation(String.format("%s.%s", paymentScheme, "transferToDisposalAccount.DisposalAccount.DepositTransactionAmount"));
+			String depositAmountOperation = "transferToDisposalAccount.DisposalAccount.DepositTransactionAmount";
+			String depositAmountConfigOperationKey = String.format("%s.%s", paymentScheme, depositAmountOperation);
+			paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(depositAmountConfigOperationKey);
+			paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(depositAmountConfigOperationKey);
 
 			body = new TransactionBody(
 					transactionDate,
@@ -374,13 +382,11 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 
 			camt053RelativeUrl = "datatables/transaction_details/$.resourceId";
 
-			td = new TransactionDetails(
+			td = new DtSavingsTransactionDetails(
 					internalCorrelationId,
 					camt053Entry,
 					creditorIban,
-					transactionDate,
-					FORMAT,
-					locale,
+					paymentTypeCode,
 					transactionGroupId,
 					transactionCategoryPurposeCode);
 

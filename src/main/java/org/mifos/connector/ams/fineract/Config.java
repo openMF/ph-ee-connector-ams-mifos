@@ -5,12 +5,14 @@ import java.util.Map;
 public class Config {
 	
 	private String tenant;
-	private Map<String, Integer> configs;
+	private Map<String, Integer> paymentTypeIdConfigs;
+	private Map<String, String> paymentTypeCodeConfigs;
 
-	Config(String tenant, Map<String, Integer> configs) {
+	Config(String tenant, Map<String, Integer> ptiConfigs, Map<String, String> ptcConfigs) {
 		super();
 		this.tenant = tenant;
-		this.configs = configs;
+		this.paymentTypeIdConfigs = ptiConfigs;
+		this.paymentTypeCodeConfigs = ptcConfigs;
 	}
 
 	public String getTenant() {
@@ -21,15 +23,27 @@ public class Config {
 		this.tenant = tenant;
 	}
 
-	public Map<String, Integer> getConfigs() {
-		return configs;
+	public Map<String, Integer> getPaymentTypeIdConfigs() {
+		return paymentTypeIdConfigs;
 	}
 
-	public void setConfigs(Map<String, Integer> configs) {
-		this.configs = configs;
+	public void setPaymentTypeIdConfigs(Map<String, Integer> configs) {
+		this.paymentTypeIdConfigs = configs;
 	}
 	
-	public Integer findByOperation(String operation) {
-		return configs.get(operation);
+	public Map<String, String> getPaymentTypeCodeConfigs() {
+		return paymentTypeCodeConfigs;
+	}
+	
+	public void setPaymentTypeCodeConfigs(Map<String, String> configs) {
+		this.paymentTypeCodeConfigs = configs;
+	}
+	
+	public Integer findPaymentTypeIdByOperation(String operation) {
+		return paymentTypeIdConfigs.get(operation);
+	}
+	
+	public String findPaymentTypeCodeByOperation(String operation) {
+		return paymentTypeCodeConfigs.get(operation);
 	}
 }

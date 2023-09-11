@@ -12,7 +12,7 @@ import org.mifos.connector.ams.fineract.ConfigFactory;
 import org.mifos.connector.ams.mapstruct.Pain001Camt053Mapper;
 import org.mifos.connector.ams.zeebe.workers.utils.BatchItemBuilder;
 import org.mifos.connector.ams.zeebe.workers.utils.TransactionBody;
-import org.mifos.connector.ams.zeebe.workers.utils.TransactionDetails;
+import org.mifos.connector.ams.zeebe.workers.utils.DtSavingsTransactionDetails;
 import org.mifos.connector.ams.zeebe.workers.utils.TransactionItem;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -85,7 +85,10 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
     		String debtorDisposalWithdrawalRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), debtorDisposalAccountAmsId, "withdrawal");
     		
     		Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
-    		Integer paymentTypeId = paymentTypeConfig.findByOperation(String.format("%s.%s", paymentScheme, "transferTheAmountBetweenDisposalAccounts.Debtor.DisposalAccount.WithdrawTransactionAmount"));
+    		String withdrawAmountOperation = "transferTheAmountBetweenDisposalAccounts.Debtor.DisposalAccount.WithdrawTransactionAmount";
+			String withdrawAmountConfigOperationKey = String.format("%s.%s", paymentScheme, withdrawAmountOperation);
+			Integer paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(withdrawAmountConfigOperationKey);
+			String paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(withdrawAmountConfigOperationKey);
     		
     		TransactionBody body = new TransactionBody(
     				interbankSettlementDate,
@@ -103,13 +106,11 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
     	
     		String camt053RelativeUrl = "datatables/transaction_details/$.resourceId";
     		
-    		TransactionDetails td = new TransactionDetails(
+    		DtSavingsTransactionDetails td = new DtSavingsTransactionDetails(
     				internalCorrelationId,
     				camt053Entry,
     				debtorIban,
-    				interbankSettlementDate,
-    				FORMAT,
-    				locale,
+    				paymentTypeCode,
     				transactionGroupId,
     				transactionCategoryPurposeCode);
     		
@@ -119,7 +120,10 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
     		
 			
 			if (!BigDecimal.ZERO.equals(transactionFeeAmount)) {
-				paymentTypeId = paymentTypeConfig.findByOperation(String.format("%s.%s", paymentScheme, "transferTheAmountBetweenDisposalAccounts.Debtor.DisposalAccount.WithdrawTransactionFee"));
+				String withdrawFeeDisposalOperation = "transferTheAmountBetweenDisposalAccounts.Debtor.DisposalAccount.WithdrawTransactionFee";
+				String withdrawFeeDisposalConfigOperationKey = String.format("%s.%s", paymentScheme, withdrawFeeDisposalOperation);
+				paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(withdrawFeeDisposalConfigOperationKey);
+				paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(withdrawFeeDisposalConfigOperationKey);
 	    		
 	    		body = new TransactionBody(
 	    				interbankSettlementDate,
@@ -136,13 +140,11 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 	    		convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getSupplementaryData().get(0).getEnvelope().setAdditionalProperty("InternalCorrelationId", transactionFeeInternalCorrelationId);
 				camt053Entry = objectMapper.writeValueAsString(convertedcamt053Entry);
 	    		
-	    		td = new TransactionDetails(
+	    		td = new DtSavingsTransactionDetails(
 	    				transactionFeeInternalCorrelationId,
 	    				camt053Entry,
 	    				debtorIban,
-	    				interbankSettlementDate,
-	    				FORMAT,
-	    				locale,
+	    				paymentTypeCode,
 	    				transactionGroupId,
 	    				transactionFeeCategoryPurposeCode);
 	    		
@@ -151,7 +153,10 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 
 	    		
 	    		
-				paymentTypeId = paymentTypeConfig.findByOperation(String.format("%s.%s", paymentScheme, "transferTheAmountBetweenDisposalAccounts.Debtor.ConversionAccount.DepositTransactionFee"));
+				String depositFeeOperation = "transferTheAmountBetweenDisposalAccounts.Debtor.ConversionAccount.DepositTransactionFee";
+				String depositFeeConfigOperationKey = String.format("%s.%s", paymentScheme, depositFeeOperation);
+				paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(depositFeeConfigOperationKey);
+				paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(depositFeeConfigOperationKey);
 	    		
 	    		body = new TransactionBody(
 	    				interbankSettlementDate,
@@ -167,13 +172,11 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 		    		
 	    		batchItemBuilder.add(items, debtorConversionDepositRelativeUrl, bodyItem, false);
 		    	
-	    		td = new TransactionDetails(
+	    		td = new DtSavingsTransactionDetails(
 	    				transactionFeeInternalCorrelationId,
 	    				camt053Entry,
 	    				creditorIban,
-	    				interbankSettlementDate,
-	    				FORMAT,
-	    				locale,
+	    				paymentTypeCode,
 	    				transactionGroupId,
 	    				transactionFeeCategoryPurposeCode);
 	    		
@@ -181,7 +184,10 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 	    		batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 			}
 			
-			paymentTypeId = paymentTypeConfig.findByOperation(String.format("%s.%s", paymentScheme, "transferTheAmountBetweenDisposalAccounts.Creditor.DisposalAccount.DepositTransactionAmount"));
+			String depositAmountOperation = "transferTheAmountBetweenDisposalAccounts.Creditor.DisposalAccount.DepositTransactionAmount";
+			String depositAmountConfigOperationKey = String.format("%s.%s", paymentScheme, depositAmountOperation);
+			paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(depositAmountConfigOperationKey);
+			paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(depositAmountConfigOperationKey);
     		
     		body = new TransactionBody(
     				interbankSettlementDate,
@@ -200,13 +206,11 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
     		convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getSupplementaryData().get(0).getEnvelope().setAdditionalProperty("InternalCorrelationId", internalCorrelationId);
 			camt053Entry = objectMapper.writeValueAsString(convertedcamt053Entry);
 			
-    		td = new TransactionDetails(
+    		td = new DtSavingsTransactionDetails(
     				transactionFeeInternalCorrelationId,
     				camt053Entry,
     				creditorIban,
-    				interbankSettlementDate,
-    				FORMAT,
-    				locale,
+    				paymentTypeCode,
     				transactionGroupId,
     				transactionCategoryPurposeCode);
     		
@@ -215,7 +219,10 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 			
 	    		
 			if (!BigDecimal.ZERO.equals(transactionFeeAmount)) {
-	    		paymentTypeId = paymentTypeConfig.findByOperation(String.format("%s.%s", paymentScheme, "transferTheAmountBetweenDisposalAccounts.Debtor.ConversionAccount.WithdrawTransactionFee"));
+	    		String withdrawFeeConversionOperation = "transferTheAmountBetweenDisposalAccounts.Debtor.ConversionAccount.WithdrawTransactionFee";
+				String withdrawFeeConversionConfigOperationKey = String.format("%s.%s", paymentScheme, withdrawFeeConversionOperation);
+				paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(withdrawFeeConversionConfigOperationKey);
+				paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(withdrawFeeConversionConfigOperationKey);
 	    		
 	    		body = new TransactionBody(
 	    				interbankSettlementDate,
@@ -234,13 +241,11 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 	    		convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getSupplementaryData().get(0).getEnvelope().setAdditionalProperty("InternalCorrelationId", transactionFeeInternalCorrelationId);
 				camt053Entry = objectMapper.writeValueAsString(convertedcamt053Entry);
 				
-				td = new TransactionDetails(
+				td = new DtSavingsTransactionDetails(
 	    				transactionFeeInternalCorrelationId,
 	    				camt053Entry,
 	    				debtorIban,
-	    				interbankSettlementDate,
-	    				FORMAT,
-	    				locale,
+	    				paymentTypeCode,
 	    				transactionGroupId,
 	    				transactionFeeCategoryPurposeCode);
 	    		

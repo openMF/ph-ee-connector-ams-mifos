@@ -12,7 +12,7 @@ import org.mifos.connector.ams.mapstruct.Pain001Camt053Mapper;
 import org.mifos.connector.ams.zeebe.workers.utils.BatchItemBuilder;
 import org.mifos.connector.ams.zeebe.workers.utils.JAXBUtils;
 import org.mifos.connector.ams.zeebe.workers.utils.TransactionBody;
-import org.mifos.connector.ams.zeebe.workers.utils.TransactionDetails;
+import org.mifos.connector.ams.zeebe.workers.utils.DtSavingsTransactionDetails;
 import org.mifos.connector.ams.zeebe.workers.utils.TransactionItem;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -82,7 +82,10 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 		String conversionAccountWithdrawRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "withdrawal");
 		
 		Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
-		Integer paymentTypeId = paymentTypeConfig.findByOperation(String.format("%s.%s", paymentScheme, "revertInAms.ConversionAccount.WithdrawTransactionAmount"));
+		String withdrawAmountOperation = "revertInAms.ConversionAccount.WithdrawTransactionAmount";
+		String withdrawAmountConfigOperationKey = String.format("%s.%s", paymentScheme, withdrawAmountOperation);
+		Integer paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(withdrawAmountConfigOperationKey);
+		String paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(withdrawAmountConfigOperationKey);
 		
 		TransactionBody body = new TransactionBody(
 				transactionDate,
@@ -106,13 +109,11 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 		
 		String camt053RelativeUrl = "datatables/transaction_details/$.resourceId";
 		
-		TransactionDetails td = new TransactionDetails(
+		DtSavingsTransactionDetails td = new DtSavingsTransactionDetails(
 				internalCorrelationId,
 				camt053Entry,
 				debtorIban,
-				transactionDate,
-				FORMAT,
-				locale,
+				paymentTypeCode,
 				transactionGroupId,
 				transactionCategoryPurposeCode);
 		
@@ -123,7 +124,10 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 		if (!BigDecimal.ZERO.equals(transactionFeeAmount)) {
 			logger.debug("Withdrawing fee {} from conversion account {}", transactionFeeAmount, conversionAccountAmsId);
 			
-			paymentTypeId = paymentTypeConfig.findByOperation(String.format("%s.%s", paymentScheme, "revertInAms.ConversionAccount.WithdrawTransactionFee"));
+			String withdrawFeeOperation = "revertInAms.ConversionAccount.WithdrawTransactionFee";
+			String withdrawFeeConfigOperationKey = String.format("%s.%s", paymentScheme, withdrawFeeOperation);
+			paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(withdrawFeeConfigOperationKey);
+			paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(withdrawFeeConfigOperationKey);
 			
 			body = new TransactionBody(
 					transactionDate,
@@ -137,13 +141,11 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			
 			batchItemBuilder.add(items, conversionAccountWithdrawRelativeUrl, bodyItem, false);
 			
-			td = new TransactionDetails(
+			td = new DtSavingsTransactionDetails(
 					internalCorrelationId,
 					camt053Entry,
 					debtorIban,
-					transactionDate,
-					FORMAT,
-					locale,
+					paymentTypeCode,
 					transactionGroupId,
 					transactionFeeCategoryPurposeCode);
 			camt053Body = objectMapper.writeValueAsString(td);
@@ -154,7 +156,10 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 		
 		String disposalAccountDepositRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), disposalAccountAmsId, "deposit");
 		
-		paymentTypeId = paymentTypeConfig.findByOperation(String.format("%s.%s", paymentScheme, "revertInAms.DisposalAccount.DepositTransactionAmount"));
+		String depositAmountOperation = "revertInAms.DisposalAccount.DepositTransactionAmount";
+		String depositAmountConfigOperationKey = String.format("%s.%s", paymentScheme, depositAmountOperation);
+		paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(depositAmountConfigOperationKey);
+		paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(depositAmountConfigOperationKey);
 		
 		body = new TransactionBody(
 				transactionDate,
@@ -168,13 +173,11 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 		
 		batchItemBuilder.add(items, disposalAccountDepositRelativeUrl, bodyItem, false);
 		
-		td = new TransactionDetails(
+		td = new DtSavingsTransactionDetails(
 				internalCorrelationId,
 				camt053Entry,
 				debtorIban,
-				transactionDate,
-				FORMAT,
-				locale,
+				paymentTypeCode,
 				transactionGroupId,
 				transactionCategoryPurposeCode);
 		
@@ -185,7 +188,10 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 		if (!BigDecimal.ZERO.equals(transactionFeeAmount)) {
 			logger.debug("Re-depositing fee {} in disposal account {}", transactionFeeAmount, disposalAccountAmsId);
 			
-			paymentTypeId = paymentTypeConfig.findByOperation(String.format("%s.%s", paymentScheme, "revertInAms.DisposalAccount.DepositTransactionFee"));
+			String depositFeeOperation = "revertInAms.DisposalAccount.DepositTransactionFee";
+			String depositFeeConfigOperationKey = String.format("%s.%s", paymentScheme, depositFeeOperation);
+			paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(depositFeeConfigOperationKey);
+			paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(depositFeeConfigOperationKey);
 			
 			body = new TransactionBody(
 					transactionDate,
@@ -199,13 +205,11 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			
 			batchItemBuilder.add(items, disposalAccountDepositRelativeUrl, bodyItem, false);
 			
-			td = new TransactionDetails(
+			td = new DtSavingsTransactionDetails(
 					internalCorrelationId,
 					camt053Entry,
 					debtorIban,
-					transactionDate,
-					FORMAT,
-					locale,
+					paymentTypeCode,
 					transactionGroupId,
 					transactionFeeCategoryPurposeCode);
 			camt053Body = objectMapper.writeValueAsString(td);
@@ -247,7 +251,10 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 		String conversionAccountWithdrawRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "withdrawal");
 		
 		Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
-		Integer paymentTypeId = paymentTypeConfig.findByOperation(String.format("%s.%s", paymentScheme, "revertInAms.ConversionAccount.WithdrawTransactionAmount"));
+		String withdrawAmountOperation = "revertInAms.ConversionAccount.WithdrawTransactionAmount";
+		String withdrawAmountConfigOperationKey = String.format("%s.%s", paymentScheme, withdrawAmountOperation);
+		Integer paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(withdrawAmountConfigOperationKey);
+		String paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(withdrawAmountConfigOperationKey);
 		
 		TransactionBody body = new TransactionBody(
 				transactionDate,
@@ -269,13 +276,11 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 		
 		String camt053RelativeUrl = "datatables/transaction_details/$.resourceId";
 		
-		TransactionDetails td = new TransactionDetails(
+		DtSavingsTransactionDetails td = new DtSavingsTransactionDetails(
 				internalCorrelationId,
 				camt053Entry,
 				debtorIban,
-				transactionDate,
-				FORMAT,
-				locale,
+				paymentTypeCode,
 				transactionGroupId,
 				transactionCategoryPurposeCode);
 		
@@ -286,7 +291,10 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 		if (!BigDecimal.ZERO.equals(transactionFeeAmount)) {
 			logger.debug("Withdrawing fee {} from conversion account {}", transactionFeeAmount, conversionAccountAmsId);
 			
-			paymentTypeId = paymentTypeConfig.findByOperation(String.format("%s.%s", paymentScheme, "revertInAms.ConversionAccount.WithdrawTransactionFee"));
+			String withdrawFeeOperation = "revertInAms.ConversionAccount.WithdrawTransactionFee";
+			String withdrawFeeConfigOperationKey = String.format("%s.%s", paymentScheme, withdrawFeeOperation);
+			paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(withdrawFeeConfigOperationKey);
+			paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(withdrawFeeConfigOperationKey);
 			
 			body = new TransactionBody(
 					transactionDate,
@@ -300,13 +308,11 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			
 			batchItemBuilder.add(items, conversionAccountWithdrawRelativeUrl, bodyItem, false);
 			
-			td = new TransactionDetails(
+			td = new DtSavingsTransactionDetails(
 					internalCorrelationId,
 					camt053Entry,
 					debtorIban,
-					transactionDate,
-					FORMAT,
-					locale,
+					paymentTypeCode,
 					transactionGroupId,
 					transactionFeeCategoryPurposeCode);
 			camt053Body = objectMapper.writeValueAsString(td);
@@ -317,7 +323,10 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 		
 		String disposalAccountDepositRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), disposalAccountAmsId, "deposit");
 		
-		paymentTypeId = paymentTypeConfig.findByOperation(String.format("%s.%s", paymentScheme, "revertInAms.DisposalAccount.DepositTransactionAmount"));
+		String depositAmountOperation = "revertInAms.DisposalAccount.DepositTransactionAmount";
+		String depositAmountConfigOperationKey = String.format("%s.%s", paymentScheme, depositAmountOperation);
+		paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(depositAmountConfigOperationKey);
+		paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(depositAmountConfigOperationKey);
 		
 		body = new TransactionBody(
 				transactionDate,
@@ -331,13 +340,11 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 		
 		batchItemBuilder.add(items, disposalAccountDepositRelativeUrl, bodyItem, false);
 		
-		td = new TransactionDetails(
+		td = new DtSavingsTransactionDetails(
 				internalCorrelationId,
 				camt053Entry,
 				debtorIban,
-				transactionDate,
-				FORMAT,
-				locale,
+				paymentTypeCode,
 				transactionGroupId,
 				transactionCategoryPurposeCode);
 		
@@ -369,7 +376,10 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			String conversionAccountWithdrawRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "withdrawal");
 			
 			Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
-			Integer paymentTypeId = paymentTypeConfig.findByOperation(String.format("%s.%s", paymentScheme, "revertInAms.ConversionAccount.WithdrawTransactionAmount"));
+			String withdrawAmountOperation = "revertInAms.ConversionAccount.WithdrawTransactionAmount";
+			String withdrawAmountConfigOperationKey = String.format("%s.%s", paymentScheme, withdrawAmountOperation);
+			Integer paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(withdrawAmountConfigOperationKey);
+			String paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(withdrawAmountConfigOperationKey);
 			
 			TransactionBody body = new TransactionBody(
 					transactionDate,
@@ -416,13 +426,11 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			
 			String camt053RelativeUrl = "datatables/transaction_details/$.resourceId";
 			
-			TransactionDetails td = new TransactionDetails(
+			DtSavingsTransactionDetails td = new DtSavingsTransactionDetails(
 					internalCorrelationId,
 					camt053,
 					debtorIban,
-					transactionDate,
-					FORMAT,
-					locale,
+					paymentTypeCode,
 					internalCorrelationId,
 					transactionCategoryPurposeCode);
 			
@@ -432,7 +440,10 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			
 			String disposalAccountDepositRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), disposalAccountAmsId, "deposit");
 			
-			paymentTypeId = paymentTypeConfig.findByOperation(String.format("%s.%s", paymentScheme, "revertInAms.DisposalAccount.DepositTransactionAmount"));
+			String depositAmountOperation = "revertInAms.DisposalAccount.DepositTransactionAmount";
+			String depositAmountConfigOperationKey = String.format("%s.%s", paymentScheme, depositAmountOperation);
+			paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(depositAmountConfigOperationKey);
+			paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(depositAmountConfigOperationKey);
 			
 			body = new TransactionBody(
 					transactionDate,
@@ -446,13 +457,11 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			
 			batchItemBuilder.add(items, disposalAccountDepositRelativeUrl, bodyItem, false);
 			
-			td = new TransactionDetails(
+			td = new DtSavingsTransactionDetails(
 					internalCorrelationId,
 					camt053,
 					debtorIban,
-					transactionDate,
-					FORMAT,
-					locale,
+					paymentTypeCode,
 					internalCorrelationId,
 					transactionCategoryPurposeCode);
 			

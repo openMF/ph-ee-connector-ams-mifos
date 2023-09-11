@@ -9,7 +9,7 @@ import org.mifos.connector.ams.mapstruct.Pacs008Camt053Mapper;
 import org.mifos.connector.ams.zeebe.workers.utils.BatchItemBuilder;
 import org.mifos.connector.ams.zeebe.workers.utils.JAXBUtils;
 import org.mifos.connector.ams.zeebe.workers.utils.TransactionBody;
-import org.mifos.connector.ams.zeebe.workers.utils.TransactionDetails;
+import org.mifos.connector.ams.zeebe.workers.utils.DtSavingsTransactionDetails;
 import org.mifos.connector.ams.zeebe.workers.utils.TransactionItem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -90,12 +90,14 @@ public class BookCreditedAmountFromTechnicalAccountWorker extends AbstractMoneyI
             
             String taLookup = String.format("%s.%s", paymentScheme, caseIdentifier);
             logger.debug("Looking up account id for {}", taLookup);
-			Integer recallTechnicalAccountId = technicalAccountConfig.findByOperation(taLookup);
+			Integer recallTechnicalAccountId = technicalAccountConfig.findPaymentTypeIdByOperation(taLookup);
     		
     		String technicalAccountWithdrawalRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), recallTechnicalAccountId, "withdrawal");
     		
     		Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
-    		Integer paymentTypeId = paymentTypeConfig.findByOperation(String.format("%s.%s.%s", paymentScheme, "bookFromTechnicalAccount", caseIdentifier));
+    		String configOperationKey = String.format("%s.%s.%s", paymentScheme, "bookFromTechnicalAccount", caseIdentifier);
+			Integer paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(configOperationKey);
+    		String paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(configOperationKey);
     		
     		TransactionBody body = new TransactionBody(
     				transactionDate,
@@ -114,13 +116,11 @@ public class BookCreditedAmountFromTechnicalAccountWorker extends AbstractMoneyI
     		
     		String camt053RelativeUrl = "datatables/transaction_details/$.resourceId";
     		
-    		TransactionDetails td = new TransactionDetails(
+    		DtSavingsTransactionDetails td = new DtSavingsTransactionDetails(
     				internalCorrelationId,
     				camt053Entry,
     				null,
-    				transactionDate,
-    				FORMAT,
-    				locale,
+    				paymentTypeCode,
     				transactionGroupId,
     				transactionCategoryPurposeCode);
     		
