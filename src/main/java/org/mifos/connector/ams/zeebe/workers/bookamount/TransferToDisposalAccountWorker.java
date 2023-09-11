@@ -1,80 +1,105 @@
 package org.mifos.connector.ams.zeebe.workers.bookamount;
 
-import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.List;
-
-import iso.std.iso._20022.tech.json.camt_053_001.AccountStatement9;
-import iso.std.iso._20022.tech.json.camt_053_001.BankToCustomerStatementV08;
-import org.mifos.connector.ams.fineract.Config;
-import org.mifos.connector.ams.fineract.ConfigFactory;
-import org.mifos.connector.ams.mapstruct.Pacs008Camt053Mapper;
-import org.mifos.connector.ams.zeebe.workers.utils.BatchItemBuilder;
-import org.mifos.connector.ams.zeebe.workers.utils.JAXBUtils;
-import org.mifos.connector.ams.zeebe.workers.utils.TransactionBody;
-import org.mifos.connector.ams.zeebe.workers.utils.DtSavingsTransactionDetails;
-import org.mifos.connector.ams.zeebe.workers.utils.TransactionItem;
-import org.slf4j.MDC;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
-
+import com.baasflow.commons.events.Event;
+import com.baasflow.commons.events.EventService;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import io.camunda.zeebe.client.api.response.ActivatedJob;
 import io.camunda.zeebe.client.api.worker.JobClient;
 import io.camunda.zeebe.spring.client.annotation.JobWorker;
 import io.camunda.zeebe.spring.client.annotation.Variable;
 import io.camunda.zeebe.spring.client.exception.ZeebeBpmnError;
-import iso.std.iso._20022.tech.json.camt_053_001.ReportEntry10;
+import iso.std.iso._20022.tech.json.camt_053_001.AccountStatement9;
 import iso.std.iso._20022.tech.json.camt_053_001.ActiveOrHistoricCurrencyAndAmountRange2.CreditDebitCode;
+import iso.std.iso._20022.tech.json.camt_053_001.BankToCustomerStatementV08;
+import iso.std.iso._20022.tech.json.camt_053_001.ReportEntry10;
+import lombok.extern.slf4j.Slf4j;
+import org.mifos.connector.ams.fineract.Config;
+import org.mifos.connector.ams.fineract.ConfigFactory;
+import org.mifos.connector.ams.log.EventLogUtil;
+import org.mifos.connector.ams.log.LogInternalCorrelationId;
+import org.mifos.connector.ams.log.TraceZeebeArguments;
+import org.mifos.connector.ams.mapstruct.Pacs008Camt053Mapper;
+import org.mifos.connector.ams.zeebe.workers.utils.*;
+import org.slf4j.MDC;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 
 @Component
+@Slf4j
 public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
-	
-	@Autowired
-	private Pacs008Camt053Mapper camt053Mapper;
-	
-	@Value("${fineract.incoming-money-api}")
-	protected String incomingMoneyApi;
-	
-	@Autowired
+
+    @Autowired
+    private Pacs008Camt053Mapper camt053Mapper;
+
+    @Value("${fineract.incoming-money-api}")
+    protected String incomingMoneyApi;
+
+    @Autowired
     private ConfigFactory paymentTypeConfigFactory;
-	
-	@Autowired
-	private JAXBUtils jaxbUtils;
-	
-	@Autowired
-	private BatchItemBuilder batchItemBuilder;
 
-	@JobWorker
-	public void transferToDisposalAccount(JobClient jobClient, 
-			ActivatedJob activatedJob,
-			@Variable String originalPacs008,
-			@Variable String internalCorrelationId,
-			@Variable String paymentScheme,
-			@Variable String transactionDate,
-			@Variable String transactionGroupId,
-			@Variable String transactionCategoryPurposeCode,
-			@Variable BigDecimal amount,
-			@Variable Integer conversionAccountAmsId,
-			@Variable Integer disposalAccountAmsId,
-			@Variable String tenantIdentifier,
-			@Variable String creditorIban) throws Exception {
-		try {
+    @Autowired
+    private JAXBUtils jaxbUtils;
+
+    @Autowired
+    private BatchItemBuilder batchItemBuilder;
+
+    @Autowired
+    private EventService eventService;
+
+    @JobWorker
+    @LogInternalCorrelationId
+    @TraceZeebeArguments
+    public void transferToDisposalAccount(JobClient jobClient,
+                                          ActivatedJob activatedJob,
+                                          @Variable String originalPacs008,
+                                          @Variable String internalCorrelationId,
+                                          @Variable String paymentScheme,
+                                          @Variable String transactionDate,
+                                          @Variable String transactionGroupId,
+                                          @Variable String transactionCategoryPurposeCode,
+                                          @Variable BigDecimal amount,
+                                          @Variable Integer conversionAccountAmsId,
+                                          @Variable Integer disposalAccountAmsId,
+                                          @Variable String tenantIdentifier,
+                                          @Variable String creditorIban) {
+        log.info("transferToDisposalAccount");
+        eventService.auditedEvent(
+                eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "transferToDisposalAccount", internalCorrelationId, transactionGroupId, eventBuilder),
+                eventBuilder -> transferToDisposalAccount(originalPacs008,
+                        internalCorrelationId,
+                        paymentScheme,
+                        transactionDate,
+                        transactionGroupId,
+                        transactionCategoryPurposeCode,
+                        amount,
+                        conversionAccountAmsId,
+                        disposalAccountAmsId,
+                        tenantIdentifier,
+                        creditorIban,
+                        eventBuilder));
+    }
+
+    private Void transferToDisposalAccount(String originalPacs008,
+                                           String internalCorrelationId,
+                                           String paymentScheme,
+                                           String transactionDate,
+                                           String transactionGroupId,
+                                           String transactionCategoryPurposeCode,
+                                           BigDecimal amount,
+                                           Integer conversionAccountAmsId,
+                                           Integer disposalAccountAmsId,
+                                           String tenantIdentifier,
+                                           String creditorIban,
+                                           Event.Builder eventBuilder) {
+    	try {
 			MDC.put("internalCorrelationId", internalCorrelationId);
-			logger.info("transfer to disposal account in payment (pacs.008) {} started for {} on {} ", internalCorrelationId, paymentScheme, tenantIdentifier);
-			if (logger.isDebugEnabled()) {
-				logger.debug("activated job type {} with key {} at element {} of workflow {} with instance key {}\nheaders: {}\nvariables: {})",
-						activatedJob.getType(),
-						activatedJob.getKey(),
-						activatedJob.getElementId(),
-						activatedJob.getBpmnProcessId(),
-						activatedJob.getProcessInstanceKey(),
-						activatedJob.getCustomHeaders(),
-						activatedJob.getVariables());
-			}
+			log.info("transfer to disposal account in payment (pacs.008) {} started for {} on {} ", internalCorrelationId, paymentScheme, tenantIdentifier);
 
 			iso.std.iso._20022.tech.xsd.pacs_008_001.Document pacs008 = jaxbUtils.unmarshalPacs008(originalPacs008);
 
@@ -165,45 +190,75 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 			
 			batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 		
-			doBatch(items, tenantIdentifier, internalCorrelationId);
+			doBatch(items,
+                    tenantIdentifier,
+                    disposalAccountAmsId,
+                    conversionAccountAmsId,
+                    internalCorrelationId,
+                    "transferToDisposalAccount");
 			
-			logger.info("Exchange to disposal worker has finished successfully");
+			log.info("Exchange to disposal worker has finished successfully");
 		} catch (Exception e) {
-			logger.error("Exchange to disposal worker has failed, dispatching user task to handle exchange", e);
+			log.error("Exchange to disposal worker has failed, dispatching user task to handle exchange", e);
 			throw new ZeebeBpmnError("Error_TransferToDisposalToBeHandledManually", e.getMessage());
 		} finally {
 			MDC.remove("internalCorrelationId");
 		}
-	}
-	
-	@JobWorker
-	public void transferToDisposalAccountInRecall(JobClient jobClient, 
-			ActivatedJob activatedJob,
-			@Variable String originalPacs008,
-			@Variable String internalCorrelationId,
-			@Variable String paymentScheme,
-			@Variable String transactionDate,
-			@Variable String transactionGroupId,
-			@Variable String transactionCategoryPurposeCode,
-			@Variable BigDecimal amount,
-			@Variable Integer conversionAccountAmsId,
-			@Variable Integer disposalAccountAmsId,
-			@Variable String tenantIdentifier,
-			@Variable String pacs004,
-			@Variable String creditorIban) throws Exception {
-		try {
+
+        return null;
+    }
+
+    @JobWorker
+    @LogInternalCorrelationId
+    @TraceZeebeArguments
+    public void transferToDisposalAccountInRecall(JobClient jobClient,
+                                                  ActivatedJob activatedJob,
+                                                  @Variable String originalPacs008,
+                                                  @Variable String internalCorrelationId,
+                                                  @Variable String paymentScheme,
+                                                  @Variable String transactionDate,
+                                                  @Variable String transactionGroupId,
+                                                  @Variable String transactionCategoryPurposeCode,
+                                                  @Variable BigDecimal amount,
+                                                  @Variable Integer conversionAccountAmsId,
+                                                  @Variable Integer disposalAccountAmsId,
+                                                  @Variable String tenantIdentifier,
+                                                  @Variable String pacs004,
+                                                  @Variable String creditorIban) {
+        log.info("transferToDisposalAccountInRecall");
+        eventService.auditedEvent(
+                eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "transferToDisposalAccountInRecall", internalCorrelationId, transactionGroupId, eventBuilder),
+                eventBuilder -> transferToDisposalAccountInRecall(originalPacs008,
+                        internalCorrelationId,
+                        paymentScheme,
+                        transactionDate,
+                        transactionGroupId,
+                        transactionCategoryPurposeCode,
+                        amount,
+                        conversionAccountAmsId,
+                        disposalAccountAmsId,
+                        tenantIdentifier,
+                        pacs004,
+                        creditorIban,
+                        eventBuilder));
+    }
+
+    private Void transferToDisposalAccountInRecall(String originalPacs008,
+                                                   String internalCorrelationId,
+                                                   String paymentScheme,
+                                                   String transactionDate,
+                                                   String transactionGroupId,
+                                                   String transactionCategoryPurposeCode,
+                                                   BigDecimal amount,
+                                                   Integer conversionAccountAmsId,
+                                                   Integer disposalAccountAmsId,
+                                                   String tenantIdentifier,
+                                                   String pacs004,
+                                                   String creditorIban,
+                                                   Event.Builder eventBuilder) {
+    	try {
 			MDC.put("internalCorrelationId", internalCorrelationId);
-			logger.info("transfer to disposal account in recall (pacs.004) {} started for {} on {} ", internalCorrelationId, paymentScheme, tenantIdentifier);
-			if (logger.isDebugEnabled()) {
-				logger.debug("activated job type {} with key {} at element {} of workflow {} with instance key {}\nheaders: {}\nvariables: {})",
-						activatedJob.getType(),
-						activatedJob.getKey(),
-						activatedJob.getElementId(),
-						activatedJob.getBpmnProcessId(),
-						activatedJob.getProcessInstanceKey(),
-						activatedJob.getCustomHeaders(),
-						activatedJob.getVariables());
-			}
+			log.info("transfer to disposal account in recall (pacs.004) {} started for {} on {} ", internalCorrelationId, paymentScheme, tenantIdentifier);
 
 			iso.std.iso._20022.tech.xsd.pacs_008_001.Document pacs008 = jaxbUtils.unmarshalPacs008(originalPacs008);
 		
@@ -294,44 +349,74 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 			
 			batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 		
-			doBatch(items, tenantIdentifier, internalCorrelationId);
+			doBatch(items,
+                    tenantIdentifier,
+                    disposalAccountAmsId,
+                    conversionAccountAmsId,
+                    internalCorrelationId,
+                    "transferToDisposalAccountInRecall");
 			
-			logger.info("Exchange to disposal worker has finished successfully");
+			log.info("Exchange to disposal worker has finished successfully");
 		} catch (Exception e) {
-			logger.error("Exchange to disposal worker has failed, dispatching user task to handle exchange", e);
+			log.error("Exchange to disposal worker has failed, dispatching user task to handle exchange", e);
 			throw new ZeebeBpmnError("Error_TransferToDisposalToBeHandledManually", e.getMessage());
 		} finally {
 			MDC.remove("internalCorrelationId");
 		}
-	}
 
-	@JobWorker
-	public void transferToDisposalAccountInReturn(JobClient jobClient,
-												  ActivatedJob activatedJob,
-												  @Variable String pacs004,
-												  @Variable String internalCorrelationId,
-												  @Variable String paymentScheme,
-												  @Variable String transactionDate,
-												  @Variable String transactionGroupId,
-												  @Variable String transactionCategoryPurposeCode,
-												  @Variable BigDecimal amount,
-												  @Variable Integer conversionAccountAmsId,
-												  @Variable Integer disposalAccountAmsId,
-												  @Variable String tenantIdentifier,
-												  @Variable String creditorIban) throws Exception {
-		try {
+        return null;
+    }
+
+    @JobWorker
+    @LogInternalCorrelationId
+    @TraceZeebeArguments
+    public void transferToDisposalAccountInReturn(JobClient jobClient,
+                                                  ActivatedJob activatedJob,
+                                                  @Variable String pacs004,
+                                                  @Variable String internalCorrelationId,
+                                                  @Variable String paymentScheme,
+                                                  @Variable String transactionDate,
+                                                  @Variable String transactionGroupId,
+                                                  @Variable String transactionCategoryPurposeCode,
+                                                  @Variable BigDecimal amount,
+                                                  @Variable Integer conversionAccountAmsId,
+                                                  @Variable Integer disposalAccountAmsId,
+                                                  @Variable String tenantIdentifier,
+                                                  @Variable String creditorIban) {
+        log.info("transferToDisposalAccountInReturn");
+        eventService.auditedEvent(
+                eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "transferToDisposalAccountInReturn", internalCorrelationId, transactionGroupId, eventBuilder),
+                eventBuilder -> transferToDisposalAccountInRecall(pacs004,
+                        internalCorrelationId,
+                        paymentScheme,
+                        transactionDate,
+                        transactionGroupId,
+                        transactionCategoryPurposeCode,
+                        amount,
+                        conversionAccountAmsId,
+                        disposalAccountAmsId,
+                        tenantIdentifier,
+                        pacs004,
+                        creditorIban,
+                        eventBuilder));
+    }
+
+    private Void transferToDisposalAccountInReturn(String pacs004,
+                                                   String internalCorrelationId,
+                                                   String paymentScheme,
+                                                   String transactionDate,
+                                                   String transactionGroupId,
+                                                   String transactionCategoryPurposeCode,
+                                                   BigDecimal amount,
+                                                   Integer conversionAccountAmsId,
+                                                   Integer disposalAccountAmsId,
+                                                   String tenantIdentifier,
+                                                   String copy,
+                                                   String creditorIban,
+                                                   Event.Builder eventBuilder) {
+    	try {
 			MDC.put("internalCorrelationId", internalCorrelationId);
-			logger.info("transfer to disposal account in return (pacs.004) {} started for {} on {} ", internalCorrelationId, paymentScheme, tenantIdentifier);
-			if (logger.isDebugEnabled()) {
-				logger.debug("activated job type {} with key {} at element {} of workflow {} with instance key {}\nheaders: {}\nvariables: {})",
-						activatedJob.getType(),
-						activatedJob.getKey(),
-						activatedJob.getElementId(),
-						activatedJob.getBpmnProcessId(),
-						activatedJob.getProcessInstanceKey(),
-						activatedJob.getCustomHeaders(),
-						activatedJob.getVariables());
-			}
+			log.info("transfer to disposal account in return (pacs.004) {} started for {} on {} ", internalCorrelationId, paymentScheme, tenantIdentifier);
 
 			ObjectMapper objectMapper = new ObjectMapper();
 
@@ -426,14 +511,21 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 
 			batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 
-			doBatch(items, tenantIdentifier, internalCorrelationId);
+			doBatch(items,
+                    tenantIdentifier,
+                    disposalAccountAmsId,
+                    conversionAccountAmsId,
+                    internalCorrelationId,
+                    "transferToDisposalAccountInReturn");
 
-			logger.info("Exchange to disposal worker has finished successfully");
+			log.info("Exchange to disposal worker has finished successfully");
 		} catch (Exception e) {
-			logger.error("Exchange to disposal worker has failed, dispatching user task to handle exchange", e);
+			log.error("Exchange to disposal worker has failed, dispatching user task to handle exchange", e);
 			throw new ZeebeBpmnError("Error_TransferToDisposalToBeHandledManually", e.getMessage());
 		} finally {
 			MDC.remove("internalCorrelationId");
 		}
-	}
+
+        return null;
+    }
 }

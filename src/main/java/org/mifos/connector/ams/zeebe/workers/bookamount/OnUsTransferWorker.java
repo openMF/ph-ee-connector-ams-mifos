@@ -9,15 +9,20 @@ import java.util.Map;
 
 import org.mifos.connector.ams.fineract.Config;
 import org.mifos.connector.ams.fineract.ConfigFactory;
+import org.mifos.connector.ams.log.EventLogUtil;
+import org.mifos.connector.ams.log.LogInternalCorrelationId;
+import org.mifos.connector.ams.log.TraceZeebeArguments;
 import org.mifos.connector.ams.mapstruct.Pain001Camt053Mapper;
 import org.mifos.connector.ams.zeebe.workers.utils.BatchItemBuilder;
-import org.mifos.connector.ams.zeebe.workers.utils.TransactionBody;
 import org.mifos.connector.ams.zeebe.workers.utils.DtSavingsTransactionDetails;
+import org.mifos.connector.ams.zeebe.workers.utils.TransactionBody;
 import org.mifos.connector.ams.zeebe.workers.utils.TransactionItem;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import com.baasflow.commons.events.Event;
+import com.baasflow.commons.events.EventService;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -26,50 +31,91 @@ import io.camunda.zeebe.client.api.response.ActivatedJob;
 import io.camunda.zeebe.client.api.worker.JobClient;
 import io.camunda.zeebe.spring.client.annotation.JobWorker;
 import io.camunda.zeebe.spring.client.annotation.Variable;
-import io.camunda.zeebe.spring.client.exception.ZeebeBpmnError;
 import iso.std.iso._20022.tech.json.camt_053_001.ReportEntry10;
 import iso.std.iso._20022.tech.json.pain_001_001.Pain00100110CustomerCreditTransferInitiationV10MessageSchema;
+import lombok.extern.slf4j.Slf4j;
 
 @Component
+@Slf4j
 public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
-	
-	private static final String ERROR_FAILED_CREDIT_TRANSFER = "Error_FailedCreditTransfer";
 
-	@Autowired
-	private Pain001Camt053Mapper camt053Mapper;
-	
-	@Value("${fineract.incoming-money-api}")
-	protected String incomingMoneyApi;
-	
-	@Autowired
+    @Autowired
+    private Pain001Camt053Mapper camt053Mapper;
+
+    @Value("${fineract.incoming-money-api}")
+    protected String incomingMoneyApi;
+
+    @Autowired
     private ConfigFactory paymentTypeConfigFactory;
-	
-	@Autowired
-	private BatchItemBuilder batchItemBuilder;
-	
-	private static final DateTimeFormatter PATTERN = DateTimeFormatter.ofPattern(FORMAT);
 
-	@JobWorker
-	public Map<String, Object> transferTheAmountBetweenDisposalAccounts(JobClient jobClient, 
-			ActivatedJob activatedJob,
-			@Variable String internalCorrelationId,
-			@Variable String paymentScheme,
-			@Variable String originalPain001,
-			@Variable BigDecimal amount,
-			@Variable Integer creditorDisposalAccountAmsId,
-			@Variable Integer debtorDisposalAccountAmsId,
-			@Variable Integer debtorConversionAccountAmsId,
-			@Variable BigDecimal transactionFeeAmount,
-			@Variable String tenantIdentifier,
-			@Variable String transactionGroupId,
-			@Variable String transactionCategoryPurposeCode,
-			@Variable String transactionFeeCategoryPurposeCode,
-			@Variable String transactionFeeInternalCorrelationId,
-			@Variable String creditorIban,
-			@Variable String debtorIban) {
-		try {
+    @Autowired
+    private BatchItemBuilder batchItemBuilder;
+
+    @Autowired
+    private EventService eventService;
+
+    private static final DateTimeFormatter PATTERN = DateTimeFormatter.ofPattern(FORMAT);
+
+    @JobWorker
+    @LogInternalCorrelationId
+    @TraceZeebeArguments
+    public Map<String, Object> transferTheAmountBetweenDisposalAccounts(JobClient jobClient,
+                                                                        ActivatedJob activatedJob,
+                                                                        @Variable String internalCorrelationId,
+                                                                        @Variable String paymentScheme,
+                                                                        @Variable String originalPain001,
+                                                                        @Variable BigDecimal amount,
+                                                                        @Variable Integer creditorDisposalAccountAmsId,
+                                                                        @Variable Integer debtorDisposalAccountAmsId,
+                                                                        @Variable Integer debtorConversionAccountAmsId,
+                                                                        @Variable BigDecimal transactionFeeAmount,
+                                                                        @Variable String tenantIdentifier,
+                                                                        @Variable String transactionGroupId,
+                                                                        @Variable String transactionCategoryPurposeCode,
+                                                                        @Variable String transactionFeeCategoryPurposeCode,
+                                                                        @Variable String transactionFeeInternalCorrelationId,
+                                                                        @Variable String creditorIban,
+                                                                        @Variable String debtorIban) {
+        log.info("transferTheAmountBetweenDisposalAccounts");
+        return eventService.auditedEvent(
+                eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "transferTheAmountBetweenDisposalAccounts", internalCorrelationId, transactionGroupId, eventBuilder),
+                eventBuilder -> transferTheAmountBetweenDisposalAccounts(internalCorrelationId,
+                        paymentScheme,
+                        originalPain001,
+                        amount,
+                        creditorDisposalAccountAmsId,
+                        debtorDisposalAccountAmsId,
+                        debtorConversionAccountAmsId,
+                        transactionFeeAmount,
+                        tenantIdentifier,
+                        transactionGroupId,
+                        transactionCategoryPurposeCode,
+                        transactionFeeCategoryPurposeCode,
+                        transactionFeeInternalCorrelationId,
+                        creditorIban,
+                        debtorIban,
+                        eventBuilder));
+    }
+
+    private Map<String, Object> transferTheAmountBetweenDisposalAccounts(String internalCorrelationId,
+                                                                         String paymentScheme,
+                                                                         String originalPain001,
+                                                                         BigDecimal amount,
+                                                                         Integer creditorDisposalAccountAmsId,
+                                                                         Integer debtorDisposalAccountAmsId,
+                                                                         Integer debtorConversionAccountAmsId,
+                                                                         BigDecimal transactionFeeAmount,
+                                                                         String tenantIdentifier,
+                                                                         String transactionGroupId,
+                                                                         String transactionCategoryPurposeCode,
+                                                                         String transactionFeeCategoryPurposeCode,
+                                                                         String transactionFeeInternalCorrelationId,
+                                                                         String creditorIban,
+                                                                         String debtorIban,
+                                                                         Event.Builder eventBuilder) {
+try {
 			
-			logger.debug("Incoming pain.001: {}", originalPain001);
+			log.debug("Incoming pain.001: {}", originalPain001);
 			
 			ObjectMapper objectMapper = new ObjectMapper();
 			objectMapper.setSerializationInclusion(Include.NON_NULL);
@@ -279,15 +325,17 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 	    		batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 			}
 			
-			doBatch(items, tenantIdentifier, internalCorrelationId);
+			doBatchOnUs(items,
+                    tenantIdentifier,
+                    debtorDisposalAccountAmsId,
+                    debtorConversionAccountAmsId,
+                    creditorDisposalAccountAmsId,
+                    internalCorrelationId);
 			
 			return Map.of("transactionDate", interbankSettlementDate);
 		} catch (JsonProcessingException e) {
-			logger.error(e.getMessage(), e);
-			throw new ZeebeBpmnError(ERROR_FAILED_CREDIT_TRANSFER, e.getMessage());
-		} catch (Exception e) {
-			logger.error(e.getMessage(), e);
-			throw new ZeebeBpmnError(activatedJob.getBpmnProcessId(), e.getMessage());
+			log.error(e.getMessage(), e);
+			throw new RuntimeException("failed to create camt.053", e);
 		}
-	}
+    }
 }

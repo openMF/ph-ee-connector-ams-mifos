@@ -1,23 +1,31 @@
 package org.mifos.connector.ams.zeebe.workers.bookamount;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Set;
-
+import com.baasflow.commons.events.Event;
+import com.baasflow.commons.events.EventService;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.networknt.schema.ValidationMessage;
+import hu.dpc.rt.utils.converter.Camt056ToCamt053Converter;
+import io.camunda.zeebe.client.api.response.ActivatedJob;
+import io.camunda.zeebe.client.api.worker.JobClient;
+import io.camunda.zeebe.spring.client.annotation.JobWorker;
+import io.camunda.zeebe.spring.client.annotation.Variable;
+import io.camunda.zeebe.spring.client.exception.ZeebeBpmnError;
+import iso.std.iso._20022.tech.json.camt_053_001.ActiveOrHistoricCurrencyAndAmountRange2.CreditDebitCode;
+import iso.std.iso._20022.tech.json.camt_053_001.BankToCustomerStatementV08;
+import iso.std.iso._20022.tech.json.camt_053_001.ReportEntry10;
+import iso.std.iso._20022.tech.json.pain_001_001.Pain00100110CustomerCreditTransferInitiationV10MessageSchema;
+import iso.std.iso._20022.tech.xsd.camt_056_001.PaymentTransactionInformation31;
+import jakarta.xml.bind.JAXBException;
+import lombok.extern.slf4j.Slf4j;
 import org.mifos.connector.ams.fineract.Config;
 import org.mifos.connector.ams.fineract.ConfigFactory;
+import org.mifos.connector.ams.log.EventLogUtil;
+import org.mifos.connector.ams.log.LogInternalCorrelationId;
+import org.mifos.connector.ams.log.TraceZeebeArguments;
 import org.mifos.connector.ams.mapstruct.Pain001Camt053Mapper;
-import org.mifos.connector.ams.zeebe.workers.utils.AuthTokenHelper;
-import org.mifos.connector.ams.zeebe.workers.utils.BatchItemBuilder;
-import org.mifos.connector.ams.zeebe.workers.utils.JAXBUtils;
-import org.mifos.connector.ams.zeebe.workers.utils.JsonSchemaValidator;
-import org.mifos.connector.ams.zeebe.workers.utils.TransactionBody;
-import org.mifos.connector.ams.zeebe.workers.utils.DtSavingsTransactionDetails;
-import org.mifos.connector.ams.zeebe.workers.utils.TransactionItem;
+import org.mifos.connector.ams.zeebe.workers.utils.*;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -27,94 +35,123 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 
-import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.networknt.schema.ValidationMessage;
-
-import hu.dpc.rt.utils.converter.Camt056ToCamt053Converter;
-import io.camunda.zeebe.client.api.response.ActivatedJob;
-import io.camunda.zeebe.client.api.worker.JobClient;
-import io.camunda.zeebe.spring.client.annotation.JobWorker;
-import io.camunda.zeebe.spring.client.annotation.Variable;
-import io.camunda.zeebe.spring.client.exception.ZeebeBpmnError;
-import iso.std.iso._20022.tech.json.camt_053_001.BankToCustomerStatementV08;
-import iso.std.iso._20022.tech.json.camt_053_001.ReportEntry10;
-import iso.std.iso._20022.tech.json.camt_053_001.ActiveOrHistoricCurrencyAndAmountRange2.CreditDebitCode;
-import iso.std.iso._20022.tech.json.pain_001_001.Pain00100110CustomerCreditTransferInitiationV10MessageSchema;
-import iso.std.iso._20022.tech.xsd.camt_056_001.PaymentTransactionInformation31;
-import jakarta.xml.bind.JAXBException;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Set;
 
 @Component
+@Slf4j
 public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWorker {
-	
-	@Autowired
-	private Pain001Camt053Mapper camt053Mapper;
-	
-	@Value("${fineract.incoming-money-api}")
-	protected String incomingMoneyApi;
-	
-	@Autowired
-    private ConfigFactory paymentTypeConfigFactory;
-	
-	@Autowired
-	private JsonSchemaValidator validator;
-	
-	@Autowired
-	private JAXBUtils jaxbUtils;
-	
-	@Autowired
-	private AuthTokenHelper authTokenHelper;
-	
-	@Autowired
-	private BatchItemBuilder batchItemBuilder;
-	
-	private final ObjectMapper objectMapper = new ObjectMapper();
-	
-	private static final DateTimeFormatter PATTERN = DateTimeFormatter.ofPattern(FORMAT);
 
-	@SuppressWarnings("unchecked")
-	@JobWorker
-	public void transferToConversionAccountInAms(JobClient jobClient, 
-			ActivatedJob activatedJob,
-			@Variable String transactionGroupId,
-			@Variable String transactionCategoryPurposeCode,
-			@Variable String transactionFeeCategoryPurposeCode,
-			@Variable String originalPain001,
-			@Variable String internalCorrelationId,
-			@Variable BigDecimal amount,
-			@Variable BigDecimal transactionFeeAmount,
-			@Variable String paymentScheme,
-			@Variable Integer disposalAccountAmsId,
-			@Variable Integer conversionAccountAmsId,
-			@Variable String tenantIdentifier,
-			@Variable String iban,
-			@Variable String transactionFeeInternalCorrelationId) {
-		String transactionDate = LocalDate.now().format(PATTERN);
-		logger.debug("Debtor exchange worker starting");
-		MDC.put("internalCorrelationId", internalCorrelationId);
-		try {
+    @Autowired
+    private Pain001Camt053Mapper camt053Mapper;
+
+    @Value("${fineract.incoming-money-api}")
+    protected String incomingMoneyApi;
+
+    @Autowired
+    private ConfigFactory paymentTypeConfigFactory;
+
+    @Autowired
+    private JsonSchemaValidator validator;
+
+    @Autowired
+    private JAXBUtils jaxbUtils;
+
+    @Autowired
+    private AuthTokenHelper authTokenHelper;
+
+    @Autowired
+    private BatchItemBuilder batchItemBuilder;
+
+    @Autowired
+    private EventService eventService;
+
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
+    private static final DateTimeFormatter PATTERN = DateTimeFormatter.ofPattern(FORMAT);
+
+    @JobWorker
+    @LogInternalCorrelationId
+    @TraceZeebeArguments
+    public void transferToConversionAccountInAms(JobClient jobClient,
+                                                 ActivatedJob activatedJob,
+                                                 @Variable String transactionGroupId,
+                                                 @Variable String transactionCategoryPurposeCode,
+                                                 @Variable String transactionFeeCategoryPurposeCode,
+                                                 @Variable String originalPain001,
+                                                 @Variable String internalCorrelationId,
+                                                 @Variable BigDecimal amount,
+                                                 @Variable BigDecimal transactionFeeAmount,
+                                                 @Variable String paymentScheme,
+                                                 @Variable Integer disposalAccountAmsId,
+                                                 @Variable Integer conversionAccountAmsId,
+                                                 @Variable String tenantIdentifier,
+                                                 @Variable String iban,
+                                                 @Variable String transactionFeeInternalCorrelationId) {
+        log.info("transferToConversionAccountInAms");
+        eventService.auditedEvent(
+                eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "transferToConversionAccountInAms", internalCorrelationId, transactionGroupId, eventBuilder),
+                eventBuilder -> transferToConversionAccountInAms(transactionGroupId,
+                        transactionCategoryPurposeCode,
+                        transactionFeeCategoryPurposeCode,
+                        originalPain001,
+                        internalCorrelationId,
+                        amount,
+                        transactionFeeAmount,
+                        paymentScheme,
+                        disposalAccountAmsId,
+                        conversionAccountAmsId,
+                        tenantIdentifier,
+                        iban,
+                        transactionFeeInternalCorrelationId,
+                        eventBuilder));
+    }
+
+    @SuppressWarnings("unchecked")
+    private Void transferToConversionAccountInAms(String transactionGroupId,
+                                                  String transactionCategoryPurposeCode,
+                                                  String transactionFeeCategoryPurposeCode,
+                                                  String originalPain001,
+                                                  String internalCorrelationId,
+                                                  BigDecimal amount,
+                                                  BigDecimal transactionFeeAmount,
+                                                  String paymentScheme,
+                                                  Integer disposalAccountAmsId,
+                                                  Integer conversionAccountAmsId,
+                                                  String tenantIdentifier,
+                                                  String iban,
+                                                  String transactionFeeInternalCorrelationId,
+                                                  Event.Builder eventBuilder) {
+        try {
+        	String transactionDate = LocalDate.now().format(PATTERN);
+    		log.debug("Debtor exchange worker starting");
+    		MDC.put("internalCorrelationId", internalCorrelationId);
 			objectMapper.setSerializationInclusion(Include.NON_NULL);
 			Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001 = objectMapper.readValue(originalPain001, Pain00100110CustomerCreditTransferInitiationV10MessageSchema.class);
 			
 			try {
-				logger.info(">>>>>>>>>>>>>>>>>> Validating incoming pain.001 <<<<<<<<<<<<<<<<");
+				log.info(">>>>>>>>>>>>>>>>>> Validating incoming pain.001 <<<<<<<<<<<<<<<<");
 				
 				Set<ValidationMessage> validationResult = validator.validate(originalPain001);
 			
 				if (validationResult.isEmpty()) {
-					logger.info(">>>>>>>>>>>>>>>> pain.001 validation successful <<<<<<<<<<<<<<<");
+					log.info(">>>>>>>>>>>>>>>> pain.001 validation successful <<<<<<<<<<<<<<<");
 				} else {
-					logger.error(validationResult.toString());
+					log.error(validationResult.toString());
 				}
 			} catch (JsonProcessingException e) {
-				logger.warn("Unable to validate pain.001: {}", e.getMessage());
+				log.warn("Unable to validate pain.001: {}", e.getMessage());
 			}
 			
 			
-			logger.debug("Debtor exchange worker incoming variables:");
+			log.debug("Debtor exchange worker incoming variables:");
 		
-			logger.debug("Withdrawing amount {} from disposal account {}", amount, disposalAccountAmsId);
+			log.debug("Withdrawing amount {} from disposal account {}", amount, disposalAccountAmsId);
 			
 			boolean hasFee = !BigDecimal.ZERO.equals(transactionFeeAmount);
 
@@ -175,7 +212,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 					partnerAccountSecondaryIdentifier, unstructured);
 
 			if (hasFee) {
-				logger.debug("Withdrawing fee {} from disposal account {}", transactionFeeAmount, disposalAccountAmsId);
+				log.debug("Withdrawing fee {} from disposal account {}", transactionFeeAmount, disposalAccountAmsId);
 					String withdrawFeeOperation = "transferToConversionAccountInAms.DisposalAccount.WithdrawTransactionFee";
 					addExchange(transactionFeeAmount, paymentScheme, transactionDate, objectMapper, paymentTypeConfig, batchItemBuilder, items, disposalAccountWithdrawRelativeUrl, withdrawFeeOperation);
 					
@@ -187,7 +224,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 							withdrawFeeOperation, partnerName, partnerAccountIban, partnerAccountSecondaryIdentifier, unstructured);
 			}
 			
-			logger.info("Depositing amount {} to conversion account {}", amount, conversionAccountAmsId);
+			log.info("Depositing amount {} to conversion account {}", amount, conversionAccountAmsId);
 			
 			String conversionAccountDepositRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "deposit");
 			
@@ -203,7 +240,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 		
 			
 			if (hasFee) {
-				logger.debug("Depositing fee {} to conversion account {}", transactionFeeAmount, conversionAccountAmsId);
+				log.debug("Depositing fee {} to conversion account {}", transactionFeeAmount, conversionAccountAmsId);
 				String depositFeeOperation = "transferToConversionAccountInAms.ConversionAccount.DepositTransactionFee";
 				addExchange(transactionFeeAmount, paymentScheme, transactionDate, objectMapper, paymentTypeConfig, batchItemBuilder, items, conversionAccountDepositRelativeUrl, depositFeeOperation);
 				
@@ -214,26 +251,34 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 						items, camt053Entry, camt053RelativeUrl, iban, paymentTypeConfig, paymentScheme, depositFeeOperation, partnerName, 
 						partnerAccountIban, partnerAccountSecondaryIdentifier, unstructured);
 			}
-			
-			doBatch(items, tenantIdentifier, internalCorrelationId);
-		} catch (Exception e) {
-			logger.error(e.getMessage(), e);
-			throw new ZeebeBpmnError("Error_InsufficientFunds", e.getMessage());
-		} finally {
-			MDC.remove("internalCorrelationId");
-		}
-	}
+    			
+    		doBatch(items,
+                    tenantIdentifier,
+                    disposalAccountAmsId,
+                    conversionAccountAmsId,
+                    internalCorrelationId,
+                    "transferToConversionAccountInAms");
 
-	private void addExchange(BigDecimal amount, 
-			String paymentScheme, 
-			String transactionDate, 
-			ObjectMapper om, 
-			Config paymentTypeConfig, 
-			BatchItemBuilder batchItemBuilder, 
-			List<TransactionItem> items, 
-			String relativeUrl, 
-			String paymentTypeOperation) throws JsonProcessingException {
-		Integer paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(String.format("%s.%s", paymentScheme, paymentTypeOperation));
+        } catch (Exception e) {
+            // TODO technical error handling
+            log.error(e.getMessage(), e);
+            throw new ZeebeBpmnError("Error_InsufficientFunds", e.getMessage());
+        } finally {
+        	MDC.remove("internalCorrelationId");
+        }
+        return null;
+    }
+
+    private void addExchange(BigDecimal amount,
+                             String paymentScheme,
+                             String transactionDate,
+                             ObjectMapper om,
+                             Config paymentTypeConfig,
+                             BatchItemBuilder batchItemBuilder,
+                             List<TransactionItem> items,
+                             String relativeUrl,
+                             String paymentTypeOperation) throws JsonProcessingException {
+    	Integer paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(String.format("%s.%s", paymentScheme, paymentTypeOperation));
 		
 		TransactionBody transactionBody = new TransactionBody(
 				transactionDate,
@@ -245,9 +290,9 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 		
 		String bodyItem = om.writeValueAsString(transactionBody);
 		batchItemBuilder.add(items, relativeUrl, bodyItem, false);
-	}
+    }
 
-	private void addDetails(String transactionGroupId, 
+    private void addDetails(String transactionGroupId, 
 			String transactionFeeCategoryPurposeCode,
 			String internalCorrelationId, 
 			ObjectMapper om, 
@@ -263,7 +308,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			String partnerAccountIban,
 			String partnerAccountSecondaryIdentifier,
 			String unstructured) throws JsonProcessingException {
-		String paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(String.format("%s.%s", paymentScheme, paymentTypeOperation));
+    	String paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(String.format("%s.%s", paymentScheme, paymentTypeOperation));
 		DtSavingsTransactionDetails td = new DtSavingsTransactionDetails(
 				internalCorrelationId,
 				camt053,
@@ -279,24 +324,50 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 		
 		String camt053Body = om.writeValueAsString(td);
 		batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
-	}
-	
-	@JobWorker
-	public void withdrawTheAmountFromDisposalAccountInAMS(JobClient client,
-			ActivatedJob job,
-			@Variable BigDecimal amount,
-			@Variable Integer conversionAccountAmsId,
-			@Variable Integer disposalAccountAmsId,
-			@Variable String tenantIdentifier,
-			@Variable String paymentScheme,
-			@Variable String transactionCategoryPurposeCode,
-			@Variable String camt056,
-			@Variable String iban) {
-		
-		try {
+    }
+
+    @JobWorker
+    @TraceZeebeArguments
+    public void withdrawTheAmountFromDisposalAccountInAMS(JobClient client,
+                                                          ActivatedJob activatedJob,
+                                                          @Variable BigDecimal amount,
+                                                          @Variable Integer conversionAccountAmsId,
+                                                          @Variable Integer disposalAccountAmsId,
+                                                          @Variable String tenantIdentifier,
+                                                          @Variable String paymentScheme,
+                                                          @Variable String transactionCategoryPurposeCode,
+                                                          @Variable String camt056,
+                                                          @Variable String iban) {
+        log.info("withdrawTheAmountFromDisposalAccountInAMS");
+        eventService.auditedEvent(
+                eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "withdrawTheAmountFromDisposalAccountInAMS",
+                        null,
+                        null,
+                        eventBuilder),
+                eventBuilder -> withdrawTheAmountFromDisposalAccountInAMS(amount,
+                        conversionAccountAmsId,
+                        disposalAccountAmsId,
+                        tenantIdentifier,
+                        paymentScheme,
+                        transactionCategoryPurposeCode,
+                        camt056,
+                        iban,
+                        eventBuilder));
+    }
+
+    private Void withdrawTheAmountFromDisposalAccountInAMS(BigDecimal amount,
+                                                           Integer conversionAccountAmsId,
+                                                           Integer disposalAccountAmsId,
+                                                           String tenantIdentifier,
+                                                           String paymentScheme,
+                                                           String transactionCategoryPurposeCode,
+                                                           String camt056,
+                                                           String iban,
+                                                           Event.Builder eventBuilder) {
+    	try {
 			String transactionDate = LocalDate.now().format(PATTERN);
 			
-			logger.debug("Withdrawing amount {} from disposal account {}", amount, disposalAccountAmsId);
+			log.debug("Withdrawing amount {} from disposal account {}", amount, disposalAccountAmsId);
 			
 			batchItemBuilder.tenantId(tenantIdentifier);
 			
@@ -378,10 +449,17 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			camt053Body = objectMapper.writeValueAsString(td);
 			batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 			
-			doBatch(items, tenantIdentifier, internalCorrelationId);
+			doBatch(items,
+                    tenantIdentifier,
+                    disposalAccountAmsId,
+                    conversionAccountAmsId,
+                    internalCorrelationId,
+                    "withdrawTheAmountFromDisposalAccountInAMS");
 		} catch (JAXBException | JsonProcessingException e) {
-			logger.error(e.getMessage(), e);
+			log.error(e.getMessage(), e);
 			throw new RuntimeException(e);
 		}
-	}
+
+        return null;
+    }
 }
