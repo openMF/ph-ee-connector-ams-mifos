@@ -49,7 +49,7 @@
     <logger name="org.apache.camel.impl.health" level="INFO"/>
     <logger name="io" level="INFO"/>
     <logger name="hu.dpc" level="TRACE"/>
-    <logger name="org.mifos.connector.ams.zeebe" level="DEBUG" />
+    <logger name="org.mifos.connector.ams" level="TRACE" />
 
     <root level="DEBUG">
         <appender-ref ref="CONSOLE"/>

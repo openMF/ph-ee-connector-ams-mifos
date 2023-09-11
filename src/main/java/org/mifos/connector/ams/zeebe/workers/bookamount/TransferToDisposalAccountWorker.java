@@ -386,7 +386,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
         log.info("transferToDisposalAccountInReturn");
         eventService.auditedEvent(
                 eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "transferToDisposalAccountInReturn", internalCorrelationId, transactionGroupId, eventBuilder),
-                eventBuilder -> transferToDisposalAccountInRecall(pacs004,
+                eventBuilder -> transferToDisposalAccountInReturn(pacs004,
                         internalCorrelationId,
                         paymentScheme,
                         transactionDate,
@@ -396,7 +396,6 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
                         conversionAccountAmsId,
                         disposalAccountAmsId,
                         tenantIdentifier,
-                        pacs004,
                         creditorIban,
                         eventBuilder));
     }
@@ -411,7 +410,6 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
                                                    Integer conversionAccountAmsId,
                                                    Integer disposalAccountAmsId,
                                                    String tenantIdentifier,
-                                                   String copy,
                                                    String creditorIban,
                                                    Event.Builder eventBuilder) {
     	try {
