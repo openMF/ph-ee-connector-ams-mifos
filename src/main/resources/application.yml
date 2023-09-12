@@ -41,7 +41,7 @@ dfspids: "DFSPID"
 
 fineract:
   api-url: ${FINERACT_URL}
-  datatable-query-api: "/datatables/account_mapping/query"
+  datatable-query-api: "/datatables/dt_client_account_mapping/query"
   column-filter: "iban"
   result-columns: "conversion_account_id,disposal_account_id,internal_account_id"
   internal-id-column: "internal_account_id"
