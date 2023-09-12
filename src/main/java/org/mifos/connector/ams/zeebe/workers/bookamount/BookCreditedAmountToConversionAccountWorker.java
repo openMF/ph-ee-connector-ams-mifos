@@ -151,7 +151,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
     				pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getDbtr().getNm(),
     				pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getDbtrAcct().getId().getIBAN(),
     				null,
-    				Optional.of(pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getDbtr().getCtctDtls()).map(ContactDetails2::toString).orElse(""),
+    				Optional.ofNullable(pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getDbtr().getCtctDtls()).map(ContactDetails2::toString).orElse(""),
     				pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getRmtInf().getUstrd().toString(),
     				transactionCategoryPurposeCode);
     		
@@ -263,7 +263,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
     				pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getDbtr().getNm(),
     				pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getDbtrAcct().getId().getIBAN(),
     				null,
-    				Optional.of(pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getDbtr().getCtctDtls()).map(ContactDetails2::toString).orElse(""),
+    				Optional.ofNullable(pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getDbtr().getCtctDtls()).map(ContactDetails2::toString).orElse(""),
     				pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getRmtInf().getUstrd().toString(),
     				transactionCategoryPurposeCode);
 
@@ -379,7 +379,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
                     pacs_004.getPmtRtr().getTxInf().get(0).getOrgnlTxRef().getCdtr().getNm(),
                     pacs_004.getPmtRtr().getTxInf().get(0).getOrgnlTxRef().getCdtrAcct().getId().getIBAN(),
                     null,
-                    Optional.of(pacs_004.getPmtRtr().getTxInf().get(0).getOrgnlTxRef().getCdtr().getCtctDtls())
+                    Optional.ofNullable(pacs_004.getPmtRtr().getTxInf().get(0).getOrgnlTxRef().getCdtr().getCtctDtls())
                     		.map(iso.std.iso._20022.tech.xsd.pacs_004_001.ContactDetails2::toString).orElse(""),
                     pacs_004.getPmtRtr().getTxInf().get(0).getOrgnlTxRef().getRmtInf().getUstrd().toString(),
                     transactionCategoryPurposeCode);
