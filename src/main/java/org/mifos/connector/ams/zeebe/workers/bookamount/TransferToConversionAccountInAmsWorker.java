@@ -199,7 +199,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.DBIT);
 			String camt053Entry = objectMapper.writeValueAsString(convertedCamt053Entry);
 			
-			String camt053RelativeUrl = "datatables/transaction_details/$.resourceId";
+			String camt053RelativeUrl = "datatables/dt_savings_transaction_details /$.resourceId";
 			
 			String partnerName = pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditor().getName();
 			String partnerAccountIban = pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditorAccount().getIdentification().getIban();
@@ -423,7 +423,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 		
 			String camt053 = objectMapper.writeValueAsString(statement);
 			
-			String camt053RelativeUrl = "datatables/transaction_details/$.resourceId";
+			String camt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
 			
 			DtSavingsTransactionDetails td = new DtSavingsTransactionDetails(
 					internalCorrelationId,

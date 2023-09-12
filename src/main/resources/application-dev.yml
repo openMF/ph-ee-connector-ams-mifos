@@ -16,7 +16,7 @@ fineract:
   incoming-money-api: "/savingsaccounts/"
   transaction-details-api: "/datatables/dt_savings_transaction_details/"
   datatable-name: "transaction_details"
-  flags-query-api: "/datatables/account_flags/query"
+  flags-query-api: "/datatables/dt_savings_account_flags/query"
   flags-column-filter: "savings_account_id"
   flags-result-columns: "flag_code"
   locale: "en"

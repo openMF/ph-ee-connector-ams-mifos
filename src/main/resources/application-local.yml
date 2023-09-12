@@ -10,11 +10,11 @@ dfspids: "DFSPID"
 
 fineract:
   api-url: "http://localhost:8080/fineract-provider/api/v1"
-  datatable-query-api: "/datatables/account_mapping/query"
+  datatable-query-api: "/datatables/dt_client_account_mapping/query"
   column-filter: "iban"
   result-columns: "conversion_account_id,disposal_account_id,internal_account_id"
   incoming-money-api: "/savingsaccounts/"
-  transaction-details-api: "/datatables/transaction_details/"
+  transaction-details-api: "/datatables/dt_savings_transaction_details /"
   datatable-name: "transaction_details"
   locale: "en"
   paymentType:

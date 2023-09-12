@@ -132,7 +132,7 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 			ReportEntry10 convertedcamt053 = camt053Mapper.toCamt053Entry(pain001.getDocument());
 			String camt053Entry = objectMapper.writeValueAsString(convertedcamt053);
 			
-			String camt053RelativeUrl = "datatables/transaction_details/$.resourceId";
+			String camt053RelativeUrl = "datatables/dt_savings_transaction_details /$.resourceId";
 			
 			DtSavingsTransactionDetails td = new DtSavingsTransactionDetails(
 					internalCorrelationId,

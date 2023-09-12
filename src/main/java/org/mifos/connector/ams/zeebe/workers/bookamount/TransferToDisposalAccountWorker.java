@@ -135,7 +135,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 			convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.CRDT);
 			String camt053Entry = objectMapper.writeValueAsString(convertedCamt053Entry);
 			
-			String camt053RelativeUrl = "datatables/transaction_details/$.resourceId";
+			String camt053RelativeUrl = "datatables/dt_savings_transaction_details /$.resourceId";
 			
 			DtSavingsTransactionDetails td = new DtSavingsTransactionDetails(
 					internalCorrelationId,
@@ -294,7 +294,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 			convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.CRDT);
 			String camt053Entry = objectMapper.writeValueAsString(convertedCamt053Entry);
 			
-			String camt053RelativeUrl = "datatables/transaction_details/$.resourceId";
+			String camt053RelativeUrl = "datatables/dt_savings_transaction_details /$.resourceId";
 			
 			DtSavingsTransactionDetails td = new DtSavingsTransactionDetails(
 					internalCorrelationId,
@@ -452,7 +452,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 
 			String camt053Entry = objectMapper.writeValueAsString(convertedCamt053Entry);
 
-			String camt053RelativeUrl = "datatables/transaction_details/$.resourceId";
+			String camt053RelativeUrl = "datatables/dt_savings_transaction_details /$.resourceId";
 
 			DtSavingsTransactionDetails td = new DtSavingsTransactionDetails(
 					internalCorrelationId,
@@ -490,7 +490,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 
 			batchItemBuilder.add(items, disposalAccountDepositRelativeUrl, bodyItem, false);
 
-			camt053RelativeUrl = "datatables/transaction_details/$.resourceId";
+			camt053RelativeUrl = "datatables/dt_savings_transaction_details /$.resourceId";
 
 			td = new DtSavingsTransactionDetails(
 					internalCorrelationId,
