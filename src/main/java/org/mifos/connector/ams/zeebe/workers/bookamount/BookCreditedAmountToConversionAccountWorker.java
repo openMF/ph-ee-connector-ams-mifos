@@ -36,6 +36,7 @@ import iso.std.iso._20022.tech.json.camt_053_001.ActiveOrHistoricCurrencyAndAmou
 import iso.std.iso._20022.tech.json.camt_053_001.BankToCustomerStatementV08;
 import iso.std.iso._20022.tech.json.camt_053_001.ReportEntry10;
 import iso.std.iso._20022.tech.xsd.pacs_008_001.ContactDetails2;
+import iso.std.iso._20022.tech.xsd.pacs_008_001.RemittanceInformation5;
 import lombok.extern.slf4j.Slf4j;
 
 @Component
@@ -152,7 +153,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
     				pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getDbtrAcct().getId().getIBAN(),
     				null,
     				Optional.ofNullable(pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getDbtr().getCtctDtls()).map(ContactDetails2::toString).orElse(""),
-    				pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getRmtInf().getUstrd().toString(),
+    				Optional.ofNullable(pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getRmtInf()).map(RemittanceInformation5::getUstrd).map(List::toString).orElse(""),
     				transactionCategoryPurposeCode);
     		
     		String camt053Body = objectMapper.writeValueAsString(td);
@@ -264,7 +265,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
     				pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getDbtrAcct().getId().getIBAN(),
     				null,
     				Optional.ofNullable(pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getDbtr().getCtctDtls()).map(ContactDetails2::toString).orElse(""),
-    				pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getRmtInf().getUstrd().toString(),
+    				Optional.ofNullable(pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getRmtInf()).map(RemittanceInformation5::getUstrd).map(List::toString).orElse(""),
     				transactionCategoryPurposeCode);
 
             String camt053Body = objectMapper.writeValueAsString(td);
@@ -381,7 +382,8 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
                     null,
                     Optional.ofNullable(pacs_004.getPmtRtr().getTxInf().get(0).getOrgnlTxRef().getCdtr().getCtctDtls())
                     		.map(iso.std.iso._20022.tech.xsd.pacs_004_001.ContactDetails2::toString).orElse(""),
-                    pacs_004.getPmtRtr().getTxInf().get(0).getOrgnlTxRef().getRmtInf().getUstrd().toString(),
+                    Optional.ofNullable(pacs_004.getPmtRtr().getTxInf().get(0).getOrgnlTxRef().getRmtInf())
+                    		.map(iso.std.iso._20022.tech.xsd.pacs_004_001.RemittanceInformation5::getUstrd).map(List::toString).orElse(""),
                     transactionCategoryPurposeCode);
 
             String camt053Body = objectMapper.writeValueAsString(td);

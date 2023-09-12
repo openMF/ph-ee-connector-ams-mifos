@@ -32,6 +32,7 @@ import io.camunda.zeebe.spring.client.annotation.Variable;
 import io.camunda.zeebe.spring.client.exception.ZeebeBpmnError;
 import iso.std.iso._20022.tech.json.camt_053_001.ReportEntry10;
 import iso.std.iso._20022.tech.xsd.pacs_008_001.ContactDetails2;
+import iso.std.iso._20022.tech.xsd.pacs_008_001.RemittanceInformation5;
 import jakarta.xml.bind.JAXBException;
 import lombok.extern.slf4j.Slf4j;
 
@@ -158,7 +159,7 @@ public class BookCreditedAmountFromTechnicalAccountWorker extends AbstractMoneyI
     				pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getDbtrAcct().getId().getIBAN(),
     				null,
     				Optional.ofNullable(pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getDbtr().getCtctDtls()).map(ContactDetails2::toString).orElse(""),
-    				pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getRmtInf().getUstrd().toString(),
+    				Optional.ofNullable(pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getRmtInf()).map(RemittanceInformation5::getUstrd).map(List::toString).orElse(""),
     				transactionCategoryPurposeCode);
 
             String camt053Body = objectMapper.writeValueAsString(td);

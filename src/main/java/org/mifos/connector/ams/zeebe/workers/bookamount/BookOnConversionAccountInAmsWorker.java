@@ -170,7 +170,8 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 					pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditorAccount().getIdentification().getIban(),
 					null,
 					Optional.ofNullable(pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditor().getContactDetails()).map(Contact4::toString).orElse(""),
-					pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getRemittanceInformation().getUnstructured().toString(),
+					Optional.ofNullable(pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getRemittanceInformation())
+							.map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(List::toString).orElse(""),
 					transactionCategoryPurposeCode);
 			
 			String camt053Body = objectMapper.writeValueAsString(td);
@@ -208,7 +209,8 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 						pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditorAccount().getIdentification().getIban(),
 						null,
 						Optional.ofNullable(pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditor().getContactDetails()).map(Contact4::toString).orElse(""),
-						pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getRemittanceInformation().getUnstructured().toString(),
+						Optional.ofNullable(pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getRemittanceInformation())
+								.map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(List::toString).orElse(""),
 						transactionFeeCategoryPurposeCode);
 				camt053Body = objectMapper.writeValueAsString(td);
 				batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
@@ -339,7 +341,8 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 					document.getFIToFIPmtCxlReq().getUndrlyg().get(0).getTxInf().get(0).getOrgnlTxRef().getDbtrAcct().getId().getIBAN(),
 					null,
 					Optional.ofNullable(document.getFIToFIPmtCxlReq().getUndrlyg().get(0).getTxInf().get(0).getOrgnlTxRef().getDbtr().getCtctDtls()).map(ContactDetails2::toString).orElse(""),
-					document.getFIToFIPmtCxlReq().getUndrlyg().get(0).getTxInf().get(0).getOrgnlTxRef().getRmtInf().getUstrd().toString(),
+					Optional.ofNullable(document.getFIToFIPmtCxlReq().getUndrlyg().get(0).getTxInf().get(0).getOrgnlTxRef().getRmtInf())
+							.map(iso.std.iso._20022.tech.xsd.camt_056_001.RemittanceInformation5::getUstrd).map(List::toString).orElse(""),
 					transactionCategoryPurposeCode);
 			
 			String camt053Body = objectMapper.writeValueAsString(td);
