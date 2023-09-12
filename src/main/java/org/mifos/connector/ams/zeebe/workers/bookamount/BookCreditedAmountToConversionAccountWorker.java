@@ -141,7 +141,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
     		convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.CRDT);
     		String camt053Entry = objectMapper.writeValueAsString(convertedCamt053Entry);
     		
-    		String camt053RelativeUrl = "datatables/dt_savings_transaction_details /$.resourceId";
+    		String camt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
     		
     		DtSavingsTransactionDetails td = new DtSavingsTransactionDetails(
     				internalCorrelationId,
@@ -253,7 +253,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
             ReportEntry10 convertedCamt053Entry = camt053Mapper.toCamt053Entry(pacs008);
             String camt053Entry = objectMapper.writeValueAsString(convertedCamt053Entry);
 
-            String camt053RelativeUrl = "datatables/dt_savings_transaction_details /$.resourceId";
+            String camt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
 
             DtSavingsTransactionDetails td = new DtSavingsTransactionDetails(
     				internalCorrelationId,
@@ -369,7 +369,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
 
             String camt053Entry = objectMapper.writeValueAsString(convertedCamt053Entry);
 
-            String camt053RelativeUrl = "datatables/dt_savings_transaction_details /$.resourceId";
+            String camt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
 
             DtSavingsTransactionDetails td = new DtSavingsTransactionDetails(
                     internalCorrelationId,

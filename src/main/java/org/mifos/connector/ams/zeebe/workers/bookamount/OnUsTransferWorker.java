@@ -152,7 +152,7 @@ try {
     		
     		batchItemBuilder.add(items, debtorDisposalWithdrawalRelativeUrl, bodyItem, false);
     	
-    		String camt053RelativeUrl = "datatables/dt_savings_transaction_details /$.resourceId";
+    		String camt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
     		
     		DtSavingsTransactionDetails td = new DtSavingsTransactionDetails(
     				internalCorrelationId,

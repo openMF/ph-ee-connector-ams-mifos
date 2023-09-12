@@ -150,7 +150,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.DBIT);
 			String camt053Entry = objectMapper.writeValueAsString(convertedcamt053Entry);
 			
-			String camt053RelativeUrl = "datatables/dt_savings_transaction_details /$.resourceId";
+			String camt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
 			
 			DtSavingsTransactionDetails td = new DtSavingsTransactionDetails(
 					internalCorrelationId,
@@ -386,7 +386,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.DBIT);
 			String camt053Entry = objectMapper.writeValueAsString(convertedcamt053Entry);
 			
-			String camt053RelativeUrl = "datatables/dt_savings_transaction_details /$.resourceId";
+			String camt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
 			
 			DtSavingsTransactionDetails td = new DtSavingsTransactionDetails(
 					internalCorrelationId,
@@ -592,7 +592,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			String internalCorrelationId = String.format("%s_%s_%s", originalDebtorBic, originalCreationDate, originalEndToEndId);
 			String camt053 = objectMapper.writeValueAsString(statement);
 			
-			String camt053RelativeUrl = "datatables/dt_savings_transaction_details /$.resourceId";
+			String camt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
 			
 			DtSavingsTransactionDetails td = new DtSavingsTransactionDetails(
 					internalCorrelationId,
