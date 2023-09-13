@@ -19,7 +19,7 @@ public class JAXBUtils {
         JAXBContext jaxbContext = JAXBContext.newInstance(eu.nets.realtime247.ri_2015_10.ObjectFactory.class,
                 iso.std.iso._20022.tech.xsd.pacs_008_001.ObjectFactory.class,
                 iso.std.iso._20022.tech.xsd.pacs_002_001.ObjectFactory.class,
-                iso.std.iso._20022.tech.xsd.camt_056_001.ObjectFactory.class),
+                iso.std.iso._20022.tech.xsd.camt_056_001.ObjectFactory.class,
         		iso.std.iso._20022.tech.xsd.pacs_004_001.ObjectFactory.class);
         unmarshaller = jaxbContext.createUnmarshaller();
     }
