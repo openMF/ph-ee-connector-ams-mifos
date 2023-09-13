@@ -152,7 +152,7 @@ public class BookCreditedAmountFromTechnicalAccountWorker extends AbstractMoneyI
             DtSavingsTransactionDetails td = new DtSavingsTransactionDetails(
     				internalCorrelationId,
     				camt053Entry,
-    				null,
+    				pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getCdtrAcct().getId().getIBAN(),
     				paymentTypeCode,
     				transactionGroupId,
     				pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getDbtr().getNm(),
