@@ -1,34 +1,40 @@
 package org.mifos.connector.ams.zeebe.workers.bookamount;
 
-import com.baasflow.commons.events.Event;
-import com.baasflow.commons.events.EventService;
-import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import io.camunda.zeebe.client.api.response.ActivatedJob;
-import io.camunda.zeebe.client.api.worker.JobClient;
-import io.camunda.zeebe.spring.client.annotation.JobWorker;
-import io.camunda.zeebe.spring.client.annotation.Variable;
-import io.camunda.zeebe.spring.client.exception.ZeebeBpmnError;
-import iso.std.iso._20022.tech.json.camt_053_001.ActiveOrHistoricCurrencyAndAmountRange2.CreditDebitCode;
-import iso.std.iso._20022.tech.xsd.pacs_008_001.ContactDetails2;
-import iso.std.iso._20022.tech.xsd.pacs_008_001.RemittanceInformation5;
-import iso.std.iso._20022.tech.json.camt_053_001.ReportEntry10;
-import lombok.extern.slf4j.Slf4j;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
 import org.mifos.connector.ams.fineract.Config;
 import org.mifos.connector.ams.fineract.ConfigFactory;
 import org.mifos.connector.ams.log.EventLogUtil;
 import org.mifos.connector.ams.log.LogInternalCorrelationId;
 import org.mifos.connector.ams.log.TraceZeebeArguments;
 import org.mifos.connector.ams.mapstruct.Pacs008Camt053Mapper;
-import org.mifos.connector.ams.zeebe.workers.utils.*;
+import org.mifos.connector.ams.zeebe.workers.utils.BatchItemBuilder;
+import org.mifos.connector.ams.zeebe.workers.utils.ContactDetailsUtil;
+import org.mifos.connector.ams.zeebe.workers.utils.DtSavingsTransactionDetails;
+import org.mifos.connector.ams.zeebe.workers.utils.JAXBUtils;
+import org.mifos.connector.ams.zeebe.workers.utils.TransactionBody;
+import org.mifos.connector.ams.zeebe.workers.utils.TransactionItem;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import com.baasflow.commons.events.Event;
+import com.baasflow.commons.events.EventService;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import io.camunda.zeebe.client.api.response.ActivatedJob;
+import io.camunda.zeebe.client.api.worker.JobClient;
+import io.camunda.zeebe.spring.client.annotation.JobWorker;
+import io.camunda.zeebe.spring.client.annotation.Variable;
+import io.camunda.zeebe.spring.client.exception.ZeebeBpmnError;
+import iso.std.iso._20022.tech.json.camt_053_001.ActiveOrHistoricCurrencyAndAmountRange2.CreditDebitCode;
+import iso.std.iso._20022.tech.json.camt_053_001.ReportEntry10;
+import iso.std.iso._20022.tech.xsd.pacs_008_001.RemittanceInformation5;
+import lombok.extern.slf4j.Slf4j;
 
 @Component
 @Slf4j
@@ -54,6 +60,9 @@ public class BookCreditedAmountToTechnicalAccountWorker extends AbstractMoneyInO
 
     @Autowired
     private Pacs008Camt053Mapper camt053Mapper;
+    
+    @Autowired
+    private ContactDetailsUtil contactDetailsUtil;
 
     @Autowired
     private EventService eventService;
@@ -157,7 +166,7 @@ public class BookCreditedAmountToTechnicalAccountWorker extends AbstractMoneyInO
     				pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getDbtr().getNm(),
     				pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getDbtrAcct().getId().getIBAN(),
     				null,
-    				Optional.ofNullable(pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getDbtr().getCtctDtls()).map(ContactDetails2::toString).orElse(""),
+    				contactDetailsUtil.getId(pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getDbtr().getCtctDtls()),
     				Optional.ofNullable(pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getRmtInf()).map(RemittanceInformation5::getUstrd).map(List::toString).orElse(""),
     				transactionCategoryPurposeCode);
     		
