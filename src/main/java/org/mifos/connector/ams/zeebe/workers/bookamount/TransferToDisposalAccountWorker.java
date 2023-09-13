@@ -149,7 +149,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 			DtSavingsTransactionDetails td = new DtSavingsTransactionDetails(
 					internalCorrelationId,
 					camt053Entry,
-					creditorIban,
+					pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getCdtrAcct().getId().getIBAN(),
 					paymentTypeCode,
 					transactionGroupId,
 					pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getDbtr().getNm(),
@@ -185,7 +185,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 			td = new DtSavingsTransactionDetails(
 					internalCorrelationId,
 					camt053Entry,
-					creditorIban,
+					pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getCdtrAcct().getId().getIBAN(),
 					paymentTypeCode,
 					transactionGroupId,
 					pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getDbtr().getNm(),
@@ -308,7 +308,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 			DtSavingsTransactionDetails td = new DtSavingsTransactionDetails(
 					internalCorrelationId,
 					camt053Entry,
-					creditorIban,
+					pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getCdtrAcct().getId().getIBAN(),
 					paymentTypeCode,
 					transactionGroupId,
 					pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getDbtr().getNm(),
@@ -344,7 +344,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 			td = new DtSavingsTransactionDetails(
 					internalCorrelationId,
 					camt053Entry,
-					creditorIban,
+					pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getCdtrAcct().getId().getIBAN(),
 					paymentTypeCode,
 					transactionGroupId,
 					pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getDbtr().getNm(),
@@ -466,7 +466,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 			DtSavingsTransactionDetails td = new DtSavingsTransactionDetails(
 					internalCorrelationId,
 					camt053Entry,
-					creditorIban,
+					pacs_004.getPmtRtr().getTxInf().get(0).getOrgnlTxRef().getDbtrAcct().getId().getIBAN(),
 					paymentTypeCode,
 					transactionGroupId,
 					pacs_004.getPmtRtr().getTxInf().get(0).getOrgnlTxRef().getCdtr().getNm(),
@@ -506,7 +506,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 			td = new DtSavingsTransactionDetails(
 					internalCorrelationId,
 					camt053Entry,
-					creditorIban,
+					pacs_004.getPmtRtr().getTxInf().get(0).getOrgnlTxRef().getDbtrAcct().getId().getIBAN(),
 					paymentTypeCode,
 					transactionGroupId,
 					pacs_004.getPmtRtr().getTxInf().get(0).getOrgnlTxRef().getCdtr().getNm(),

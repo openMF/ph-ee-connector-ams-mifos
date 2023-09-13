@@ -157,7 +157,7 @@ try {
     		DtSavingsTransactionDetails td = new DtSavingsTransactionDetails(
     				internalCorrelationId,
     				camt053Entry,
-    				debtorIban,
+    				pain001.getDocument().getPaymentInformation().get(0).getDebtorAccount().getIdentification().getIban(),
     				paymentTypeCode,
     				transactionGroupId,
     				pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditor().getName(),
@@ -197,7 +197,7 @@ try {
 	    		td = new DtSavingsTransactionDetails(
 	    				transactionFeeInternalCorrelationId,
 	    				camt053Entry,
-	    				debtorIban,
+	    				pain001.getDocument().getPaymentInformation().get(0).getDebtorAccount().getIdentification().getIban(),
 	    				paymentTypeCode,
 	    				transactionGroupId,
 	    				pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditor().getName(),
@@ -235,7 +235,7 @@ try {
 	    		td = new DtSavingsTransactionDetails(
 	    				transactionFeeInternalCorrelationId,
 	    				camt053Entry,
-	    				creditorIban,
+	    				pain001.getDocument().getPaymentInformation().get(0).getDebtorAccount().getIdentification().getIban(),
 	    				paymentTypeCode,
 	    				transactionGroupId,
 	    				pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditor().getName(),
@@ -275,7 +275,7 @@ try {
     		td = new DtSavingsTransactionDetails(
     				transactionFeeInternalCorrelationId,
     				camt053Entry,
-    				creditorIban,
+    				pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditorAccount().getIdentification().getIban(),
     				paymentTypeCode,
     				transactionGroupId,
     				pain001.getDocument().getPaymentInformation().get(0).getDebtor().getName(),
@@ -316,7 +316,7 @@ try {
 				td = new DtSavingsTransactionDetails(
 	    				transactionFeeInternalCorrelationId,
 	    				camt053Entry,
-	    				debtorIban,
+	    				pain001.getDocument().getPaymentInformation().get(0).getDebtorAccount().getIdentification().getIban(),
 	    				paymentTypeCode,
 	    				transactionGroupId,
 	    				pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditor().getName(),

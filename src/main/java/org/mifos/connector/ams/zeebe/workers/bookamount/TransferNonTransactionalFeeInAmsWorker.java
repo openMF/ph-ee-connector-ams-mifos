@@ -139,7 +139,7 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 			DtSavingsTransactionDetails td = new DtSavingsTransactionDetails(
 					internalCorrelationId,
 					camt053Entry,
-					debtorIban,
+					pain001.getDocument().getPaymentInformation().get(0).getDebtorAccount().getIdentification().getIban(),
 					paymentTypeCode,
 					transactionGroupId,
 					pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditor().getName(),
@@ -178,7 +178,7 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 			td = new DtSavingsTransactionDetails(
 					internalCorrelationId,
 					camt053Entry,
-					debtorIban,
+					pain001.getDocument().getPaymentInformation().get(0).getDebtorAccount().getIdentification().getIban(),
 					paymentTypeCode,
 					transactionGroupId,
 					pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditor().getName(),
@@ -217,7 +217,7 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 			td = new DtSavingsTransactionDetails(
 					internalCorrelationId,
 					camt053Entry,
-					debtorIban,
+					pain001.getDocument().getPaymentInformation().get(0).getDebtorAccount().getIdentification().getIban(),
 					paymentTypeCode,
 					transactionGroupId,
 					pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditor().getName(),
