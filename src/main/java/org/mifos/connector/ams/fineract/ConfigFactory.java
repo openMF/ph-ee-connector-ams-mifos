@@ -1,6 +1,7 @@
 package org.mifos.connector.ams.fineract;
 
 import java.util.Map;
+import java.util.Optional;
 
 public class ConfigFactory {
 
@@ -19,7 +20,8 @@ public class ConfigFactory {
 			throw new IllegalArgumentException("No tenant payment type Id configuration found for " + tenant);
 		}
 		
-		Map<String, String> paymentTypeCodeConfig = paymentTypeCodeConfigs.getOrDefault(tenant, null);
+		Map<String, String> paymentTypeCodeConfig = Optional.ofNullable(paymentTypeCodeConfigs)
+				.map(configs -> configs.getOrDefault(tenant, null)).orElse(null);
 		
 		return new Config(tenant, paymentTypeIdConfig, paymentTypeCodeConfig);
 	}
