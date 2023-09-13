@@ -278,10 +278,10 @@ try {
     				creditorIban,
     				paymentTypeCode,
     				transactionGroupId,
-    				pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditor().getName(),
-    				pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditorAccount().getIdentification().getIban(),
+    				pain001.getDocument().getPaymentInformation().get(0).getDebtor().getName(),
+    				pain001.getDocument().getPaymentInformation().get(0).getDebtorAccount().getIdentification().getIban(),
     				null,
-    				Optional.ofNullable(pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditor().getContactDetails()).map(Contact4::toString).orElse(""),
+    				Optional.ofNullable(pain001.getDocument().getPaymentInformation().get(0).getDebtor().getContactDetails()).map(Contact4::toString).orElse(""),
     				Optional.ofNullable(pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getRemittanceInformation())
 							.map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(List::toString).orElse(""),
     				transactionCategoryPurposeCode);
