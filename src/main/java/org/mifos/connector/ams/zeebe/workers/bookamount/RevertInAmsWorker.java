@@ -68,7 +68,8 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
     @Autowired
     private EventService eventService;
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @JobWorker
     @LogInternalCorrelationId

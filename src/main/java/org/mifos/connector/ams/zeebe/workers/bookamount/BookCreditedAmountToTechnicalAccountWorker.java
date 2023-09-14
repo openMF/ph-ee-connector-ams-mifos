@@ -66,6 +66,9 @@ public class BookCreditedAmountToTechnicalAccountWorker extends AbstractMoneyInO
 
     @Autowired
     private EventService eventService;
+    
+    @Autowired
+    private ObjectMapper objectMapper;
 
     private static final String FORMAT = "yyyyMMdd";
 
@@ -140,8 +143,6 @@ public class BookCreditedAmountToTechnicalAccountWorker extends AbstractMoneyInO
     				"",
     				FORMAT,
     				locale);
-    		
-    		ObjectMapper objectMapper = new ObjectMapper();
     		
     		objectMapper.setSerializationInclusion(Include.NON_NULL);
     		

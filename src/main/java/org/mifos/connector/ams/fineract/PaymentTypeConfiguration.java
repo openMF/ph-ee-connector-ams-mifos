@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -21,6 +22,9 @@ public class PaymentTypeConfiguration {
 
 	@Value("${TENANT_CONFIGS}")
 	private String tenantConfigsJson;
+	
+	@Autowired
+	private ObjectMapper objectMapper;
 	
 	@Bean(name = "paymentTypeConfigFactory")
 	public ConfigFactory paymentTypeConfigFactory() throws JsonProcessingException {
@@ -53,7 +57,6 @@ public class PaymentTypeConfiguration {
 
 	private Map<String, Map<String, List<LinkedHashMap<String, Object>>>> readTenantConfigs()
 			throws JsonProcessingException {
-		ObjectMapper objectMapper = new ObjectMapper();
 		JsonNode jsonNode = objectMapper.readTree(tenantConfigsJson);
 		return objectMapper.convertValue(jsonNode, new TypeReference<Map<String, Map<String, List<LinkedHashMap<String, Object>>>>>() {});
 	}

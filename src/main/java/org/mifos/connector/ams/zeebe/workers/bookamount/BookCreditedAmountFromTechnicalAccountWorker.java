@@ -32,7 +32,6 @@ import io.camunda.zeebe.spring.client.annotation.JobWorker;
 import io.camunda.zeebe.spring.client.annotation.Variable;
 import io.camunda.zeebe.spring.client.exception.ZeebeBpmnError;
 import iso.std.iso._20022.tech.json.camt_053_001.ReportEntry10;
-import iso.std.iso._20022.tech.xsd.pacs_008_001.ContactDetails2;
 import iso.std.iso._20022.tech.xsd.pacs_008_001.RemittanceInformation5;
 import jakarta.xml.bind.JAXBException;
 import lombok.extern.slf4j.Slf4j;
@@ -67,6 +66,9 @@ public class BookCreditedAmountFromTechnicalAccountWorker extends AbstractMoneyI
 
     @Autowired
     private EventService eventService;
+    
+    @Autowired
+    private ObjectMapper objectMapper;
 
     private static final String FORMAT = "yyyyMMdd";
 
@@ -113,8 +115,6 @@ public class BookCreditedAmountFromTechnicalAccountWorker extends AbstractMoneyI
                                                         String caseIdentifier,
                                                         Event.Builder eventBuilder) {
         try {
-            ObjectMapper objectMapper = new ObjectMapper();
-
             objectMapper.setSerializationInclusion(Include.NON_NULL);
 
             List<TransactionItem> items = new ArrayList<>();

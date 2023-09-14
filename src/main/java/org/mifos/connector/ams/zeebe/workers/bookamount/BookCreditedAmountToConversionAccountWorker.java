@@ -63,6 +63,9 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
 
     @Autowired
     private EventService eventService;
+    
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @JobWorker
     @LogInternalCorrelationId
@@ -129,8 +132,6 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
     				"",
     				FORMAT,
     				locale);
-    		
-    		ObjectMapper objectMapper = new ObjectMapper();
     		
     		objectMapper.setSerializationInclusion(Include.NON_NULL);
     		
@@ -243,8 +244,6 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
                     FORMAT,
                     locale);
 
-            ObjectMapper objectMapper = new ObjectMapper();
-
             objectMapper.setSerializationInclusion(Include.NON_NULL);
 
             String bodyItem = objectMapper.writeValueAsString(body);
@@ -356,8 +355,6 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
                     FORMAT,
                     locale);
 
-            ObjectMapper objectMapper = new ObjectMapper();
-
             String bodyItem = objectMapper.writeValueAsString(body);
 
             List<TransactionItem> items = new ArrayList<>();
@@ -376,7 +373,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
 
             DtSavingsTransactionDetails td = new DtSavingsTransactionDetails(
                     internalCorrelationId,
-                    null,
+                    camt053Entry,
                     pacs_004.getPmtRtr().getTxInf().get(0).getOrgnlTxRef().getDbtrAcct().getId().getIBAN(),
                     paymentTypeCode,
                     transactionGroupId,

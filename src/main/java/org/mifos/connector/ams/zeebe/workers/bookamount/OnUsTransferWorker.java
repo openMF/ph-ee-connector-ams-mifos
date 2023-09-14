@@ -58,6 +58,9 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 
     @Autowired
     private EventService eventService;
+    
+    @Autowired
+    private ObjectMapper objectMapper;
 
     private static final DateTimeFormatter PATTERN = DateTimeFormatter.ofPattern(FORMAT);
 
@@ -122,7 +125,6 @@ try {
 			
 			log.debug("Incoming pain.001: {}", originalPain001);
 			
-			ObjectMapper objectMapper = new ObjectMapper();
 			objectMapper.setSerializationInclusion(Include.NON_NULL);
 			Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001 = objectMapper.readValue(originalPain001, Pain00100110CustomerCreditTransferInitiationV10MessageSchema.class);
 			

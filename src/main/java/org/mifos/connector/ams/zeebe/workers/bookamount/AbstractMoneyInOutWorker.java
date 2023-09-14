@@ -57,6 +57,9 @@ public abstract class AbstractMoneyInOutWorker {
 
     @Autowired
     private EventService eventService;
+    
+    @Autowired
+    private ObjectMapper objectMapper;
 
     protected static final String FORMAT = "yyyyMMdd";
 
@@ -174,7 +177,6 @@ public abstract class AbstractMoneyInOutWorker {
 
         log.debug(">> Sending {} to {} with headers {}", items, urlTemplate, httpHeaders);
 
-        ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.setSerializationInclusion(Include.NON_NULL);
         String body;
         try {

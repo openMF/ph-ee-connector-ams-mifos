@@ -63,6 +63,9 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 
     @Autowired
     private EventService eventService;
+    
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @JobWorker
     @LogInternalCorrelationId
@@ -115,8 +118,6 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 
 			iso.std.iso._20022.tech.xsd.pacs_008_001.Document pacs008 = jaxbUtils.unmarshalPacs008(originalPacs008);
 
-			ObjectMapper objectMapper = new ObjectMapper();
-			
 			objectMapper.setSerializationInclusion(Include.NON_NULL);
 			
 			batchItemBuilder.tenantId(tenantIdentifier);
@@ -274,8 +275,6 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 
 			iso.std.iso._20022.tech.xsd.pacs_008_001.Document pacs008 = jaxbUtils.unmarshalPacs008(originalPacs008);
 		
-			ObjectMapper objectMapper = new ObjectMapper();
-			
 			objectMapper.setSerializationInclusion(Include.NON_NULL);
 			
 			batchItemBuilder.tenantId(tenantIdentifier);
@@ -427,8 +426,6 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
     	try {
 			MDC.put("internalCorrelationId", internalCorrelationId);
 			log.info("transfer to disposal account in return (pacs.004) {} started for {} on {} ", internalCorrelationId, paymentScheme, tenantIdentifier);
-
-			ObjectMapper objectMapper = new ObjectMapper();
 
 			batchItemBuilder.tenantId(tenantIdentifier);
 

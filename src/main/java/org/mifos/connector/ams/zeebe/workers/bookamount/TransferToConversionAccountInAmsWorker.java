@@ -84,7 +84,8 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
     @Autowired
     private EventService eventService;
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    @Autowired
+    private ObjectMapper objectMapper;
 
     private static final DateTimeFormatter PATTERN = DateTimeFormatter.ofPattern(FORMAT);
 
