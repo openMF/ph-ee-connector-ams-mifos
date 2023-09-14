@@ -376,7 +376,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
 
             DtSavingsTransactionDetails td = new DtSavingsTransactionDetails(
                     internalCorrelationId,
-                    camt053Entry,
+                    null,
                     pacs_004.getPmtRtr().getTxInf().get(0).getOrgnlTxRef().getDbtrAcct().getId().getIBAN(),
                     paymentTypeCode,
                     transactionGroupId,
@@ -400,7 +400,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
                     "bookCreditedAmountToConversionAccountInReturn");
         } catch (Exception e) {
             log.error("Worker to book incoming money in AMS has failed, dispatching user task to handle conversion account deposit", e);
-            throw new ZeebeBpmnError("Error_BookToConversionToBeHandledManually", e.getMessage());
+            throw new RuntimeException(e);
         } finally {
             MDC.remove("internalCorrelationId");
         }
