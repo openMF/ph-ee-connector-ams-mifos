@@ -49,3 +49,8 @@ server:
   servlet:
     contextPath: /fineract
   port: 7070
+
+wiremock:
+  local:
+      host: http://localhost:8080/api/mytest
+      base-url: /api/mytest

@@ -202,6 +202,9 @@ public class InteroperationRouteBuilder extends ErrorHandlerRouteBuilder {
                     exchange.setProperty("accountNumber",exchange.getProperty(ACCOUNT_NUMBER));
                 })
                 .process(amsService::repayLoan);
+//         .process(amsService::repayLoan).onCompletion().onCompleteOnly().to("log:get-external-account")
+//                .to("direct:get-external-account")
+//                .end();
 
 
         from("direct:fincn-oauth")
