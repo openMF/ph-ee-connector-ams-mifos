@@ -18,6 +18,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -32,6 +33,12 @@ public class GetAccountDetailsFromAmsWorker extends AbstractAmsWorker {
     @Autowired
     private EventService eventService;
 
+    private Map<String, String> schemeAndDirectionToReasonCode = Map.of(
+            "HCT_INST-IN", "AC07",
+            "IG2-IN", "AC04"
+    );
+
+
     @JobWorker
     @LogInternalCorrelationId
     @TraceZeebeArguments
@@ -40,17 +47,21 @@ public class GetAccountDetailsFromAmsWorker extends AbstractAmsWorker {
                                                         @Variable String internalCorrelationId,
                                                         @Variable String iban,
                                                         @Variable String tenantIdentifier,
-                                                        @Variable String currency) {
+                                                        @Variable String currency,
+                                                        @Variable String paymentScheme,
+                                                        @Variable String direction) {
         log.info("getAccountDetailsFromAms");
         return eventService.auditedEvent(
                 eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "getAccountDetailsFromAms", internalCorrelationId, null, eventBuilder),
-                eventBuilder -> getAccountDetailsFromAms(internalCorrelationId, iban, tenantIdentifier, currency, eventBuilder));
+                eventBuilder -> getAccountDetailsFromAms(internalCorrelationId, iban, tenantIdentifier, currency, paymentScheme, direction, eventBuilder));
     }
 
     private Map<String, Object> getAccountDetailsFromAms(String internalCorrelationId,
                                                          String iban,
                                                          String tenantIdentifier,
                                                          String currency,
+                                                         String paymentScheme,
+                                                         String direction,
                                                          Event.Builder eventBuilder) {
         AmsDataTableQueryResponse[] response = lookupAccount(iban, tenantIdentifier);
 
@@ -92,12 +103,20 @@ public class GetAccountDetailsFromAmsWorker extends AbstractAmsWorker {
 
         log.trace("IBAN {} status is {}", iban, status);
 
-        return Map.of("disposalAccountAmsId", disposalAccountAmsId,
-                "conversionAccountAmsId", conversionAccountAmsId,
-                "accountAmsStatus", status,
-                "internalAccountId", internalAccountId,
-                "disposalAccountFlags", flags,
-                "disposalAccountAmsStatusType", statusType);
+        HashMap<String, Object> outputVariables = new HashMap<>();
+        outputVariables.put("disposalAccountAmsId", disposalAccountAmsId);
+        outputVariables.put("conversionAccountAmsId", conversionAccountAmsId);
+        outputVariables.put("accountAmsStatus", status);
+        outputVariables.put("internalAccountId", internalAccountId);
+        outputVariables.put("disposalAccountFlags", flags);
+        outputVariables.put("disposalAccountAmsStatusType", statusType);
+
+        if (SavingsAccountStatusType.CLOSED.equals(statusType)) {
+            String reasonCode = schemeAndDirectionToReasonCode.get(paymentScheme + "-" + direction);
+            log.info("CLOSED account, returning reasonCode based on scheme and direction: {}-{}: {}", paymentScheme, direction, reasonCode);
+            outputVariables.put("reasonCode", reasonCode);
+        }
+        return outputVariables;
     }
 
     private GetSavingsAccountsAccountIdResponse retrieveCurrencyIdAndStatus(Long accountCurrencyId, String tenantId) {
