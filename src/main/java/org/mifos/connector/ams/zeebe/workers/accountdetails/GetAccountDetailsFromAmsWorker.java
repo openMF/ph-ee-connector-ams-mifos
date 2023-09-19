@@ -115,6 +115,8 @@ public class GetAccountDetailsFromAmsWorker extends AbstractAmsWorker {
             String reasonCode = schemeAndDirectionToReasonCode.get(paymentScheme + "-" + direction);
             log.info("CLOSED account, returning reasonCode based on scheme and direction: {}-{}: {}", paymentScheme, direction, reasonCode);
             outputVariables.put("reasonCode", reasonCode);
+        } else {
+            outputVariables.put("reasonCode", null);
         }
         return outputVariables;
     }
