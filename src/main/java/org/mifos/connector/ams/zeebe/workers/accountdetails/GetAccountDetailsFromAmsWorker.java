@@ -111,13 +111,13 @@ public class GetAccountDetailsFromAmsWorker extends AbstractAmsWorker {
         outputVariables.put("disposalAccountFlags", flags);
         outputVariables.put("disposalAccountAmsStatusType", statusType);
 
+        String reasonCode = null;
         if (SavingsAccountStatusType.CLOSED.equals(statusType)) {
-            String reasonCode = schemeAndDirectionToReasonCode.get(paymentScheme + "-" + direction);
+            reasonCode = schemeAndDirectionToReasonCode.get(paymentScheme + "-" + direction);
             log.info("CLOSED account, returning reasonCode based on scheme and direction: {}-{}: {}", paymentScheme, direction, reasonCode);
-            outputVariables.put("reasonCode", reasonCode);
-        } else {
-            outputVariables.put("reasonCode", null);
         }
+
+        outputVariables.put("reasonCode", reasonCode != null ? reasonCode : "NOT_PROVIDED");
         return outputVariables;
     }
 
