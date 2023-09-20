@@ -6,7 +6,6 @@ import io.camunda.zeebe.client.api.response.ActivatedJob;
 import io.camunda.zeebe.client.api.worker.JobClient;
 import io.camunda.zeebe.spring.client.annotation.JobWorker;
 import io.camunda.zeebe.spring.client.annotation.Variable;
-import io.camunda.zeebe.spring.client.exception.ZeebeBpmnError;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.client.models.GetSavingsAccountsAccountIdResponse;
 import org.mifos.connector.ams.log.EventLogUtil;
@@ -33,7 +32,12 @@ public class GetAccountDetailsFromAmsWorker extends AbstractAmsWorker {
     @Autowired
     private EventService eventService;
 
-    private Map<String, String> schemeAndDirectionToReasonCode = Map.of(
+    private Map<String, String> accountNotExistsReasons = Map.of(
+            "HCT_INST-IN", "AC03",
+            "IG2-IN", "AC01"
+    );
+
+    private Map<String, String> accountClosedReasons = Map.of(
             "HCT_INST-IN", "AC07",
             "IG2-IN", "AC04"
     );
@@ -63,10 +67,22 @@ public class GetAccountDetailsFromAmsWorker extends AbstractAmsWorker {
                                                          String paymentScheme,
                                                          String direction,
                                                          Event.Builder eventBuilder) {
+        String paymentSchemePrefix = paymentScheme.split(":")[0];
         AmsDataTableQueryResponse[] response = lookupAccount(iban, tenantIdentifier);
 
         if (response.length == 0) {
-            throw new ZeebeBpmnError("Error_AccountNotFound", String.format("IBAN %s not found in AMS", iban));
+            String reasonCode = accountNotExistsReasons.getOrDefault(paymentSchemePrefix + "-" + direction, "NOT_PROVIDED");
+            log.debug("Account not found in AMS, returning reasonCode based on scheme and direction: {}-{}: {}", paymentSchemePrefix, direction, reasonCode);
+
+            return Map.of(
+                    "accountAmsStatus", AccountAmsStatus.NOT_READY_TO_RECEIVE_MONEY.name(),
+                    "reasonCode", reasonCode,
+                    "conversionAccountAmsId", "NOT_PROVIDED",
+                    "internalAccountId", "NOT_PROVIDED",
+                    "disposalAccountAmsId", "NOT_PROVIDED",
+                    "disposalAccountFlags", "NOT_PROVIDED",
+                    "disposalAccountAmsStatusType", "NOT_PROVIDED"
+            );
         }
 
         String status = AccountAmsStatus.NOT_READY_TO_RECEIVE_MONEY.name();
@@ -103,21 +119,20 @@ public class GetAccountDetailsFromAmsWorker extends AbstractAmsWorker {
 
         log.trace("IBAN {} status is {}", iban, status);
 
-        HashMap<String, Object> outputVariables = new HashMap<>();
-        outputVariables.put("disposalAccountAmsId", disposalAccountAmsId);
-        outputVariables.put("conversionAccountAmsId", conversionAccountAmsId);
-        outputVariables.put("accountAmsStatus", status);
-        outputVariables.put("internalAccountId", internalAccountId);
-        outputVariables.put("disposalAccountFlags", flags);
-        outputVariables.put("disposalAccountAmsStatusType", statusType);
-
-        String reasonCode = null;
+        String reasonCode = "NOT_PROVIDED";
         if (SavingsAccountStatusType.CLOSED.equals(statusType)) {
-            reasonCode = schemeAndDirectionToReasonCode.get(paymentScheme + "-" + direction);
-            log.info("CLOSED account, returning reasonCode based on scheme and direction: {}-{}: {}", paymentScheme, direction, reasonCode);
+            reasonCode = accountClosedReasons.getOrDefault(paymentSchemePrefix + "-" + direction, "NOT_PROVIDED");
+            log.info("CLOSED account, returning reasonCode based on scheme and direction: {}-{}: {}", paymentSchemePrefix, direction, reasonCode);
         }
 
-        outputVariables.put("reasonCode", reasonCode != null ? reasonCode : "NOT_PROVIDED");
+        HashMap<String, Object> outputVariables = new HashMap<>();
+        outputVariables.put("accountAmsStatus", status);
+        outputVariables.put("conversionAccountAmsId", conversionAccountAmsId);
+        outputVariables.put("disposalAccountAmsId", disposalAccountAmsId);
+        outputVariables.put("disposalAccountFlags", flags);
+        outputVariables.put("disposalAccountAmsStatusType", statusType);
+        outputVariables.put("internalAccountId", internalAccountId);
+        outputVariables.put("reasonCode", reasonCode);
         return outputVariables;
     }
 
