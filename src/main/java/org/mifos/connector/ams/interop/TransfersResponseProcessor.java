@@ -27,7 +27,7 @@ import static org.mifos.connector.common.mojaloop.type.ErrorCode.PAYEE_FSP_REJEC
 import static org.mifos.connector.common.mojaloop.type.ErrorCode.PAYER_REJECTED_TRANSACTION_REQUEST;
 
 @Component
-@ConditionalOnExpression("${ams.local.enabled}")
+//@ConditionalOnExpression("${ams.local.enabled}")
 public class TransfersResponseProcessor implements Processor {
 
     private Logger logger = LoggerFactory.getLogger(this.getClass());

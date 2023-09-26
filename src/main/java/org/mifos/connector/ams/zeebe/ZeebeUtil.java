@@ -90,7 +90,7 @@ public class ZeebeUtil {
 
         variables.put(ACCOUNT_IDENTIFIER,e.getProperty(ACCOUNT_IDENTIFIER));
         variables.put(ACCOUNT_NUMBER,e.getProperty(ACCOUNT_NUMBER));
-        variables.put(TRANSACTION_ID, UUID.randomUUID().toString());
+//        variables.put(TRANSACTION_ID, UUID.randomUUID().toString());
         variables.put(TENANT_ID,accountHoldingInstitutionId);
         variables.put(TRANSFER_ACTION,CREATE.name());
         variables.put(CHANNEL_REQUEST,transactionChannelRequestDTO);

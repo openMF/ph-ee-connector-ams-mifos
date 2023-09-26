@@ -10,7 +10,7 @@ import org.springframework.context.annotation.Profile;
 
 @Profile({"fin12", "fincn"})
 @Configuration
-@ConditionalOnExpression("${ams.local.enabled}")
+//@ConditionalOnExpression("${ams.local.enabled}")
 @ImportResource("classpath:endpoints.xml")
 public class AmsConfiguration {
 

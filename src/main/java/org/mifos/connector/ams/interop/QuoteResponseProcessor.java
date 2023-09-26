@@ -29,7 +29,7 @@ import static org.mifos.connector.common.mojaloop.type.ErrorCode.PAYEE_FSP_REJEC
 import static org.mifos.connector.common.mojaloop.type.ErrorCode.PAYER_FSP_INSUFFICIENT_LIQUIDITY;
 
 @Component
-@ConditionalOnExpression("${ams.local.enabled}")
+//@ConditionalOnExpression("${ams.local.enabled}")
 public class QuoteResponseProcessor implements Processor {
 
     private Logger logger = LoggerFactory.getLogger(this.getClass());
