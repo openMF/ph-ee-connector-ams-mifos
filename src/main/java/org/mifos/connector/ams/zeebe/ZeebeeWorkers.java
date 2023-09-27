@@ -34,7 +34,6 @@ import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 import static org.mifos.connector.ams.camel.config.CamelProperties.*;
 import static org.mifos.connector.ams.zeebe.ZeebeUtil.zeebeVariable;
@@ -44,8 +43,10 @@ import static org.mifos.connector.ams.zeebe.ZeebeVariables.ACCOUNT_CURRENCY;
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.ACCOUNT_IDENTIFIER;
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.ACCOUNT_NUMBER;
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.BOOK_TRANSACTION_ID;
+import static org.mifos.connector.ams.zeebe.ZeebeVariables.CALLBACK_SUCCESS;
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.CHANNEL_REQUEST;
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.EXTERNAL_ACCOUNT_ID;
+import static org.mifos.connector.ams.zeebe.ZeebeVariables.FINERACT_RESPONSE_BODY;
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.INTEROP_REGISTRATION_FAILED;
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.LOCAL_QUOTE_FAILED;
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.LOCAL_QUOTE_RESPONSE;
@@ -54,8 +55,6 @@ import static org.mifos.connector.ams.zeebe.ZeebeVariables.PARTY_ID_TYPE;
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.PAYEE_PARTY_RESPONSE;
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.QUOTE_FAILED;
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.QUOTE_SWITCH_REQUEST;
-import static org.mifos.connector.ams.zeebe.ZeebeVariables.QUOTE_SWITCH_REQUEST_AMOUNT;
-import static org.mifos.connector.ams.zeebe.ZeebeVariables.REQUESTED_DATE;
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.TENANT_ID;
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.TRANSACTION_ID;
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.TRANSFER_CODE;
@@ -76,6 +75,7 @@ public class ZeebeeWorkers {
     public static final String WORKER_PAYEE_DEPOSIT_TRANSFER = "payee-deposit-transfer-";
     public static final String WORKER_PAYEE_LOAN_TRANSFER = "payee-loan-transfer-";
     public static final String WORKER_ACCOUNT_IDENTIFIER = "account-identifier-";
+    public static final String WORKER_SEND_CALLBACK = "send-callback";
 
     private Logger logger = LoggerFactory.getLogger(this.getClass());
 
@@ -587,6 +587,29 @@ public class ZeebeeWorkers {
                             }
                         })
                         .name(WORKER_ACCOUNT_IDENTIFIER + dfspid)
+                        .maxJobsActive(workerMaxJobs)
+                        .open();
+
+                logger.info("## generating {} worker", WORKER_SEND_CALLBACK );
+                zeebeClient.newWorker()
+                        .jobType(WORKER_SEND_CALLBACK)
+                        .handler((client, job) -> {
+                            logWorkerDetails(job);
+                            Map<String, Object> existingVariables = job.getVariablesAsMap();
+                            logger.debug("Exisiting variables {}", existingVariables);
+                                Exchange ex = new DefaultExchange(camelContext);
+                                Map<String, Object> variables = job.getVariablesAsMap();
+
+                                ex.setProperty(X_CALLBACKURL, existingVariables.get(X_CALLBACKURL));
+                                ex.setProperty(FINERACT_RESPONSE_BODY, existingVariables.get(FINERACT_RESPONSE_BODY));
+                                producerTemplate.send("direct:send-callback", ex);
+                                variables.put(CALLBACK_SUCCESS, ex.getProperty("callbackSent").toString());
+                                zeebeClient.newCompleteCommand(job.getKey())
+                                        .variables(variables)
+                                        .send();
+
+                        })
+                        .name(WORKER_SEND_CALLBACK)
                         .maxJobsActive(workerMaxJobs)
                         .open();
             }

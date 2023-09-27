@@ -87,6 +87,8 @@ public class InteroperationRouteBuilder extends ErrorHandlerRouteBuilder {
     private ErrorTranslator errorTranslator;
 
     private Logger logger = LoggerFactory.getLogger(this.getClass());
+    private String callbackUrl;
+    private String fineractResponseBody;
 
     public InteroperationRouteBuilder() {
         super.configure();
@@ -183,6 +185,7 @@ public class InteroperationRouteBuilder extends ErrorHandlerRouteBuilder {
                                     .variables(variables)
                                     .send();
                         }
+
                         logger.info("End of process in send-transfers");
                     })
                 .otherwise()
@@ -201,7 +204,38 @@ public class InteroperationRouteBuilder extends ErrorHandlerRouteBuilder {
                     exchange.getIn().setBody(requestBody);
                     exchange.setProperty("accountNumber",exchange.getProperty(ACCOUNT_NUMBER));
                 })
-                .process(amsService::repayLoan);
+                .process(amsService::repayLoan)
+                .to("direct:error-handler") // this route will parse and set error field if exist
+                .log("Process type: ${exchangeProperty." + PROCESS_TYPE + "}")
+                .choice()
+                .when(exchange -> exchange.getProperty(PROCESS_TYPE)!=null && exchange.getProperty(PROCESS_TYPE).equals("api"))
+                .process(exchange -> {
+                    int statusCode = exchange.getIn().getHeader(Exchange.HTTP_RESPONSE_CODE, Integer.class);
+                    if (statusCode > 202) {
+                        Map<String, Object>  variables = Utils.getDefaultZeebeErrorVariable(exchange, errorTranslator);
+                        zeebeClient.newCompleteCommand(exchange.getProperty(ZEEBE_JOB_KEY, Long.class))
+                                .variables(variables)
+                                .send();
+
+                        logger.error("{}", variables.get(ERROR_INFORMATION));
+                    } else {
+                        Map<String, Object> variables = new HashMap<>();
+                        JSONObject responseJson = new JSONObject(exchange.getIn().getBody(String.class));
+                        variables.put(TRANSFER_PREPARE_FAILED,false);
+                        variables.put(TRANSFER_CREATE_FAILED,false);
+                        variables.put("payeeTenantId", exchange.getProperty("payeeTenantId"));
+                        variables.put(TRANSFER_CODE,responseJson.getString("transferCode"));
+                        logger.info("API call successful. Response Body: " + exchange.getIn().getBody(String.class));
+                        zeebeClient.newCompleteCommand(exchange.getProperty(ZEEBE_JOB_KEY, Long.class))
+                                .variables(variables)
+                                .send();
+                    }
+
+                    logger.info("End of process in send-transfers-loan");
+                })
+                .otherwise()
+                .process(transfersResponseProcessor)
+                .end();
 
 
         from("direct:fincn-oauth")
@@ -359,5 +393,17 @@ public class InteroperationRouteBuilder extends ErrorHandlerRouteBuilder {
                     exchange.setProperty(PARTY_ID, transactionRequest.getPayee().getPartyIdInfo().getPartyIdentifier());
                 })
                 .to("direct:send-transfers");
+
+
+        from("direct:send-callback").id("send-callback")
+                .log(LoggingLevel.DEBUG, "Sending callback with action: ${exchangeProperty." + TRANSFER_ACTION + "} " +
+                        " for transaction: ${exchangeProperty." + TRANSACTION_ID + "}")
+                .log("Process type: ${exchangeProperty." + PROCESS_TYPE + "}")
+                .process(exchange -> {
+                    fineractResponseBody = exchange.getProperty(FINERACT_RESPONSE_BODY).toString();
+                    callbackUrl = exchange.getProperty(X_CALLBACKURL).toString();
+                    boolean callbackSent= amsService.sendCallback(callbackUrl,fineractResponseBody);
+                    exchange.setProperty("callbackSent",callbackSent);
+                });
     }
 }

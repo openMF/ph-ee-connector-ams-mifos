@@ -62,7 +62,7 @@ public class TransfersResponseProcessor implements Processor {
             }
             variables.put(ACTION_FAILURE_MAP.get(transferAction), false);
         }
-
+        variables.put(FINERACT_RESPONSE_BODY, exchange.getIn().getBody());
         zeebeClient.newCompleteCommand(exchange.getProperty(ZEEBE_JOB_KEY, Long.class))
                 .variables(variables)
                 .send();
