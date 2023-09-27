@@ -590,8 +590,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 					.getFinInstnId()
 					.getBIC();
 			String originalCreationDate = paymentTransactionInformation
-					.getOrgnlGrpInf()
-					.getOrgnlCreDtTm()
+					.getOrgnlIntrBkSttlmDt()
 					.toGregorianCalendar()
 					.toZonedDateTime()
 					.toLocalDate()
