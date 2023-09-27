@@ -319,8 +319,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 					.getFinInstnId()
 					.getBIC();
 			String originalCreationDate = paymentTransactionInformation
-					.getOrgnlGrpInf()
-					.getOrgnlCreDtTm()
+					.getOrgnlIntrBkSttlmDt()
 					.toGregorianCalendar()
 					.toZonedDateTime()
 					.toLocalDate()
