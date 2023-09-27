@@ -427,8 +427,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 					.getFinInstnId()
 					.getBIC();
     		String originalCreationDate = paymentTransactionInformation
-    				.getOrgnlGrpInf()
-    				.getOrgnlCreDtTm()
+    				.getOrgnlIntrBkSttlmDt()
     				.toGregorianCalendar()
     				.toZonedDateTime()
     				.toLocalDate()
