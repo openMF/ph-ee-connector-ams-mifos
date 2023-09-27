@@ -12,30 +12,32 @@ import java.io.StringReader;
 @Component
 public class JAXBUtils {
 
-    private Unmarshaller unmarshaller;
+    private JAXBContext jaxbContext;
 
     @PostConstruct
     public void init() throws JAXBException {
-        JAXBContext jaxbContext = JAXBContext.newInstance(eu.nets.realtime247.ri_2015_10.ObjectFactory.class,
+        jaxbContext = JAXBContext.newInstance(eu.nets.realtime247.ri_2015_10.ObjectFactory.class,
                 iso.std.iso._20022.tech.xsd.pacs_008_001.ObjectFactory.class,
                 iso.std.iso._20022.tech.xsd.pacs_002_001.ObjectFactory.class,
                 iso.std.iso._20022.tech.xsd.camt_056_001.ObjectFactory.class,
         		iso.std.iso._20022.tech.xsd.pacs_004_001.ObjectFactory.class);
-        unmarshaller = jaxbContext.createUnmarshaller();
     }
 
     @SuppressWarnings("unchecked")
     public iso.std.iso._20022.tech.xsd.camt_056_001.Document unmarshalCamt056(String camt056) throws JAXBException {
+    	Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
         return ((JAXBElement<iso.std.iso._20022.tech.xsd.camt_056_001.Document>) unmarshaller.unmarshal(new StringReader(camt056))).getValue();
     }
 
     @SuppressWarnings("unchecked")
     public iso.std.iso._20022.tech.xsd.pacs_008_001.Document unmarshalPacs008(String pacs008) throws JAXBException {
+    	Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
         return ((JAXBElement<iso.std.iso._20022.tech.xsd.pacs_008_001.Document>) unmarshaller.unmarshal(new StringReader(pacs008))).getValue();
     }
     
     @SuppressWarnings("unchecked")
     public iso.std.iso._20022.tech.xsd.pacs_004_001.Document unmarshalPacs004(String pacs004) throws JAXBException {
+    	Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
         return ((JAXBElement<iso.std.iso._20022.tech.xsd.pacs_004_001.Document>) unmarshaller.unmarshal(new StringReader(pacs004))).getValue();
     }
 }
