@@ -196,7 +196,6 @@ public abstract class AbstractMoneyInOutWorker {
             try {
                 response = restTemplate.exchange(urlTemplate, HttpMethod.POST, entity, Object.class);
                 wireLogger.receiving(response.toString());
-                log.debug("Response is " + (response == null ? "" : "not ") + "null");
             } catch (ResourceAccessException e) {
                 if (e.getCause() instanceof SocketTimeoutException
                         || e.getCause() instanceof ConnectException) {
