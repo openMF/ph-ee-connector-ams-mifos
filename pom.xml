@@ -246,6 +246,8 @@
                 <artifactId>aspectj-maven-plugin</artifactId>
                 <version>1.13.1</version>
                 <configuration>
+                    <source>${java.version}</source>
+                    <target>${java.version}</target>
                     <showWeaveInfo/>
                     <forceAjcCompile>true</forceAjcCompile>
                     <sources/>
