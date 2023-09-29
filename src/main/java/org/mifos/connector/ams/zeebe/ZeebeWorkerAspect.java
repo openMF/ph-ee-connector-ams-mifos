@@ -20,8 +20,10 @@ public class ZeebeWorkerAspect {
     @Around("zeebeWorkerMethods()")
     public Object around(ProceedingJoinPoint joinPoint) throws Throwable {
         LOG.info("## worker entry: {}", joinPoint.getSignature().getName());
+        long start = System.currentTimeMillis();
         Object result = joinPoint.proceed();
-        LOG.info("## worker exit: {}", joinPoint.getSignature().getName());
+        long end = System.currentTimeMillis();
+        LOG.info("## worker exit: {}, took {} ms", joinPoint.getSignature().getName(), (end - start));
         return result;
     }
 }
