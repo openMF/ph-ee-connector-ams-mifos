@@ -1,4 +1,4 @@
-FROM amazoncorretto:17-al2023-headless
+FROM amazoncorretto:17-al2023-jdk
 
 # Disable caching to make the dnf upgrade effective (the build job passes the build time as the value of this argument)
 ARG CACHEBUST=1
