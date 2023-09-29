@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component;
 public class ZeebeWorkerAspect {
     private static final Logger LOG = LoggerFactory.getLogger("zeebe-worker-aspect");
 
-    @Pointcut("execution(@io.camunda.zeebe.spring.client.annotation.ZeebeWorker * *(..))")
+    @Pointcut("execution(@io.camunda.zeebe.spring.client.annotation.JobWorker * *(..))")
     public void zeebeWorkerMethods() {
     }
 
