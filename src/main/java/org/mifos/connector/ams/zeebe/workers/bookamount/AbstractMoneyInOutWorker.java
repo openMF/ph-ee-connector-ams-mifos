@@ -24,9 +24,7 @@ import java.net.SocketTimeoutException;
 import java.util.LinkedHashMap;
 import java.util.List;
 
-import static org.apache.hc.core5.http.HttpStatus.SC_CONFLICT;
-import static org.apache.hc.core5.http.HttpStatus.SC_LOCKED;
-import static org.apache.hc.core5.http.HttpStatus.SC_OK;
+import static org.apache.hc.core5.http.HttpStatus.*;
 
 @Component
 @Slf4j
@@ -61,7 +59,7 @@ public abstract class AbstractMoneyInOutWorker {
 
     @Autowired
     private EventService eventService;
-    
+
     @Autowired
     private ObjectMapper objectMapper;
 
@@ -186,7 +184,7 @@ public abstract class AbstractMoneyInOutWorker {
         try {
             body = objectMapper.writeValueAsString(items);
         } catch (JsonProcessingException e) {
-        	throw new RuntimeException("Failed to build batch request [{}] body" + internalCorrelationId, e);
+            throw new RuntimeException("Failed to build batch request [{}] body" + internalCorrelationId, e);
         }
 
         int retryCount = idempotencyRetryCount;
@@ -202,11 +200,11 @@ public abstract class AbstractMoneyInOutWorker {
                 response = restTemplate.exchange(urlTemplate, HttpMethod.POST, entity, Object.class);
                 wireLogger.receiving(response.toString());
             } catch (ResourceAccessException e) {
-            	if (e.getCause() instanceof SocketTimeoutException || e.getCause() instanceof ConnectException) {
-            		log.warn("Communication with Fineract timed out for request [{}]", idempotencyKey);
+                if (e.getCause() instanceof SocketTimeoutException || e.getCause() instanceof ConnectException) {
+                    log.warn("Communication with Fineract timed out for request [{}]", idempotencyKey);
                     retryCount--;
                     if (retryCount > 0) {
-                    	log.warn("Retrying request [{}], {} more times", internalCorrelationId, retryCount);
+                        log.warn("Retrying request [{}], {} more times", internalCorrelationId, retryCount);
                     }
                 } else {
                     log.error(e.getMessage(), e);
@@ -245,7 +243,7 @@ public abstract class AbstractMoneyInOutWorker {
                         retryCount--;
                         continue retry;
                     }
-                    default -> throw new RuntimeException("An unexpected error occurred for request [{}]" + idempotencyKey);
+                    default -> throw new RuntimeException("An unexpected error occurred for request " + idempotencyKey + ": " + statusCode);
                 }
             }
             log.info("Request [{}] successful", idempotencyKey);
