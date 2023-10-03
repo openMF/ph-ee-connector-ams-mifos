@@ -11,7 +11,6 @@ plugins {
 
 repositories {
     mavenLocal()
-
     maven {
         url = uri('https://repo.maven.apache.org/maven2')
     }
@@ -39,6 +38,17 @@ dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter-engine:5.6.0'
     compileOnly 'org.projectlombok:lombok:1.18.24'
     annotationProcessor 'org.projectlombok:lombok:1.18.24'
+}
+
+dependencies {
+    implementation "org.springframework.boot:spring-boot-starter-web:*"
+    implementation "org.springframework.boot:spring-boot-starter-tomcat:*"
+    implementation "io.springfox:springfox-oas:3.0.0"
+    implementation "io.springfox:springfox-swagger-ui:3.0.0"
+    implementation "com.github.joschi.jackson:jackson-datatype-threetenbp:2.6.4"
+    implementation "javax.validation:validation-api:*"
+    implementation "org.springframework.plugin:spring-plugin-core:2.0.0.RELEASE"
+    implementation 'io.swagger.codegen.v3:swagger-codegen-maven-plugin:3.0.16'
 }
 
 group = 'org.mifos'

@@ -25,7 +25,7 @@ import static org.mifos.connector.common.camel.ErrorHandlerRouteBuilder.createEr
 import static org.mifos.connector.common.mojaloop.type.ErrorCode.INTERNAL_SERVER_ERROR;
 
 @Component
-@ConditionalOnExpression("${ams.local.enabled}")
+//@ConditionalOnExpression("${ams.local.enabled}")
 public class InteropPartyResponseProcessor implements Processor {
 
     private Logger logger = LoggerFactory.getLogger(this.getClass());

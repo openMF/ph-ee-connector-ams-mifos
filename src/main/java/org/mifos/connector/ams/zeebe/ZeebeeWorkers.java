@@ -34,7 +34,6 @@ import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 import static org.mifos.connector.ams.camel.config.CamelProperties.*;
 import static org.mifos.connector.ams.zeebe.ZeebeUtil.zeebeVariable;
@@ -454,7 +453,6 @@ public class ZeebeeWorkers {
 
                             String tenantId = (String) existingVariables.get(TENANT_ID);
 
-                            if (isAmsLocalEnabled) {
                                 Exchange ex = new DefaultExchange(camelContext);
                                 Map<String, Object> variables = job.getVariablesAsMap();
                                 zeebeVariablesToCamelProperties(variables, ex,
@@ -494,13 +492,6 @@ public class ZeebeeWorkers {
                                 zeebeClient.newCompleteCommand(job.getKey())
                                         .variables(variables)
                                         .send();
-                            } else {
-                                Map<String, Object> variables = new HashMap<>();
-                                variables.put("transferCreateFailed", false);
-                                zeebeClient.newCompleteCommand(job.getKey())
-                                        .variables(variables)
-                                        .send();
-                            }
                         })
                         .name(WORKER_PAYEE_DEPOSIT_TRANSFER + dfspid)
                         .maxJobsActive(workerMaxJobs)
@@ -516,39 +507,31 @@ public class ZeebeeWorkers {
 
                             String tenantId = (String) existingVariables.get(TENANT_ID);
 
-                            if (isAmsLocalEnabled) {
-                                Exchange ex = new DefaultExchange(camelContext);
-                                Map<String, Object> variables = job.getVariablesAsMap();
-                                zeebeVariablesToCamelProperties(variables, ex,
-                                        TRANSACTION_ID,
-                                        TENANT_ID,
-                                        CHANNEL_REQUEST);
-                                ex.setProperty(TRANSFER_ACTION, CREATE.name());
-                                ex.setProperty("payeeTenantId", existingVariables.get("payeeTenantId"));
-                                ex.setProperty(ZEEBE_JOB_KEY, job.getKey());
+                            Exchange ex = new DefaultExchange(camelContext);
+                            Map<String, Object> variables = job.getVariablesAsMap();
+                            zeebeVariablesToCamelProperties(variables, ex,
+                                    TRANSACTION_ID,
+                                    TENANT_ID,
+                                    CHANNEL_REQUEST);
+                            ex.setProperty(TRANSFER_ACTION, CREATE.name());
+                            ex.setProperty("payeeTenantId", existingVariables.get("payeeTenantId"));
+                            ex.setProperty(ZEEBE_JOB_KEY, job.getKey());
 
-                                TransactionChannelRequestDTO transactionRequest = objectMapper.readValue((String) variables.get(CHANNEL_REQUEST), TransactionChannelRequestDTO.class);
+                            TransactionChannelRequestDTO transactionRequest = objectMapper.readValue((String) variables.get(CHANNEL_REQUEST), TransactionChannelRequestDTO.class);
 
-                                ZeebeUtil.setZeebeVariablesLoanWorker(variables,transactionRequest);
+                            ZeebeUtil.setZeebeVariablesLoanWorker(variables,transactionRequest);
 
-                                String partyIdType = transactionRequest.getPayee().getPartyIdInfo().getPartyIdType().name();
-                                String partyId = transactionRequest.getPayee().getPartyIdInfo().getPartyIdentifier();
+                            String partyIdType = transactionRequest.getPayee().getPartyIdInfo().getPartyIdType().name();
+                            String partyId = transactionRequest.getPayee().getPartyIdInfo().getPartyIdentifier();
 
-                                ZeebeUtil.setExchangePropertyLoan(ex,partyId,partyIdType,transactionRequest,existingVariables);
+                            ZeebeUtil.setExchangePropertyLoan(ex,partyId,partyIdType,transactionRequest,existingVariables);
 
-                                producerTemplate.send("direct:send-transfers-loan", ex);
-                                variables.put("transferCreateFailed", false);
-                                variables.put("payeeTenantId", existingVariables.get("payeeTenantId"));
-                                zeebeClient.newCompleteCommand(job.getKey())
-                                        .variables(variables)
-                                        .send();
-                            } else {
-                                Map<String, Object> variables = new HashMap<>();
-                                variables.put("transferCreateFailed", false);
-                                zeebeClient.newCompleteCommand(job.getKey())
-                                        .variables(variables)
-                                        .send();
-                            }
+                            producerTemplate.send("direct:send-transfers-loan", ex);
+                            variables.put("transferCreateFailed", false);
+                            variables.put("payeeTenantId", existingVariables.get("payeeTenantId"));
+                            zeebeClient.newCompleteCommand(job.getKey())
+                                    .variables(variables)
+                                    .send();
                         })
                         .name(WORKER_PAYEE_LOAN_TRANSFER + dfspid)
                         .maxJobsActive(workerMaxJobs)
@@ -562,7 +545,6 @@ public class ZeebeeWorkers {
                             Map<String, Object> existingVariables = job.getVariablesAsMap();
                             logger.debug("Exisiting variables {}", existingVariables);
                             String accountHoldingInstitutionId = (String) existingVariables.get(TENANT_ID);
-                            if (isAmsLocalEnabled) {
                                 Exchange ex = new DefaultExchange(camelContext);
                                 Map<String, Object> variables = job.getVariablesAsMap();
                                 GsmaTransfer gsmaTransfer = objectMapper.readValue((String) variables.get(CHANNEL_REQUEST), GsmaTransfer.class);
@@ -578,13 +560,6 @@ public class ZeebeeWorkers {
                                 zeebeClient.newCompleteCommand(job.getKey())
                                         .variables(variables)
                                         .send();
-                            } else {
-                                Map<String, Object> variables = new HashMap<>();
-                                variables.put("accountIdentificationFailed", true);
-                                zeebeClient.newCompleteCommand(job.getKey())
-                                        .variables(variables)
-                                        .send();
-                            }
                         })
                         .name(WORKER_ACCOUNT_IDENTIFIER + dfspid)
                         .maxJobsActive(workerMaxJobs)

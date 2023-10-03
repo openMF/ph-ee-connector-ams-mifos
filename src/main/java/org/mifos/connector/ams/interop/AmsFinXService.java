@@ -19,7 +19,7 @@ import static org.mifos.connector.ams.camel.cxfrs.HeaderBasedInterceptor.CXF_TRA
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.*;
 
 @Component
-@ConditionalOnExpression("${ams.local.enabled} && '${ams.local.version}'.equals('1.2')")
+@ConditionalOnExpression("'${ams.local.version}'.equals('1.2')")
 public class AmsFinXService extends AmsCommonService implements AmsService {
 
     @Value("${ams.local.interop.accounts-path}")

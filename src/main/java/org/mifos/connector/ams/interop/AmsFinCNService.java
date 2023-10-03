@@ -23,7 +23,7 @@ import static org.mifos.connector.ams.zeebe.ZeebeVariables.ACCOUNT_ID;
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.TENANT_ID;
 
 @Component
-@ConditionalOnExpression("${ams.local.enabled} && '${ams.local.version}'.equals('cn')")
+@ConditionalOnExpression("'${ams.local.version}'.equals('cn')")
 public class AmsFinCNService extends AmsCommonService implements AmsService {
 
     @Value("${ams.local.account.instances-path}")

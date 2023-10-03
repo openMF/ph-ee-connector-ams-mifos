@@ -40,6 +40,18 @@ ams:
       host: http://localhost:8443
       repayment-path: /fineract-provider/api/v1/interoperation/transactions/{accountNumber}/loanrepayment
 
-
+mock-service:
+  local:
+    loan:
+      host: http://localhost:7070
+      base-url: /fineract
+      repayment-path: ${mock-service.local.loan.base-url}/transactions/loanrepayment
+    interop:
+      host: http://localhost:7070
+      base-url: /fineract
+      quotes-path: ${mock-service.local.interop.base-url}/savingsaccount
+      parties-path: ${mock-service.local.interop.base-url}/savingsaccount
+      transfers-path: ${mock-service.local.interop.base-url}/savingsaccount/transfers
+      accounts-path: ${mock-service.local.interop.base-url}/savingsaccount
 # Savings : S , Loan : L
 accountPrefixes: "S,L"

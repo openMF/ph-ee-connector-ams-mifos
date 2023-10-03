@@ -26,7 +26,7 @@ import static org.mifos.connector.ams.camel.config.CamelProperties.LOGIN_USERNAM
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.TENANT_ID;
 
 @Component
-@ConditionalOnExpression("${ams.local.enabled}")
+//@ConditionalOnExpression("${ams.local.enabled}")
 public class TenantService {
 
     public static final String X_TENANT_IDENTIFIER_HEADER = "X-Tenant-Identifier";

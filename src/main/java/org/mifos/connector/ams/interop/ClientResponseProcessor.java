@@ -34,7 +34,7 @@ import static org.mifos.connector.common.camel.ErrorHandlerRouteBuilder.createEr
 import static org.mifos.connector.common.mojaloop.type.ErrorCode.PARTY_NOT_FOUND;
 
 @Component
-@ConditionalOnExpression("${ams.local.enabled}")
+//@ConditionalOnExpression("${ams.local.enabled}")
 public class ClientResponseProcessor implements Processor {
 
     private Logger logger = LoggerFactory.getLogger(this.getClass());

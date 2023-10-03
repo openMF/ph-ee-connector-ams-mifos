@@ -16,7 +16,7 @@ import org.springframework.stereotype.Component;
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.*;
 
 @Component
-@ConditionalOnExpression("${ams.local.enabled}")
+//@ConditionalOnExpression("${ams.local.enabled}")
 public class ErrorParserRouteBuilder extends ErrorHandlerRouteBuilder {
 
     @Autowired
