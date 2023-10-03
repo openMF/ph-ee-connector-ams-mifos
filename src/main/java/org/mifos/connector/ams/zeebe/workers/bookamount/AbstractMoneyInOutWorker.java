@@ -173,7 +173,7 @@ public abstract class AbstractMoneyInOutWorker {
 
         var urlTemplate = UriComponentsBuilder.fromHttpUrl(fineractApiUrl)
                 .path("/batches")
-                .queryParam("enclosingTransaction", true)
+                .queryParam("enclosingTransaction", false)
                 .encode()
                 .toUriString();
 
