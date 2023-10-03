@@ -1,4 +1,4 @@
-FROM amazoncorretto:17-al2023-headless
+FROM amazoncorretto:17-al2023-jdk
 
 # Disable caching to make the dnf upgrade effective (the build job passes the build time as the value of this argument)
 ARG CACHEBUST=1
@@ -6,7 +6,7 @@ ARG CACHEBUST=1
 # Upgrade the system
 RUN dnf -y --releasever=latest --setopt=install_weak_deps=False upgrade && \
 # Add less, vi, nano, ps, ping, netstat, ss, traceroute, telnet (curl is already included in the image)
-    dnf -y --releasever=latest --setopt=install_weak_deps=False install less vim nano procps-ng iputils net-tools iproute traceroute telnet && \
+    dnf -y --releasever=latest --setopt=install_weak_deps=False install less vim nano procps-ng iputils net-tools iproute traceroute telnet findutils && \
 # Create the non-root user to run the application
     dnf -y --releasever=latest --setopt=install_weak_deps=False install shadow-utils && \
     groupadd --system --gid 1000 javagroup && \

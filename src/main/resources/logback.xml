@@ -18,7 +18,7 @@
             <fileNamePattern>logs/console-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
             <maxFileSize>300MB</maxFileSize>
             <maxHistory>3</maxHistory>
-            <totalSizeCap>950MB</totalSizeCap>
+            <totalSizeCap>750MB</totalSizeCap>
         </rollingPolicy>
         <encoder>
             <pattern>${CONSOLE_LOG_PATTERN}</pattern>
@@ -27,12 +27,12 @@
     </appender>
 
     <appender name="WIRE_LOG" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>http.log</file>
+        <file>logs/http.log</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
             <fileNamePattern>wire-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
-            <maxFileSize>500MB</maxFileSize>
+            <maxFileSize>200MB</maxFileSize>
             <maxHistory>10</maxHistory>
-            <totalSizeCap>5GB</totalSizeCap>
+            <totalSizeCap>200MB</totalSizeCap>
         </rollingPolicy>
         <encoder>
             <pattern>${CONSOLE_LOG_PATTERN}</pattern>
@@ -45,9 +45,11 @@
     </logger>
 
     <logger name="org" level="INFO"/>
+    <logger name="com" level="INFO"/>
     <logger name="org.apache.camel.health" level="INFO"/>
     <logger name="org.apache.camel.impl.health" level="INFO"/>
     <logger name="io" level="INFO"/>
+    <logger name="io.camunda.zeebe" level="DEBUG"/>
     <logger name="hu.dpc" level="TRACE"/>
     <logger name="org.mifos.connector.ams" level="TRACE" />
 

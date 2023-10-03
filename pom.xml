@@ -18,7 +18,7 @@
     <properties>
         <java.version>17</java.version>
         <camel.version>4.0.0</camel.version>
-        <zeebe.version>8.2.4</zeebe.version>
+        <zeebe.version>8.2.15</zeebe.version>
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
@@ -82,7 +82,7 @@
         <dependency>
             <groupId>io.camunda.spring</groupId>
             <artifactId>spring-boot-starter-camunda</artifactId>
-            <version>${zeebe.version}</version>
+            <version>8.2.4</version>
             <exclusions>
                 <exclusion>
                     <groupId>com.fasterxml.jackson.module</groupId>
@@ -111,6 +111,10 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-aop</artifactId>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.datatype</groupId>
@@ -183,7 +187,7 @@
         <dependency>
             <groupId>io.camunda.spring</groupId>
             <artifactId>spring-boot-starter-camunda-test</artifactId>
-            <version>${zeebe.version}</version>
+            <version>8.2.4</version>
             <scope>test</scope>
         </dependency>
         <dependency>
