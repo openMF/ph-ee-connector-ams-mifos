@@ -24,6 +24,10 @@ import java.net.SocketTimeoutException;
 import java.util.LinkedHashMap;
 import java.util.List;
 
+import static org.apache.hc.core5.http.HttpStatus.SC_CONFLICT;
+import static org.apache.hc.core5.http.HttpStatus.SC_LOCKED;
+import static org.apache.hc.core5.http.HttpStatus.SC_OK;
+
 @Component
 @Slf4j
 public abstract class AbstractMoneyInOutWorker {
@@ -175,14 +179,14 @@ public abstract class AbstractMoneyInOutWorker {
                 .encode()
                 .toUriString();
 
-        log.debug(">> Sending {} to {} with headers {}", items, urlTemplate, httpHeaders);
+        log.debug(">> Sending {} to {} with headers {} and idempotency {}", items, urlTemplate, httpHeaders, internalCorrelationId);
 
         objectMapper.setSerializationInclusion(Include.NON_NULL);
         String body;
         try {
             body = objectMapper.writeValueAsString(items);
         } catch (JsonProcessingException e) {
-            throw new RuntimeException("failed to create json from batch items", e);
+        	throw new RuntimeException("Failed to build batch request [{}] body" + internalCorrelationId, e);
         }
 
         int retryCount = idempotencyRetryCount;
@@ -190,32 +194,26 @@ public abstract class AbstractMoneyInOutWorker {
         retry:
         while (retryCount > 0) {
             httpHeaders.remove(idempotencyKeyHeaderName);
-            httpHeaders.set(idempotencyKeyHeaderName, String.format("%s_%d", internalCorrelationId, idempotencyPostfix));
+            String idempotencyKey = String.format("%s_%d", internalCorrelationId, idempotencyPostfix);
+            httpHeaders.set(idempotencyKeyHeaderName, idempotencyKey);
             wireLogger.sending(body);
-            ResponseEntity<Object> response = null;
+            ResponseEntity<Object> response;
             try {
                 response = restTemplate.exchange(urlTemplate, HttpMethod.POST, entity, Object.class);
                 wireLogger.receiving(response.toString());
                 log.debug("Response is " + (response == null ? "" : "not ") + "null");
             } catch (ResourceAccessException e) {
-                if (e.getCause() instanceof SocketTimeoutException
-                        || e.getCause() instanceof ConnectException) {
-                    log.warn("Communication with Fineract timed out");
+            	if (e.getCause() instanceof SocketTimeoutException || e.getCause() instanceof ConnectException) {
+            		log.warn("Communication with Fineract timed out for request [{}]", idempotencyKey);
                     retryCount--;
                     if (retryCount > 0) {
-                        log.warn("Retrying transaction {} more times with idempotency header value {}", retryCount, internalCorrelationId);
+                    	log.warn("Retrying request [{}], {} more times", internalCorrelationId, retryCount);
                     }
                 } else {
                     log.error(e.getMessage(), e);
                     throw e;
                 }
-                try {
-                    Thread.sleep(idempotencyRetryInterval);
-                } catch (InterruptedException ie) {
-                    log.error(ie.getMessage(), ie);
-                    throw new RuntimeException(ie);
-                }
-                continue retry;
+                continue;
             } catch (RestClientException e) {
                 // Some other exception occurred, one not related to timeout
                 log.error(e.getMessage(), e);
@@ -226,57 +224,37 @@ public abstract class AbstractMoneyInOutWorker {
             }
 
             List<LinkedHashMap<String, Object>> responseBody = (List<LinkedHashMap<String, Object>>) response.getBody();
-
-            boolean allOk = true;
-
-            for (LinkedHashMap<String, Object> responseItem : responseBody) {
-                log.debug("Investigating {}", responseItem);
-                int statusCode = (Integer) responseItem.get("statusCode");
-                log.debug("Got {} for status code", statusCode);
-                allOk &= (statusCode == 200);
-                if (!allOk) {
-                    switch (statusCode) {
-                        case 403:
-                            LinkedHashMap<String, Object> response403Body = (LinkedHashMap<String, Object>) responseItem.get("body");
-                            log.debug("Got response body {}", response403Body);
-                            String defaultUserMessage403 = (String) response403Body.get("defaultUserMessage");
-                            if (defaultUserMessage403.contains("OptimisticLockException")) {
-                                log.info("Optimistic lock exception detected, retrying in a short while");
-                                log.debug("Current Idempotency-Key HTTP header expired, a new one is generated");
-                                idempotencyPostfix++;
-                                retryCount--;
-                                continue retry;
-                            }
-                            break retry;
-                        case 500:
-                            String response500Body = (String) responseItem.get("body");
-                            log.debug("Got response body {}", response500Body);
-                            if (response500Body.contains("NullPointerException")) {
-                                log.info("Possible optimistic lock exception, retrying in a short while");
-                                log.debug("Current Idempotency-Key HTTP header expired, a new one is generated");
-                                idempotencyPostfix++;
-                                retryCount--;
-                                continue retry;
-                            }
-                            break retry;
-                        case 409:
-                            log.warn("Transaction is already executing, has not completed yet");
-                            return null;
-
-                        default:
-                            throw new RuntimeException("An unexpected error occurred");
-                    }
-                }
-            }
-
-            if (allOk) {
+            if (responseBody == null) {
                 return null;
             }
-
-            log.info("{} more attempts", retryCount);
+            for (LinkedHashMap<String, Object> responseItem : responseBody) {
+                log.debug("Investigating response item {} for request [{}]", responseItem, idempotencyKey);
+                int statusCode = (Integer) responseItem.get("statusCode");
+                log.debug("Got status code {} for request [{}]", statusCode, idempotencyKey);
+                if (statusCode == SC_OK) {
+                    continue;
+                }
+                LinkedHashMap<String, Object> responseItemBody = (LinkedHashMap<String, Object>) responseItem.get("body");
+                log.debug("Got error {} response body {} for request [{}]", statusCode, responseItemBody, idempotencyKey);
+                switch (statusCode) {
+                    case SC_CONFLICT -> {
+                        log.warn("Transaction request [{}] is already executing, has not completed yet", idempotencyKey);
+                        return null;
+                    }
+                    case SC_LOCKED -> {
+                        log.info("Locking exception detected, retrying request [{}]", idempotencyKey);
+                        idempotencyPostfix++;
+                        retryCount--;
+                        continue retry;
+                    }
+                    default -> throw new RuntimeException("An unexpected error occurred for request [{}]" + idempotencyKey);
+                }
+            }
+            log.info("Request [{}] successful", idempotencyKey);
+            return null;
         }
 
-        log.error("Failed to execute transaction in {} tries.", idempotencyRetryCount - retryCount + 1);
-        throw new RuntimeException("Failed to execute transaction.");
+        log.error("Failed to execute transaction request [{}] in {} tries.", internalCorrelationId, idempotencyRetryCount - retryCount + 1);
+        throw new RuntimeException("Failed to execute transaction " + internalCorrelationId);
     }
 }
