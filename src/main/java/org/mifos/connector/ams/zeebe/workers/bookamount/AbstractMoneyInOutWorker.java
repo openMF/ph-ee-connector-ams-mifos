@@ -233,8 +233,7 @@ public abstract class AbstractMoneyInOutWorker {
                 if (statusCode == SC_OK) {
                     continue;
                 }
-                LinkedHashMap<String, Object> responseItemBody = (LinkedHashMap<String, Object>) responseItem.get("body");
-                log.debug("Got error {} response body {} for request [{}]", statusCode, responseItemBody, idempotencyKey);
+                log.debug("Got error {}, response item '{}' for request [{}]", statusCode, responseItem, idempotencyKey);
                 switch (statusCode) {
                     case SC_CONFLICT -> {
                         log.warn("Transaction request [{}] is already executing, has not completed yet", idempotencyKey);
