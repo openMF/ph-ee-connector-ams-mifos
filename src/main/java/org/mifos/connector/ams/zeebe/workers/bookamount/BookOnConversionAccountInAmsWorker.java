@@ -239,6 +239,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 
     @JobWorker
     @TraceZeebeArguments
+    @LogInternalCorrelationId
     public void withdrawTheAmountFromConversionAccountInAms(JobClient client,
                                                             ActivatedJob activatedJob,
                                                             @Variable BigDecimal amount,

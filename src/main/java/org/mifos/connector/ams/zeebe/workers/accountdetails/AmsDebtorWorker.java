@@ -8,6 +8,7 @@ import io.camunda.zeebe.spring.client.annotation.JobWorker;
 import io.camunda.zeebe.spring.client.annotation.Variable;
 import io.camunda.zeebe.spring.client.exception.ZeebeBpmnError;
 import org.mifos.connector.ams.log.EventLogUtil;
+import org.mifos.connector.ams.log.LogInternalCorrelationId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +25,7 @@ public class AmsDebtorWorker extends AbstractAmsWorker {
     private EventService eventService;
 
     @JobWorker
+    @LogInternalCorrelationId
     public Map<String, Object> getAccountIdsFromAms(JobClient jobClient,
                                                     ActivatedJob activatedJob,
                                                     @Variable String debtorIban,

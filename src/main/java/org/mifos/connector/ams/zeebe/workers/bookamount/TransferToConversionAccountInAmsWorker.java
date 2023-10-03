@@ -345,6 +345,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 
     @JobWorker
     @TraceZeebeArguments
+    @LogInternalCorrelationId
     public void withdrawTheAmountFromDisposalAccountInAMS(JobClient client,
                                                           ActivatedJob activatedJob,
                                                           @Variable BigDecimal amount,

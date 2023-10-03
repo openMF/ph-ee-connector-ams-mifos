@@ -510,6 +510,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 
     @JobWorker
     @TraceZeebeArguments
+    @LogInternalCorrelationId
     public void depositTheAmountOnDisposalInAms(JobClient client,
                                                 ActivatedJob activatedJob,
                                                 @Variable BigDecimal amount,
