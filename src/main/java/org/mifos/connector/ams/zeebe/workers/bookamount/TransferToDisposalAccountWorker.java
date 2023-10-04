@@ -122,15 +122,17 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 			
 			batchItemBuilder.tenantId(tenantIdentifier);
 			
-			String conversionAccountWithdrawRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "withdrawal");
-			
 			Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
-			String withdrawAmountOperation = "transferToDisposalAccount.ConversionAccount.WithdrawTransactionAmount";
-			String withdrawAmountConfigOperationKey = String.format("%s.%s", paymentScheme, withdrawAmountOperation);
-			Integer paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(withdrawAmountConfigOperationKey);
-			String paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(withdrawAmountConfigOperationKey);
 			
-			TransactionBody body = new TransactionBody(
+			List<TransactionItem> items = new ArrayList<>();
+			
+			String disposalAccountDepositRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), disposalAccountAmsId, "deposit");
+			String depositAmountOperation = "transferToDisposalAccount.DisposalAccount.DepositTransactionAmount";
+			String depositAmountConfigOperationKey = String.format("%s.%s", paymentScheme, depositAmountOperation);
+			var paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(depositAmountConfigOperationKey);
+			var paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(depositAmountConfigOperationKey);
+			
+			var body = new TransactionBody(
 					transactionDate,
 					amount,
 					paymentTypeId,
@@ -138,19 +140,15 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 					FORMAT,
 					locale);
 			
-			String bodyItem = objectMapper.writeValueAsString(body);
+			var bodyItem = objectMapper.writeValueAsString(body);
 			
-			List<TransactionItem> items = new ArrayList<>();
-			
-			batchItemBuilder.add(items, conversionAccountWithdrawRelativeUrl, bodyItem, false);
+			batchItemBuilder.add(items, disposalAccountDepositRelativeUrl, bodyItem, false);
 			
 			ReportEntry10 convertedCamt053Entry = camt053Mapper.toCamt053Entry(pacs008);
 			convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.CRDT);
 			String camt053Entry = objectMapper.writeValueAsString(convertedCamt053Entry);
 			
-			String camt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
-			
-			DtSavingsTransactionDetails td = new DtSavingsTransactionDetails(
+			var td = new DtSavingsTransactionDetails(
 					internalCorrelationId,
 					camt053Entry,
 					pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getCdtrAcct().getId().getIBAN(),
@@ -163,16 +161,18 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 					Optional.ofNullable(pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getRmtInf()).map(RemittanceInformation5::getUstrd).map(List::toString).orElse(""),
 					transactionCategoryPurposeCode);
 			
-			String camt053Body = objectMapper.writeValueAsString(td);
-
+			var camt053Body = objectMapper.writeValueAsString(td);
+			
+			String camt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
+			
 			batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 			
+			String conversionAccountWithdrawRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "withdrawal");
 			
-			String disposalAccountDepositRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), disposalAccountAmsId, "deposit");
-			String depositAmountOperation = "transferToDisposalAccount.DisposalAccount.DepositTransactionAmount";
-			String depositAmountConfigOperationKey = String.format("%s.%s", paymentScheme, depositAmountOperation);
-			paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(depositAmountConfigOperationKey);
-			paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(depositAmountConfigOperationKey);
+			String withdrawAmountOperation = "transferToDisposalAccount.ConversionAccount.WithdrawTransactionAmount";
+			String withdrawAmountConfigOperationKey = String.format("%s.%s", paymentScheme, withdrawAmountOperation);
+			paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(withdrawAmountConfigOperationKey);
+			paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(withdrawAmountConfigOperationKey);
 			
 			body = new TransactionBody(
 					transactionDate,
@@ -184,7 +184,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 			
 			bodyItem = objectMapper.writeValueAsString(body);
 			
-			batchItemBuilder.add(items, disposalAccountDepositRelativeUrl, bodyItem, false);
+			batchItemBuilder.add(items, conversionAccountWithdrawRelativeUrl, bodyItem, false);
 			
 			td = new DtSavingsTransactionDetails(
 					internalCorrelationId,
@@ -200,9 +200,9 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 					transactionCategoryPurposeCode);
 			
 			camt053Body = objectMapper.writeValueAsString(td);
-			
+
 			batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
-		
+			
 			doBatch(items,
                     tenantIdentifier,
                     disposalAccountAmsId,
@@ -279,15 +279,15 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 			
 			batchItemBuilder.tenantId(tenantIdentifier);
 			
-			String conversionAccountWithdrawRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "withdrawal");
-			
 			Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
-			String withdrawAmountOperation = "transferToDisposalAccount.ConversionAccount.WithdrawTransactionAmount";
-			String withdrawAmountConfigOperationKey = String.format("%s.%s", paymentScheme, withdrawAmountOperation);
-			Integer paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(withdrawAmountConfigOperationKey);
-			String paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(withdrawAmountConfigOperationKey);
 			
-			TransactionBody body = new TransactionBody(
+			String disposalAccountDepositRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), disposalAccountAmsId, "deposit");
+			String depositAmountOperation = "transferToDisposalAccount.DisposalAccount.DepositTransactionAmount";
+			String depositAmountConfigOperationKey = String.format("%s.%s", paymentScheme, depositAmountOperation);
+			var paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(depositAmountConfigOperationKey);
+			var paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(depositAmountConfigOperationKey);
+			
+			var body = new TransactionBody(
 					transactionDate,
 					amount,
 					paymentTypeId,
@@ -295,19 +295,17 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 					FORMAT,
 					locale);
 			
-			String bodyItem = objectMapper.writeValueAsString(body);
+			var bodyItem = objectMapper.writeValueAsString(body);
 			
 			List<TransactionItem> items = new ArrayList<>();
 			
-			batchItemBuilder.add(items, conversionAccountWithdrawRelativeUrl, bodyItem, false);
+			batchItemBuilder.add(items, disposalAccountDepositRelativeUrl, bodyItem, false);
 			
 			ReportEntry10 convertedCamt053Entry = camt053Mapper.toCamt053Entry(pacs008);
 			convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.CRDT);
 			String camt053Entry = objectMapper.writeValueAsString(convertedCamt053Entry);
 			
-			String camt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
-			
-			DtSavingsTransactionDetails td = new DtSavingsTransactionDetails(
+			var td = new DtSavingsTransactionDetails(
 					internalCorrelationId,
 					camt053Entry,
 					pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getCdtrAcct().getId().getIBAN(),
@@ -320,16 +318,18 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 					Optional.ofNullable(pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getRmtInf()).map(RemittanceInformation5::getUstrd).map(List::toString).orElse(""),
 					transactionCategoryPurposeCode);
 			
-			String camt053Body = objectMapper.writeValueAsString(td);
-
+			var camt053Body = objectMapper.writeValueAsString(td);
+			
+			String camt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
+			
 			batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 			
+			String conversionAccountWithdrawRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "withdrawal");
 			
-			String disposalAccountDepositRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), disposalAccountAmsId, "deposit");
-			String depositAmountOperation = "transferToDisposalAccount.DisposalAccount.DepositTransactionAmount";
-			String depositAmountConfigOperationKey = String.format("%s.%s", paymentScheme, depositAmountOperation);
-			paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(depositAmountConfigOperationKey);
-			paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(depositAmountConfigOperationKey);
+			String withdrawAmountOperation = "transferToDisposalAccount.ConversionAccount.WithdrawTransactionAmount";
+			String withdrawAmountConfigOperationKey = String.format("%s.%s", paymentScheme, withdrawAmountOperation);
+			paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(withdrawAmountConfigOperationKey);
+			paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(withdrawAmountConfigOperationKey);
 			
 			body = new TransactionBody(
 					transactionDate,
@@ -341,7 +341,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 			
 			bodyItem = objectMapper.writeValueAsString(body);
 			
-			batchItemBuilder.add(items, disposalAccountDepositRelativeUrl, bodyItem, false);
+			batchItemBuilder.add(items, conversionAccountWithdrawRelativeUrl, bodyItem, false);
 			
 			td = new DtSavingsTransactionDetails(
 					internalCorrelationId,
@@ -357,9 +357,9 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 					transactionCategoryPurposeCode);
 			
 			camt053Body = objectMapper.writeValueAsString(td);
-			
+
 			batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
-		
+			
 			doBatch(items,
                     tenantIdentifier,
                     disposalAccountAmsId,
@@ -428,18 +428,15 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 			log.info("transfer to disposal account in return (pacs.004) {} started for {} on {} ", internalCorrelationId, paymentScheme, tenantIdentifier);
 
 			batchItemBuilder.tenantId(tenantIdentifier);
-
-			String conversionAccountWithdrawRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "withdrawal");
-
-			Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
-			String withdrawAmountOperation = "transferToDisposalAccount.ConversionAccount.WithdrawTransactionAmount";
-			String withdrawAmountConfigOperationKey = String.format("%s.%s", paymentScheme, withdrawAmountOperation);
-			Integer paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(withdrawAmountConfigOperationKey);
-			String paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(withdrawAmountConfigOperationKey);
 			
-			iso.std.iso._20022.tech.xsd.pacs_004_001.Document pacs_004 = jaxbUtils.unmarshalPacs004(pacs004);
+			String disposalAccountDepositRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), disposalAccountAmsId, "deposit");
+			String depositAmountOperation = "transferToDisposalAccount.DisposalAccount.DepositTransactionAmount";
+			String depositAmountConfigOperationKey = String.format("%s.%s", paymentScheme, depositAmountOperation);
+			Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
+			var paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(depositAmountConfigOperationKey);
+			var paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(depositAmountConfigOperationKey);
 
-			TransactionBody body = new TransactionBody(
+			var body = new TransactionBody(
 					transactionDate,
 					amount,
 					paymentTypeId,
@@ -447,23 +444,24 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 					FORMAT,
 					locale);
 
-			String bodyItem = objectMapper.writeValueAsString(body);
-
+			var bodyItem = objectMapper.writeValueAsString(body);
+			
 			List<TransactionItem> items = new ArrayList<>();
 
-			batchItemBuilder.add(items, conversionAccountWithdrawRelativeUrl, bodyItem, false);
+			batchItemBuilder.add(items, disposalAccountDepositRelativeUrl, bodyItem, false);
 
-			// TODO make proper pacs.004 -> camt.053 converter
+			var camt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
+			
 			BankToCustomerStatementV08 camt053 = new BankToCustomerStatementV08();
 			camt053.getStatement().add(new AccountStatement9());
 			camt053.getStatement().get(0).getEntry().add(new ReportEntry10());
 			ReportEntry10 convertedCamt053Entry = camt053.getStatement().get(0).getEntry().get(0);
 
 			String camt053Entry = objectMapper.writeValueAsString(convertedCamt053Entry);
+			
+			iso.std.iso._20022.tech.xsd.pacs_004_001.Document pacs_004 = jaxbUtils.unmarshalPacs004(pacs004);
 
-			String camt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
-
-			DtSavingsTransactionDetails td = new DtSavingsTransactionDetails(
+			var td = new DtSavingsTransactionDetails(
 					internalCorrelationId,
 					camt053Entry,
 					pacs_004.getPmtRtr().getTxInf().get(0).getOrgnlTxRef().getDbtrAcct().getId().getIBAN(),
@@ -477,17 +475,17 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
                     		.map(iso.std.iso._20022.tech.xsd.pacs_004_001.RemittanceInformation5::getUstrd).map(List::toString).orElse(""),
 					transactionCategoryPurposeCode);
 
-			String camt053Body = objectMapper.writeValueAsString(td);
+			var camt053Body = objectMapper.writeValueAsString(td);
 
 			batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 
+			String conversionAccountWithdrawRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "withdrawal");
 
-			String disposalAccountDepositRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), disposalAccountAmsId, "deposit");
-			String depositAmountOperation = "transferToDisposalAccount.DisposalAccount.DepositTransactionAmount";
-			String depositAmountConfigOperationKey = String.format("%s.%s", paymentScheme, depositAmountOperation);
-			paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(depositAmountConfigOperationKey);
-			paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(depositAmountConfigOperationKey);
-
+			String withdrawAmountOperation = "transferToDisposalAccount.ConversionAccount.WithdrawTransactionAmount";
+			String withdrawAmountConfigOperationKey = String.format("%s.%s", paymentScheme, withdrawAmountOperation);
+			paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(withdrawAmountConfigOperationKey);
+			paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(withdrawAmountConfigOperationKey);
+			
 			body = new TransactionBody(
 					transactionDate,
 					amount,
@@ -498,7 +496,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 
 			bodyItem = objectMapper.writeValueAsString(body);
 
-			batchItemBuilder.add(items, disposalAccountDepositRelativeUrl, bodyItem, false);
+			batchItemBuilder.add(items, conversionAccountWithdrawRelativeUrl, bodyItem, false);
 
 			camt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
 
@@ -519,6 +517,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 			camt053Body = objectMapper.writeValueAsString(td);
 
 			batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
+
 
 			doBatch(items,
                     tenantIdentifier,
