@@ -69,6 +69,7 @@ public class GetAccountDetailsFromAmsWorker extends AbstractAmsWorker {
                                                          Event.Builder eventBuilder) {
         String paymentSchemePrefix = paymentScheme.split(":")[0];
         AmsDataTableQueryResponse[] response = lookupAccount(iban, tenantIdentifier);
+        log.info("1/3: Account details retrieval finished");
 
         if (response.length == 0) {
             String reasonCode = accountNotExistsReasons.getOrDefault(paymentSchemePrefix + "-" + direction, "NOT_PROVIDED");
@@ -92,11 +93,14 @@ public class GetAccountDetailsFromAmsWorker extends AbstractAmsWorker {
         Long accountDisposalId = responseItem.disposal_account_id();
         Long internalAccountId = responseItem.internal_account_id();
 
+        log.info("Retrieving conversion account data");
         GetSavingsAccountsAccountIdResponse conversion = retrieveCurrencyIdAndStatus(accountConversionId, tenantIdentifier);
         log.trace("conversion account details: {}", conversion);
+        log.info("2/3: Conversion account data retrieval finished");
 
         GetSavingsAccountsAccountIdResponse disposal = retrieveCurrencyIdAndStatus(accountDisposalId, tenantIdentifier);
         log.trace("disposal account details: {}", disposal);
+        log.info("3/3: Disposal account data retrieval finished");
 
         Integer disposalAccountAmsId = disposal.getId();
         Integer conversionAccountAmsId = conversion.getId();
