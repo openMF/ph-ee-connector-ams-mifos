@@ -2,6 +2,7 @@ package org.mifos.connector;
 
 import java.util.concurrent.TimeUnit;
 
+import com.fasterxml.jackson.module.afterburner.AfterburnerModule;
 import org.apache.camel.Processor;
 import org.apache.hc.client5.http.classic.HttpClient;
 import org.apache.hc.client5.http.config.RequestConfig;
@@ -34,6 +35,7 @@ public class AmsConnectorApplication {
     @Bean
     public ObjectMapper objectMapper() {
         ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new AfterburnerModule());
         objectMapper.registerModule(new JavaTimeModule());
         objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
         return objectMapper

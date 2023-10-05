@@ -63,8 +63,8 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
     @Autowired
     private ConfigFactory paymentTypeConfigFactory;
 
-    @Autowired
-    private JsonSchemaValidator validator;
+//    @Autowired
+//    private JsonSchemaValidator validator;
 
     @Autowired
     private JAXBUtils jaxbUtils;
@@ -144,19 +144,19 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			objectMapper.setSerializationInclusion(Include.NON_NULL);
 			Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001 = objectMapper.readValue(originalPain001, Pain00100110CustomerCreditTransferInitiationV10MessageSchema.class);
 			
-			try {
-				log.info(">>>>>>>>>>>>>>>>>> Validating incoming pain.001 <<<<<<<<<<<<<<<<");
-				
-				Set<ValidationMessage> validationResult = validator.validate(originalPain001);
-			
-				if (validationResult.isEmpty()) {
-					log.info(">>>>>>>>>>>>>>>> pain.001 validation successful <<<<<<<<<<<<<<<");
-				} else {
-					log.error(validationResult.toString());
-				}
-			} catch (JsonProcessingException e) {
-				log.warn("Unable to validate pain.001: {}", e.getMessage());
-			}
+//			try {
+//				log.info(">>>>>>>>>>>>>>>>>> Validating incoming pain.001 <<<<<<<<<<<<<<<<");
+//
+//				Set<ValidationMessage> validationResult = validator.validate(originalPain001);
+//
+//				if (validationResult.isEmpty()) {
+//					log.info(">>>>>>>>>>>>>>>> pain.001 validation successful <<<<<<<<<<<<<<<");
+//				} else {
+//					log.error(validationResult.toString());
+//				}
+//			} catch (JsonProcessingException e) {
+//				log.warn("Unable to validate pain.001: {}", e.getMessage());
+//			}
 			
 			
 			log.debug("Debtor exchange worker incoming variables:");
