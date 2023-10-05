@@ -62,3 +62,9 @@ ams:
       savingsaccounts-path: ${ams.local.account.base-url}/savingsaccounts
     auth:
       host: http://localhost:8080
+commons:
+  events:
+    audit:
+      kafka:
+        brokers: localhost:9092
+        topis: auditlog

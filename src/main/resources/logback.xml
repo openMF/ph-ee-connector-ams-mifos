@@ -50,8 +50,8 @@
     <logger name="org.apache.camel.impl.health" level="INFO"/>
     <logger name="io" level="INFO"/>
     <logger name="io.camunda.zeebe" level="DEBUG"/>
-    <logger name="hu.dpc" level="TRACE"/>
-    <logger name="org.mifos.connector.ams" level="TRACE" />
+    <logger name="hu.dpc" level="INFO"/>
+    <logger name="org.mifos.connector.ams" level="INFO" />
 
     <root level="DEBUG">
         <appender-ref ref="CONSOLE"/>
