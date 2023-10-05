@@ -1,30 +1,37 @@
 package org.mifos.connector.ams.zeebe.workers.bookamount;
 
-import com.baasflow.commons.events.EventService;
-import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.extern.slf4j.Slf4j;
-import org.mifos.connector.ams.log.EventLogUtil;
-import org.mifos.connector.ams.log.IOTxLogger;
-import org.mifos.connector.ams.zeebe.workers.utils.AuthTokenHelper;
-import org.mifos.connector.ams.zeebe.workers.utils.HoldAmountBody;
-import org.mifos.connector.ams.zeebe.workers.utils.TransactionItem;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.*;
-import org.springframework.stereotype.Component;
-import org.springframework.web.client.ResourceAccessException;
-import org.springframework.web.client.RestClientException;
-import org.springframework.web.client.RestTemplate;
-import org.springframework.web.util.UriComponentsBuilder;
+import static org.apache.hc.core5.http.HttpStatus.SC_CONFLICT;
+import static org.apache.hc.core5.http.HttpStatus.SC_LOCKED;
+import static org.apache.hc.core5.http.HttpStatus.SC_OK;
 
 import java.net.ConnectException;
 import java.net.SocketTimeoutException;
 import java.util.LinkedHashMap;
 import java.util.List;
 
-import static org.apache.hc.core5.http.HttpStatus.*;
+import org.mifos.connector.ams.log.EventLogUtil;
+import org.mifos.connector.ams.log.IOTxLogger;
+import org.mifos.connector.ams.zeebe.workers.utils.AuthTokenHelper;
+import org.mifos.connector.ams.zeebe.workers.utils.TransactionItem;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Component;
+import org.springframework.web.client.ResourceAccessException;
+import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
+
+import com.baasflow.commons.events.EventService;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import lombok.extern.slf4j.Slf4j;
 
 @Component
 @Slf4j
@@ -65,43 +72,43 @@ public abstract class AbstractMoneyInOutWorker {
 
     protected static final String FORMAT = "yyyyMMdd";
 
-    protected ResponseEntity<Object> release(Integer currencyAccountAmsId, Integer holdAmountId, String tenantId) {
-        HttpHeaders httpHeaders = new HttpHeaders();
-        httpHeaders.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
-        httpHeaders.set("Authorization", authTokenHelper.generateAuthToken());
-        httpHeaders.set("Fineract-Platform-TenantId", tenantId);
-        var entity = new HttpEntity<>(null, httpHeaders);
-
-        var urlTemplate = UriComponentsBuilder.fromHttpUrl(fineractApiUrl)
-                .path(incomingMoneyApi)
-                .path(String.format("%s", currencyAccountAmsId))
-                .path("/transactions")
-                .path(String.format("/%s", holdAmountId))
-                .queryParam("command", "releaseAmount")
-                .encode()
-                .toUriString();
-
-        log.trace("calling {} with HttpHeaders {}", urlTemplate, httpHeaders);
-
-        return eventService.auditedEvent(
-                // TODO internalCorrelationId?
-                eventBuilder -> EventLogUtil.initFineractCall(urlTemplate, currencyAccountAmsId, -1, null, eventBuilder),
-                eventBuilder -> restTemplate.exchange(urlTemplate,
-                        HttpMethod.POST,
-                        entity,
-                        Object.class));
-    }
-
-    protected ResponseEntity<Object> hold(Integer holdReasonId, String transactionDate, Object amount, Integer currencyAccountAmsId, String tenantId) {
-        var body = new HoldAmountBody(
-                transactionDate,
-                amount,
-                holdReasonId,
-                locale,
-                FORMAT
-        );
-        return doExchange(body, currencyAccountAmsId, "holdAmount", tenantId);
-    }
+//    protected ResponseEntity<Object> release(Integer currencyAccountAmsId, Integer holdAmountId, String tenantId) {
+//        HttpHeaders httpHeaders = new HttpHeaders();
+//        httpHeaders.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
+//        httpHeaders.set("Authorization", authTokenHelper.generateAuthToken());
+//        httpHeaders.set("Fineract-Platform-TenantId", tenantId);
+//        var entity = new HttpEntity<>(null, httpHeaders);
+//
+//        var urlTemplate = UriComponentsBuilder.fromHttpUrl(fineractApiUrl)
+//                .path(incomingMoneyApi)
+//                .path(String.format("%s", currencyAccountAmsId))
+//                .path("/transactions")
+//                .path(String.format("/%s", holdAmountId))
+//                .queryParam("command", "releaseAmount")
+//                .encode()
+//                .toUriString();
+//
+//        log.trace("calling {} with HttpHeaders {}", urlTemplate, httpHeaders);
+//
+//        return eventService.auditedEvent(
+//                // TODO internalCorrelationId?
+//                eventBuilder -> EventLogUtil.initFineractCall(urlTemplate, currencyAccountAmsId, -1, null, eventBuilder),
+//                eventBuilder -> restTemplate.exchange(urlTemplate,
+//                        HttpMethod.POST,
+//                        entity,
+//                        Object.class));
+//    }
+//
+//    protected ResponseEntity<Object> hold(Integer holdReasonId, String transactionDate, Object amount, Integer currencyAccountAmsId, String tenantId) {
+//        var body = new HoldAmountBody(
+//                transactionDate,
+//                amount,
+//                holdReasonId,
+//                locale,
+//                FORMAT
+//        );
+//        return doExchange(body, currencyAccountAmsId, "holdAmount", tenantId);
+//    }
 
     protected <T> ResponseEntity<Object> doExchange(T body, Integer currencyAccountAmsId, String command, String tenantId) {
         HttpHeaders httpHeaders = new HttpHeaders();
