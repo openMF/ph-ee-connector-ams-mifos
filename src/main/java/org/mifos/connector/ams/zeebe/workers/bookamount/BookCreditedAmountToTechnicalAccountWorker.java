@@ -146,11 +146,9 @@ public class BookCreditedAmountToTechnicalAccountWorker extends AbstractMoneyInO
     		
     		objectMapper.setSerializationInclusion(Include.NON_NULL);
     		
-    		String bodyItem = objectMapper.writeValueAsString(body);
-    		
     		List<TransactionItem> items = new ArrayList<>();
     		
-    		batchItemBuilder.add(items, conversionAccountWithdrawalRelativeUrl, bodyItem, false);
+    		batchItemBuilder.add(items, conversionAccountWithdrawalRelativeUrl, body.toString(), false);
     	
     		ReportEntry10 convertedCamt053Entry = camt053Mapper.toCamt053Entry(pacs008);
     		convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.CRDT);

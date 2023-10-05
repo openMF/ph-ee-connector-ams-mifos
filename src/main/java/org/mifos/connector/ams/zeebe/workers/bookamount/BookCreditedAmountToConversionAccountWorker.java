@@ -135,11 +135,9 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
     		
     		objectMapper.setSerializationInclusion(Include.NON_NULL);
     		
-    		String bodyItem = objectMapper.writeValueAsString(body);
-    		
     		List<TransactionItem> items = new ArrayList<>();
     		
-    		batchItemBuilder.add(items, conversionAccountWithdrawalRelativeUrl, bodyItem, false);
+    		batchItemBuilder.add(items, conversionAccountWithdrawalRelativeUrl, body.toString(), false);
     	
     		ReportEntry10 convertedCamt053Entry = camt053Mapper.toCamt053Entry(pacs008);
     		convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.CRDT);
@@ -246,11 +244,9 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
 
             objectMapper.setSerializationInclusion(Include.NON_NULL);
 
-            String bodyItem = objectMapper.writeValueAsString(body);
-
             List<TransactionItem> items = new ArrayList<>();
 
-            batchItemBuilder.add(items, conversionAccountWithdrawalRelativeUrl, bodyItem, false);
+            batchItemBuilder.add(items, conversionAccountWithdrawalRelativeUrl, body.toString(), false);
 
             ReportEntry10 convertedCamt053Entry = camt053Mapper.toCamt053Entry(pacs008);
             String camt053Entry = objectMapper.writeValueAsString(convertedCamt053Entry);
@@ -355,11 +351,9 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
                     FORMAT,
                     locale);
 
-            String bodyItem = objectMapper.writeValueAsString(body);
-
             List<TransactionItem> items = new ArrayList<>();
 
-            batchItemBuilder.add(items, conversionAccountWithdrawalRelativeUrl, bodyItem, false);
+            batchItemBuilder.add(items, conversionAccountWithdrawalRelativeUrl, body.toString(), false);
 
             // TODO make proper pacs.004 -> camt.053 converter
             BankToCustomerStatementV08 camt053 = new BankToCustomerStatementV08();

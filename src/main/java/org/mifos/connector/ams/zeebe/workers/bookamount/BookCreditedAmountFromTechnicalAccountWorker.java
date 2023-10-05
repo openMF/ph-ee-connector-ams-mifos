@@ -136,17 +136,7 @@ public class BookCreditedAmountFromTechnicalAccountWorker extends AbstractMoneyI
             Integer paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(String.format("%s.%s.%s", paymentScheme, "bookFromTechnicalAccount", caseIdentifier));
             String paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(configOperationKey);
 
-            TransactionBody body = new TransactionBody(
-                    transactionDate,
-                    amount,
-                    paymentTypeId,
-                    "",
-                    FORMAT,
-                    locale);
-
-            String bodyItem = objectMapper.writeValueAsString(body);
-
-            batchItemBuilder.add(items, technicalAccountWithdrawalRelativeUrl, bodyItem, false);
+            batchItemBuilder.add(items, technicalAccountWithdrawalRelativeUrl, body.toString(), false);
 
             ReportEntry10 convertedCamt053Entry = camt053Mapper.toCamt053Entry(pacs008);
             String camt053Entry = objectMapper.writeValueAsString(convertedCamt053Entry);

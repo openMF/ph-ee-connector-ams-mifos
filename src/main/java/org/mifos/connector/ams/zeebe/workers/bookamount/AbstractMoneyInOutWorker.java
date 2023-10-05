@@ -27,9 +27,6 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import com.baasflow.commons.events.EventService;
-import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -66,9 +63,6 @@ public abstract class AbstractMoneyInOutWorker {
 
     @Autowired
     private EventService eventService;
-
-    @Autowired
-    private ObjectMapper objectMapper;
 
     protected static final String FORMAT = "yyyyMMdd";
 
@@ -186,14 +180,6 @@ public abstract class AbstractMoneyInOutWorker {
 
         log.debug(">> Sending {} to {} with headers {} and idempotency {}", items, urlTemplate, httpHeaders, internalCorrelationId);
 
-        objectMapper.setSerializationInclusion(Include.NON_NULL);
-        String body;
-        try {
-            body = objectMapper.writeValueAsString(items);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException("Failed to build batch request [{}] body" + internalCorrelationId, e);
-        }
-
         int retryCount = idempotencyRetryCount;
 
         retry:
@@ -201,7 +187,7 @@ public abstract class AbstractMoneyInOutWorker {
             httpHeaders.remove(idempotencyKeyHeaderName);
             String idempotencyKey = String.format("%s_%d", internalCorrelationId, idempotencyPostfix);
             httpHeaders.set(idempotencyKeyHeaderName, idempotencyKey);
-            wireLogger.sending(body);
+            wireLogger.sending(items.toString());
             ResponseEntity<Object> response;
             try {
                 response = restTemplate.exchange(urlTemplate, HttpMethod.POST, entity, Object.class);

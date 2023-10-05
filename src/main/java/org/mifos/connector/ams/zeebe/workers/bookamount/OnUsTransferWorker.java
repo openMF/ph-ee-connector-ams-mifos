@@ -151,11 +151,9 @@ try {
     				FORMAT,
     				locale);
     		
-    		String bodyItem = objectMapper.writeValueAsString(body);
-    		
     		List<TransactionItem> items = new ArrayList<>();
     		
-    		batchItemBuilder.add(items, debtorDisposalWithdrawalRelativeUrl, bodyItem, false);
+    		batchItemBuilder.add(items, debtorDisposalWithdrawalRelativeUrl, body.toString(), false);
     	
     		String camt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
     		
@@ -192,9 +190,7 @@ try {
 	    				FORMAT,
 	    				locale);
 	    		
-	    		bodyItem = objectMapper.writeValueAsString(body);
-	    		
-	    		batchItemBuilder.add(items, debtorDisposalWithdrawalRelativeUrl, bodyItem, false);
+	    		batchItemBuilder.add(items, debtorDisposalWithdrawalRelativeUrl, body.toString(), false);
 	    	
 	    		convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getSupplementaryData().get(0).getEnvelope().setAdditionalProperty("InternalCorrelationId", transactionFeeInternalCorrelationId);
 				camt053Entry = objectMapper.writeValueAsString(convertedcamt053Entry);
@@ -231,11 +227,9 @@ try {
 	    				FORMAT,
 	    				locale);
 			    		
-	    		bodyItem = objectMapper.writeValueAsString(body);
-	    		
 	    		String debtorConversionDepositRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), debtorConversionAccountAmsId, "deposit");
 		    		
-	    		batchItemBuilder.add(items, debtorConversionDepositRelativeUrl, bodyItem, false);
+	    		batchItemBuilder.add(items, debtorConversionDepositRelativeUrl, body.toString(), false);
 		    	
 	    		td = new DtSavingsTransactionDetails(
 	    				transactionFeeInternalCorrelationId,
@@ -268,11 +262,9 @@ try {
     				FORMAT,
     				locale);
 		    		
-    		bodyItem = objectMapper.writeValueAsString(body);
-    		
     		String creditorDisposalDepositRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), creditorDisposalAccountAmsId, "deposit");
 	    		
-    		batchItemBuilder.add(items, creditorDisposalDepositRelativeUrl, bodyItem, false);
+    		batchItemBuilder.add(items, creditorDisposalDepositRelativeUrl, body.toString(), false);
 	    	
     		convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getSupplementaryData().get(0).getEnvelope().setAdditionalProperty("InternalCorrelationId", internalCorrelationId);
 			camt053Entry = objectMapper.writeValueAsString(convertedcamt053Entry);
@@ -309,11 +301,9 @@ try {
 	    				FORMAT,
 	    				locale);
 			    		
-	    		bodyItem = objectMapper.writeValueAsString(body);
-	    		
 	    		String debtorConversionWithdrawRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), debtorConversionAccountAmsId, "withdrawal");
 		    		
-	    		batchItemBuilder.add(items, debtorConversionWithdrawRelativeUrl, bodyItem, false);
+	    		batchItemBuilder.add(items, debtorConversionWithdrawRelativeUrl, body.toString(), false);
 		    	
 	    		convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getSupplementaryData().get(0).getEnvelope().setAdditionalProperty("InternalCorrelationId", transactionFeeInternalCorrelationId);
 				camt053Entry = objectMapper.writeValueAsString(convertedcamt053Entry);

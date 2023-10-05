@@ -151,11 +151,9 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 					FORMAT,
 					locale);
 			
-			String bodyItem = objectMapper.writeValueAsString(body);
-			
 			List<TransactionItem> items = new ArrayList<>();
 			
-			batchItemBuilder.add(items, conversionAccountWithdrawalRelativeUrl, bodyItem, false);
+			batchItemBuilder.add(items, conversionAccountWithdrawalRelativeUrl, body.toString(), false);
 		
 			ReportEntry10 convertedcamt053Entry = camt053Mapper.toCamt053Entry(pain001.getDocument());
 			convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.DBIT);
@@ -198,9 +196,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 						FORMAT,
 						locale);
 				
-				bodyItem = objectMapper.writeValueAsString(body);
-				
-				batchItemBuilder.add(items, conversionAccountWithdrawalRelativeUrl, bodyItem, false);
+				batchItemBuilder.add(items, conversionAccountWithdrawalRelativeUrl, body.toString(), false);
 			
 				td = new DtSavingsTransactionDetails(
 						internalCorrelationId,
@@ -299,11 +295,9 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 			
 			objectMapper.setSerializationInclusion(Include.NON_NULL);
 			
-			String bodyItem = objectMapper.writeValueAsString(body);
-			
 			List<TransactionItem> items = new ArrayList<>();
 			
-			batchItemBuilder.add(items, conversionAccountWithdrawalRelativeUrl, bodyItem, false);
+			batchItemBuilder.add(items, conversionAccountWithdrawalRelativeUrl, body.toString(), false);
 		
 			iso.std.iso._20022.tech.xsd.camt_056_001.Document document = jaxbUtils.unmarshalCamt056(camt056);
 			Camt056ToCamt053Converter converter = new Camt056ToCamt053Converter();
