@@ -155,9 +155,7 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 							.map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(List::toString).orElse(""),
 					categoryPurpose);
 			
-			String camt053Body = objectMapper.writeValueAsString(td);
-
-			batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
+			batchItemBuilder.add(items, camt053RelativeUrl, td.toString(), true);
 			
 			
 			
@@ -192,9 +190,7 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 							.map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(List::toString).orElse(""),
 					categoryPurpose);
 			
-			camt053Body = objectMapper.writeValueAsString(td);
-
-			batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
+			batchItemBuilder.add(items, camt053RelativeUrl, td.toString(), true);
 			
 			
 			
@@ -229,9 +225,7 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 							.map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(List::toString).orElse(""),
 					categoryPurpose);
 			
-			camt053Body = objectMapper.writeValueAsString(td);
-
-			batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
+			batchItemBuilder.add(items, camt053RelativeUrl, td.toString(), true);
 			
 			log.debug("Attempting to send {}", items);
 			

@@ -171,9 +171,7 @@ try {
 							.map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(List::toString).orElse(""),
     				transactionCategoryPurposeCode);
     		
-    		String camt053Body = objectMapper.writeValueAsString(td);
-
-    		batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
+    		batchItemBuilder.add(items, camt053RelativeUrl, td.toString(), true);
     		
 			
 			if (!BigDecimal.ZERO.equals(transactionFeeAmount)) {
@@ -209,8 +207,7 @@ try {
 								.map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(List::toString).orElse(""),
 	    				transactionFeeCategoryPurposeCode);
 	    		
-	    		camt053Body = objectMapper.writeValueAsString(td);
-	    		batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
+	    		batchItemBuilder.add(items, camt053RelativeUrl, td.toString(), true);
 
 	    		
 	    		
@@ -245,8 +242,7 @@ try {
 								.map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(List::toString).orElse(""),
 	    				transactionFeeCategoryPurposeCode);
 	    		
-	    		camt053Body = objectMapper.writeValueAsString(td);
-	    		batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
+	    		batchItemBuilder.add(items, camt053RelativeUrl, td.toString(), true);
 			}
 			
 			String depositAmountOperation = "transferTheAmountBetweenDisposalAccounts.Creditor.DisposalAccount.DepositTransactionAmount";
@@ -283,8 +279,7 @@ try {
 							.map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(List::toString).orElse(""),
     				transactionCategoryPurposeCode);
     		
-    		camt053Body = objectMapper.writeValueAsString(td);
-    		batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
+    		batchItemBuilder.add(items, camt053RelativeUrl, td.toString(), true);
 			
 	    		
 			if (!BigDecimal.ZERO.equals(transactionFeeAmount)) {
@@ -322,9 +317,7 @@ try {
 								.map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(List::toString).orElse(""),
 	    				transactionFeeCategoryPurposeCode);
 	    		
-	    		camt053Body = objectMapper.writeValueAsString(td);
-			    		
-	    		batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
+	    		batchItemBuilder.add(items, camt053RelativeUrl, td.toString(), true);
 			}
 			
 			doBatchOnUs(items,

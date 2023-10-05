@@ -175,9 +175,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 							.map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(List::toString).orElse(""),
 					transactionCategoryPurposeCode);
 			
-			String camt053Body = objectMapper.writeValueAsString(td);
-	
-			batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
+			batchItemBuilder.add(items, camt053RelativeUrl, td.toString(), true);
 			
 			if (!BigDecimal.ZERO.equals(transactionFeeAmount)) {
 					
@@ -211,8 +209,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 						Optional.ofNullable(pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getRemittanceInformation())
 								.map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(List::toString).orElse(""),
 						transactionFeeCategoryPurposeCode);
-				camt053Body = objectMapper.writeValueAsString(td);
-				batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
+				batchItemBuilder.add(items, camt053RelativeUrl, td.toString(), true);
 			}
 			
 			doBatch(items,
@@ -342,9 +339,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 							.map(iso.std.iso._20022.tech.xsd.camt_056_001.RemittanceInformation5::getUstrd).map(List::toString).orElse(""),
 					transactionCategoryPurposeCode);
 			
-			String camt053Body = objectMapper.writeValueAsString(td);
-	
-			batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
+			batchItemBuilder.add(items, camt053RelativeUrl, td.toString(), true);
 			
 			doBatch(items,
                     tenantIdentifier,

@@ -169,9 +169,7 @@ public class BookCreditedAmountToTechnicalAccountWorker extends AbstractMoneyInO
     				Optional.ofNullable(pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getRmtInf()).map(RemittanceInformation5::getUstrd).map(List::toString).orElse(""),
     				transactionCategoryPurposeCode);
     		
-    		String camt053Body = objectMapper.writeValueAsString(td);
-
-    		batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
+    		batchItemBuilder.add(items, camt053RelativeUrl, td.toString(), true);
 
     		doBatch(items,
                     tenantIdentifier,
