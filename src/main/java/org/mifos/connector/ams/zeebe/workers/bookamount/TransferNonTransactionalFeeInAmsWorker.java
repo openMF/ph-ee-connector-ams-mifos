@@ -132,11 +132,9 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 					FORMAT,
 					locale);
 			
-			String bodyItem = objectMapper.writeValueAsString(body);
-			
 			List<TransactionItem> items = new ArrayList<>();
 			
-			batchItemBuilder.add(items, disposalAccountWithdrawRelativeUrl, bodyItem, false);
+			batchItemBuilder.add(items, disposalAccountWithdrawRelativeUrl, body.toString(), false);
 			
 			ReportEntry10 convertedcamt053 = camt053Mapper.toCamt053Entry(pain001.getDocument());
 			String camt053Entry = objectMapper.writeValueAsString(convertedcamt053);
@@ -157,9 +155,7 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 							.map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(List::toString).orElse(""),
 					categoryPurpose);
 			
-			String camt053Body = objectMapper.writeValueAsString(td);
-
-			batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
+			batchItemBuilder.add(items, camt053RelativeUrl, td.toString(), true);
 			
 			
 			
@@ -176,11 +172,9 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 					FORMAT,
 					locale);
 			
-			bodyItem = objectMapper.writeValueAsString(body);
-			
 			String conversionAccountDepositRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "deposit");
 			
-			batchItemBuilder.add(items, conversionAccountDepositRelativeUrl, bodyItem, false);
+			batchItemBuilder.add(items, conversionAccountDepositRelativeUrl, body.toString(), false);
 			
 			td = new DtSavingsTransactionDetails(
 					internalCorrelationId,
@@ -196,9 +190,7 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 							.map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(List::toString).orElse(""),
 					categoryPurpose);
 			
-			camt053Body = objectMapper.writeValueAsString(td);
-
-			batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
+			batchItemBuilder.add(items, camt053RelativeUrl, td.toString(), true);
 			
 			
 			
@@ -215,11 +207,9 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 					FORMAT,
 					locale);
 			
-			bodyItem = objectMapper.writeValueAsString(body);
-			
 			String conversionAccountWithdrawRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "withdrawal");
 			
-			batchItemBuilder.add(items, conversionAccountWithdrawRelativeUrl, bodyItem, false);
+			batchItemBuilder.add(items, conversionAccountWithdrawRelativeUrl, body.toString(), false);
 			
 			td = new DtSavingsTransactionDetails(
 					internalCorrelationId,
@@ -235,11 +225,9 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 							.map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(List::toString).orElse(""),
 					categoryPurpose);
 			
-			camt053Body = objectMapper.writeValueAsString(td);
-
-			batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
+			batchItemBuilder.add(items, camt053RelativeUrl, td.toString(), true);
 			
-			log.debug("Attempting to send {}", objectMapper.writeValueAsString(items));
+			log.debug("Attempting to send {}", items);
 			
 			doBatch(items,
                     tenantIdentifier,

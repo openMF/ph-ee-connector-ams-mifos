@@ -68,6 +68,8 @@ public class AmsConnectorApplication {
     	
     	ClientHttpRequestFactory requestFactory = new HttpComponentsClientHttpRequestFactory(httpClient);
     	
-    	return new RestTemplate(requestFactory);
+    	RestTemplate restTemplate = new RestTemplate(requestFactory);
+    	
+		return restTemplate;
     }
 }

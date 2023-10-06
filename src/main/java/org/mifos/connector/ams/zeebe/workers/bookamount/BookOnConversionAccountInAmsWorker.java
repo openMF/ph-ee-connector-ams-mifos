@@ -151,11 +151,9 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 					FORMAT,
 					locale);
 			
-			String bodyItem = objectMapper.writeValueAsString(body);
-			
 			List<TransactionItem> items = new ArrayList<>();
 			
-			batchItemBuilder.add(items, conversionAccountWithdrawalRelativeUrl, bodyItem, false);
+			batchItemBuilder.add(items, conversionAccountWithdrawalRelativeUrl, body.toString(), false);
 		
 			ReportEntry10 convertedcamt053Entry = camt053Mapper.toCamt053Entry(pain001.getDocument());
 			convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.DBIT);
@@ -177,9 +175,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 							.map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(List::toString).orElse(""),
 					transactionCategoryPurposeCode);
 			
-			String camt053Body = objectMapper.writeValueAsString(td);
-	
-			batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
+			batchItemBuilder.add(items, camt053RelativeUrl, td.toString(), true);
 			
 			if (!BigDecimal.ZERO.equals(transactionFeeAmount)) {
 					
@@ -198,9 +194,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 						FORMAT,
 						locale);
 				
-				bodyItem = objectMapper.writeValueAsString(body);
-				
-				batchItemBuilder.add(items, conversionAccountWithdrawalRelativeUrl, bodyItem, false);
+				batchItemBuilder.add(items, conversionAccountWithdrawalRelativeUrl, body.toString(), false);
 			
 				td = new DtSavingsTransactionDetails(
 						internalCorrelationId,
@@ -215,8 +209,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 						Optional.ofNullable(pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getRemittanceInformation())
 								.map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(List::toString).orElse(""),
 						transactionFeeCategoryPurposeCode);
-				camt053Body = objectMapper.writeValueAsString(td);
-				batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
+				batchItemBuilder.add(items, camt053RelativeUrl, td.toString(), true);
 			}
 			
 			doBatch(items,
@@ -299,11 +292,9 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 			
 			objectMapper.setSerializationInclusion(Include.NON_NULL);
 			
-			String bodyItem = objectMapper.writeValueAsString(body);
-			
 			List<TransactionItem> items = new ArrayList<>();
 			
-			batchItemBuilder.add(items, conversionAccountWithdrawalRelativeUrl, bodyItem, false);
+			batchItemBuilder.add(items, conversionAccountWithdrawalRelativeUrl, body.toString(), false);
 		
 			iso.std.iso._20022.tech.xsd.camt_056_001.Document document = jaxbUtils.unmarshalCamt056(camt056);
 			Camt056ToCamt053Converter converter = new Camt056ToCamt053Converter();
@@ -348,9 +339,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 							.map(iso.std.iso._20022.tech.xsd.camt_056_001.RemittanceInformation5::getUstrd).map(List::toString).orElse(""),
 					transactionCategoryPurposeCode);
 			
-			String camt053Body = objectMapper.writeValueAsString(td);
-	
-			batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
+			batchItemBuilder.add(items, camt053RelativeUrl, td.toString(), true);
 			
 			doBatch(items,
                     tenantIdentifier,
