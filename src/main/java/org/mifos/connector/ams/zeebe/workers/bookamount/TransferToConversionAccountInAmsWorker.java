@@ -4,9 +4,9 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 import org.mifos.connector.ams.fineract.Config;
 import org.mifos.connector.ams.fineract.ConfigFactory;
@@ -19,13 +19,14 @@ import org.mifos.connector.ams.zeebe.workers.utils.BatchItemBuilder;
 import org.mifos.connector.ams.zeebe.workers.utils.ContactDetailsUtil;
 import org.mifos.connector.ams.zeebe.workers.utils.DtSavingsTransactionDetails;
 import org.mifos.connector.ams.zeebe.workers.utils.JAXBUtils;
-import org.mifos.connector.ams.zeebe.workers.utils.JsonSchemaValidator;
 import org.mifos.connector.ams.zeebe.workers.utils.TransactionBody;
 import org.mifos.connector.ams.zeebe.workers.utils.TransactionItem;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 
@@ -34,7 +35,6 @@ import com.baasflow.commons.events.EventService;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.networknt.schema.ValidationMessage;
 
 import hu.dpc.rt.utils.converter.Camt056ToCamt053Converter;
 import io.camunda.zeebe.client.api.response.ActivatedJob;
@@ -123,7 +123,8 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
                         eventBuilder));
     }
 
-    private Void transferToConversionAccountInAms(String transactionGroupId,
+    @SuppressWarnings("unchecked")
+	private Void transferToConversionAccountInAms(String transactionGroupId,
                                                   String transactionCategoryPurposeCode,
                                                   String transactionFeeCategoryPurposeCode,
                                                   String originalPain001,
@@ -167,38 +168,38 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 
 			Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
 			
-			// Integer outHoldReasonId = paymentTypeConfig.findPaymentTypeIdByOperation(String.format("%s.%s", paymentScheme, "outHoldReasonId"));
-			// var holdResponse = hold(outHoldReasonId, transactionDate, hasFee ? amount.add(transactionFeeAmount) : amount, disposalAccountAmsId, tenantIdentifier).getBody();
-			// Integer lastHoldTransactionId = (Integer) ((LinkedHashMap<String, Object>) holdResponse).get("resourceId");
+			 Integer outHoldReasonId = paymentTypeConfig.findPaymentTypeIdByOperation(String.format("%s.%s", paymentScheme, "outHoldReasonId"));
+			 var holdResponse = hold(outHoldReasonId, transactionDate, hasFee ? amount.add(transactionFeeAmount) : amount, disposalAccountAmsId, tenantIdentifier).getBody();
+			 Integer lastHoldTransactionId = (Integer) ((LinkedHashMap<String, Object>) holdResponse).get("resourceId");
 			
 			HttpHeaders httpHeaders = new HttpHeaders();
 			httpHeaders.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
 			httpHeaders.set("Authorization", authTokenHelper.generateAuthToken());
 			httpHeaders.set("Fineract-Platform-TenantId", tenantIdentifier);
-//			LinkedHashMap<String, Object> accountDetails = restTemplate.exchange(
-//					String.format("%s/%s%d", fineractApiUrl, incomingMoneyApi.substring(1), disposalAccountAmsId), 
-//					HttpMethod.GET, 
-//					new HttpEntity<>(httpHeaders), 
-//					LinkedHashMap.class)
-//				.getBody();
-//			LinkedHashMap<String, Object> summary = (LinkedHashMap<String, Object>) accountDetails.get("summary");
-//			BigDecimal availableBalance = new BigDecimal(summary.get("availableBalance").toString());
-//			if (availableBalance.signum() < 0) {
-//				restTemplate.exchange(
-//					String.format("%s/%ssavingsaccounts/%d/transactions/%d?command=releaseAmount", fineractApiUrl, incomingMoneyApi.substring(1), disposalAccountAmsId, lastHoldTransactionId),
-//					HttpMethod.POST,
-//					new HttpEntity<>(httpHeaders),
-//					Object.class
-//				);
-//				throw new ZeebeBpmnError("Error_InsufficientFunds", "Insufficient funds");
-//			}
+			LinkedHashMap<String, Object> accountDetails = restTemplate.exchange(
+					String.format("%s/%s%d", fineractApiUrl, incomingMoneyApi.substring(1), disposalAccountAmsId), 
+					HttpMethod.GET, 
+					new HttpEntity<>(httpHeaders), 
+					LinkedHashMap.class)
+				.getBody();
+			LinkedHashMap<String, Object> summary = (LinkedHashMap<String, Object>) accountDetails.get("summary");
+			BigDecimal availableBalance = new BigDecimal(summary.get("availableBalance").toString());
+			if (availableBalance.signum() < 0) {
+				restTemplate.exchange(
+					String.format("%s/%ssavingsaccounts/%d/transactions/%d?command=releaseAmount", fineractApiUrl, incomingMoneyApi.substring(1), disposalAccountAmsId, lastHoldTransactionId),
+					HttpMethod.POST,
+					new HttpEntity<>(httpHeaders),
+					Object.class
+				);
+				throw new ZeebeBpmnError("Error_InsufficientFunds", "Insufficient funds");
+			}
 			
 			batchItemBuilder.tenantId(tenantIdentifier);
 			
 			List<TransactionItem> items = new ArrayList<>();
 			
-//			String releaseTransactionUrl = String.format("%s%d/transactions/%d?command=releaseAmount", incomingMoneyApi.substring(1), disposalAccountAmsId, lastHoldTransactionId);
-//			batchItemBuilder.add(items, releaseTransactionUrl, "", false);
+			String releaseTransactionUrl = String.format("%s%d/transactions/%d?command=releaseAmount", incomingMoneyApi.substring(1), disposalAccountAmsId, lastHoldTransactionId);
+			batchItemBuilder.add(items, releaseTransactionUrl, "", false);
 			
 			String disposalAccountWithdrawRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), disposalAccountAmsId, "withdrawal");
 			
