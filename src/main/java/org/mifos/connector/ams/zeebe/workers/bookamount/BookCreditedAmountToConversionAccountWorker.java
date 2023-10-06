@@ -135,9 +135,11 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
     		
     		objectMapper.setSerializationInclusion(Include.NON_NULL);
     		
+    		String bodyItem = objectMapper.writeValueAsString(body);
+    		
     		List<TransactionItem> items = new ArrayList<>();
     		
-    		batchItemBuilder.add(items, conversionAccountWithdrawalRelativeUrl, body.toString(), false);
+    		batchItemBuilder.add(items, conversionAccountWithdrawalRelativeUrl, bodyItem, false);
     	
     		ReportEntry10 convertedCamt053Entry = camt053Mapper.toCamt053Entry(pacs008);
     		convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.CRDT);
@@ -158,7 +160,9 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
     				Optional.ofNullable(pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getRmtInf()).map(RemittanceInformation5::getUstrd).map(List::toString).orElse(""),
     				transactionCategoryPurposeCode);
     		
-            batchItemBuilder.add(items, camt053RelativeUrl, td.toString(), true);
+    		String camt053Body = objectMapper.writeValueAsString(td);
+
+            batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 
             doBatch(items,
                     tenantIdentifier,
@@ -242,9 +246,11 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
 
             objectMapper.setSerializationInclusion(Include.NON_NULL);
 
+            String bodyItem = objectMapper.writeValueAsString(body);
+
             List<TransactionItem> items = new ArrayList<>();
 
-            batchItemBuilder.add(items, conversionAccountWithdrawalRelativeUrl, body.toString(), false);
+            batchItemBuilder.add(items, conversionAccountWithdrawalRelativeUrl, bodyItem, false);
 
             ReportEntry10 convertedCamt053Entry = camt053Mapper.toCamt053Entry(pacs008);
             String camt053Entry = objectMapper.writeValueAsString(convertedCamt053Entry);
@@ -264,7 +270,9 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
     				Optional.ofNullable(pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getRmtInf()).map(RemittanceInformation5::getUstrd).map(List::toString).orElse(""),
     				transactionCategoryPurposeCode);
 
-            batchItemBuilder.add(items, camt053RelativeUrl, td.toString(), true);
+            String camt053Body = objectMapper.writeValueAsString(td);
+
+            batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 
             doBatch(items,
                     tenantIdentifier,
@@ -347,9 +355,11 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
                     FORMAT,
                     locale);
 
+            String bodyItem = objectMapper.writeValueAsString(body);
+
             List<TransactionItem> items = new ArrayList<>();
 
-            batchItemBuilder.add(items, conversionAccountWithdrawalRelativeUrl, body.toString(), false);
+            batchItemBuilder.add(items, conversionAccountWithdrawalRelativeUrl, bodyItem, false);
 
             // TODO make proper pacs.004 -> camt.053 converter
             BankToCustomerStatementV08 camt053 = new BankToCustomerStatementV08();
@@ -375,7 +385,9 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
                     		.map(iso.std.iso._20022.tech.xsd.pacs_004_001.RemittanceInformation5::getUstrd).map(List::toString).orElse(""),
                     transactionCategoryPurposeCode);
 
-            batchItemBuilder.add(items, camt053RelativeUrl, td.toString(), true);
+            String camt053Body = objectMapper.writeValueAsString(td);
+
+            batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 
             doBatch(items,
                     tenantIdentifier,

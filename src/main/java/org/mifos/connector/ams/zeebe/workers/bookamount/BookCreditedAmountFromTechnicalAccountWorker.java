@@ -144,7 +144,9 @@ public class BookCreditedAmountFromTechnicalAccountWorker extends AbstractMoneyI
                     FORMAT,
                     locale);
 
-            batchItemBuilder.add(items, technicalAccountWithdrawalRelativeUrl, body.toString(), false);
+            String bodyItem = objectMapper.writeValueAsString(body);
+
+            batchItemBuilder.add(items, technicalAccountWithdrawalRelativeUrl, bodyItem, false);
 
             ReportEntry10 convertedCamt053Entry = camt053Mapper.toCamt053Entry(pacs008);
             String camt053Entry = objectMapper.writeValueAsString(convertedCamt053Entry);
@@ -164,7 +166,9 @@ public class BookCreditedAmountFromTechnicalAccountWorker extends AbstractMoneyI
     				Optional.ofNullable(pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getRmtInf()).map(RemittanceInformation5::getUstrd).map(List::toString).orElse(""),
     				transactionCategoryPurposeCode);
 
-            batchItemBuilder.add(items, camt053RelativeUrl, td.toString(), true);
+            String camt053Body = objectMapper.writeValueAsString(td);
+
+            batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 
             doBatch(items,
                     tenantIdentifier,

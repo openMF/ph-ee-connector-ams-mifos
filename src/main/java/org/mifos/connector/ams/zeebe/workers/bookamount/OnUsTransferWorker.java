@@ -151,9 +151,11 @@ try {
     				FORMAT,
     				locale);
     		
+    		String bodyItem = objectMapper.writeValueAsString(body);
+    		
     		List<TransactionItem> items = new ArrayList<>();
     		
-    		batchItemBuilder.add(items, debtorDisposalWithdrawalRelativeUrl, body.toString(), false);
+    		batchItemBuilder.add(items, debtorDisposalWithdrawalRelativeUrl, bodyItem, false);
     	
     		String camt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
     		
@@ -171,7 +173,9 @@ try {
 							.map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(List::toString).orElse(""),
     				transactionCategoryPurposeCode);
     		
-    		batchItemBuilder.add(items, camt053RelativeUrl, td.toString(), true);
+    		String camt053Body = objectMapper.writeValueAsString(td);
+
+    		batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
     		
 			
 			if (!BigDecimal.ZERO.equals(transactionFeeAmount)) {
@@ -188,7 +192,9 @@ try {
 	    				FORMAT,
 	    				locale);
 	    		
-	    		batchItemBuilder.add(items, debtorDisposalWithdrawalRelativeUrl, body.toString(), false);
+	    		bodyItem = objectMapper.writeValueAsString(body);
+	    		
+	    		batchItemBuilder.add(items, debtorDisposalWithdrawalRelativeUrl, bodyItem, false);
 	    	
 	    		convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getSupplementaryData().get(0).getEnvelope().setAdditionalProperty("InternalCorrelationId", transactionFeeInternalCorrelationId);
 				camt053Entry = objectMapper.writeValueAsString(convertedcamt053Entry);
@@ -207,7 +213,8 @@ try {
 								.map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(List::toString).orElse(""),
 	    				transactionFeeCategoryPurposeCode);
 	    		
-	    		batchItemBuilder.add(items, camt053RelativeUrl, td.toString(), true);
+	    		camt053Body = objectMapper.writeValueAsString(td);
+	    		batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 
 	    		
 	    		
@@ -224,9 +231,11 @@ try {
 	    				FORMAT,
 	    				locale);
 			    		
+	    		bodyItem = objectMapper.writeValueAsString(body);
+	    		
 	    		String debtorConversionDepositRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), debtorConversionAccountAmsId, "deposit");
 		    		
-	    		batchItemBuilder.add(items, debtorConversionDepositRelativeUrl, body.toString(), false);
+	    		batchItemBuilder.add(items, debtorConversionDepositRelativeUrl, bodyItem, false);
 		    	
 	    		td = new DtSavingsTransactionDetails(
 	    				transactionFeeInternalCorrelationId,
@@ -242,7 +251,8 @@ try {
 								.map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(List::toString).orElse(""),
 	    				transactionFeeCategoryPurposeCode);
 	    		
-	    		batchItemBuilder.add(items, camt053RelativeUrl, td.toString(), true);
+	    		camt053Body = objectMapper.writeValueAsString(td);
+	    		batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 			}
 			
 			String depositAmountOperation = "transferTheAmountBetweenDisposalAccounts.Creditor.DisposalAccount.DepositTransactionAmount";
@@ -258,9 +268,11 @@ try {
     				FORMAT,
     				locale);
 		    		
+    		bodyItem = objectMapper.writeValueAsString(body);
+    		
     		String creditorDisposalDepositRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), creditorDisposalAccountAmsId, "deposit");
 	    		
-    		batchItemBuilder.add(items, creditorDisposalDepositRelativeUrl, body.toString(), false);
+    		batchItemBuilder.add(items, creditorDisposalDepositRelativeUrl, bodyItem, false);
 	    	
     		convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getSupplementaryData().get(0).getEnvelope().setAdditionalProperty("InternalCorrelationId", internalCorrelationId);
 			camt053Entry = objectMapper.writeValueAsString(convertedcamt053Entry);
@@ -279,7 +291,8 @@ try {
 							.map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(List::toString).orElse(""),
     				transactionCategoryPurposeCode);
     		
-    		batchItemBuilder.add(items, camt053RelativeUrl, td.toString(), true);
+    		camt053Body = objectMapper.writeValueAsString(td);
+    		batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 			
 	    		
 			if (!BigDecimal.ZERO.equals(transactionFeeAmount)) {
@@ -296,9 +309,11 @@ try {
 	    				FORMAT,
 	    				locale);
 			    		
+	    		bodyItem = objectMapper.writeValueAsString(body);
+	    		
 	    		String debtorConversionWithdrawRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), debtorConversionAccountAmsId, "withdrawal");
 		    		
-	    		batchItemBuilder.add(items, debtorConversionWithdrawRelativeUrl, body.toString(), false);
+	    		batchItemBuilder.add(items, debtorConversionWithdrawRelativeUrl, bodyItem, false);
 		    	
 	    		convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getSupplementaryData().get(0).getEnvelope().setAdditionalProperty("InternalCorrelationId", transactionFeeInternalCorrelationId);
 				camt053Entry = objectMapper.writeValueAsString(convertedcamt053Entry);
@@ -317,7 +332,9 @@ try {
 								.map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(List::toString).orElse(""),
 	    				transactionFeeCategoryPurposeCode);
 	    		
-	    		batchItemBuilder.add(items, camt053RelativeUrl, td.toString(), true);
+	    		camt053Body = objectMapper.writeValueAsString(td);
+			    		
+	    		batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 			}
 			
 			doBatchOnUs(items,

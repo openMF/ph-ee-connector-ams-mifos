@@ -302,7 +302,8 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 				FORMAT,
 				locale);
 		
-		batchItemBuilder.add(items, relativeUrl, transactionBody.toString(), false);
+		String bodyItem = om.writeValueAsString(transactionBody);
+		batchItemBuilder.add(items, relativeUrl, bodyItem, false);
     }
 
     private void addDetails(String transactionGroupId, 
@@ -335,7 +336,8 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 				unstructured,
 				transactionFeeCategoryPurposeCode);
 		
-		batchItemBuilder.add(items, camt053RelativeUrl, td.toString(), true);
+		String camt053Body = om.writeValueAsString(td);
+		batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
     }
 
     @JobWorker
@@ -402,9 +404,11 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			
 			objectMapper.setSerializationInclusion(Include.NON_NULL);
 			
+			String bodyItem = objectMapper.writeValueAsString(body);
+			
 			List<TransactionItem> items = new ArrayList<>();
 			
-			batchItemBuilder.add(items, disposalAccountWithdrawRelativeUrl, body.toString(), false);
+			batchItemBuilder.add(items, disposalAccountWithdrawRelativeUrl, bodyItem, false);
 		
 			iso.std.iso._20022.tech.xsd.camt_056_001.Document document = jaxbUtils.unmarshalCamt056(camt056);
     		Camt056ToCamt053Converter converter = new Camt056ToCamt053Converter();
@@ -449,13 +453,16 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 							.map(iso.std.iso._20022.tech.xsd.camt_056_001.RemittanceInformation5::getUstrd).map(List::toString).orElse(""),
 					transactionCategoryPurposeCode);
 			
-			batchItemBuilder.add(items, camt053RelativeUrl, td.toString(), true);
+			String camt053Body = objectMapper.writeValueAsString(td);
+	
+			batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 			
 			String conversionAccountDepositRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "deposit");
 			
 			addExchange(amount, paymentScheme, transactionDate, objectMapper, paymentTypeConfig, batchItemBuilder, items, conversionAccountDepositRelativeUrl, "transferToConversionAccountInAms.ConversionAccount.DepositTransactionAmount");
 			
-			batchItemBuilder.add(items, camt053RelativeUrl, td.toString(), true);
+			camt053Body = objectMapper.writeValueAsString(td);
+			batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 			
 			doBatch(items,
                     tenantIdentifier,

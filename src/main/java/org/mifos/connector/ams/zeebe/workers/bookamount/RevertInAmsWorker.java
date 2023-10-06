@@ -153,7 +153,9 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 					FORMAT,
 					locale);
 			
-			batchItemBuilder.add(items, disposalAccountDepositRelativeUrl, body.toString(), false);
+			var bodyItem = objectMapper.writeValueAsString(body);
+			
+			batchItemBuilder.add(items, disposalAccountDepositRelativeUrl, bodyItem, false);
 			
 			ReportEntry10 convertedcamt053Entry = camt053Mapper.toCamt053Entry(pain001.getDocument());
 			convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.DBIT);
@@ -173,9 +175,11 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 							.map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(List::toString).orElse(""),
 					transactionCategoryPurposeCode);
 			
+			var camt053Body = objectMapper.writeValueAsString(td);
+			
 			String camt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
 			
-			batchItemBuilder.add(items, camt053RelativeUrl, td.toString(), true);
+			batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 			
 			if (!BigDecimal.ZERO.equals(transactionFeeAmount)) {
 				log.debug("Re-depositing fee {} in disposal account {}", transactionFeeAmount, disposalAccountAmsId);
@@ -193,7 +197,9 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 						FORMAT,
 						locale);
 				
-				batchItemBuilder.add(items, disposalAccountDepositRelativeUrl, body.toString(), false);
+				bodyItem = objectMapper.writeValueAsString(body);
+				
+				batchItemBuilder.add(items, disposalAccountDepositRelativeUrl, bodyItem, false);
 				
 				td = new DtSavingsTransactionDetails(
 						internalCorrelationId,
@@ -208,7 +214,8 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 						Optional.ofNullable(pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getRemittanceInformation())
 								.map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(List::toString).orElse(""),
 						transactionFeeCategoryPurposeCode);
-				batchItemBuilder.add(items, camt053RelativeUrl, td.toString(), true);
+				camt053Body = objectMapper.writeValueAsString(td);
+				batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 			}
 			
 			String conversionAccountWithdrawRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "withdrawal");
@@ -228,7 +235,10 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			
 			objectMapper.setSerializationInclusion(Include.NON_NULL);
 			
-			batchItemBuilder.add(items, conversionAccountWithdrawRelativeUrl, body.toString(), false);
+			bodyItem = objectMapper.writeValueAsString(body);
+			
+			
+			batchItemBuilder.add(items, conversionAccountWithdrawRelativeUrl, bodyItem, false);
 			
 			td = new DtSavingsTransactionDetails(
 					internalCorrelationId,
@@ -244,7 +254,9 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 							.map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(List::toString).orElse(""),
 					transactionCategoryPurposeCode);
 			
-			batchItemBuilder.add(items, camt053RelativeUrl, td.toString(), true);
+			camt053Body = objectMapper.writeValueAsString(td);
+	
+			batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 			
 			if (!BigDecimal.ZERO.equals(transactionFeeAmount)) {
 				log.debug("Withdrawing fee {} from conversion account {}", transactionFeeAmount, conversionAccountAmsId);
@@ -262,7 +274,9 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 						FORMAT,
 						locale);
 				
-				batchItemBuilder.add(items, conversionAccountWithdrawRelativeUrl, body.toString(), false);
+				bodyItem = objectMapper.writeValueAsString(body);
+				
+				batchItemBuilder.add(items, conversionAccountWithdrawRelativeUrl, bodyItem, false);
 				
 				td = new DtSavingsTransactionDetails(
 						internalCorrelationId,
@@ -277,7 +291,8 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 						Optional.ofNullable(pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getRemittanceInformation())
 								.map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(List::toString).orElse(""),
 						transactionFeeCategoryPurposeCode);
-				batchItemBuilder.add(items, camt053RelativeUrl, td.toString(), true);
+				camt053Body = objectMapper.writeValueAsString(td);
+				batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 			}
 
 			
@@ -377,7 +392,9 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 					FORMAT,
 					locale);
 			
-			batchItemBuilder.add(items, disposalAccountDepositRelativeUrl, body.toString(), false);
+			var bodyItem = objectMapper.writeValueAsString(body);
+			
+			batchItemBuilder.add(items, disposalAccountDepositRelativeUrl, bodyItem, false);
 			
 			ReportEntry10 convertedcamt053Entry = camt053Mapper.toCamt053Entry(pain001.getDocument());
 			convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.DBIT);
@@ -397,9 +414,11 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 							.map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(List::toString).orElse(""),
 					transactionCategoryPurposeCode);
 			
+			var camt053Body = objectMapper.writeValueAsString(td);
+			
 			String camt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
 			
-			batchItemBuilder.add(items, camt053RelativeUrl, td.toString(), true);
+			batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 			
 			String conversionAccountWithdrawRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "withdrawal");
 			
@@ -417,7 +436,9 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 					FORMAT,
 					locale);
 			
-			batchItemBuilder.add(items, conversionAccountWithdrawRelativeUrl, body.toString(), false);
+			bodyItem = objectMapper.writeValueAsString(body);
+			
+			batchItemBuilder.add(items, conversionAccountWithdrawRelativeUrl, bodyItem, false);
 			
 			td = new DtSavingsTransactionDetails(
 					internalCorrelationId,
@@ -433,7 +454,9 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 							.map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(List::toString).orElse(""),
 					transactionCategoryPurposeCode);
 			
-			batchItemBuilder.add(items, camt053RelativeUrl, td.toString(), true);
+			camt053Body = objectMapper.writeValueAsString(td);
+	
+			batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 			
 			if (!BigDecimal.ZERO.equals(transactionFeeAmount)) {
 				log.debug("Withdrawing fee {} from conversion account {}", transactionFeeAmount, conversionAccountAmsId);
@@ -451,7 +474,9 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 						FORMAT,
 						locale);
 				
-				batchItemBuilder.add(items, conversionAccountWithdrawRelativeUrl, body.toString(), false);
+				bodyItem = objectMapper.writeValueAsString(body);
+				
+				batchItemBuilder.add(items, conversionAccountWithdrawRelativeUrl, bodyItem, false);
 				
 				td = new DtSavingsTransactionDetails(
 						internalCorrelationId,
@@ -466,7 +491,8 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 						Optional.ofNullable(pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getRemittanceInformation())
 								.map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(List::toString).orElse(""),
 						transactionFeeCategoryPurposeCode);
-				batchItemBuilder.add(items, camt053RelativeUrl, td.toString(), true);
+				camt053Body = objectMapper.writeValueAsString(td);
+				batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 			}
 	
 			doBatch(items,
@@ -546,7 +572,9 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 					FORMAT,
 					locale);
 			
-			batchItemBuilder.add(items, disposalAccountDepositRelativeUrl, body.toString(), false);
+			var bodyItem = objectMapper.writeValueAsString(body);
+			
+			batchItemBuilder.add(items, disposalAccountDepositRelativeUrl, bodyItem, false);
 			
 			String camt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
 			
@@ -591,7 +619,9 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 					document.getFIToFIPmtCxlReq().getUndrlyg().get(0).getTxInf().get(0).getOrgnlTxRef().getRmtInf().getUstrd().toString(),
 					transactionCategoryPurposeCode);
 			
-			batchItemBuilder.add(items, camt053RelativeUrl, td.toString(), true);
+			var camt053Body = objectMapper.writeValueAsString(td);
+			
+			batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 			
 			String conversionAccountWithdrawRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "withdrawal");
 			
@@ -610,7 +640,10 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			
 			objectMapper.setSerializationInclusion(Include.NON_NULL);
 			
-			batchItemBuilder.add(items, conversionAccountWithdrawRelativeUrl, body.toString(), false);
+			bodyItem = objectMapper.writeValueAsString(body);
+			
+			
+			batchItemBuilder.add(items, conversionAccountWithdrawRelativeUrl, bodyItem, false);
 			
 			td = new DtSavingsTransactionDetails(
 					internalCorrelationId,
@@ -626,7 +659,9 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 							.map(iso.std.iso._20022.tech.xsd.camt_056_001.RemittanceInformation5::getUstrd).map(List::toString).orElse(""),
 					transactionCategoryPurposeCode);
 			
-			batchItemBuilder.add(items, camt053RelativeUrl, td.toString(), true);
+			camt053Body = objectMapper.writeValueAsString(td);
+
+			batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 			
 			doBatch(items,
                     tenantIdentifier,
