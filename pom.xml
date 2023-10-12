@@ -24,7 +24,7 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         
         <git-commit-id-maven-plugin.version>6.0.0</git-commit-id-maven-plugin.version>
-        <baasflow-events-spring-boot-starter.version>1.0.3</baasflow-events-spring-boot-starter.version>
+        <baasflow-events-spring-boot-starter.version>1.1.0</baasflow-events-spring-boot-starter.version>
     </properties>
 
     <dependencyManagement>

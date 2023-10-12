@@ -1,60 +1,66 @@
 server:
-  shutdown: "graceful"
+    shutdown: "graceful"
 
 spring:
-  lifecycle:
-    timeout-per-shutdown-phase: "20s"
+    lifecycle:
+        timeout-per-shutdown-phase: "20s"
 
 camel:
-  health:
-    enabled: true
-  server-port: 5000
-  springboot:
-    main-run-controller: true
-  dataformat:
-    json-jackson:
-      auto-discover-object-mapper: true
+    health:
+        enabled: true
+    server-port: 5000
+    springboot:
+        main-run-controller: true
+    dataformat:
+        json-jackson:
+            auto-discover-object-mapper: true
 
 management:
-  endpoint:
-    health:
-      show-details: always
-      group:
-        liveness:
-          include:
-            - camelHealth
-            # zeebeClient will not get included in the liveness state
-        readiness:
-          include:
-            - camelHealth
-            - zeebeClient
+    endpoint:
+        health:
+            show-details: always
+            group:
+                liveness:
+                    include:
+                        - camelHealth
+                        # zeebeClient will not get included in the liveness state
+                readiness:
+                    include:
+                        - camelHealth
+                        - zeebeClient
 
 baasflow:
-  commons:
     events:
-      audit:
+        disabled: "false"
         kafka:
-          brokers: ${COMMONS_EVENTS_AUDIT_KAFKA_BROKERS}
-          topic: ${COMMONS_EVENTS_AUDIT_KAFKA_TOPIC}
+            msk: "true"
+            brokers: "b-3.baasflowdev.6555wo.c8.kafka.eu-central-1.amazonaws.com:9098,b-2.baasflowdev.6555wo.c8.kafka.eu-central-1.amazonaws.com:9098,b-1.baasflowdev.6555wo.c8.kafka.eu-central-1.amazonaws.com:9098"
+            topic: ${COMMONS_EVENTS_AUDIT_KAFKA_TOPIC}
+            connection-timeout-ms: 1000
+            request-timeout-ms: 1000
+            retries-count: 3
+        channels:
+            audit:
+                topic: "auditlog"
 
 dfspids: "DFSPID"
 
 fineract:
-  api-url: ${FINERACT_URL}
-  datatable-query-api: "/datatables/dt_client_account_mapping/query"
-  column-filter: "iban"
-  result-columns: "conversion_account_id,disposal_account_id,internal_account_id"
-  internal-id-column: "internal_account_id"
-  incoming-money-api: "/savingsaccounts/"
-  locale: "en"
+    api-url: ${FINERACT_URL}
+    datatable-query-api: "/datatables/dt_client_account_mapping/query"
+    column-filter: "iban"
+    result-columns: "conversion_account_id,disposal_account_id,internal_account_id"
+    internal-id-column: "internal_account_id"
+    incoming-money-api: "/savingsaccounts/"
+    locale: "en"
 
 zeebe:
-  client:
-    worker:
-      max-jobs-active: 100
-      threads: 100
+    client:
+        worker:
+            max-jobs-active: 100
+            threads: 100
 
 ams:
-  local:
-    server-cert-check: false
-    enabled: false
+    local:
+        server-cert-check: false
+        enabled: false
