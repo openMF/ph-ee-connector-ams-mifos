@@ -168,6 +168,7 @@ public class InteroperationRouteBuilder extends ErrorHandlerRouteBuilder {
                         int statusCode = exchange.getIn().getHeader(Exchange.HTTP_RESPONSE_CODE, Integer.class);
                         if (statusCode > 202) {
                             Map<String, Object>  variables = Utils.getDefaultZeebeErrorVariable(exchange, errorTranslator);
+                            variables.put(FINERACT_RESPONSE_BODY,exchange.getIn().getBody(String.class));
                             zeebeClient.newCompleteCommand(exchange.getProperty(ZEEBE_JOB_KEY, Long.class))
                                     .variables(variables)
                                     .send();
@@ -181,6 +182,7 @@ public class InteroperationRouteBuilder extends ErrorHandlerRouteBuilder {
                             variables.put("payeeTenantId", exchange.getProperty("payeeTenantId"));
                             variables.put(TRANSFER_CODE,responseJson.getString("transferCode"));
                             logger.info("API call successful. Response Body: " + exchange.getIn().getBody(String.class));
+                            variables.put(FINERACT_RESPONSE_BODY,exchange.getIn().getBody(String.class));
                             zeebeClient.newCompleteCommand(exchange.getProperty(ZEEBE_JOB_KEY, Long.class))
                                     .variables(variables)
                                     .send();
@@ -213,6 +215,7 @@ public class InteroperationRouteBuilder extends ErrorHandlerRouteBuilder {
                     int statusCode = exchange.getIn().getHeader(Exchange.HTTP_RESPONSE_CODE, Integer.class);
                     if (statusCode > 202) {
                         Map<String, Object>  variables = Utils.getDefaultZeebeErrorVariable(exchange, errorTranslator);
+                        variables.put(FINERACT_RESPONSE_BODY,exchange.getIn().getBody(String.class));
                         zeebeClient.newCompleteCommand(exchange.getProperty(ZEEBE_JOB_KEY, Long.class))
                                 .variables(variables)
                                 .send();
@@ -226,6 +229,7 @@ public class InteroperationRouteBuilder extends ErrorHandlerRouteBuilder {
                         variables.put("payeeTenantId", exchange.getProperty("payeeTenantId"));
                         variables.put(TRANSFER_CODE,responseJson.getString("transferCode"));
                         logger.info("API call successful. Response Body: " + exchange.getIn().getBody(String.class));
+                        variables.put(FINERACT_RESPONSE_BODY,exchange.getIn().getBody(String.class));
                         zeebeClient.newCompleteCommand(exchange.getProperty(ZEEBE_JOB_KEY, Long.class))
                                 .variables(variables)
                                 .send();
@@ -400,7 +404,9 @@ public class InteroperationRouteBuilder extends ErrorHandlerRouteBuilder {
                         " for transaction: ${exchangeProperty." + TRANSACTION_ID + "}")
                 .log("Process type: ${exchangeProperty." + PROCESS_TYPE + "}")
                 .process(exchange -> {
-                    fineractResponseBody = exchange.getProperty(FINERACT_RESPONSE_BODY).toString();
+                    if(exchange.getProperties().containsKey(FINERACT_RESPONSE_BODY)){
+                        fineractResponseBody = exchange.getProperty(FINERACT_RESPONSE_BODY).toString();
+                    }
                     callbackUrl = exchange.getProperty(X_CALLBACKURL).toString();
                     boolean callbackSent= amsService.sendCallback(callbackUrl,fineractResponseBody);
                     exchange.setProperty("callbackSent",callbackSent);

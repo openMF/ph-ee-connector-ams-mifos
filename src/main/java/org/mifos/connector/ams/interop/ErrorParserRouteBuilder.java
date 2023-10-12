@@ -47,6 +47,7 @@ public class ErrorParserRouteBuilder extends ErrorHandlerRouteBuilder {
                         exchange.setProperty(ERROR_INFORMATION, errorResponse.getDefaultUserMessage());
                     }
                     exchange.setProperty(ERROR_PAYLOAD, errorResponse);
+                    exchange.setProperty(FINERACT_RESPONSE_BODY,errorResponse);
                 })
                 .otherwise()
                 .endChoice();
