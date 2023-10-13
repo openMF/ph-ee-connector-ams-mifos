@@ -31,14 +31,6 @@ management:
 
 baasflow:
     events:
-        disabled: "false"
-        kafka:
-            msk: "true"
-            brokers: "b-3.baasflowdev.6555wo.c8.kafka.eu-central-1.amazonaws.com:9098,b-2.baasflowdev.6555wo.c8.kafka.eu-central-1.amazonaws.com:9098,b-1.baasflowdev.6555wo.c8.kafka.eu-central-1.amazonaws.com:9098"
-            topic: ${COMMONS_EVENTS_AUDIT_KAFKA_TOPIC}
-            connection-timeout-ms: 1000
-            request-timeout-ms: 1000
-            retries-count: 3
         channels:
             audit:
                 topic: "auditlog"
