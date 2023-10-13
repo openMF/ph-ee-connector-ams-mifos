@@ -59,6 +59,7 @@ public class ErrorTranslator {
 
         zeebeFinalVariables.put(ERROR_CODE, phErrorDTO.getErrorCode());
         zeebeFinalVariables.put(ERROR_INFORMATION, phErrorDTO.getErrorDescription());
+        zeebeFinalVariables.put(FINERACT_RESPONSE_BODY, zeebeFinalVariables.get(ERROR_PAYLOAD));
         try {
             zeebeFinalVariables.put(ERROR_INFORMATION, objectMapper.writeValueAsString(phErrorDTO));
             PhErrorDTO errorDTO = objectMapper.readValue((String) zeebeFinalVariables.get(ERROR_INFORMATION), PhErrorDTO.class);

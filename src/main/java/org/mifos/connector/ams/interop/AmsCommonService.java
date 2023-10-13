@@ -9,15 +9,15 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestTemplate;
 
-import java.net.InetAddress;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import static org.apache.camel.Exchange.HTTP_METHOD;
-import static org.apache.camel.Exchange.HTTP_PATH;
+import static org.apache.camel.Exchange.*;
 import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSFER_ACTION;
 import static org.mifos.connector.ams.camel.cxfrs.HeaderBasedInterceptor.CXF_TRACE_HEADER;
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.ACCOUNT_NUMBER;
@@ -46,6 +46,8 @@ public class AmsCommonService {
 
     @Autowired
     private CxfrsUtil cxfrsUtil;
+    @Autowired
+    RestTemplate restTemplate;
 
     @Value("${ams.local.enabled}")
     private boolean isAmsLocalEnabled;
@@ -122,6 +124,24 @@ public class AmsCommonService {
             cxfrsUtil.sendInOut("cxfrs:bean:mock-service.local.loan", e, headers, e.getIn().getBody().toString());
         }
 //        cxfrsUtil.sendInOut("cxfrs:bean:ams.local.loan", e, headers, e.getIn().getBody());
+    }
+    public boolean sendCallback(String callbackURL, String body) {
+        logger.info("Sending Callback...");
+        ResponseEntity responseEntity;
+        try{
+            responseEntity =  restTemplate.postForEntity(callbackURL,body,null);
+            if(responseEntity.getStatusCode().is2xxSuccessful()){
+                logger.info("Callback sent");
+                return true;
+            }else{
+                logger.info("Callback failed!!!");
+                return false;
+            }
+        }catch (Exception exception){
+            logger.info("Callback failed!!!");
+            exception.printStackTrace();
+        }
+        return false;
     }
 
 
