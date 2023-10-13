@@ -23,9 +23,6 @@ zeebe:
 #    server-cert-check: false
 #    enabled: true
 
-spring:
-  main:
-    web-application-type: none
 ams:
   local:
     server-cert-check: false
