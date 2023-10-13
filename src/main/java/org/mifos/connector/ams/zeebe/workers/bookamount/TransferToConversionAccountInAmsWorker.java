@@ -223,7 +223,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			addDetails(transactionGroupId, transactionCategoryPurposeCode, internalCorrelationId, 
 					objectMapper, batchItemBuilder, items, camt053Entry, camt053RelativeUrl, iban, 
 					paymentTypeConfig, paymentScheme, withdrawAmountOperation, partnerName, partnerAccountIban, 
-					partnerAccountSecondaryIdentifier, unstructured);
+					partnerAccountSecondaryIdentifier, unstructured, disposalAccountAmsId, conversionAccountAmsId);
 
 			if (hasFee) {
 				log.debug("Withdrawing fee {} from disposal account {}", transactionFeeAmount, disposalAccountAmsId);
@@ -235,7 +235,8 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 					
 					addDetails(transactionGroupId, transactionFeeCategoryPurposeCode, internalCorrelationId, objectMapper,
 							batchItemBuilder, items, camt053Entry, camt053RelativeUrl, iban, paymentTypeConfig, paymentScheme, 
-							withdrawFeeOperation, partnerName, partnerAccountIban, partnerAccountSecondaryIdentifier, unstructured);
+							withdrawFeeOperation, partnerName, partnerAccountIban, partnerAccountSecondaryIdentifier, unstructured,
+							disposalAccountAmsId, conversionAccountAmsId);
 			}
 			
 			log.info("Depositing amount {} to conversion account {}", amount, conversionAccountAmsId);
@@ -250,7 +251,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			
 			addDetails(transactionGroupId, transactionCategoryPurposeCode, internalCorrelationId, objectMapper, batchItemBuilder, items,
 					camt053Entry, camt053RelativeUrl, iban, paymentTypeConfig, paymentScheme, depositAmountOperation, partnerName, 
-					partnerAccountIban, partnerAccountSecondaryIdentifier, unstructured);
+					partnerAccountIban, partnerAccountSecondaryIdentifier, unstructured, disposalAccountAmsId, conversionAccountAmsId);
 		
 			
 			if (hasFee) {
@@ -263,7 +264,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 				
 				addDetails(transactionGroupId, transactionFeeCategoryPurposeCode, internalCorrelationId, objectMapper, batchItemBuilder,
 						items, camt053Entry, camt053RelativeUrl, iban, paymentTypeConfig, paymentScheme, depositFeeOperation, partnerName, 
-						partnerAccountIban, partnerAccountSecondaryIdentifier, unstructured);
+						partnerAccountIban, partnerAccountSecondaryIdentifier, unstructured, disposalAccountAmsId, conversionAccountAmsId);
 			}
     			
     		doBatch(items,
@@ -321,7 +322,9 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			String partnerName,
 			String partnerAccountIban,
 			String partnerAccountSecondaryIdentifier,
-			String unstructured) throws JsonProcessingException {
+			String unstructured,
+			Integer sourceAmsAccountId,
+			Integer targetAmsAccountId) throws JsonProcessingException {
     	String paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(String.format("%s.%s", paymentScheme, paymentTypeOperation));
 		DtSavingsTransactionDetails td = new DtSavingsTransactionDetails(
 				internalCorrelationId,
@@ -334,7 +337,11 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 				null,
 				partnerAccountSecondaryIdentifier,
 				unstructured,
-				transactionFeeCategoryPurposeCode);
+				transactionFeeCategoryPurposeCode,
+				paymentScheme,
+				null,
+				sourceAmsAccountId,
+				targetAmsAccountId);
 		
 		String camt053Body = om.writeValueAsString(td);
 		batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
@@ -412,7 +419,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 		
 			iso.std.iso._20022.tech.xsd.camt_056_001.Document document = jaxbUtils.unmarshalCamt056(camt056);
     		Camt056ToCamt053Converter converter = new Camt056ToCamt053Converter();
-    		BankToCustomerStatementV08 statement = converter.convert(document);
+    		BankToCustomerStatementV08 statement = converter.convert(document, new BankToCustomerStatementV08());
     		
     		PaymentTransactionInformation31 paymentTransactionInformation = document
     				.getFIToFIPmtCxlReq()
@@ -451,7 +458,11 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 					contactDetailsUtil.getId(document.getFIToFIPmtCxlReq().getUndrlyg().get(0).getTxInf().get(0).getOrgnlTxRef().getDbtr().getCtctDtls()),
 					Optional.ofNullable(document.getFIToFIPmtCxlReq().getUndrlyg().get(0).getTxInf().get(0).getOrgnlTxRef().getRmtInf())
 							.map(iso.std.iso._20022.tech.xsd.camt_056_001.RemittanceInformation5::getUstrd).map(List::toString).orElse(""),
-					transactionCategoryPurposeCode);
+					transactionCategoryPurposeCode,
+					paymentScheme,
+					null,
+					disposalAccountAmsId,
+					null);
 			
 			String camt053Body = objectMapper.writeValueAsString(td);
 	

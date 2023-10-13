@@ -33,6 +33,7 @@ import io.camunda.zeebe.client.api.response.ActivatedJob;
 import io.camunda.zeebe.client.api.worker.JobClient;
 import io.camunda.zeebe.spring.client.annotation.JobWorker;
 import io.camunda.zeebe.spring.client.annotation.Variable;
+import iso.std.iso._20022.tech.json.camt_053_001.AccountSchemeName1Choice;
 import iso.std.iso._20022.tech.json.camt_053_001.ReportEntry10;
 import iso.std.iso._20022.tech.json.pain_001_001.Pain00100110CustomerCreditTransferInitiationV10MessageSchema;
 import lombok.extern.slf4j.Slf4j;
@@ -83,7 +84,9 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
                                                                         @Variable String transactionFeeCategoryPurposeCode,
                                                                         @Variable String transactionFeeInternalCorrelationId,
                                                                         @Variable String creditorIban,
-                                                                        @Variable String debtorIban) {
+                                                                        @Variable String debtorIban,
+                                                                        @Variable String debtorInternalAccountId,
+                                                                        @Variable String creditorInternalAccountId) {
         log.info("transferTheAmountBetweenDisposalAccounts");
         return eventService.auditedEvent(
                 eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "transferTheAmountBetweenDisposalAccounts", internalCorrelationId, transactionGroupId, eventBuilder),
@@ -102,6 +105,8 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
                         transactionFeeInternalCorrelationId,
                         creditorIban,
                         debtorIban,
+                        debtorInternalAccountId,
+                        creditorInternalAccountId,
                         eventBuilder));
     }
 
@@ -120,6 +125,8 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
                                                                          String transactionFeeInternalCorrelationId,
                                                                          String creditorIban,
                                                                          String debtorIban,
+                                                                         String debtorInternalAccountId,
+                                                                         String creditorInternalAccountId,
                                                                          Event.Builder eventBuilder) {
 try {
 			
@@ -129,6 +136,12 @@ try {
 			Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001 = objectMapper.readValue(originalPain001, Pain00100110CustomerCreditTransferInitiationV10MessageSchema.class);
 			
 			ReportEntry10 convertedcamt053Entry = camt053Mapper.toCamt053Entry(pain001.getDocument());
+			var debtorAccountIdOther = convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getRelatedParties().getDebtorAccount().getIdentification().getOther();
+			debtorAccountIdOther.setIdentification(debtorInternalAccountId);
+			debtorAccountIdOther.setSchemeName(new AccountSchemeName1Choice().withCode("IAID"));
+			var creditorAccountIdOther = convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getRelatedParties().getCreditorAccount().getIdentification().getOther();
+			creditorAccountIdOther.setIdentification(creditorInternalAccountId);
+			creditorAccountIdOther.setSchemeName(new AccountSchemeName1Choice().withCode("IAID"));
 			String camt053Entry = objectMapper.writeValueAsString(convertedcamt053Entry);
 			
 			String interbankSettlementDate = LocalDate.now().format(PATTERN);
@@ -171,7 +184,11 @@ try {
     				contactDetailsUtil.getId(pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditor().getContactDetails()),
     				Optional.ofNullable(pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getRemittanceInformation())
 							.map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(List::toString).orElse(""),
-    				transactionCategoryPurposeCode);
+    				transactionCategoryPurposeCode,
+    				paymentScheme,
+    				creditorInternalAccountId,
+    				debtorDisposalAccountAmsId,
+    				creditorDisposalAccountAmsId);
     		
     		String camt053Body = objectMapper.writeValueAsString(td);
 
@@ -211,7 +228,11 @@ try {
 	    				contactDetailsUtil.getId(pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditor().getContactDetails()),
 	    				Optional.ofNullable(pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getRemittanceInformation())
 								.map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(List::toString).orElse(""),
-	    				transactionFeeCategoryPurposeCode);
+	    				transactionFeeCategoryPurposeCode,
+	    				paymentScheme,
+	    				creditorInternalAccountId,
+	    				debtorDisposalAccountAmsId,
+	    				debtorConversionAccountAmsId);
 	    		
 	    		camt053Body = objectMapper.writeValueAsString(td);
 	    		batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
@@ -249,7 +270,11 @@ try {
 	    				contactDetailsUtil.getId(pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditor().getContactDetails()),
 	    				Optional.ofNullable(pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getRemittanceInformation())
 								.map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(List::toString).orElse(""),
-	    				transactionFeeCategoryPurposeCode);
+	    				transactionFeeCategoryPurposeCode,
+	    				paymentScheme,
+	    				creditorInternalAccountId,
+	    				debtorDisposalAccountAmsId,
+	    				debtorConversionAccountAmsId);
 	    		
 	    		camt053Body = objectMapper.writeValueAsString(td);
 	    		batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
@@ -289,7 +314,11 @@ try {
     				contactDetailsUtil.getId(pain001.getDocument().getPaymentInformation().get(0).getDebtor().getContactDetails()),
     				Optional.ofNullable(pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getRemittanceInformation())
 							.map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(List::toString).orElse(""),
-    				transactionCategoryPurposeCode);
+    				transactionCategoryPurposeCode,
+    				paymentScheme,
+    				debtorInternalAccountId,
+    				debtorDisposalAccountAmsId,
+    				creditorDisposalAccountAmsId);
     		
     		camt053Body = objectMapper.writeValueAsString(td);
     		batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
@@ -330,7 +359,11 @@ try {
 	    				contactDetailsUtil.getId(pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditor().getContactDetails()),
 	    				Optional.ofNullable(pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getRemittanceInformation())
 								.map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(List::toString).orElse(""),
-	    				transactionFeeCategoryPurposeCode);
+	    				transactionFeeCategoryPurposeCode,
+	    				paymentScheme,
+	    				creditorInternalAccountId,
+	    				debtorConversionAccountAmsId,
+	    				null);
 	    		
 	    		camt053Body = objectMapper.writeValueAsString(td);
 			    		

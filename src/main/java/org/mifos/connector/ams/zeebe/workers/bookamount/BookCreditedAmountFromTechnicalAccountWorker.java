@@ -149,6 +149,7 @@ public class BookCreditedAmountFromTechnicalAccountWorker extends AbstractMoneyI
             batchItemBuilder.add(items, technicalAccountWithdrawalRelativeUrl, bodyItem, false);
 
             ReportEntry10 convertedCamt053Entry = camt053Mapper.toCamt053Entry(pacs008);
+            convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
             String camt053Entry = objectMapper.writeValueAsString(convertedCamt053Entry);
 
             String camt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
@@ -164,7 +165,11 @@ public class BookCreditedAmountFromTechnicalAccountWorker extends AbstractMoneyI
     				null,
     				contactDetailsUtil.getId(pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getDbtr().getCtctDtls()),
     				Optional.ofNullable(pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getRmtInf()).map(RemittanceInformation5::getUstrd).map(List::toString).orElse(""),
-    				transactionCategoryPurposeCode);
+    				transactionCategoryPurposeCode,
+    				paymentScheme,
+    				null,
+    				null,
+    				null);
 
             String camt053Body = objectMapper.writeValueAsString(td);
 

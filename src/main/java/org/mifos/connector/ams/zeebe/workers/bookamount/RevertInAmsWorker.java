@@ -173,7 +173,11 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 					contactDetailsUtil.getId(pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditor().getContactDetails()),
 					Optional.ofNullable(pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getRemittanceInformation())
 							.map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(List::toString).orElse(""),
-					transactionCategoryPurposeCode);
+					transactionCategoryPurposeCode,
+					paymentScheme,
+					null,
+					conversionAccountAmsId,
+					disposalAccountAmsId);
 			
 			var camt053Body = objectMapper.writeValueAsString(td);
 			
@@ -213,7 +217,11 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 						contactDetailsUtil.getId(pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditor().getContactDetails()),
 						Optional.ofNullable(pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getRemittanceInformation())
 								.map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(List::toString).orElse(""),
-						transactionFeeCategoryPurposeCode);
+						transactionFeeCategoryPurposeCode,
+						paymentScheme,
+						null,
+						conversionAccountAmsId,
+						disposalAccountAmsId);
 				camt053Body = objectMapper.writeValueAsString(td);
 				batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 			}
@@ -252,7 +260,11 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 					contactDetailsUtil.getId(pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditor().getContactDetails()),
 					Optional.ofNullable(pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getRemittanceInformation())
 							.map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(List::toString).orElse(""),
-					transactionCategoryPurposeCode);
+					transactionCategoryPurposeCode,
+					paymentScheme,
+					null,
+					conversionAccountAmsId,
+					disposalAccountAmsId);
 			
 			camt053Body = objectMapper.writeValueAsString(td);
 	
@@ -290,7 +302,11 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 						contactDetailsUtil.getId(pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditor().getContactDetails()),
 						Optional.ofNullable(pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getRemittanceInformation())
 								.map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(List::toString).orElse(""),
-						transactionFeeCategoryPurposeCode);
+						transactionFeeCategoryPurposeCode,
+						paymentScheme,
+						null,
+						conversionAccountAmsId,
+						disposalAccountAmsId);
 				camt053Body = objectMapper.writeValueAsString(td);
 				batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 			}
@@ -412,7 +428,11 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 					contactDetailsUtil.getId(pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditor().getContactDetails()),
 					Optional.ofNullable(pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getRemittanceInformation())
 							.map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(List::toString).orElse(""),
-					transactionCategoryPurposeCode);
+					transactionCategoryPurposeCode,
+					paymentScheme,
+					null,
+					conversionAccountAmsId,
+					disposalAccountAmsId);
 			
 			var camt053Body = objectMapper.writeValueAsString(td);
 			
@@ -452,7 +472,11 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 					contactDetailsUtil.getId(pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditor().getContactDetails()),
 					Optional.ofNullable(pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getRemittanceInformation())
 							.map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(List::toString).orElse(""),
-					transactionCategoryPurposeCode);
+					transactionCategoryPurposeCode,
+					paymentScheme,
+					null,
+					conversionAccountAmsId,
+					disposalAccountAmsId);
 			
 			camt053Body = objectMapper.writeValueAsString(td);
 	
@@ -490,7 +514,11 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 						contactDetailsUtil.getId(pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditor().getContactDetails()),
 						Optional.ofNullable(pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getRemittanceInformation())
 								.map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(List::toString).orElse(""),
-						transactionFeeCategoryPurposeCode);
+						transactionFeeCategoryPurposeCode,
+						paymentScheme,
+						null,
+						conversionAccountAmsId,
+						disposalAccountAmsId);
 				camt053Body = objectMapper.writeValueAsString(td);
 				batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 			}
@@ -602,7 +630,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			String internalCorrelationId = String.format("%s_%s_%s", originalDebtorBic, originalCreationDate, originalEndToEndId);
 			
 			Camt056ToCamt053Converter converter = new Camt056ToCamt053Converter();
-			BankToCustomerStatementV08 statement = converter.convert(document);
+			BankToCustomerStatementV08 statement = converter.convert(document, new BankToCustomerStatementV08());
 			
 			String camt053 = objectMapper.writeValueAsString(statement);
 			
@@ -617,7 +645,11 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 					null,
 					contactDetailsUtil.getId(document.getFIToFIPmtCxlReq().getUndrlyg().get(0).getTxInf().get(0).getOrgnlTxRef().getDbtr().getCtctDtls()),
 					document.getFIToFIPmtCxlReq().getUndrlyg().get(0).getTxInf().get(0).getOrgnlTxRef().getRmtInf().getUstrd().toString(),
-					transactionCategoryPurposeCode);
+					transactionCategoryPurposeCode,
+					paymentScheme,
+					null,
+					null,
+					disposalAccountAmsId);
 			
 			var camt053Body = objectMapper.writeValueAsString(td);
 			
@@ -657,7 +689,11 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 					contactDetailsUtil.getId(document.getFIToFIPmtCxlReq().getUndrlyg().get(0).getTxInf().get(0).getOrgnlTxRef().getDbtr().getCtctDtls()),
 					Optional.ofNullable(document.getFIToFIPmtCxlReq().getUndrlyg().get(0).getTxInf().get(0).getOrgnlTxRef().getRmtInf())
 							.map(iso.std.iso._20022.tech.xsd.camt_056_001.RemittanceInformation5::getUstrd).map(List::toString).orElse(""),
-					transactionCategoryPurposeCode);
+					transactionCategoryPurposeCode,
+					paymentScheme,
+					null,
+					null,
+					disposalAccountAmsId);
 			
 			camt053Body = objectMapper.writeValueAsString(td);
 

@@ -155,7 +155,11 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 					contactDetailsUtil.getId(pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditor().getContactDetails()),
 					Optional.ofNullable(pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getRemittanceInformation())
 							.map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(List::toString).orElse(""),
-					categoryPurpose);
+					categoryPurpose,
+					paymentScheme,
+					null,
+					disposalAccountAmsId,
+					null);
 			
 			String camt053Body = objectMapper.writeValueAsString(td);
 
@@ -194,7 +198,11 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 					contactDetailsUtil.getId(pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditor().getContactDetails()),
 					Optional.ofNullable(pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getRemittanceInformation())
 							.map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(List::toString).orElse(""),
-					categoryPurpose);
+					categoryPurpose,
+					paymentScheme,
+					null,
+					disposalAccountAmsId,
+					null);
 			
 			camt053Body = objectMapper.writeValueAsString(td);
 
@@ -233,7 +241,11 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 					contactDetailsUtil.getId(pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditor().getContactDetails()),
 					Optional.ofNullable(pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getRemittanceInformation())
 							.map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(List::toString).orElse(""),
-					categoryPurpose);
+					categoryPurpose,
+					paymentScheme,
+					null,
+					disposalAccountAmsId,
+					null);
 			
 			camt053Body = objectMapper.writeValueAsString(td);
 

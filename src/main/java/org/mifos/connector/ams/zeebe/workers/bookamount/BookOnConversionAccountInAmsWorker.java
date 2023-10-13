@@ -175,7 +175,11 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 					contactDetailsUtil.getId(pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditor().getContactDetails()),
 					Optional.ofNullable(pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getRemittanceInformation())
 							.map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(List::toString).orElse(""),
-					transactionCategoryPurposeCode);
+					transactionCategoryPurposeCode,
+					paymentScheme,
+					null,
+					null,
+					conversionAccountAmsId);
 			
 			String camt053Body = objectMapper.writeValueAsString(td);
 	
@@ -214,7 +218,11 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 						contactDetailsUtil.getId(pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditor().getContactDetails()),
 						Optional.ofNullable(pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getRemittanceInformation())
 								.map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(List::toString).orElse(""),
-						transactionFeeCategoryPurposeCode);
+						transactionFeeCategoryPurposeCode,
+						paymentScheme,
+						null,
+						null,
+						conversionAccountAmsId);
 				camt053Body = objectMapper.writeValueAsString(td);
 				batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 			}
@@ -307,7 +315,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 		
 			iso.std.iso._20022.tech.xsd.camt_056_001.Document document = jaxbUtils.unmarshalCamt056(camt056);
 			Camt056ToCamt053Converter converter = new Camt056ToCamt053Converter();
-			BankToCustomerStatementV08 statement = converter.convert(document);
+			BankToCustomerStatementV08 statement = converter.convert(document, new BankToCustomerStatementV08());
 			
 			PaymentTransactionInformation31 paymentTransactionInformation = document
 					.getFIToFIPmtCxlReq()
@@ -346,7 +354,11 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 					contactDetailsUtil.getId(document.getFIToFIPmtCxlReq().getUndrlyg().get(0).getTxInf().get(0).getOrgnlTxRef().getDbtr().getCtctDtls()),
 					Optional.ofNullable(document.getFIToFIPmtCxlReq().getUndrlyg().get(0).getTxInf().get(0).getOrgnlTxRef().getRmtInf())
 							.map(iso.std.iso._20022.tech.xsd.camt_056_001.RemittanceInformation5::getUstrd).map(List::toString).orElse(""),
-					transactionCategoryPurposeCode);
+					transactionCategoryPurposeCode,
+					paymentScheme,
+					null,
+					conversionAccountAmsId,
+					null);
 			
 			String camt053Body = objectMapper.writeValueAsString(td);
 	
