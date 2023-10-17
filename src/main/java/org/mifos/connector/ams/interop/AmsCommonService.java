@@ -129,6 +129,7 @@ public class AmsCommonService {
         logger.info("Sending Callback...");
         ResponseEntity responseEntity;
         try{
+            logger.info("$CallbackURL = "+ callbackURL);
             responseEntity =  restTemplate.postForEntity(callbackURL,body,null);
             if(responseEntity.getStatusCode().is2xxSuccessful()){
                 logger.info("Callback sent");
