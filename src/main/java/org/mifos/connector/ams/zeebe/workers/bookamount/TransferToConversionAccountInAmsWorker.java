@@ -420,6 +420,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			iso.std.iso._20022.tech.xsd.camt_056_001.Document document = jaxbUtils.unmarshalCamt056(camt056);
     		Camt056ToCamt053Converter converter = new Camt056ToCamt053Converter();
     		BankToCustomerStatementV08 statement = converter.convert(document, new BankToCustomerStatementV08());
+    		statement.getStatement().get(0).getEntry().get(0).getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
     		
     		PaymentTransactionInformation31 paymentTransactionInformation = document
     				.getFIToFIPmtCxlReq()
@@ -442,7 +443,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
     		
     		String internalCorrelationId = String.format("%s_%s_%s", originalDebtorBic, originalCreationDate, originalTxId);
 		
-			String camt053 = objectMapper.writeValueAsString(statement);
+			String camt053 = objectMapper.writeValueAsString(statement.getStatement().get(0));
 			
 			String camt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
 			
