@@ -24,7 +24,6 @@ public class AmsMifosErrorMapper extends ErrorMapper {
         add("error.msg.currency.currencyCode.invalid.or.not.supported", PaymentHubError.PayeeCurrencyInvalid);
         add("error.msg.currency.currencyCode.inUse", PaymentHubError.PayeeCurrencyInvalid);
 
-
         // 404 httpstatus and response is empty -> payerFspNotFound
         // payeefsp and payerfsp not configured
         // currency invalid

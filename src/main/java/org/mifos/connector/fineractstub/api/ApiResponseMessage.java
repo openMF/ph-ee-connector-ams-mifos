@@ -1,10 +1,12 @@
 package org.mifos.connector.fineractstub.api;
 
 import javax.xml.bind.annotation.XmlTransient;
+
 @SuppressWarnings("checkstyle:Dynamic")
 @javax.annotation.Generated(value = "io.swagger.codegen.v3.generators.java.SpringCodegen", date = "2023-08-10T10:13:07.472376795Z[GMT]")
 @javax.xml.bind.annotation.XmlRootElement
 public class ApiResponseMessage {
+
     public static final int ERROR = 1;
     public static final int WARNING = 2;
     public static final int INFO = 3;
@@ -15,28 +17,28 @@ public class ApiResponseMessage {
     String type;
     String message;
 
-    public ApiResponseMessage(){}
+    public ApiResponseMessage() {}
 
-    public ApiResponseMessage(int code, String message){
+    public ApiResponseMessage(int code, String message) {
         this.code = code;
-        switch(code){
-        case ERROR:
-            setType("error");
+        switch (code) {
+            case ERROR:
+                setType("error");
             break;
-        case WARNING:
-            setType("warning");
+            case WARNING:
+                setType("warning");
             break;
-        case INFO:
-            setType("info");
+            case INFO:
+                setType("info");
             break;
-        case OK:
-            setType("ok");
+            case OK:
+                setType("ok");
             break;
-        case TOO_BUSY:
-            setType("too busy");
+            case TOO_BUSY:
+                setType("too busy");
             break;
-        default:
-            setType("unknown");
+            default:
+                setType("unknown");
             break;
         }
         this.message = message;
