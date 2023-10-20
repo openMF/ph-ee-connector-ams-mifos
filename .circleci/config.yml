@@ -2,14 +2,14 @@ version: 2.1
 executors:
   docker-executor:
     docker:
-      - image: circleci/openjdk:13.0-buster-node-browsers-legacy
+      - image: circleci/openjdk:17.0-buster-node-browsers-legacy
 
 jobs:
   build_and_push_tag_image:
     executor: docker-executor
     environment:
       JVM_OPTS: -Xmx512m
-      TERM: dumb  
+      TERM: dumb
       GITHUB_TOKEN: ${GITHUB_TOKEN}  # Add the GitHub token as an environment variable
 
     steps:
@@ -37,7 +37,7 @@ jobs:
             docker push "openmf/ph-ee-connector-ams-mifos:$IMAGE_TAG"
 
           # when: always  # The job will be executed even if there's no match for the tag filter
-  
+
   build_and_push_latest_image:
     executor: docker-executor
     environment:
@@ -55,7 +55,8 @@ jobs:
           name: Build Docker image
           command: |
             IMAGE_TAG=$CIRCLE_TAG
-            ./gradlew bootJar
+            ./gradlew checkstyleMain
+            ./gradlew clean bootJar
             docker build -t openmf/ph-ee-connector-ams-mifos:latest .
 
       # Log in to DockerHub using environment variables
@@ -66,7 +67,7 @@ jobs:
       # Push the Docker image to DockerHub
       - run:
           name: Push Docker image to DockerHub
-          command: docker push openmf/ph-ee-connector-ams-mifos:latest        
+          command: docker push openmf/ph-ee-connector-ams-mifos:latest
 
 workflows:
   version: 2
@@ -81,4 +82,3 @@ workflows:
       - build_and_push_latest_image:
           context:
               - DOCKER
-             

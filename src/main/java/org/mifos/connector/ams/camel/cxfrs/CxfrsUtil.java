@@ -1,12 +1,11 @@
 package org.mifos.connector.ams.camel.cxfrs;
 
+import java.util.Map;
 import org.apache.camel.Exchange;
 import org.apache.camel.ExchangePattern;
 import org.apache.camel.ProducerTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-
-import java.util.Map;
 
 @Component
 public class CxfrsUtil {
@@ -19,7 +18,7 @@ public class CxfrsUtil {
      */
     public void sendInOut(String endpoint, Exchange ex, Map<String, Object> headers, Object body) {
         ExchangePattern oldPattern = ex.getPattern();
-        if(body != null) {
+        if (body != null) {
             ex.getIn().setBody(body);
         }
         ex.getIn().removeHeaders("*");

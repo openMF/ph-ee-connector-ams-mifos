@@ -1,5 +1,22 @@
 package org.mifos.connector.ams.interop;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.apache.camel.Exchange.HTTP_METHOD;
+import static org.apache.camel.Exchange.HTTP_PATH;
+import static org.mifos.connector.ams.camel.config.CamelProperties.CLIENT_ID;
+import static org.mifos.connector.ams.camel.config.CamelProperties.DEFINITON_ID;
+import static org.mifos.connector.ams.camel.config.CamelProperties.IDENTIFIER_ID;
+import static org.mifos.connector.ams.camel.config.CamelProperties.LOGIN_PASSWORD;
+import static org.mifos.connector.ams.camel.config.CamelProperties.LOGIN_USERNAME;
+import static org.mifos.connector.ams.camel.cxfrs.HeaderBasedInterceptor.CXF_TRACE_HEADER;
+import static org.mifos.connector.ams.tenant.TenantService.X_TENANT_IDENTIFIER_HEADER;
+import static org.mifos.connector.ams.zeebe.ZeebeVariables.ACCOUNT_ID;
+import static org.mifos.connector.ams.zeebe.ZeebeVariables.TENANT_ID;
+
+import java.util.Base64;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import org.apache.camel.Exchange;
 import org.apache.camel.component.cxf.common.message.CxfConstants;
 import org.mifos.connector.ams.camel.cxfrs.CxfrsUtil;
@@ -8,19 +25,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.stereotype.Component;
-
-import java.util.Base64;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.Map;
-
-import static org.apache.camel.Exchange.HTTP_METHOD;
-import static org.apache.camel.Exchange.HTTP_PATH;
-import static org.mifos.connector.ams.camel.config.CamelProperties.*;
-import static org.mifos.connector.ams.camel.cxfrs.HeaderBasedInterceptor.CXF_TRACE_HEADER;
-import static org.mifos.connector.ams.tenant.TenantService.X_TENANT_IDENTIFIER_HEADER;
-import static org.mifos.connector.ams.zeebe.ZeebeVariables.ACCOUNT_ID;
-import static org.mifos.connector.ams.zeebe.ZeebeVariables.TENANT_ID;
 
 @Component
 @ConditionalOnExpression("'${ams.local.version}'.equals('cn')")
@@ -84,7 +88,6 @@ public class AmsFinCNService extends AmsCommonService implements AmsService {
         cxfrsUtil.sendInOut("cxfrs:bean:ams.local.customer", e, headers, null);
     }
 
-
     public void login(Exchange e) {
         Map<String, Object> headers = new HashMap<>();
         headers.put(CXF_TRACE_HEADER, true);
@@ -96,14 +99,14 @@ public class AmsFinCNService extends AmsCommonService implements AmsService {
         Map<String, String> queryMap = new LinkedHashMap<>();
         queryMap.put("grant_type", "password");
         queryMap.put("username", e.getProperty(LOGIN_USERNAME, String.class));
-        queryMap.put("password", Base64.getEncoder().encodeToString(e.getProperty(LOGIN_PASSWORD, String.class).getBytes()));
+        queryMap.put("password", Base64.getEncoder().encodeToString(e.getProperty(LOGIN_PASSWORD, String.class).getBytes(UTF_8)));
         headers.put(CxfConstants.CAMEL_CXF_RS_QUERY_MAP, queryMap);
 
         cxfrsUtil.sendInOut("cxfrs:bean:ams.local.auth", e, headers, null);
     }
 
     public void getSavingsAccountsTransactions(Exchange e) {
-        //need this to be filled
+        // need this to be filled
 
     }
 }

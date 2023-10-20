@@ -5,16 +5,20 @@
  */
 package org.mifos.connector.fineractstub.api;
 
-import org.mifos.connector.fineractstub.model.InteropIdentifier;
-import org.mifos.connector.fineractstub.model.InteropTransfers;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import java.io.IOException;
+import java.util.Optional;
+import javax.servlet.http.HttpServletRequest;
+import javax.validation.Valid;
+import org.mifos.connector.fineractstub.model.InteropIdentifier;
+import org.mifos.connector.fineractstub.model.InteropTransfers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -24,10 +28,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.validation.Valid;
-import java.io.IOException;
-import java.util.Optional;
 @SuppressWarnings("checkstyle:Dynamic")
 @javax.annotation.Generated(value = "io.swagger.codegen.v3.generators.java.SpringCodegen", date = "2023-08-10T10:13:07.472376795Z[GMT]")
 @Validated
@@ -35,11 +35,11 @@ public interface SavingsaccountApi {
 
     Logger log = LoggerFactory.getLogger(SavingsaccountApi.class);
 
-    default Optional<ObjectMapper> getObjectMapper(){
+    default Optional<ObjectMapper> getObjectMapper() {
         return Optional.empty();
     }
 
-    default Optional<HttpServletRequest> getRequest(){
+    default Optional<HttpServletRequest> getRequest() {
         return Optional.empty();
     }
 
@@ -47,17 +47,17 @@ public interface SavingsaccountApi {
         return getRequest().map(r -> r.getHeader("Accept"));
     }
 
-    @Operation(summary = "Get savings Account", description = "Adds an item to the system", tags={ "developers" })
-    @ApiResponses(value = { 
-        @ApiResponse(responseCode = "200", description = "Get savings account", content = @Content(mediaType = "application/json", schema = @Schema(implementation = InteropIdentifier.class))) })
-    @RequestMapping(value = "/savingsaccount",
-        produces = { "application/json" }, 
-        method = RequestMethod.GET)
+    @Operation(summary = "Get savings Account", description = "Adds an item to the system", tags = { "developers" })
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Get savings account", content = @Content(mediaType = "application/json", schema = @Schema(implementation = InteropIdentifier.class))) })
+    @RequestMapping(value = "/savingsaccount", produces = { "application/json" }, method = RequestMethod.GET)
     default ResponseEntity<InteropIdentifier> getSavingsAccount() {
-        if(getObjectMapper().isPresent() && getAcceptHeader().isPresent()) {
+        if (getObjectMapper().isPresent() && getAcceptHeader().isPresent()) {
             if (getAcceptHeader().get().contains("application/json")) {
                 try {
-                    return new ResponseEntity<>(getObjectMapper().get().readValue("{\n  \"accountId\" : \"cde3e5ee-214b-423f-97b0-0a0206aecaaf\",\n  \"resourceId\" : \"1\",\n  \"resourceIdentifier\" : \"1\"\n}", InteropIdentifier.class), HttpStatus.OK);
+                    return new ResponseEntity<>(getObjectMapper().get().readValue(
+                            "{\n  \"accountId\" : \"cde3e5ee-214b-423f-97b0-0a0206aecaaf\",\n  \"resourceId\" : \"1\",\n  \"resourceIdentifier\" : \"1\"\n}",
+                            InteropIdentifier.class), HttpStatus.OK);
                 } catch (IOException e) {
                     log.error("Couldn't serialize response for content type application/json", e);
                     return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
@@ -69,24 +69,19 @@ public interface SavingsaccountApi {
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
+    @Operation(summary = "savings account transfers", description = "Adds an item to the system", tags = { "developers" })
+    @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "transfers created"),
 
-    @Operation(summary = "savings account transfers", description = "Adds an item to the system", tags={ "developers" })
-    @ApiResponses(value = { 
-        @ApiResponse(responseCode = "200", description = "transfers created"),
-        
-        @ApiResponse(responseCode = "400", description = "invalid input, object invalid"),
-        
-        @ApiResponse(responseCode = "409", description = "an existing item already exists") })
-    @RequestMapping(value = "/savingsaccount/transfers",
-        consumes = { "application/json" }, 
-        method = RequestMethod.POST)
-    default ResponseEntity<Void> transfers(@Parameter(in = ParameterIn.DEFAULT, description = "post savings Account transfers", schema=@Schema()) @Valid @RequestBody InteropTransfers body) {
-        if(getObjectMapper().isPresent() && getAcceptHeader().isPresent()) {
-        } else {
+            @ApiResponse(responseCode = "400", description = "invalid input, object invalid"),
+
+            @ApiResponse(responseCode = "409", description = "an existing item already exists") })
+    @RequestMapping(value = "/savingsaccount/transfers", consumes = { "application/json" }, method = RequestMethod.POST)
+    default ResponseEntity<Void> transfers(
+            @Parameter(in = ParameterIn.DEFAULT, description = "post savings Account transfers", schema = @Schema()) @Valid @RequestBody InteropTransfers body) {
+        if (getObjectMapper().isPresent() && getAcceptHeader().isPresent()) {} else {
             log.warn("ObjectMapper or HttpServletRequest not configured in default SavingsaccountApi interface so no example is generated");
         }
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
 }
-

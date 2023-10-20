@@ -1,5 +1,16 @@
 package org.mifos.connector.ams.tenant;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.mifos.connector.ams.camel.config.CamelProperties.LOGIN_PASSWORD;
+import static org.mifos.connector.ams.camel.config.CamelProperties.LOGIN_USERNAME;
+import static org.mifos.connector.ams.zeebe.ZeebeVariables.TENANT_ID;
+
+import java.util.Base64;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import javax.ws.rs.core.HttpHeaders;
 import org.apache.camel.CamelContext;
 import org.apache.camel.Exchange;
 import org.apache.camel.ProducerTemplate;
@@ -11,28 +22,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.stereotype.Component;
 
-import javax.ws.rs.core.HttpHeaders;
-import java.util.Base64;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
-import static org.mifos.connector.ams.camel.config.CamelProperties.LOGIN_PASSWORD;
-import static org.mifos.connector.ams.camel.config.CamelProperties.LOGIN_USERNAME;
-import static org.mifos.connector.ams.zeebe.ZeebeVariables.TENANT_ID;
-
 @Component
-//@ConditionalOnExpression("${ams.local.enabled}")
+// @ConditionalOnExpression("${ams.local.enabled}")
 public class TenantService {
 
     public static final String X_TENANT_IDENTIFIER_HEADER = "X-Tenant-Identifier";
     public static final String USER_HEADER = "User";
     public static final String FINERACT_PLATFORM_TENANT_ID_HEADER = "Fineract-Platform-TenantId";
-
 
     private Logger logger = LoggerFactory.getLogger(this.getClass());
 
@@ -80,11 +78,12 @@ public class TenantService {
     private CachedTenantAuth login(Tenant tenant) {
         String tenantAuthtype = tenant.getAuthtype();
         if ("1.2".equals(amsLocalVersion) && "basic".equals(tenantAuthtype)) {
-            return new CachedTenantAuth("Basic " + Base64.getEncoder()
-                    .encodeToString((tenant.getUser() + ":" + tenant.getPassword()).getBytes()), null);
+            return new CachedTenantAuth(
+                    "Basic " + Base64.getEncoder().encodeToString((tenant.getUser() + ":" + tenant.getPassword()).getBytes(UTF_8)), null);
         } else if ("1.2".equals(amsLocalVersion) && "oauth".equals(tenantAuthtype)) {
             // TODO implement
-            throw new RuntimeException("Unsupported authType: " + tenantAuthtype + ", for local fsp version: " + amsLocalVersion + ", for tenant: " + tenant.getName());
+            throw new RuntimeException("Unsupported authType: " + tenantAuthtype + ", for local fsp version: " + amsLocalVersion
+                    + ", for tenant: " + tenant.getName());
         } else if ("cn".equals(amsLocalVersion) && "oauth".equals(tenantAuthtype)) {
             Exchange ex = new DefaultExchange(camelContext);
             ex.setProperty(TENANT_ID, tenant.getName());
@@ -94,13 +93,15 @@ public class TenantService {
             LoginFineractCnResponseDTO response = ex.getOut().getBody(LoginFineractCnResponseDTO.class);
             return new CachedTenantAuth(response.getAccessToken(), response.getAccessTokenExpiration());
         } else {
-            throw new RuntimeException("Unsupported authType: " + tenantAuthtype + ", for local fsp version: " + amsLocalVersion + ", for tenant: " + tenant.getName());
+            throw new RuntimeException("Unsupported authType: " + tenantAuthtype + ", for local fsp version: " + amsLocalVersion
+                    + ", for tenant: " + tenant.getName());
         }
     }
 
     private boolean isAccessTokenExpired(Date accessTokenExpiration) {
-        if (accessTokenExpiration == null) // basic is stateless and has no expiration
+        if (accessTokenExpiration == null) { // basic is stateless and has no expiration
             return false;
+        }
 
         Date fiveMinsFromNow = new Date(System.currentTimeMillis() + 300 * 1000);
         return accessTokenExpiration.before(fiveMinsFromNow);
