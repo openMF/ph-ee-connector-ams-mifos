@@ -27,12 +27,12 @@ import com.baasflow.commons.events.EventService;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import hu.dpc.rt.utils.converter.Pacs004ToCamt053Converter;
 import io.camunda.zeebe.client.api.response.ActivatedJob;
 import io.camunda.zeebe.client.api.worker.JobClient;
 import io.camunda.zeebe.spring.client.annotation.JobWorker;
 import io.camunda.zeebe.spring.client.annotation.Variable;
 import io.camunda.zeebe.spring.client.exception.ZeebeBpmnError;
-import iso.std.iso._20022.tech.json.camt_053_001.AccountStatement9;
 import iso.std.iso._20022.tech.json.camt_053_001.ActiveOrHistoricCurrencyAndAmountRange2.CreditDebitCode;
 import iso.std.iso._20022.tech.json.camt_053_001.BankToCustomerStatementV08;
 import iso.std.iso._20022.tech.json.camt_053_001.ReportEntry10;
@@ -44,7 +44,10 @@ import lombok.extern.slf4j.Slf4j;
 public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 
     @Autowired
-    private Pacs008Camt053Mapper camt053Mapper;
+    private Pacs008Camt053Mapper pacs008Camt053Mapper;
+    
+    @Autowired
+    private Pacs004ToCamt053Converter pacs004Camt053Mapper;
 
     @Value("${fineract.incoming-money-api}")
     protected String incomingMoneyApi;
@@ -144,7 +147,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 			
 			batchItemBuilder.add(items, disposalAccountDepositRelativeUrl, bodyItem, false);
 			
-			ReportEntry10 convertedCamt053Entry = camt053Mapper.toCamt053Entry(pacs008);
+			ReportEntry10 convertedCamt053Entry = pacs008Camt053Mapper.toCamt053Entry(pacs008).getStatement().get(0).getEntry().get(0);
 			convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.CRDT);
 			convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
 			String camt053Entry = objectMapper.writeValueAsString(convertedCamt053Entry);
@@ -275,7 +278,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
                                                    Integer conversionAccountAmsId,
                                                    Integer disposalAccountAmsId,
                                                    String tenantIdentifier,
-                                                   String pacs004,
+                                                   String originalPacs004,
                                                    String creditorIban,
                                                    Event.Builder eventBuilder) {
     	try {
@@ -283,6 +286,8 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 			log.info("transfer to disposal account in recall (pacs.004) {} started for {} on {} ", internalCorrelationId, paymentScheme, tenantIdentifier);
 
 			iso.std.iso._20022.tech.xsd.pacs_008_001.Document pacs008 = jaxbUtils.unmarshalPacs008(originalPacs008);
+			
+			iso.std.iso._20022.tech.xsd.pacs_004_001.Document pacs004 = jaxbUtils.unmarshalPacs004(originalPacs004);
 		
 			objectMapper.setSerializationInclusion(Include.NON_NULL);
 			
@@ -310,7 +315,8 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 			
 			batchItemBuilder.add(items, disposalAccountDepositRelativeUrl, bodyItem, false);
 			
-			ReportEntry10 convertedCamt053Entry = camt053Mapper.toCamt053Entry(pacs008);
+			BankToCustomerStatementV08 intermediateCamt053 = pacs008Camt053Mapper.toCamt053Entry(pacs008);
+			ReportEntry10 convertedCamt053Entry = pacs004Camt053Mapper.convert(pacs004, intermediateCamt053).getStatement().get(0).getEntry().get(0);
 			convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.CRDT);
 			convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
 			String camt053Entry = objectMapper.writeValueAsString(convertedCamt053Entry);
@@ -470,14 +476,12 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 
 			var camt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
 			
-			BankToCustomerStatementV08 camt053 = new BankToCustomerStatementV08();
-			camt053.getStatement().add(new AccountStatement9());
-			camt053.getStatement().get(0).getEntry().add(new ReportEntry10());
+			iso.std.iso._20022.tech.xsd.pacs_004_001.Document pacs_004 = jaxbUtils.unmarshalPacs004(pacs004);
+			BankToCustomerStatementV08 camt053 = pacs004Camt053Mapper.convert(pacs_004, new BankToCustomerStatementV08());
 			ReportEntry10 convertedCamt053Entry = camt053.getStatement().get(0).getEntry().get(0);
 
 			String camt053Entry = objectMapper.writeValueAsString(convertedCamt053Entry);
 			
-			iso.std.iso._20022.tech.xsd.pacs_004_001.Document pacs_004 = jaxbUtils.unmarshalPacs004(pacs004);
 
 			var td = new DtSavingsTransactionDetails(
 					internalCorrelationId,

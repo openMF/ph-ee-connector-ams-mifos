@@ -27,12 +27,12 @@ import com.baasflow.commons.events.EventService;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import hu.dpc.rt.utils.converter.Pacs004ToCamt053Converter;
 import io.camunda.zeebe.client.api.response.ActivatedJob;
 import io.camunda.zeebe.client.api.worker.JobClient;
 import io.camunda.zeebe.spring.client.annotation.JobWorker;
 import io.camunda.zeebe.spring.client.annotation.Variable;
 import io.camunda.zeebe.spring.client.exception.ZeebeBpmnError;
-import iso.std.iso._20022.tech.json.camt_053_001.AccountStatement9;
 import iso.std.iso._20022.tech.json.camt_053_001.ActiveOrHistoricCurrencyAndAmountRange2.CreditDebitCode;
 import iso.std.iso._20022.tech.json.camt_053_001.BankToCustomerStatementV08;
 import iso.std.iso._20022.tech.json.camt_053_001.ReportEntry10;
@@ -44,7 +44,10 @@ import lombok.extern.slf4j.Slf4j;
 public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyInOutWorker {
 
     @Autowired
-    private Pacs008Camt053Mapper camt053Mapper;
+    private Pacs008Camt053Mapper pacs008Camt053Mapper;
+    
+    @Autowired
+    private Pacs004ToCamt053Converter pacs004Camt053Mapper;
 
     @Value("${fineract.incoming-money-api}")
     protected String incomingMoneyApi;
@@ -141,7 +144,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
     		
     		batchItemBuilder.add(items, conversionAccountWithdrawalRelativeUrl, bodyItem, false);
     	
-    		ReportEntry10 convertedCamt053Entry = camt053Mapper.toCamt053Entry(pacs008);
+    		ReportEntry10 convertedCamt053Entry = pacs008Camt053Mapper.toCamt053Entry(pacs008).getStatement().get(0).getEntry().get(0);
     		convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.CRDT);
     		convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
     		String camt053Entry = objectMapper.writeValueAsString(convertedCamt053Entry);
@@ -199,6 +202,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
                                                               @Variable BigDecimal amount,
                                                               @Variable Integer conversionAccountAmsId,
                                                               @Variable String pacs004,
+                                                              @Variable String pacs002,
                                                               @Variable String creditorIban) {
         log.info("bookCreditedAmountToConversionAccountInRecall");
         eventService.auditedEvent(
@@ -213,6 +217,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
                         amount,
                         conversionAccountAmsId,
                         pacs004,
+                        pacs002,
                         creditorIban,
                         eventBuilder));
     }
@@ -226,13 +231,18 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
                                                                String paymentScheme,
                                                                BigDecimal amount,
                                                                Integer conversionAccountAmsId,
-                                                               String pacs004,
+                                                               String originalPacs004,
+                                                               String originalPacs002,
                                                                String creditorIban,
                                                                Event.Builder eventBuilder) {
         try {
             iso.std.iso._20022.tech.xsd.pacs_008_001.Document pacs008 = jaxbUtils.unmarshalPacs008(originalPacs008);
+            
+            iso.std.iso._20022.tech.xsd.pacs_004_001.Document pacs004 = jaxbUtils.unmarshalPacs004(originalPacs004);
 
             batchItemBuilder.tenantId(tenantIdentifier);
+            
+            //TODO: IG2-nél egyáltalán nincs pacs.002; AFR-nél van, de nem tesszük be a flow-ba
 
             String conversionAccountWithdrawalRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "deposit");
 
@@ -257,7 +267,8 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
 
             batchItemBuilder.add(items, conversionAccountWithdrawalRelativeUrl, bodyItem, false);
 
-            ReportEntry10 convertedCamt053Entry = camt053Mapper.toCamt053Entry(pacs008);
+            BankToCustomerStatementV08 intermediateCamt053Entry = pacs008Camt053Mapper.toCamt053Entry(pacs008);
+            ReportEntry10 convertedCamt053Entry = pacs004Camt053Mapper.convert(pacs004, intermediateCamt053Entry).getStatement().get(0).getEntry().get(0);
             convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
             String camt053Entry = objectMapper.writeValueAsString(convertedCamt053Entry);
 
@@ -372,9 +383,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
             batchItemBuilder.add(items, conversionAccountWithdrawalRelativeUrl, bodyItem, false);
 
             // TODO make proper pacs.004 -> camt.053 converter
-            BankToCustomerStatementV08 camt053 = new BankToCustomerStatementV08();
-            camt053.getStatement().add(new AccountStatement9());
-            camt053.getStatement().get(0).getEntry().add(new ReportEntry10());
+            BankToCustomerStatementV08 camt053 = pacs004Camt053Mapper.convert(pacs_004, new BankToCustomerStatementV08());
             ReportEntry10 convertedCamt053Entry = camt053.getStatement().get(0).getEntry().get(0);
 
             String camt053Entry = objectMapper.writeValueAsString(convertedCamt053Entry);
