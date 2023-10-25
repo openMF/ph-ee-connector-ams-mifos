@@ -46,7 +46,7 @@ spotless {
 }
 
 dependencies {
-    implementation 'org.mifos:ph-ee-connector-common:1.5.1-SNAPSHOT'
+    implementation 'org.mifos:ph-ee-connector-common:1.6.1-rc.2'
     implementation 'com.sun.xml.ws:jaxws-ri:2.3.2'
     implementation 'org.apache.camel.springboot:camel-spring-boot-starter:3.4.0'
     implementation 'org.apache.camel:camel-endpointdsl:3.4.0'
