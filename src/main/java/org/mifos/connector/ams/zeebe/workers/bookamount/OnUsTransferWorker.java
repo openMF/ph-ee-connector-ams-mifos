@@ -137,10 +137,10 @@ try {
 			Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001 = objectMapper.readValue(originalPain001, Pain00100110CustomerCreditTransferInitiationV10MessageSchema.class);
 			
 			ReportEntry10 convertedcamt053Entry = camt053Mapper.toCamt053Entry(pain001.getDocument());
-			GenericAccountIdentification1 debtorAccountIdOther = (GenericAccountIdentification1) convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getRelatedParties().getDebtorAccount().getIdentification().getAdditionalProperties().get("Other");
+			GenericAccountIdentification1 debtorAccountIdOther = (GenericAccountIdentification1) convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getRelatedParties().getDebtorAccount().getIdentification().getAdditionalProperties().getOrDefault("Other", GenericAccountIdentification1.builder().build());
 			debtorAccountIdOther.id(debtorInternalAccountId);
 			debtorAccountIdOther.schemeName(AccountSchemeName1Choice.builder().code("IAID").build());
-			GenericAccountIdentification1 creditorAccountIdOther = (GenericAccountIdentification1) convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getRelatedParties().getCreditorAccount().getIdentification().getAdditionalProperties().get("Other");
+			GenericAccountIdentification1 creditorAccountIdOther = (GenericAccountIdentification1) convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getRelatedParties().getCreditorAccount().getIdentification().getAdditionalProperties().getOrDefault("Other", GenericAccountIdentification1.builder().build());
 			creditorAccountIdOther.id(creditorInternalAccountId);
 			creditorAccountIdOther.schemeName(AccountSchemeName1Choice.builder().code("IAID").build());
 			String camt053Entry = objectMapper.writeValueAsString(convertedcamt053Entry);
