@@ -339,7 +339,6 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 				unstructured,
 				transactionFeeCategoryPurposeCode,
 				paymentScheme,
-				null,
 				sourceAmsAccountId,
 				targetAmsAccountId);
 		
@@ -461,7 +460,6 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 							.map(iso.std.iso._20022.tech.xsd.camt_056_001.RemittanceInformation5::getUstrd).map(List::toString).orElse(""),
 					transactionCategoryPurposeCode,
 					paymentScheme,
-					null,
 					disposalAccountAmsId,
 					null);
 			

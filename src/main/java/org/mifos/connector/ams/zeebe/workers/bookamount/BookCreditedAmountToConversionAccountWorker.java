@@ -164,7 +164,6 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
     				transactionCategoryPurposeCode,
     				paymentScheme,
     				null,
-    				null,
     				conversionAccountAmsId);
     		
     		String camt053Body = objectMapper.writeValueAsString(td);
@@ -287,7 +286,6 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
     				transactionCategoryPurposeCode,
     				paymentScheme,
     				null,
-    				null,
     				conversionAccountAmsId);
 
             String camt053Body = objectMapper.writeValueAsString(td);
@@ -403,7 +401,6 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
                     		.map(iso.std.iso._20022.tech.xsd.pacs_004_001.RemittanceInformation5::getUstrd).map(List::toString).orElse(""),
                     transactionCategoryPurposeCode,
                     paymentScheme,
-                    null,
                     null,
                     conversionAccountAmsId);
 

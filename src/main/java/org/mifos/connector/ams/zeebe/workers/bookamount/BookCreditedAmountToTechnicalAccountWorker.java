@@ -183,7 +183,6 @@ public class BookCreditedAmountToTechnicalAccountWorker extends AbstractMoneyInO
     				transactionCategoryPurposeCode,
     				paymentScheme,
     				null,
-    				null,
     				null);
     		
     		String camt053Body = objectMapper.writeValueAsString(td);

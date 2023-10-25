@@ -164,7 +164,6 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 					Optional.ofNullable(pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getRmtInf()).map(RemittanceInformation5::getUstrd).map(List::toString).orElse(""),
 					transactionCategoryPurposeCode,
 					paymentScheme,
-					null,
 					conversionAccountAmsId,
 					disposalAccountAmsId);
 			
@@ -206,7 +205,6 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 					Optional.ofNullable(pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getRmtInf()).map(RemittanceInformation5::getUstrd).map(List::toString).orElse(""),
 					transactionCategoryPurposeCode,
 					paymentScheme,
-					null,
 					conversionAccountAmsId,
 					disposalAccountAmsId);
 			
@@ -333,7 +331,6 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 					Optional.ofNullable(pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getRmtInf()).map(RemittanceInformation5::getUstrd).map(List::toString).orElse(""),
 					transactionCategoryPurposeCode,
 					paymentScheme,
-					null,
 					conversionAccountAmsId,
 					disposalAccountAmsId);
 			
@@ -375,7 +372,6 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 					Optional.ofNullable(pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getRmtInf()).map(RemittanceInformation5::getUstrd).map(List::toString).orElse(""),
 					transactionCategoryPurposeCode,
 					paymentScheme,
-					null,
 					conversionAccountAmsId,
 					disposalAccountAmsId);
 			
@@ -496,7 +492,6 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
                     		.map(iso.std.iso._20022.tech.xsd.pacs_004_001.RemittanceInformation5::getUstrd).map(List::toString).orElse(""),
 					transactionCategoryPurposeCode,
 					paymentScheme,
-					null,
 					conversionAccountAmsId,
 					disposalAccountAmsId);
 
@@ -539,7 +534,6 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
                     		.map(iso.std.iso._20022.tech.xsd.pacs_004_001.RemittanceInformation5::getUstrd).map(List::toString).orElse(""),
 					transactionCategoryPurposeCode,
 					paymentScheme,
-					null,
 					conversionAccountAmsId,
 					disposalAccountAmsId);
 

@@ -184,7 +184,6 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 					transactionCategoryPurposeCode,
 					paymentScheme,
 					null,
-					null,
 					conversionAccountAmsId);
 			
 			String camt053Body = objectMapper.writeValueAsString(td);
@@ -226,7 +225,6 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 								.map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(List::toString).orElse(""),
 						transactionFeeCategoryPurposeCode,
 						paymentScheme,
-						null,
 						null,
 						conversionAccountAmsId);
 				camt053Body = objectMapper.writeValueAsString(td);
@@ -378,7 +376,6 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 							.map(iso.std.iso._20022.tech.xsd.pacs_004_001.RemittanceInformation5::getUstrd).map(List::toString).orElse(""),
 					transactionCategoryPurposeCode,
 					paymentScheme,
-					null,
 					conversionAccountAmsId,
 					null);
 			

@@ -187,7 +187,6 @@ try {
 							.map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(List::toString).orElse(""),
     				transactionCategoryPurposeCode,
     				paymentScheme,
-    				creditorInternalAccountId,
     				debtorDisposalAccountAmsId,
     				creditorDisposalAccountAmsId);
     		
@@ -231,7 +230,6 @@ try {
 								.map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(List::toString).orElse(""),
 	    				transactionFeeCategoryPurposeCode,
 	    				paymentScheme,
-	    				creditorInternalAccountId,
 	    				debtorDisposalAccountAmsId,
 	    				debtorConversionAccountAmsId);
 	    		
@@ -273,7 +271,6 @@ try {
 								.map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(List::toString).orElse(""),
 	    				transactionFeeCategoryPurposeCode,
 	    				paymentScheme,
-	    				creditorInternalAccountId,
 	    				debtorDisposalAccountAmsId,
 	    				debtorConversionAccountAmsId);
 	    		
@@ -317,7 +314,6 @@ try {
 							.map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(List::toString).orElse(""),
     				transactionCategoryPurposeCode,
     				paymentScheme,
-    				debtorInternalAccountId,
     				debtorDisposalAccountAmsId,
     				creditorDisposalAccountAmsId);
     		
@@ -362,7 +358,6 @@ try {
 								.map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(List::toString).orElse(""),
 	    				transactionFeeCategoryPurposeCode,
 	    				paymentScheme,
-	    				creditorInternalAccountId,
 	    				debtorConversionAccountAmsId,
 	    				null);
 	    		
