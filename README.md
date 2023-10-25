@@ -22,12 +22,6 @@ Payment Hub Enterprise Edition connector for AMS.
 * **ZEEBE_CLIENT_BROKER_GATEWAY_ADDRESS**: The URL of the Camunda Zeebe gateway to register and manage workers
     * Default value: empty string
     * Example: `zeebe-gateway:26500`
-* **AMS_LOCAL_KEYSTORE_PATH**: The path to the keystore file for HTTPS connections
-    * Default value: empty string
-    * Example: `keystore.jks`
-* **AMS_LOCAL_KEYSTORE_PASSWORD**: The password to the keystore file for HTTPS connections
-    * Default value: empty string
-    * Example: `changeit`
 * **TENANT_CONFIGS**: See next section
 
 

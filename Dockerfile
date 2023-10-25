@@ -25,7 +25,6 @@ HEALTHCHECK CMD curl --fail http://localhost:8080/actuator/health || exit 1
 
 # Add the application itself
 WORKDIR /app
-COPY keystore.jks /app/
 COPY target/*.jar .
 RUN chown -R 1000:1000 .
 USER javauser:javagroup

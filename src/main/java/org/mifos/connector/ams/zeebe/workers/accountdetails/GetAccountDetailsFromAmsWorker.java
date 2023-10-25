@@ -1,26 +1,28 @@
 package org.mifos.connector.ams.zeebe.workers.accountdetails;
 
-import com.baasflow.commons.events.Event;
-import com.baasflow.commons.events.EventService;
-import io.camunda.zeebe.client.api.response.ActivatedJob;
-import io.camunda.zeebe.client.api.worker.JobClient;
-import io.camunda.zeebe.spring.client.annotation.JobWorker;
-import io.camunda.zeebe.spring.client.annotation.Variable;
-import lombok.extern.slf4j.Slf4j;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+
 import org.apache.fineract.client.models.GetSavingsAccountsAccountIdResponse;
 import org.mifos.connector.ams.log.EventLogUtil;
 import org.mifos.connector.ams.log.LogInternalCorrelationId;
 import org.mifos.connector.ams.log.TraceZeebeArguments;
-import org.mifos.connector.common.ams.dto.SavingsAccountStatusType;
+import org.mifos.connector.ams.common.SavingsAccountStatusType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import com.baasflow.commons.events.Event;
+import com.baasflow.commons.events.EventService;
+
+import io.camunda.zeebe.client.api.response.ActivatedJob;
+import io.camunda.zeebe.client.api.worker.JobClient;
+import io.camunda.zeebe.spring.client.annotation.JobWorker;
+import io.camunda.zeebe.spring.client.annotation.Variable;
+import lombok.extern.slf4j.Slf4j;
 
 @Component
 @Slf4j
