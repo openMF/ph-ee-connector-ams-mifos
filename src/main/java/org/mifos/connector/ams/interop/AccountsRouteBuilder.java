@@ -1,46 +1,43 @@
 package org.mifos.connector.ams.interop;
 
-import static org.mifos.connector.ams.camel.config.CamelProperties.CLIENT_ID;
-import static org.mifos.connector.ams.zeebe.ZeebeVariables.PARTY_ID;
-import static org.mifos.connector.ams.zeebe.ZeebeVariables.PARTY_ID_TYPE;
-import static org.mifos.connector.ams.zeebe.ZeebeVariables.TENANT_ID;
-
 import org.apache.camel.LoggingLevel;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.model.dataformat.JsonLibrary;
+import org.json.JSONArray;
 import org.json.JSONObject;
-import org.mifos.connector.common.ams.dto.ClientData;
-import org.mifos.connector.common.ams.dto.Customer;
-import org.mifos.connector.common.ams.dto.InteropAccountDTO;
-import org.mifos.connector.common.ams.dto.ProductInstance;
+import org.mifos.connector.common.ams.dto.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import java.util.List;
+
+import static org.mifos.connector.ams.camel.config.CamelProperties.CLIENT_ID;
+import static org.mifos.connector.ams.zeebe.ZeebeVariables.*;
 
 @Component
 public class AccountsRouteBuilder extends RouteBuilder {
-
     @Autowired(required = false)
     private AmsService amsService;
     @Value("${ams.local.version}")
     private String amsVersion;
-
     @Override
     public void configure() {
-        from("rest:GET:/ams/accounts/{IdentifierType}/{IdentifierId}/status").id("ams-connector-account-management-status-check")
-                .log(LoggingLevel.INFO, "##ams-connector-account-management-status-check").process(e -> {
+        from("rest:GET:/ams/accounts/{IdentifierType}/{IdentifierId}/status")
+                .id("ams-connector-account-management-status-check")
+                .log(LoggingLevel.INFO, "##ams-connector-account-management-status-check")
+                .process(e -> {
                     String IdentifierType = e.getIn().getHeader("IdentifierType", String.class);
                     String IdentifierId = e.getIn().getHeader("IdentifierId", String.class);
                     String tenantId = e.getIn().getHeader("Platform-TenantId", String.class);
                     e.setProperty(PARTY_ID_TYPE, IdentifierType);
-                    e.setProperty(PARTY_ID, IdentifierId);
+                    e.setProperty(PARTY_ID,IdentifierId);
                     e.setProperty(TENANT_ID, tenantId);
                 })
-                .log(LoggingLevel.INFO,
-                        "##ams-connector-account-management-status-check: ${exchangeProperty." + PARTY_ID_TYPE
-                                + "} with value: ${exchangeProperty." + PARTY_ID + "}")
-                .to("direct:get-external-account").process(amsService::getSavingsAccount).unmarshal()
-                .json(JsonLibrary.Jackson, InteropAccountDTO.class).process(e -> {
+                .log(LoggingLevel.INFO, "##ams-connector-account-management-status-check: ${exchangeProperty." + PARTY_ID_TYPE + "} with value: ${exchangeProperty." + PARTY_ID + "}")
+                .to("direct:get-external-account")
+                .process(amsService::getSavingsAccount)
+                .unmarshal().json(JsonLibrary.Jackson, InteropAccountDTO.class)
+                .process(e -> {
                     InteropAccountDTO account = e.getIn().getBody(InteropAccountDTO.class);
                     JSONObject response = new JSONObject();
                     response.put("accountStatus", account.getStatus().getCode());
@@ -71,7 +68,7 @@ public class AccountsRouteBuilder extends RouteBuilder {
                         .process(e -> e.setProperty("client_image", e.getIn().getBody(String.class)))
                         .process(amsService::getClient)
                         .unmarshal().json(JsonLibrary.Jackson, ClientData.class)
-                        .process(e -> {
+                        .process(e ->{
                             ClientData customer = e.getIn().getBody(ClientData.class);
                             JSONObject response = new JSONObject();
                             JSONObject name = new JSONObject();
@@ -92,7 +89,7 @@ public class AccountsRouteBuilder extends RouteBuilder {
                             .process(e -> e.setProperty(CLIENT_ID, e.getIn().getBody(ProductInstance.class).getCustomerIdentifier()))
                         .process(amsService::getClient)
                         .unmarshal().json(JsonLibrary.Jackson, Customer.class)
-                        .process(e -> {
+                        .process(e ->{
                             Customer customer = e.getIn().getBody(Customer.class);
                             JSONObject response = new JSONObject();
                             JSONObject name = new JSONObject();
@@ -148,7 +145,7 @@ public class AccountsRouteBuilder extends RouteBuilder {
                 .log(LoggingLevel.INFO, "##ams-connector-account-management-status-check: ${exchangeProperty." + PARTY_ID_TYPE + "} with value: ${exchangeProperty." + PARTY_ID + "}")
                 .to("direct:get-external-account")
                 .process(amsService::getSavingsAccountsTransactions)
-                .process(e -> {
+                .process(e->{
                     e.getIn().setBody(e.getIn().getBody());
                 });
                 /*.

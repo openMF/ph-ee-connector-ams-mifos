@@ -1,5 +1,18 @@
 package org.mifos.connector.ams.interop;
 
+import io.camunda.zeebe.client.ZeebeClient;
+import org.apache.camel.Exchange;
+import org.apache.camel.Processor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
+import org.springframework.stereotype.Component;
+
+import java.util.HashMap;
+import java.util.Map;
+
 import static org.mifos.connector.ams.camel.config.CamelProperties.CONTINUE_PROCESSING;
 import static org.mifos.connector.ams.camel.config.CamelProperties.ZEEBE_JOB_KEY;
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.ACCOUNT;
@@ -11,19 +24,8 @@ import static org.mifos.connector.ams.zeebe.ZeebeVariables.PARTY_ID_TYPE;
 import static org.mifos.connector.common.camel.ErrorHandlerRouteBuilder.createError;
 import static org.mifos.connector.common.mojaloop.type.ErrorCode.INTERNAL_SERVER_ERROR;
 
-import io.camunda.zeebe.client.ZeebeClient;
-import java.util.HashMap;
-import java.util.Map;
-import org.apache.camel.Exchange;
-import org.apache.camel.Processor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
-
 @Component
-// @ConditionalOnExpression("${ams.local.enabled}")
+//@ConditionalOnExpression("${ams.local.enabled}")
 public class InteropPartyResponseProcessor implements Processor {
 
     private Logger logger = LoggerFactory.getLogger(this.getClass());
@@ -43,10 +45,12 @@ public class InteropPartyResponseProcessor implements Processor {
         boolean isRequestFailed = false;
         if (responseCode > 202) {
             isRequestFailed = true;
-            String errorMsg = String.format(
-                    "Invalid responseCode %s at interop identifier registration, partyIdType: %s partyId: %s account: %s\nExchange:\n%s",
-                    responseCode, e.getProperty(PARTY_ID_TYPE, String.class), e.getProperty(PARTY_ID, String.class),
-                    e.getProperty(ACCOUNT, String.class), e.getIn().getBody(String.class));
+            String errorMsg = String.format("Invalid responseCode %s at interop identifier registration, partyIdType: %s partyId: %s account: %s\nExchange:\n%s",
+                    responseCode,
+                    e.getProperty(PARTY_ID_TYPE, String.class),
+                    e.getProperty(PARTY_ID, String.class),
+                    e.getProperty(ACCOUNT, String.class),
+                    e.getIn().getBody(String.class));
             logger.error(errorMsg);
 
             variables.put(ERROR_INFORMATION, createError(String.valueOf(INTERNAL_SERVER_ERROR.getCode()), errorMsg).toString());
@@ -56,7 +60,10 @@ public class InteropPartyResponseProcessor implements Processor {
         Boolean continueProcessing = e.getProperty(CONTINUE_PROCESSING, Boolean.class);
         if (isRequestFailed || continueProcessing == null || !continueProcessing) {
             variables.put(ACCOUNT_CURRENCY, e.getProperty(ACCOUNT_CURRENCY, String.class));
-            zeebeClient.newCompleteCommand(e.getProperty(ZEEBE_JOB_KEY, Long.class)).variables(variables).send();
+            zeebeClient.newCompleteCommand(e.getProperty(ZEEBE_JOB_KEY, Long.class))
+                    .variables(variables)
+                    .send()
+                    ;
             if (isRequestFailed) {
                 e.setRouteStop(true);
             }

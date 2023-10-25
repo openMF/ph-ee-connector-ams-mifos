@@ -1,12 +1,10 @@
 package org.mifos.connector.fineractstub.configuration;
 
+import org.springframework.core.convert.converter.Converter;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import org.springframework.core.convert.converter.Converter;
-
 @SuppressWarnings("checkstyle:Dynamic")
 public class LocalDateTimeConverter implements Converter<String, LocalDateTime> {
-
     private final DateTimeFormatter formatter;
 
     public LocalDateTimeConverter(String dateFormat) {
@@ -15,7 +13,7 @@ public class LocalDateTimeConverter implements Converter<String, LocalDateTime> 
 
     @Override
     public LocalDateTime convert(String source) {
-        if (source == null || source.isEmpty()) {
+        if(source == null || source.isEmpty()) {
             return null;
         }
         return LocalDateTime.parse(source, this.formatter);

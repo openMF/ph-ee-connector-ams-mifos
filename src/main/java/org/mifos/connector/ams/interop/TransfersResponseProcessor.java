@@ -1,30 +1,33 @@
 package org.mifos.connector.ams.interop;
 
-import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSFER_ACTION;
-import static org.mifos.connector.ams.camel.config.CamelProperties.ZEEBE_JOB_KEY;
-import static org.mifos.connector.ams.zeebe.ZeebeVariables.ACTION_FAILURE_MAP;
-import static org.mifos.connector.ams.zeebe.ZeebeVariables.ERROR_CODE;
-import static org.mifos.connector.ams.zeebe.ZeebeVariables.ERROR_INFORMATION;
-import static org.mifos.connector.ams.zeebe.ZeebeVariables.ERROR_PAYLOAD;
-import static org.mifos.connector.ams.zeebe.ZeebeVariables.FINERACT_RESPONSE_BODY;
-import static org.mifos.connector.ams.zeebe.ZeebeVariables.TRANSFER_CODE;
-import static org.mifos.connector.ams.zeebe.ZeebeVariables.TRANSFER_CREATE_FAILED;
-import static org.mifos.connector.ams.zeebe.ZeebeVariables.TRANSFER_RESPONSE_PREFIX;
-import static org.mifos.connector.common.ams.dto.TransferActionType.PREPARE;
-
+import com.fasterxml.jackson.core.JsonProcessingException;
 import io.camunda.zeebe.client.ZeebeClient;
-import java.util.HashMap;
-import java.util.Map;
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
+import org.json.JSONObject;
 import org.mifos.connector.ams.errorhandler.ErrorTranslator;
+import org.mifos.connector.common.mojaloop.type.TransactionRole;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.stereotype.Component;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSACTION_ROLE;
+import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSFER_ACTION;
+import static org.mifos.connector.ams.camel.config.CamelProperties.ZEEBE_JOB_KEY;
+import static org.mifos.connector.ams.zeebe.ZeebeVariables.*;
+import static org.mifos.connector.ams.zeebe.ZeebeVariables.ERROR_PAYLOAD;
+import static org.mifos.connector.common.ams.dto.TransferActionType.PREPARE;
+import static org.mifos.connector.common.camel.ErrorHandlerRouteBuilder.createError;
+import static org.mifos.connector.common.mojaloop.type.ErrorCode.PAYEE_FSP_REJECTED_TRANSACTION;
+import static org.mifos.connector.common.mojaloop.type.ErrorCode.PAYER_REJECTED_TRANSACTION_REQUEST;
+
 @Component
-// @ConditionalOnExpression("${ams.local.enabled}")
+//@ConditionalOnExpression("${ams.local.enabled}")
 public class TransfersResponseProcessor implements Processor {
 
     private Logger logger = LoggerFactory.getLogger(this.getClass());
@@ -60,7 +63,9 @@ public class TransfersResponseProcessor implements Processor {
             variables.put(ACTION_FAILURE_MAP.get(transferAction), false);
         }
         variables.put(FINERACT_RESPONSE_BODY, exchange.getIn().getBody());
-        zeebeClient.newCompleteCommand(exchange.getProperty(ZEEBE_JOB_KEY, Long.class)).variables(variables).send();
+        zeebeClient.newCompleteCommand(exchange.getProperty(ZEEBE_JOB_KEY, Long.class))
+                .variables(variables)
+                .send();
         logger.info("Completed job with key: {}", exchange.getProperty(ZEEBE_JOB_KEY, Long.class));
     }
 }

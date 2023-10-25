@@ -1,6 +1,6 @@
 package org.mifos.connector.ams.camel.config;
 
-public final class CamelProperties {
+public class CamelProperties {
 
     private CamelProperties() {}
 

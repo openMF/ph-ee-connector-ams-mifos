@@ -1,9 +1,10 @@
 package org.mifos.connector.ams.interop.errordto;
 
-import java.util.ArrayList;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+
+import java.util.ArrayList;
 
 @Getter
 @Setter

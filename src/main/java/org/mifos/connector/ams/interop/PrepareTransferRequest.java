@@ -1,15 +1,6 @@
 package org.mifos.connector.ams.interop;
 
-import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSACTION_ROLE;
-import static org.mifos.connector.ams.zeebe.ZeebeUtil.zeebeVariable;
-import static org.mifos.connector.ams.zeebe.ZeebeVariables.BOOK_TRANSACTION_ID;
-import static org.mifos.connector.ams.zeebe.ZeebeVariables.EXTERNAL_ACCOUNT_ID;
-import static org.mifos.connector.ams.zeebe.ZeebeVariables.NOTE;
-import static org.mifos.connector.ams.zeebe.ZeebeVariables.TRANSACTION_ID;
-import static org.mifos.connector.ams.zeebe.ZeebeVariables.TRANSFER_CODE;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.util.UUID;
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
 import org.mifos.connector.common.ams.dto.TransferFspRequestDTO;
@@ -21,12 +12,22 @@ import org.mifos.connector.common.mojaloop.type.TransactionRole;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.stereotype.Component;
 
-@Component
-// @ConditionalOnExpression("${ams.local.enabled}")
-public class PrepareTransferRequest implements Processor {
+import java.util.UUID;
 
+import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSACTION_ROLE;
+import static org.mifos.connector.ams.zeebe.ZeebeUtil.zeebeVariable;
+import static org.mifos.connector.ams.zeebe.ZeebeVariables.BOOK_TRANSACTION_ID;
+import static org.mifos.connector.ams.zeebe.ZeebeVariables.EXTERNAL_ACCOUNT_ID;
+import static org.mifos.connector.ams.zeebe.ZeebeVariables.TRANSACTION_ID;
+import static org.mifos.connector.ams.zeebe.ZeebeVariables.TRANSFER_CODE;
+import static org.mifos.connector.ams.zeebe.ZeebeVariables.NOTE;
+
+@Component
+//@ConditionalOnExpression("${ams.local.enabled}")
+public class PrepareTransferRequest implements Processor {
     private Logger logger = LoggerFactory.getLogger(this.getClass());
 
     @Autowired
@@ -45,7 +46,7 @@ public class PrepareTransferRequest implements Processor {
         transactionType.setInitiatorType(InitiatorType.valueOf(initiatorType));
         transactionType.setScenario(Scenario.valueOf(scenario));
 
-        String note = zeebeVariable(exchange, NOTE, String.class);
+        String note = zeebeVariable(exchange,NOTE, String.class);
         FspMoneyData amount = zeebeVariable(exchange, "amount", FspMoneyData.class);
         FspMoneyData fspFee = zeebeVariable(exchange, "fspFee", FspMoneyData.class);
         FspMoneyData fspCommission = zeebeVariable(exchange, "fspCommission", FspMoneyData.class);
@@ -61,20 +62,29 @@ public class PrepareTransferRequest implements Processor {
             exchange.setProperty(TRANSFER_CODE, transferCode);
         }
 
-        String transactionCode = exchange.getProperty(BOOK_TRANSACTION_ID, String.class) != null
-                ? exchange.getProperty(BOOK_TRANSACTION_ID, String.class)
-                : exchange.getProperty(TRANSACTION_ID, String.class);
+        String transactionCode = exchange.getProperty(BOOK_TRANSACTION_ID, String.class) != null ?
+                exchange.getProperty(BOOK_TRANSACTION_ID, String.class) : exchange.getProperty(TRANSACTION_ID, String.class);
         logger.debug("using transaction code {}", transactionCode);
 
         TransferFspRequestDTO transferRequestDTO = null;
 
         if (fspFee != null || fspCommission != null) {
-            transferRequestDTO = new TransferFspRequestDTO(transactionCode, transferCode,
-                    exchange.getProperty(EXTERNAL_ACCOUNT_ID, String.class), amount, fspFee, fspCommission,
-                    TransactionRole.valueOf(exchange.getProperty(TRANSACTION_ROLE, String.class)), transactionType, note);
+            transferRequestDTO = new TransferFspRequestDTO(
+                    transactionCode,
+                    transferCode,
+                    exchange.getProperty(EXTERNAL_ACCOUNT_ID, String.class),
+                    amount,
+                    fspFee,
+                    fspCommission,
+                    TransactionRole.valueOf(exchange.getProperty(TRANSACTION_ROLE, String.class)),
+                    transactionType,
+                    note);
         } else {
-            transferRequestDTO = new TransferFspRequestDTO(transactionCode, transferCode,
-                    exchange.getProperty(EXTERNAL_ACCOUNT_ID, String.class), amount,
+            transferRequestDTO = new TransferFspRequestDTO(
+                    transactionCode,
+                    transferCode,
+                    exchange.getProperty(EXTERNAL_ACCOUNT_ID, String.class),
+                    amount,
                     TransactionRole.valueOf(exchange.getProperty(TRANSACTION_ROLE, String.class)));
         }
 

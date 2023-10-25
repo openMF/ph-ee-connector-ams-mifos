@@ -5,18 +5,15 @@
  */
 package org.mifos.connector.fineractstub.api;
 
+import org.mifos.connector.fineractstub.model.LoanRepayment;
+import org.mifos.connector.fineractstub.model.SavingsDeposit;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import java.util.Optional;
-import javax.servlet.http.HttpServletRequest;
-import javax.validation.Valid;
-import org.mifos.connector.fineractstub.model.LoanRepayment;
-import org.mifos.connector.fineractstub.model.SavingsDeposit;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.media.Schema;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -26,6 +23,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.validation.Valid;
+import java.util.Optional;
 @SuppressWarnings("checkstyle:Dynamic")
 @javax.annotation.Generated(value = "io.swagger.codegen.v3.generators.java.SpringCodegen", date = "2023-08-10T10:13:07.472376795Z[GMT]")
 @Validated
@@ -33,11 +33,11 @@ public interface TransactionsApi {
 
     Logger log = LoggerFactory.getLogger(TransactionsApi.class);
 
-    default Optional<ObjectMapper> getObjectMapper() {
+    default Optional<ObjectMapper> getObjectMapper(){
         return Optional.empty();
     }
 
-    default Optional<HttpServletRequest> getRequest() {
+    default Optional<HttpServletRequest> getRequest(){
         return Optional.empty();
     }
 
@@ -45,34 +45,42 @@ public interface TransactionsApi {
         return getRequest().map(r -> r.getHeader("Accept"));
     }
 
-    @Operation(summary = "Deposit to savings Account", description = "Adds an item to the system", tags = { "developers" })
-    @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "item created"),
-
-            @ApiResponse(responseCode = "400", description = "invalid input, object invalid"),
-
-            @ApiResponse(responseCode = "409", description = "an existing item already exists") })
-    @RequestMapping(value = "/transactions/deposit", consumes = { "application/json" }, method = RequestMethod.POST)
-    default ResponseEntity<Void> deposit(
-            @Parameter(in = ParameterIn.DEFAULT, description = "Deposit to savings Account", schema = @Schema()) @Valid @RequestBody SavingsDeposit body) {
-        if (getObjectMapper().isPresent() && getAcceptHeader().isPresent()) {} else {
+    @Operation(summary = "Deposit to savings Account", description = "Adds an item to the system", tags={ "developers" })
+    @ApiResponses(value = { 
+        @ApiResponse(responseCode = "200", description = "item created"),
+        
+        @ApiResponse(responseCode = "400", description = "invalid input, object invalid"),
+        
+        @ApiResponse(responseCode = "409", description = "an existing item already exists") })
+    @RequestMapping(value = "/transactions/deposit",
+        consumes = { "application/json" }, 
+        method = RequestMethod.POST)
+    default ResponseEntity<Void> deposit(@Parameter(in = ParameterIn.DEFAULT, description = "Deposit to savings Account", schema=@Schema()) @Valid @RequestBody SavingsDeposit body) {
+        if(getObjectMapper().isPresent() && getAcceptHeader().isPresent()) {
+        } else {
             log.warn("ObjectMapper or HttpServletRequest not configured in default TransactionsApi interface so no example is generated");
         }
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
-    @Operation(summary = "Loan repayment", description = "Adds an item to the system", tags = { "developers" })
-    @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "item created"),
 
-            @ApiResponse(responseCode = "400", description = "invalid input, object invalid"),
-
-            @ApiResponse(responseCode = "409", description = "an existing item already exists") })
-    @RequestMapping(value = "/transactions/loanrepayment", consumes = { "application/json" }, method = RequestMethod.POST)
-    default ResponseEntity<Void> loanRepayment(
-            @Parameter(in = ParameterIn.DEFAULT, description = "Loan Repayment", schema = @Schema()) @Valid @RequestBody LoanRepayment body) {
-        if (getObjectMapper().isPresent() && getAcceptHeader().isPresent()) {} else {
+    @Operation(summary = "Loan repayment", description = "Adds an item to the system", tags={ "developers" })
+    @ApiResponses(value = { 
+        @ApiResponse(responseCode = "200", description = "item created"),
+        
+        @ApiResponse(responseCode = "400", description = "invalid input, object invalid"),
+        
+        @ApiResponse(responseCode = "409", description = "an existing item already exists") })
+    @RequestMapping(value = "/transactions/loanrepayment",
+        consumes = { "application/json" }, 
+        method = RequestMethod.POST)
+    default ResponseEntity<Void> loanRepayment(@Parameter(in = ParameterIn.DEFAULT, description = "Loan Repayment", schema=@Schema()) @Valid @RequestBody LoanRepayment body) {
+        if(getObjectMapper().isPresent() && getAcceptHeader().isPresent()) {
+        } else {
             log.warn("ObjectMapper or HttpServletRequest not configured in default TransactionsApi interface so no example is generated");
         }
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
 }
+

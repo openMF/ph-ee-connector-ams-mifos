@@ -30,10 +30,8 @@ public interface AmsService {
 
     void getClientByMobileNo(Exchange e);
 
-    void getSavingsAccountsTransactions(Exchange e);
-
+    void getSavingsAccountsTransactions(Exchange e) ;
     boolean sendCallback(String callbackURL, String body);
-
-    default void getClientImage(Exchange e) {}
+    default void getClientImage(Exchange e){}
 
 }
