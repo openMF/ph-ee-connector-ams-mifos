@@ -63,8 +63,7 @@ public class BookCreditedAmountToTechnicalAccountWorker extends AbstractMoneyInO
     @Autowired
     private Pacs008Camt053Mapper pacs008Camt053Mapper;
     
-    @Autowired
-    private Pacs004ToCamt053Converter pacs004Camt053Mapper;
+    private Pacs004ToCamt053Converter pacs004Camt053Mapper = new Pacs004ToCamt053Converter();
     
     @Autowired
     private ContactDetailsUtil contactDetailsUtil;
