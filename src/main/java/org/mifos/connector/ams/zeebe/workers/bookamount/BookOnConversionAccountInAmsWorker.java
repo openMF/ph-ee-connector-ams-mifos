@@ -362,7 +362,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 			String internalCorrelationId = String.format("%s_%s_%s", originalDebtorBic, originalCreationDate, originalEndToEndId);
 			
 			ZoneId zi = TimeZone.getTimeZone("Europe/Budapest").toZoneId();
-	        ZonedDateTime zdt = pacs002.getFIToFIPmtStsRpt().getTxInfAndSts().get(0).getAccptncDtTm().toGregorianCalendar().toZonedDateTime().withZoneSameInstant(zi);
+	        ZonedDateTime zdt = pacs002.getFIToFIPmtStsRpt().getOrgnlGrpInfAndSts().getOrgnlCreDtTm().toGregorianCalendar().toZonedDateTime().withZoneSameInstant(zi);
 	        var copy = DatatypeFactory.newDefaultInstance().newXMLGregorianCalendar(GregorianCalendar.from(zdt));
 			camt053Entry.getValueDate().setAdditionalProperty("Date", copy);
 			
