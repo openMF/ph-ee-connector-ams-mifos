@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -14,6 +15,7 @@ import org.mifos.connector.ams.log.EventLogUtil;
 import org.mifos.connector.ams.log.LogInternalCorrelationId;
 import org.mifos.connector.ams.log.TraceZeebeArguments;
 import org.mifos.connector.ams.mapstruct.Pain001Camt053Mapper;
+import org.mifos.connector.ams.zeebe.workers.utils.AuthTokenHelper;
 import org.mifos.connector.ams.zeebe.workers.utils.BatchItemBuilder;
 import org.mifos.connector.ams.zeebe.workers.utils.ContactDetailsUtil;
 import org.mifos.connector.ams.zeebe.workers.utils.DtSavingsTransactionDetails;
@@ -21,6 +23,10 @@ import org.mifos.connector.ams.zeebe.workers.utils.TransactionBody;
 import org.mifos.connector.ams.zeebe.workers.utils.TransactionItem;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 
 import com.baasflow.commons.events.Event;
@@ -29,11 +35,13 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import hu.dpc.rt.utils.converter.AccountSchemeName1Choice;
+import hu.dpc.rt.utils.converter.GenericAccountIdentification1;
 import io.camunda.zeebe.client.api.response.ActivatedJob;
 import io.camunda.zeebe.client.api.worker.JobClient;
 import io.camunda.zeebe.spring.client.annotation.JobWorker;
 import io.camunda.zeebe.spring.client.annotation.Variable;
-import iso.std.iso._20022.tech.json.camt_053_001.AccountSchemeName1Choice;
+import io.camunda.zeebe.spring.client.exception.ZeebeBpmnError;
 import iso.std.iso._20022.tech.json.camt_053_001.ReportEntry10;
 import iso.std.iso._20022.tech.json.pain_001_001.Pain00100110CustomerCreditTransferInitiationV10MessageSchema;
 import lombok.extern.slf4j.Slf4j;
@@ -56,6 +64,9 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
     
     @Autowired
     private ContactDetailsUtil contactDetailsUtil;
+    
+    @Autowired
+    private AuthTokenHelper authTokenHelper;
 
     @Autowired
     private EventService eventService;
@@ -110,7 +121,8 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
                         eventBuilder));
     }
 
-    private Map<String, Object> transferTheAmountBetweenDisposalAccounts(String internalCorrelationId,
+    @SuppressWarnings("unchecked")
+	private Map<String, Object> transferTheAmountBetweenDisposalAccounts(String internalCorrelationId,
                                                                          String paymentScheme,
                                                                          String originalPain001,
                                                                          BigDecimal amount,
@@ -132,25 +144,58 @@ try {
 			
 			log.debug("Incoming pain.001: {}", originalPain001);
 			
+			String transactionDate = LocalDate.now().format(PATTERN);
+			
 			objectMapper.setSerializationInclusion(Include.NON_NULL);
 			Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001 = objectMapper.readValue(originalPain001, Pain00100110CustomerCreditTransferInitiationV10MessageSchema.class);
 			
 			ReportEntry10 convertedcamt053Entry = camt053Mapper.toCamt053Entry(pain001.getDocument());
-			var debtorAccountIdOther = convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getRelatedParties().getDebtorAccount().getIdentification().getOther();
-			debtorAccountIdOther.setIdentification(debtorInternalAccountId);
-			debtorAccountIdOther.setSchemeName(new AccountSchemeName1Choice().withCode("IAID"));
-			var creditorAccountIdOther = convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getRelatedParties().getCreditorAccount().getIdentification().getOther();
-			creditorAccountIdOther.setIdentification(creditorInternalAccountId);
-			creditorAccountIdOther.setSchemeName(new AccountSchemeName1Choice().withCode("IAID"));
+			GenericAccountIdentification1 debtorAccountIdOther = (GenericAccountIdentification1) convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getRelatedParties().getDebtorAccount().getIdentification().getAdditionalProperties().getOrDefault("Other", GenericAccountIdentification1.builder().build());
+			debtorAccountIdOther.id(debtorInternalAccountId);
+			debtorAccountIdOther.schemeName(AccountSchemeName1Choice.builder().code("IAID").build());
+			GenericAccountIdentification1 creditorAccountIdOther = (GenericAccountIdentification1) convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getRelatedParties().getCreditorAccount().getIdentification().getAdditionalProperties().getOrDefault("Other", GenericAccountIdentification1.builder().build());
+			creditorAccountIdOther.id(creditorInternalAccountId);
+			creditorAccountIdOther.schemeName(AccountSchemeName1Choice.builder().code("IAID").build());
 			String camt053Entry = objectMapper.writeValueAsString(convertedcamt053Entry);
 			
 			String interbankSettlementDate = LocalDate.now().format(PATTERN);
 			
             batchItemBuilder.tenantId(tenantIdentifier);
+            List<TransactionItem> items = new ArrayList<>();
+            boolean hasFee = !BigDecimal.ZERO.equals(transactionFeeAmount);
+            Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
+            
+            Integer outHoldReasonId = paymentTypeConfig.findPaymentTypeIdByOperation(String.format("%s.%s", paymentScheme, "outHoldReasonId"));
+            var holdResponse = hold(outHoldReasonId, transactionDate, hasFee ? amount.add(transactionFeeAmount) : amount, debtorDisposalAccountAmsId, tenantIdentifier).getBody();
+            Integer lastHoldTransactionId = (Integer) ((LinkedHashMap<String, Object>) holdResponse).get("resourceId");
+            
+            HttpHeaders httpHeaders = new HttpHeaders();
+			httpHeaders.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
+			httpHeaders.set("Authorization", authTokenHelper.generateAuthToken());
+			httpHeaders.set("Fineract-Platform-TenantId", tenantIdentifier);
+			LinkedHashMap<String, Object> accountDetails = restTemplate.exchange(
+					String.format("%s/%s%d", fineractApiUrl, incomingMoneyApi.substring(1), debtorDisposalAccountAmsId), 
+					HttpMethod.GET, 
+					new HttpEntity<>(httpHeaders), 
+					LinkedHashMap.class)
+				.getBody();
+			LinkedHashMap<String, Object> summary = (LinkedHashMap<String, Object>) accountDetails.get("summary");
+			BigDecimal availableBalance = new BigDecimal(summary.get("availableBalance").toString());
+			if (availableBalance.signum() < 0) {
+				restTemplate.exchange(
+					String.format("%s/%ssavingsaccounts/%d/transactions/%d?command=releaseAmount", fineractApiUrl, incomingMoneyApi.substring(1), debtorDisposalAccountAmsId, lastHoldTransactionId),
+					HttpMethod.POST,
+					new HttpEntity<>(httpHeaders),
+					Object.class
+				);
+				throw new ZeebeBpmnError("Error_FailedCreditTransfer", "Insufficient funds");
+			}
+			
+			String releaseTransactionUrl = String.format("%s%d/transactions/%d?command=releaseAmount", incomingMoneyApi.substring(1), debtorDisposalAccountAmsId, lastHoldTransactionId);
+			batchItemBuilder.add(items, releaseTransactionUrl, "", false);
     		
     		String debtorDisposalWithdrawalRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), debtorDisposalAccountAmsId, "withdrawal");
     		
-    		Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
     		String withdrawAmountOperation = "transferTheAmountBetweenDisposalAccounts.Debtor.DisposalAccount.WithdrawTransactionAmount";
 			String withdrawAmountConfigOperationKey = String.format("%s.%s", paymentScheme, withdrawAmountOperation);
 			Integer paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(withdrawAmountConfigOperationKey);
@@ -166,7 +211,6 @@ try {
     		
     		String bodyItem = objectMapper.writeValueAsString(body);
     		
-    		List<TransactionItem> items = new ArrayList<>();
     		
     		batchItemBuilder.add(items, debtorDisposalWithdrawalRelativeUrl, bodyItem, false);
     	
@@ -195,7 +239,7 @@ try {
     		batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
     		
 			
-			if (!BigDecimal.ZERO.equals(transactionFeeAmount)) {
+			if (hasFee) {
 				String withdrawFeeDisposalOperation = "transferTheAmountBetweenDisposalAccounts.Debtor.DisposalAccount.WithdrawTransactionFee";
 				String withdrawFeeDisposalConfigOperationKey = String.format("%s.%s", paymentScheme, withdrawFeeDisposalOperation);
 				paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(withdrawFeeDisposalConfigOperationKey);
@@ -324,7 +368,7 @@ try {
     		batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 			
 	    		
-			if (!BigDecimal.ZERO.equals(transactionFeeAmount)) {
+			if (hasFee) {
 	    		String withdrawFeeConversionOperation = "transferTheAmountBetweenDisposalAccounts.Debtor.ConversionAccount.WithdrawTransactionFee";
 				String withdrawFeeConversionConfigOperationKey = String.format("%s.%s", paymentScheme, withdrawFeeConversionOperation);
 				paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(withdrawFeeConversionConfigOperationKey);
