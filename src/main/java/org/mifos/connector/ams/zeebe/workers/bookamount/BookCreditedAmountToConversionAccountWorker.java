@@ -33,8 +33,11 @@ import io.camunda.zeebe.client.api.worker.JobClient;
 import io.camunda.zeebe.spring.client.annotation.JobWorker;
 import io.camunda.zeebe.spring.client.annotation.Variable;
 import io.camunda.zeebe.spring.client.exception.ZeebeBpmnError;
+import iso.std.iso._20022.tech.json.camt_053_001.AccountStatement9;
 import iso.std.iso._20022.tech.json.camt_053_001.ActiveOrHistoricCurrencyAndAmountRange2.CreditDebitCode;
 import iso.std.iso._20022.tech.json.camt_053_001.BankToCustomerStatementV08;
+import iso.std.iso._20022.tech.json.camt_053_001.EntryDetails9;
+import iso.std.iso._20022.tech.json.camt_053_001.EntryTransaction10;
 import iso.std.iso._20022.tech.json.camt_053_001.ReportEntry10;
 import iso.std.iso._20022.tech.xsd.pacs_008_001.RemittanceInformation5;
 import lombok.extern.slf4j.Slf4j;
@@ -379,8 +382,12 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
 
             batchItemBuilder.add(items, conversionAccountWithdrawalRelativeUrl, bodyItem, false);
 
-            // TODO make proper pacs.004 -> camt.053 converter
-            BankToCustomerStatementV08 camt053 = pacs004Camt053Mapper.convert(pacs_004, new BankToCustomerStatementV08());
+            BankToCustomerStatementV08 camt053 = pacs004Camt053Mapper.convert(pacs_004, 
+            		new BankToCustomerStatementV08()
+            				.withStatement(List.of(new AccountStatement9()
+            						.withEntry(List.of(new ReportEntry10()
+            								.withEntryDetails(List.of(new EntryDetails9()
+            										.withTransactionDetails(List.of(new EntryTransaction10())))))))));
             ReportEntry10 convertedCamt053Entry = camt053.getStatement().get(0).getEntry().get(0);
 
             String camt053Entry = objectMapper.writeValueAsString(convertedCamt053Entry);
