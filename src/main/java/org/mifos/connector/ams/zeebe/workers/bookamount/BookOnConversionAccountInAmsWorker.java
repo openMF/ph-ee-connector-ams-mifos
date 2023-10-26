@@ -261,7 +261,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
                                                             @Variable String transactionCategoryPurposeCode,
                                                             @Variable String camt056,
                                                             @Variable String debtorIban,
-                                                            @Variable String pacs004,
+                                                            @Variable String generatedPacs004,
                                                             @Variable String pacs002) {
         log.info("withdrawTheAmountFromConversionAccountInAms");
         eventService.auditedEvent(
@@ -277,7 +277,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
                         transactionCategoryPurposeCode,
                         camt056,
                         debtorIban,
-                        pacs004,
+                        generatedPacs004,
                         pacs002,
                         eventBuilder));
     }

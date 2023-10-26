@@ -552,7 +552,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                                                 @Variable String paymentScheme,
                                                 @Variable String transactionCategoryPurposeCode,
                                                 @Variable String camt056,
-                                                @Variable String pacs004,
+                                                @Variable String generatedPacs004,
                                                 @Variable String pacs002,
                                                 @Variable String debtorIban) {
         log.info("depositTheAmountOnDisposalInAms");
@@ -568,7 +568,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                         paymentScheme,
                         transactionCategoryPurposeCode,
                         camt056,
-                        pacs004,
+                        generatedPacs004,
                         pacs002,
                         debtorIban,
                         eventBuilder));
