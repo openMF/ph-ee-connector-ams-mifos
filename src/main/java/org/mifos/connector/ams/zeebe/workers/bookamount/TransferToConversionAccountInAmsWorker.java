@@ -377,7 +377,8 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
                         eventBuilder));
     }
 
-    private Void withdrawTheAmountFromDisposalAccountInAMS(BigDecimal amount,
+    @SuppressWarnings("unchecked")
+	private Void withdrawTheAmountFromDisposalAccountInAMS(BigDecimal amount,
                                                            Integer conversionAccountAmsId,
                                                            Integer disposalAccountAmsId,
                                                            String tenantIdentifier,
@@ -391,32 +392,6 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			
 			log.debug("Withdrawing amount {} from disposal account {}", amount, disposalAccountAmsId);
 			
-			batchItemBuilder.tenantId(tenantIdentifier);
-			
-			String disposalAccountWithdrawRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), disposalAccountAmsId, "withdrawal");
-			
-			Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
-			String withdrawAmountOperation = "transferToConversionAccountInAms.DisposalAccount.WithdrawTransactionAmount";
-			String configOperationKey = String.format("%s.%s", paymentScheme, withdrawAmountOperation);
-			Integer paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(configOperationKey);
-			String paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(configOperationKey);
-			
-			TransactionBody body = new TransactionBody(
-					transactionDate,
-					amount,
-					paymentTypeId,
-					"",
-					FORMAT,
-					locale);
-			
-			objectMapper.setSerializationInclusion(Include.NON_NULL);
-			
-			String bodyItem = objectMapper.writeValueAsString(body);
-			
-			List<TransactionItem> items = new ArrayList<>();
-			
-			batchItemBuilder.add(items, disposalAccountWithdrawRelativeUrl, bodyItem, false);
-		
 			iso.std.iso._20022.tech.xsd.camt_056_001.Document document = jaxbUtils.unmarshalCamt056(camt056);
     		Camt056ToCamt053Converter converter = new Camt056ToCamt053Converter();
     		BankToCustomerStatementV08 statement = converter.convert(document, new BankToCustomerStatementV08());
@@ -441,6 +416,71 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
     				.getOrgnlTxId();
     		
     		String internalCorrelationId = String.format("%s_%s_%s", originalDebtorBic, originalCreationDate, originalTxId);
+			
+			batchItemBuilder.tenantId(tenantIdentifier);
+
+			Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
+			
+			List<TransactionItem> items = new ArrayList<>();
+
+			Integer outHoldReasonId = paymentTypeConfig.findPaymentTypeIdByOperation(String.format("%s.%s", paymentScheme, "outHoldReasonId"));
+			var holdResponse = hold(outHoldReasonId, transactionDate, amount, disposalAccountAmsId, tenantIdentifier).getBody();
+			Integer lastHoldTransactionId = (Integer) ((LinkedHashMap<String, Object>) holdResponse).get("resourceId");
+			
+			HttpHeaders httpHeaders = new HttpHeaders();
+			httpHeaders.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
+			httpHeaders.set("Authorization", authTokenHelper.generateAuthToken());
+			httpHeaders.set("Fineract-Platform-TenantId", tenantIdentifier);
+			LinkedHashMap<String, Object> accountDetails = restTemplate.exchange(
+					String.format("%s/%s%d", fineractApiUrl, incomingMoneyApi.substring(1), disposalAccountAmsId), 
+					HttpMethod.GET, 
+					new HttpEntity<>(httpHeaders), 
+					LinkedHashMap.class)
+				.getBody();
+			LinkedHashMap<String, Object> summary = (LinkedHashMap<String, Object>) accountDetails.get("summary");
+			BigDecimal availableBalance = new BigDecimal(summary.get("availableBalance").toString());
+			if (availableBalance.signum() < 0) {
+				restTemplate.exchange(
+					String.format("%s/%ssavingsaccounts/%d/transactions/%d?command=releaseAmount", fineractApiUrl, incomingMoneyApi.substring(1), disposalAccountAmsId, lastHoldTransactionId),
+					HttpMethod.POST,
+					new HttpEntity<>(httpHeaders),
+					Object.class
+				);
+				throw new ZeebeBpmnError("Error_InsufficientFunds", "Insufficient funds");
+			}
+			
+			doBatch(items,
+                    tenantIdentifier,
+                    disposalAccountAmsId,
+                    conversionAccountAmsId,
+                    internalCorrelationId,
+                    "withdrawTheAmountFromDisposalAccountInAMS");
+			
+			items.clear();
+			
+			String releaseTransactionUrl = String.format("%s%d/transactions/%d?command=releaseAmount", incomingMoneyApi.substring(1), disposalAccountAmsId, lastHoldTransactionId);
+			batchItemBuilder.add(items, releaseTransactionUrl, "", false);
+			
+			String disposalAccountWithdrawRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), disposalAccountAmsId, "withdrawal");
+			
+			String withdrawAmountOperation = "transferToConversionAccountInAms.DisposalAccount.WithdrawTransactionAmount";
+			String configOperationKey = String.format("%s.%s", paymentScheme, withdrawAmountOperation);
+			Integer paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(configOperationKey);
+			String paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(configOperationKey);
+			
+			TransactionBody body = new TransactionBody(
+					transactionDate,
+					amount,
+					paymentTypeId,
+					"",
+					FORMAT,
+					locale);
+			
+			objectMapper.setSerializationInclusion(Include.NON_NULL);
+			
+			String bodyItem = objectMapper.writeValueAsString(body);
+			
+			batchItemBuilder.add(items, disposalAccountWithdrawRelativeUrl, bodyItem, false);
 		
 			String camt053 = objectMapper.writeValueAsString(statement);
 			
