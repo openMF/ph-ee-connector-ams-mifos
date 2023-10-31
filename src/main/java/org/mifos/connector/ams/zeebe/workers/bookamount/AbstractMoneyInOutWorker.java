@@ -9,6 +9,7 @@ import java.net.SocketTimeoutException;
 import java.util.LinkedHashMap;
 import java.util.List;
 
+import org.apache.fineract.client.models.BatchResponse;
 import org.mifos.connector.ams.log.EventLogUtil;
 import org.mifos.connector.ams.log.IOTxLogger;
 import org.mifos.connector.ams.zeebe.workers.utils.AuthTokenHelper;
@@ -28,6 +29,11 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import com.baasflow.commons.events.EventService;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -61,6 +67,9 @@ public abstract class AbstractMoneyInOutWorker {
 
     @Autowired
     private AuthTokenHelper authTokenHelper;
+    
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @Autowired
     private EventService eventService;
@@ -165,7 +174,7 @@ public abstract class AbstractMoneyInOutWorker {
     }
 
     @SuppressWarnings("unchecked")
-    private Void doBatchInternal(List<TransactionItem> items, String tenantId, String internalCorrelationId) {
+    private Void doBatchInternal(List<TransactionItem> items, String tenantId, String internalCorrelationId) throws JsonMappingException, JsonProcessingException {
         HttpHeaders httpHeaders = new HttpHeaders();
         httpHeaders.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
         httpHeaders.set("Authorization", authTokenHelper.generateAuthToken());
@@ -189,10 +198,10 @@ public abstract class AbstractMoneyInOutWorker {
             String idempotencyKey = String.format("%s_%d", internalCorrelationId, idempotencyPostfix);
             httpHeaders.set(idempotencyKeyHeaderName, idempotencyKey);
             wireLogger.sending(items.toString());
-            ResponseEntity<Object> response;
-            try {
-                response = restTemplate.exchange(urlTemplate, HttpMethod.POST, entity, Object.class);
-                wireLogger.receiving(response.toString());
+            ResponseEntity<String> response;
+			try {
+                response = restTemplate.exchange(urlTemplate, HttpMethod.POST, entity, String.class);
+                wireLogger.receiving(response.getBody());
             } catch (ResourceAccessException e) {
                 if (e.getCause() instanceof SocketTimeoutException || e.getCause() instanceof ConnectException) {
                     log.warn("Communication with Fineract timed out for request [{}]", idempotencyKey);
@@ -213,14 +222,21 @@ public abstract class AbstractMoneyInOutWorker {
                 log.error(t.getMessage(), t);
                 throw new RuntimeException(t);
             }
+            
+			String responseBody = response.getBody();
 
-            List<LinkedHashMap<String, Object>> responseBody = (List<LinkedHashMap<String, Object>>) response.getBody();
-            if (responseBody == null) {
+			JsonNode rootNode = objectMapper.readTree(responseBody);
+            if (rootNode.isTextual()) {
+            	throw new RuntimeException(responseBody);
+            }
+            
+            List<BatchResponse> batchResponseList = objectMapper.readValue(responseBody, new TypeReference<List<BatchResponse>>() {});
+            if (batchResponseList == null) {
                 return null;
             }
-            for (LinkedHashMap<String, Object> responseItem : responseBody) {
+            for (BatchResponse responseItem : batchResponseList) {
                 log.debug("Investigating response item {} for request [{}]", responseItem, idempotencyKey);
-                int statusCode = (Integer) responseItem.get("statusCode");
+                int statusCode = responseItem.getStatusCode();
                 log.debug("Got status code {} for request [{}]", statusCode, idempotencyKey);
                 if (statusCode == SC_OK) {
                     continue;
