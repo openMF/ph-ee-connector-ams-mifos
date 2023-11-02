@@ -6,10 +6,10 @@ import static org.apache.hc.core5.http.HttpStatus.SC_OK;
 
 import java.net.ConnectException;
 import java.net.SocketTimeoutException;
-import java.util.LinkedHashMap;
 import java.util.List;
 
 import org.apache.fineract.client.models.BatchResponse;
+import org.apache.fineract.client.models.CommandProcessingResult;
 import org.mifos.connector.ams.log.EventLogUtil;
 import org.mifos.connector.ams.log.IOTxLogger;
 import org.mifos.connector.ams.zeebe.workers.utils.AuthTokenHelper;
@@ -31,7 +31,6 @@ import org.springframework.web.util.UriComponentsBuilder;
 import com.baasflow.commons.events.EventService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -139,6 +138,22 @@ public abstract class AbstractMoneyInOutWorker {
                         entity,
                         Object.class));
     }
+    
+    protected Long holdBatch(List<TransactionItem> items,
+            String tenantId,
+            Integer disposalAccountId,
+            Integer conversionAccountId,
+            String internalCorrelationId,
+            String calledFrom) {
+    	return eventService.auditedEvent(
+    			eventBuilder -> EventLogUtil.initFineractBatchCall(calledFrom,
+    					items,
+    					disposalAccountId,
+    					conversionAccountId,
+    					internalCorrelationId,
+    					eventBuilder),
+    			eventBuilder -> holdBatchInternal(items, tenantId, internalCorrelationId));
+    }
 
     protected void doBatch(List<TransactionItem> items,
                            String tenantId,
@@ -172,9 +187,8 @@ public abstract class AbstractMoneyInOutWorker {
                         eventBuilder),
                 eventBuilder -> doBatchInternal(items, tenantId, internalCorrelationId));
     }
-
-    @SuppressWarnings("unchecked")
-    private Void doBatchInternal(List<TransactionItem> items, String tenantId, String internalCorrelationId) throws JsonMappingException, JsonProcessingException {
+    
+    private Long holdBatchInternal(List<TransactionItem> items, String tenantId, String internalCorrelationId) {
         HttpHeaders httpHeaders = new HttpHeaders();
         httpHeaders.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
         httpHeaders.set("Authorization", authTokenHelper.generateAuthToken());
@@ -225,15 +239,129 @@ public abstract class AbstractMoneyInOutWorker {
             
 			String responseBody = response.getBody();
 
-			JsonNode rootNode = objectMapper.readTree(responseBody);
-            if (rootNode.isTextual()) {
-            	throw new RuntimeException(responseBody);
+			List<BatchResponse> batchResponseList;
+			try {
+				JsonNode rootNode = objectMapper.readTree(responseBody);
+	            if (rootNode.isTextual()) {
+	            	throw new RuntimeException(responseBody);
+	            }
+	            
+	            batchResponseList = objectMapper.readValue(responseBody, new TypeReference<List<BatchResponse>>() {});
+	            if (batchResponseList == null) {
+	                return null;
+	            }
+			} catch (JsonProcessingException j) {
+				log.error(j.getMessage(), j);
+				throw new RuntimeException(j);
+			}
+			if (batchResponseList.size() != 2) {
+				throw new RuntimeException("An unexpected error occurred for hold request " + idempotencyKey);
+			}
+            BatchResponse responseItem = batchResponseList.get(0);
+            log.debug("Investigating response item {} for request [{}]", responseItem, idempotencyKey);
+            int statusCode = responseItem.getStatusCode();
+            log.debug("Got status code {} for request [{}]", statusCode, idempotencyKey);
+            if (statusCode == SC_OK) {
+                String responseItemBody = responseItem.getBody();
+                JsonNode rootNode = null;
+                try {
+                	rootNode = objectMapper.readTree(responseItemBody);
+    	            if (rootNode.isTextual()) {
+    	            	throw new RuntimeException(responseItemBody);
+    	            }
+    	            
+    	            CommandProcessingResult commandProcessingResult = objectMapper.readValue(responseBody, new TypeReference<CommandProcessingResult>() {});
+    	            return commandProcessingResult.getResourceId();
+                } catch (JsonProcessingException j) {
+                	throw new RuntimeException("An unexpected error occurred for hold request " + idempotencyKey + ": " + rootNode);
+                }
+            }
+            log.debug("Got error {}, response item '{}' for request [{}]", statusCode, responseItem, idempotencyKey);
+            switch (statusCode) {
+                case SC_CONFLICT -> {
+                    log.warn("Transaction request [{}] is already executing, has not completed yet", idempotencyKey);
+                    return null;
+                }
+                case SC_LOCKED -> {
+                    log.info("Locking exception detected, retrying request [{}]", idempotencyKey);
+                    idempotencyPostfix++;
+                    retryCount--;
+                    continue retry;
+                }
+                default -> throw new RuntimeException("An unexpected error occurred for request " + idempotencyKey + ": " + statusCode);
+            }
+        }
+
+        log.error("Failed to execute transaction request [{}] in {} tries.", internalCorrelationId, idempotencyRetryCount - retryCount + 1);
+        throw new RuntimeException("Failed to execute transaction " + internalCorrelationId);
+    }
+
+    private Void doBatchInternal(List<TransactionItem> items, String tenantId, String internalCorrelationId) {
+        HttpHeaders httpHeaders = new HttpHeaders();
+        httpHeaders.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
+        httpHeaders.set("Authorization", authTokenHelper.generateAuthToken());
+        httpHeaders.set("Fineract-Platform-TenantId", tenantId);
+        int idempotencyPostfix = 0;
+        var entity = new HttpEntity<>(items, httpHeaders);
+
+        var urlTemplate = UriComponentsBuilder.fromHttpUrl(fineractApiUrl)
+                .path("/batches")
+                .queryParam("enclosingTransaction", true)
+                .encode()
+                .toUriString();
+
+        log.debug(">> Sending {} to {} with headers {} and idempotency {}", items, urlTemplate, httpHeaders, internalCorrelationId);
+
+        int retryCount = idempotencyRetryCount;
+
+        retry:
+        while (retryCount > 0) {
+            httpHeaders.remove(idempotencyKeyHeaderName);
+            String idempotencyKey = String.format("%s_%d", internalCorrelationId, idempotencyPostfix);
+            httpHeaders.set(idempotencyKeyHeaderName, idempotencyKey);
+            wireLogger.sending(items.toString());
+            ResponseEntity<String> response;
+			try {
+                response = restTemplate.exchange(urlTemplate, HttpMethod.POST, entity, String.class);
+                wireLogger.receiving(response.getBody());
+            } catch (ResourceAccessException e) {
+                if (e.getCause() instanceof SocketTimeoutException || e.getCause() instanceof ConnectException) {
+                    log.warn("Communication with Fineract timed out for request [{}]", idempotencyKey);
+                    retryCount--;
+                    if (retryCount > 0) {
+                        log.warn("Retrying request [{}], {} more times", internalCorrelationId, retryCount);
+                    }
+                } else {
+                    log.error(e.getMessage(), e);
+                    throw e;
+                }
+                continue;
+            } catch (RestClientException e) {
+                // Some other exception occurred, one not related to timeout
+                log.error(e.getMessage(), e);
+                throw e;
+            } catch (Throwable t) {
+                log.error(t.getMessage(), t);
+                throw new RuntimeException(t);
             }
             
-            List<BatchResponse> batchResponseList = objectMapper.readValue(responseBody, new TypeReference<List<BatchResponse>>() {});
-            if (batchResponseList == null) {
-                return null;
-            }
+			String responseBody = response.getBody();
+
+			List<BatchResponse> batchResponseList;
+			try {
+				JsonNode rootNode = objectMapper.readTree(responseBody);
+	            if (rootNode.isTextual()) {
+	            	throw new RuntimeException(responseBody);
+	            }
+	            
+	            batchResponseList = objectMapper.readValue(responseBody, new TypeReference<List<BatchResponse>>() {});
+	            if (batchResponseList == null) {
+	                return null;
+	            }
+			} catch (JsonProcessingException j) {
+				log.error(j.getMessage(), j);
+				throw new RuntimeException(j);
+			}
             for (BatchResponse responseItem : batchResponseList) {
                 log.debug("Investigating response item {} for request [{}]", responseItem, idempotencyKey);
                 int statusCode = responseItem.getStatusCode();
