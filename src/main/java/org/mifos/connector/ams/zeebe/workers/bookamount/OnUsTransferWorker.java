@@ -159,6 +159,8 @@ try {
 			
 			String interbankSettlementDate = LocalDate.now().format(PATTERN);
 			
+			boolean hasFee = !BigDecimal.ZERO.equals(transactionFeeAmount);
+			
             batchItemBuilder.tenantId(tenantIdentifier);
             
             List<TransactionItem> items = new ArrayList<>();
@@ -168,7 +170,7 @@ try {
 			Integer outHoldReasonId = paymentTypeConfig.findPaymentTypeIdByOperation(String.format("%s.%s", paymentScheme, "outHoldReasonId"));
 			HoldAmountBody body = new HoldAmountBody(
 					interbankSettlementDate,
-	                amount,
+					hasFee ? amount.add(transactionFeeAmount) : amount,
 	                outHoldReasonId,
 	                locale,
 	                FORMAT
@@ -187,7 +189,7 @@ try {
 			String unstructured = Optional.ofNullable(pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getRemittanceInformation())
 					.map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(List::toString).orElse("");
     		
-			String holdAmountOperation = "transferToConversionAccountInAms.DisposalAccount.HoldTransactionAmount";
+			String holdAmountOperation = "transferTheAmountBetweenDisposalAccounts.Debtor.DisposalAccount.HoldTransactionAmount";
     		addDetails(internalCorrelationId, transactionCategoryPurposeCode, internalCorrelationId, 
 					objectMapper, batchItemBuilder, items, camt053Entry, camt053RelativeUrl, debtorIban, 
 					paymentTypeConfig, paymentScheme, holdAmountOperation, partnerName, partnerAccountIban, 
@@ -221,7 +223,7 @@ try {
 			
 			String releaseTransactionUrl = String.format("%s%d/transactions/%d?command=releaseAmount", incomingMoneyApi.substring(1), debtorDisposalAccountAmsId, lastHoldTransactionId);
 			batchItemBuilder.add(items, releaseTransactionUrl, null, false);
-			String releaseAmountOperation = "transferToConversionAccountInAms.DisposalAccount.ReleaseTransactionAmount";
+			String releaseAmountOperation = "transferTheAmountBetweenDisposalAccounts.Debtor.DisposalAccount.ReleaseTransactionAmount";
 			addDetails(internalCorrelationId, transactionCategoryPurposeCode, internalCorrelationId, 
 					objectMapper, batchItemBuilder, items, camt053Entry, camt053RelativeUrl, debtorIban, 
 					paymentTypeConfig, paymentScheme, releaseAmountOperation, partnerName, partnerAccountIban, 
@@ -271,8 +273,7 @@ try {
 
     		batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
     		
-			
-			if (!BigDecimal.ZERO.equals(transactionFeeAmount)) {
+			if (hasFee) {
 				String withdrawFeeDisposalOperation = "transferTheAmountBetweenDisposalAccounts.Debtor.DisposalAccount.WithdrawTransactionFee";
 				String withdrawFeeDisposalConfigOperationKey = String.format("%s.%s", paymentScheme, withdrawFeeDisposalOperation);
 				paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(withdrawFeeDisposalConfigOperationKey);
@@ -401,7 +402,7 @@ try {
     		batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 			
 	    		
-			if (!BigDecimal.ZERO.equals(transactionFeeAmount)) {
+			if (hasFee) {
 	    		String withdrawFeeConversionOperation = "transferTheAmountBetweenDisposalAccounts.Debtor.ConversionAccount.WithdrawTransactionFee";
 				String withdrawFeeConversionConfigOperationKey = String.format("%s.%s", paymentScheme, withdrawFeeConversionOperation);
 				paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(withdrawFeeConversionConfigOperationKey);
