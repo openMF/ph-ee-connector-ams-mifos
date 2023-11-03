@@ -57,7 +57,7 @@
         <dependency>
             <groupId>hu.dpc.rt</groupId>
             <artifactId>payment-schemas</artifactId>
-            <version>1.26.1</version>
+            <version>1.27.0</version>
 
             <exclusions>
                 <exclusion>
