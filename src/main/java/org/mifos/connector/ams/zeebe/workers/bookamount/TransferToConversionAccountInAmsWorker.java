@@ -274,10 +274,11 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
                     internalCorrelationId,
                     "transferToConversionAccountInAms");
 
+        } catch (ZeebeBpmnError z) {
+        	throw z;
         } catch (Exception e) {
-            // TODO technical error handling
             log.error(e.getMessage(), e);
-            throw new ZeebeBpmnError("Error_InsufficientFunds", e.getMessage());
+            throw new RuntimeException(e);
         } finally {
         	MDC.remove("internalCorrelationId");
         }

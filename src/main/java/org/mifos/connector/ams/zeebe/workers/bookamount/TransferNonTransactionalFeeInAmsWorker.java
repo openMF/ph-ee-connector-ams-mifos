@@ -263,7 +263,7 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 			return Map.of("transactionDate", transactionDate);
 		} catch (Exception e) {
 			log.error(e.getMessage(), e);
-			throw new ZeebeBpmnError("Error_InsufficientFunds", e.getMessage());
+			throw new RuntimeException(e);
 		} finally {
 			MDC.remove("internalCorrelationId");
 		}
