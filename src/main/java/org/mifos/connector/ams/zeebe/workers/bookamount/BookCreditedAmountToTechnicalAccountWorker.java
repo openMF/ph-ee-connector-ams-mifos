@@ -26,12 +26,14 @@ import com.baasflow.commons.events.EventService;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import hu.dpc.rt.utils.converter.Pacs004ToCamt053Converter;
 import io.camunda.zeebe.client.api.response.ActivatedJob;
 import io.camunda.zeebe.client.api.worker.JobClient;
 import io.camunda.zeebe.spring.client.annotation.JobWorker;
 import io.camunda.zeebe.spring.client.annotation.Variable;
 import io.camunda.zeebe.spring.client.exception.ZeebeBpmnError;
 import iso.std.iso._20022.tech.json.camt_053_001.ActiveOrHistoricCurrencyAndAmountRange2.CreditDebitCode;
+import iso.std.iso._20022.tech.json.camt_053_001.BankToCustomerStatementV08;
 import iso.std.iso._20022.tech.json.camt_053_001.ReportEntry10;
 import iso.std.iso._20022.tech.xsd.pacs_008_001.RemittanceInformation5;
 import lombok.extern.slf4j.Slf4j;
@@ -59,7 +61,9 @@ public class BookCreditedAmountToTechnicalAccountWorker extends AbstractMoneyInO
     private JAXBUtils jaxbUtils;
 
     @Autowired
-    private Pacs008Camt053Mapper camt053Mapper;
+    private Pacs008Camt053Mapper pacs008Camt053Mapper;
+    
+    private Pacs004ToCamt053Converter pacs004Camt053Mapper = new Pacs004ToCamt053Converter();
     
     @Autowired
     private ContactDetailsUtil contactDetailsUtil;
@@ -86,7 +90,8 @@ public class BookCreditedAmountToTechnicalAccountWorker extends AbstractMoneyInO
                                                      @Variable String internalCorrelationId,
                                                      @Variable String transactionGroupId,
                                                      @Variable String transactionCategoryPurposeCode,
-                                                     @Variable String caseIdentifier) {
+                                                     @Variable String caseIdentifier,
+                                                     @Variable String pacs004) {
         log.info("bookCreditedAmountToTechnicalAccount");
         eventService.auditedEvent(
                 eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "bookCreditedAmountToTechnicalAccount", internalCorrelationId, transactionGroupId, eventBuilder),
@@ -100,6 +105,7 @@ public class BookCreditedAmountToTechnicalAccountWorker extends AbstractMoneyInO
                         transactionGroupId,
                         transactionCategoryPurposeCode,
                         caseIdentifier,
+                        pacs004,
                         eventBuilder));
     }
 
@@ -113,11 +119,14 @@ public class BookCreditedAmountToTechnicalAccountWorker extends AbstractMoneyInO
                                                       String transactionGroupId,
                                                       String transactionCategoryPurposeCode,
                                                       String caseIdentifier,
+                                                      String originalPacs004,
                                                       Event.Builder eventBuilder) {
     	try {
             log.info("Incoming money worker started with variables");
 
             iso.std.iso._20022.tech.xsd.pacs_008_001.Document pacs008 = jaxbUtils.unmarshalPacs008(originalPacs008);
+            
+            iso.std.iso._20022.tech.xsd.pacs_004_001.Document pacs004 = jaxbUtils.unmarshalPacs004(originalPacs004);
 
             MDC.put("internalCorrelationId", internalCorrelationId);
 
@@ -152,7 +161,8 @@ public class BookCreditedAmountToTechnicalAccountWorker extends AbstractMoneyInO
     		
     		batchItemBuilder.add(items, conversionAccountWithdrawalRelativeUrl, bodyItem, false);
     	
-    		ReportEntry10 convertedCamt053Entry = camt053Mapper.toCamt053Entry(pacs008);
+    		BankToCustomerStatementV08 intermediateCamt053 = pacs008Camt053Mapper.toCamt053Entry(pacs008);
+    		ReportEntry10 convertedCamt053Entry = pacs004Camt053Mapper.convert(pacs004, intermediateCamt053).getStatement().get(0).getEntry().get(0);
     		convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.CRDT);
     		convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
     		String camt053Entry = objectMapper.writeValueAsString(convertedCamt053Entry);
@@ -172,7 +182,6 @@ public class BookCreditedAmountToTechnicalAccountWorker extends AbstractMoneyInO
     				Optional.ofNullable(pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getRmtInf()).map(RemittanceInformation5::getUstrd).map(List::toString).orElse(""),
     				transactionCategoryPurposeCode,
     				paymentScheme,
-    				null,
     				null,
     				null);
     		

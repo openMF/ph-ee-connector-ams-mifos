@@ -36,12 +36,14 @@ public class GetAccountDetailsFromAmsWorker extends AbstractAmsWorker {
 
     private Map<String, String> accountNotExistsReasons = Map.of(
             "HCT_INST-IN", "AC03",
-            "IG2-IN", "AC01"
+            "IG2-IN", "AC01",
+            "ON_US-IN", "BX01"
     );
 
     private Map<String, String> accountClosedReasons = Map.of(
             "HCT_INST-IN", "AC07",
-            "IG2-IN", "AC04"
+            "IG2-IN", "AC04",
+            "ON_US-IN", "BX02"
     );
 
 
@@ -140,7 +142,7 @@ public class GetAccountDetailsFromAmsWorker extends AbstractAmsWorker {
         outputVariables.put("disposalAccountAmsStatusType", statusType);
         outputVariables.put("internalAccountId", internalAccountId);
         outputVariables.put("reasonCode", reasonCode);
-        return outputVariables;
+        return Map.copyOf(outputVariables);
     }
 
     private GetSavingsAccountsAccountIdResponse retrieveCurrencyIdAndStatus(Long accountCurrencyId, String tenantId) {

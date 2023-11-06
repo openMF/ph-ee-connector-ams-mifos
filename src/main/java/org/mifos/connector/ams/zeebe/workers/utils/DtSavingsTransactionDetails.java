@@ -14,7 +14,6 @@ public record DtSavingsTransactionDetails(@JsonProperty("internal_correlation_id
 		@JsonProperty("remittance_information_unstructured") String remittanceInformationUnstructured,
 		@JsonProperty("category_purpose_code") String categoryPurposeCode,
 		@JsonProperty("payment_scheme") String paymentScheme,
-		@JsonProperty("partner_account_internal_id") String partnerAccountInternalId,
 		@JsonProperty("source_ams_account_id") Integer sourceAmsAccountId,
 		@JsonProperty("target_ams_account_id") Integer targetAmsAccountId) {
 }
