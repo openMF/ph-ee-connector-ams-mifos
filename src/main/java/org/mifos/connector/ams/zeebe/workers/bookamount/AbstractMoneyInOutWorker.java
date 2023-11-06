@@ -30,6 +30,7 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import com.baasflow.commons.events.EventService;
+import com.baasflow.commons.events.EventType;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -323,6 +324,7 @@ public abstract class AbstractMoneyInOutWorker {
             wireLogger.sending(items.toString());
             eventService.sendEvent(builder -> builder
             		.setSourceModule(from)
+            		.setEventType(EventType.audit)
             		.setCorrelationIds(Map.of("idempotencyKey", idempotencyKey))
             		.setPayload(entity.toString()));
             ResponseEntity<String> response;
@@ -330,6 +332,7 @@ public abstract class AbstractMoneyInOutWorker {
                 response = restTemplate.exchange(urlTemplate, HttpMethod.POST, entity, String.class);
                 eventService.sendEvent(builder -> builder
                 		.setSourceModule(from)
+                		.setEventType(EventType.audit)
                 		.setCorrelationIds(Map.of("idempotencyKey", idempotencyKey))
                 		.setPayload(response.toString()));
                 wireLogger.receiving(response.toString());

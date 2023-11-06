@@ -1,6 +1,8 @@
 package org.mifos.connector.ams.zeebe.workers.accountdetails;
 
 import com.baasflow.commons.events.EventService;
+import com.baasflow.commons.events.EventType;
+
 import lombok.extern.slf4j.Slf4j;
 import org.mifos.connector.ams.log.EventLogUtil;
 import org.mifos.connector.ams.zeebe.workers.utils.AuthTokenHelper;
@@ -99,6 +101,7 @@ public abstract class AbstractAmsWorker {
                 	var entity = new HttpEntity<>(httpHeaders);
                 	eventService.sendEvent(builder -> builder
                 			.setSourceModule(calledFrom)
+                			.setEventType(EventType.audit)
                 			.setPayload(urlTemplate));
                 	ResponseEntity<T> response = restTemplate.exchange(
                                         urlTemplate,
@@ -107,6 +110,7 @@ public abstract class AbstractAmsWorker {
                                         responseType);
                 	eventService.sendEvent(builder -> builder
                 			.setSourceModule(calledFrom)
+                			.setEventType(EventType.audit)
                 			.setPayload(response.toString()));
                 	return response.getBody();
                 	});
