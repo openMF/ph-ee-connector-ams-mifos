@@ -154,7 +154,7 @@ public abstract class AbstractMoneyInOutWorker {
     					conversionAccountId,
     					internalCorrelationId,
     					eventBuilder),
-    			eventBuilder -> holdBatchInternal(items, tenantId, internalCorrelationId));
+    			eventBuilder -> holdBatchInternal(items, tenantId, internalCorrelationId, calledFrom));
     }
 
     protected void doBatch(List<TransactionItem> items,
@@ -190,7 +190,7 @@ public abstract class AbstractMoneyInOutWorker {
                 eventBuilder -> doBatchInternal(items, tenantId, internalCorrelationId, "transferTheAmountBetweenDisposalAccounts"));
     }
     
-    private Long holdBatchInternal(List<TransactionItem> items, String tenantId, String internalCorrelationId) {
+    private Long holdBatchInternal(List<TransactionItem> items, String tenantId, String internalCorrelationId, String from) {
         HttpHeaders httpHeaders = new HttpHeaders();
         httpHeaders.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
         httpHeaders.set("Authorization", authTokenHelper.generateAuthToken());
@@ -214,9 +214,19 @@ public abstract class AbstractMoneyInOutWorker {
             String idempotencyKey = String.format("%s_%d", internalCorrelationId, idempotencyPostfix);
             httpHeaders.set(idempotencyKeyHeaderName, idempotencyKey);
             wireLogger.sending(items.toString());
+            eventService.sendEvent(builder -> builder
+            		.setSourceModule(from)
+            		.setEventType(EventType.audit)
+            		.setCorrelationIds(Map.of("idempotencyKey", idempotencyKey))
+            		.setPayload(entity.toString()));
             ResponseEntity<String> response;
 			try {
                 response = restTemplate.exchange(urlTemplate, HttpMethod.POST, entity, String.class);
+                eventService.sendEvent(builder -> builder
+                		.setSourceModule(from)
+                		.setEventType(EventType.audit)
+                		.setCorrelationIds(Map.of("idempotencyKey", idempotencyKey))
+                		.setPayload(response.toString()));
                 wireLogger.receiving(response.getBody());
             } catch (ResourceAccessException e) {
                 if (e.getCause() instanceof SocketTimeoutException || e.getCause() instanceof ConnectException) {
