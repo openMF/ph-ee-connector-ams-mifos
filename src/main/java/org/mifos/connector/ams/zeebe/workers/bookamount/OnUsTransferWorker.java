@@ -36,12 +36,13 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import hu.dpc.rt.utils.converter.AccountSchemeName1Choice;
+import hu.dpc.rt.utils.converter.GenericAccountIdentification1;
 import io.camunda.zeebe.client.api.response.ActivatedJob;
 import io.camunda.zeebe.client.api.worker.JobClient;
 import io.camunda.zeebe.spring.client.annotation.JobWorker;
 import io.camunda.zeebe.spring.client.annotation.Variable;
 import io.camunda.zeebe.spring.client.exception.ZeebeBpmnError;
-import iso.std.iso._20022.tech.json.camt_053_001.AccountSchemeName1Choice;
 import iso.std.iso._20022.tech.json.camt_053_001.ReportEntry10;
 import iso.std.iso._20022.tech.json.pain_001_001.Pain00100110CustomerCreditTransferInitiationV10MessageSchema;
 import lombok.extern.slf4j.Slf4j;
@@ -149,12 +150,12 @@ try {
 			Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001 = objectMapper.readValue(originalPain001, Pain00100110CustomerCreditTransferInitiationV10MessageSchema.class);
 			
 			ReportEntry10 convertedcamt053Entry = camt053Mapper.toCamt053Entry(pain001.getDocument());
-			var debtorAccountIdOther = convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getRelatedParties().getDebtorAccount().getIdentification().getOther();
-			debtorAccountIdOther.setIdentification(debtorInternalAccountId);
-			debtorAccountIdOther.setSchemeName(new AccountSchemeName1Choice().withCode("IAID"));
-			var creditorAccountIdOther = convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getRelatedParties().getCreditorAccount().getIdentification().getOther();
-			creditorAccountIdOther.setIdentification(creditorInternalAccountId);
-			creditorAccountIdOther.setSchemeName(new AccountSchemeName1Choice().withCode("IAID"));
+			GenericAccountIdentification1 debtorAccountIdOther = (GenericAccountIdentification1) convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getRelatedParties().getDebtorAccount().getIdentification().getAdditionalProperties().getOrDefault("Other", GenericAccountIdentification1.builder().build());
+			debtorAccountIdOther.id(debtorInternalAccountId);
+			debtorAccountIdOther.schemeName(AccountSchemeName1Choice.builder().code("IAID").build());
+			GenericAccountIdentification1 creditorAccountIdOther = (GenericAccountIdentification1) convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getRelatedParties().getCreditorAccount().getIdentification().getAdditionalProperties().getOrDefault("Other", GenericAccountIdentification1.builder().build());
+			creditorAccountIdOther.id(creditorInternalAccountId);
+			creditorAccountIdOther.schemeName(AccountSchemeName1Choice.builder().code("IAID").build());
 			String camt053Entry = objectMapper.writeValueAsString(convertedcamt053Entry);
 			
 			String interbankSettlementDate = LocalDate.now().format(PATTERN);
@@ -265,7 +266,6 @@ try {
 							.map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(List::toString).orElse(""),
     				transactionCategoryPurposeCode,
     				paymentScheme,
-    				creditorInternalAccountId,
     				debtorDisposalAccountAmsId,
     				creditorDisposalAccountAmsId);
     		
@@ -308,7 +308,6 @@ try {
 								.map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(List::toString).orElse(""),
 	    				transactionFeeCategoryPurposeCode,
 	    				paymentScheme,
-	    				creditorInternalAccountId,
 	    				debtorDisposalAccountAmsId,
 	    				debtorConversionAccountAmsId);
 	    		
@@ -350,7 +349,6 @@ try {
 								.map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(List::toString).orElse(""),
 	    				transactionFeeCategoryPurposeCode,
 	    				paymentScheme,
-	    				creditorInternalAccountId,
 	    				debtorDisposalAccountAmsId,
 	    				debtorConversionAccountAmsId);
 	    		
@@ -394,7 +392,6 @@ try {
 							.map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(List::toString).orElse(""),
     				transactionCategoryPurposeCode,
     				paymentScheme,
-    				debtorInternalAccountId,
     				debtorDisposalAccountAmsId,
     				creditorDisposalAccountAmsId);
     		
@@ -439,7 +436,6 @@ try {
 								.map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(List::toString).orElse(""),
 	    				transactionFeeCategoryPurposeCode,
 	    				paymentScheme,
-	    				creditorInternalAccountId,
 	    				debtorConversionAccountAmsId,
 	    				null);
 	    		
@@ -494,7 +490,6 @@ try {
 				unstructured,
 				transactionFeeCategoryPurposeCode,
 				paymentScheme,
-				null,
 				sourceAmsAccountId,
 				targetAmsAccountId);
 		
