@@ -24,7 +24,7 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         
         <git-commit-id-maven-plugin.version>6.0.0</git-commit-id-maven-plugin.version>
-        <baasflow-events-spring-boot-starter.version>1.1.2</baasflow-events-spring-boot-starter.version>
+        <baasflow-events-spring-boot-starter.version>1.2.0</baasflow-events-spring-boot-starter.version>
     </properties>
 
     <dependencyManagement>
@@ -57,8 +57,7 @@
         <dependency>
             <groupId>hu.dpc.rt</groupId>
             <artifactId>payment-schemas</artifactId>
-            <version>1.26.1</version>
-
+            <version>1.27.0</version>
             <exclusions>
                 <exclusion>
                     <groupId>com.fasterxml.jackson.core</groupId>

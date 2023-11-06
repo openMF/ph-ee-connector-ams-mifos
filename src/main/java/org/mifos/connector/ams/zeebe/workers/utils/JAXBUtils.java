@@ -20,13 +20,12 @@ public class JAXBUtils {
                 iso.std.iso._20022.tech.xsd.pacs_008_001.ObjectFactory.class,
                 iso.std.iso._20022.tech.xsd.pacs_002_001.ObjectFactory.class,
                 iso.std.iso._20022.tech.xsd.camt_056_001.ObjectFactory.class,
-        		iso.std.iso._20022.tech.xsd.pacs_004_001.ObjectFactory.class);
+        		iso.std.iso._20022.tech.xsd.pacs_004_001.ObjectFactory.class,
+        		iso.std.iso._20022.tech.xsd.pacs_002_001.ObjectFactory.class);
     }
 
-    @SuppressWarnings("unchecked")
     public iso.std.iso._20022.tech.xsd.camt_056_001.Document unmarshalCamt056(String camt056) throws JAXBException {
-    	Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
-        return ((JAXBElement<iso.std.iso._20022.tech.xsd.camt_056_001.Document>) unmarshaller.unmarshal(new StringReader(camt056))).getValue();
+    	return unmarshal(camt056, iso.std.iso._20022.tech.xsd.camt_056_001.Document.class);
     }
 
     @SuppressWarnings("unchecked")
@@ -39,5 +38,17 @@ public class JAXBUtils {
     public iso.std.iso._20022.tech.xsd.pacs_004_001.Document unmarshalPacs004(String pacs004) throws JAXBException {
     	Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
         return ((JAXBElement<iso.std.iso._20022.tech.xsd.pacs_004_001.Document>) unmarshaller.unmarshal(new StringReader(pacs004))).getValue();
+    }
+    
+    @SuppressWarnings("unchecked")
+    public iso.std.iso._20022.tech.xsd.pacs_002_001.Document unmarshalPacs002(String pacs002) throws JAXBException {
+    	Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
+    	return ((JAXBElement<iso.std.iso._20022.tech.xsd.pacs_002_001.Document>) unmarshaller.unmarshal(new StringReader(pacs002))).getValue();
+    }
+    
+    @SuppressWarnings("unchecked")
+    private <T> T unmarshal(String original, Class<T> clz) throws JAXBException {
+    	Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
+    	return ((JAXBElement<T>) unmarshaller.unmarshal(new StringReader(original))).getValue();
     }
 }
