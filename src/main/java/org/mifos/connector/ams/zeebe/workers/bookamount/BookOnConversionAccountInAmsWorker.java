@@ -2,10 +2,16 @@ package org.mifos.connector.ams.zeebe.workers.bookamount;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Optional;
+import java.util.TimeZone;
+
+import javax.xml.datatype.DatatypeFactory;
 
 import org.mifos.connector.ams.fineract.Config;
 import org.mifos.connector.ams.fineract.ConfigFactory;
@@ -30,16 +36,19 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import hu.dpc.rt.utils.converter.Camt056ToCamt053Converter;
+import hu.dpc.rt.utils.converter.Pacs004ToCamt053Converter;
 import io.camunda.zeebe.client.api.response.ActivatedJob;
 import io.camunda.zeebe.client.api.worker.JobClient;
 import io.camunda.zeebe.spring.client.annotation.JobWorker;
 import io.camunda.zeebe.spring.client.annotation.Variable;
 import iso.std.iso._20022.tech.json.camt_053_001.ActiveOrHistoricCurrencyAndAmountRange2.CreditDebitCode;
+import iso.std.iso._20022.tech.json.camt_053_001.AccountStatement9;
 import iso.std.iso._20022.tech.json.camt_053_001.BankToCustomerStatementV08;
+import iso.std.iso._20022.tech.json.camt_053_001.EntryDetails9;
+import iso.std.iso._20022.tech.json.camt_053_001.EntryTransaction10;
 import iso.std.iso._20022.tech.json.camt_053_001.ReportEntry10;
 import iso.std.iso._20022.tech.json.pain_001_001.Pain00100110CustomerCreditTransferInitiationV10MessageSchema;
-import iso.std.iso._20022.tech.xsd.camt_056_001.PaymentTransactionInformation31;
+import iso.std.iso._20022.tech.xsd.pacs_004_001.PaymentTransactionInformation27;
 import jakarta.xml.bind.JAXBException;
 import lombok.extern.slf4j.Slf4j;
 
@@ -178,7 +187,6 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 					transactionCategoryPurposeCode,
 					paymentScheme,
 					null,
-					null,
 					conversionAccountAmsId);
 			
 			String camt053Body = objectMapper.writeValueAsString(td);
@@ -221,7 +229,6 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 						transactionFeeCategoryPurposeCode,
 						paymentScheme,
 						null,
-						null,
 						conversionAccountAmsId);
 				camt053Body = objectMapper.writeValueAsString(td);
 				batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
@@ -256,7 +263,9 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
                                                             @Variable String paymentScheme,
                                                             @Variable String transactionCategoryPurposeCode,
                                                             @Variable String camt056,
-                                                            @Variable String debtorIban) {
+                                                            @Variable String debtorIban,
+                                                            @Variable String generatedPacs004,
+                                                            @Variable String pacs002) {
         log.info("withdrawTheAmountFromConversionAccountInAms");
         eventService.auditedEvent(
                 eventBuilder -> EventLogUtil.initZeebeJob(activatedJob,
@@ -271,6 +280,8 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
                         transactionCategoryPurposeCode,
                         camt056,
                         debtorIban,
+                        generatedPacs004,
+                        pacs002,
                         eventBuilder));
     }
 
@@ -281,11 +292,17 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
                                                              String transactionCategoryPurposeCode,
                                                              String camt056,
                                                              String debtorIban,
+                                                             String originalPacs004,
+                                                             String originalPacs002,
                                                              Event.Builder eventBuilder) {
     	try {
 			log.info("Withdrawing amount {} from conversion account {} of tenant {}", amount, conversionAccountAmsId, tenantIdentifier);
 			
 			String transactionDate = LocalDate.now().format(DateTimeFormatter.ofPattern(FORMAT));
+			
+			iso.std.iso._20022.tech.xsd.pacs_004_001.Document pacs004 = jaxbUtils.unmarshalPacs004(originalPacs004);
+			
+			iso.std.iso._20022.tech.xsd.pacs_002_001.Document pacs002 = jaxbUtils.unmarshalPacs002(originalPacs002);
 			
 			batchItemBuilder.tenantId(tenantIdentifier);
 			
@@ -313,13 +330,16 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 			
 			batchItemBuilder.add(items, conversionAccountWithdrawalRelativeUrl, bodyItem, false);
 		
-			iso.std.iso._20022.tech.xsd.camt_056_001.Document document = jaxbUtils.unmarshalCamt056(camt056);
-			Camt056ToCamt053Converter converter = new Camt056ToCamt053Converter();
-			BankToCustomerStatementV08 statement = converter.convert(document, new BankToCustomerStatementV08());
+			Pacs004ToCamt053Converter converter = new Pacs004ToCamt053Converter();
+			ReportEntry10 camt053Entry = converter.convert(pacs004, 
+            		new BankToCustomerStatementV08()
+    				.withStatement(List.of(new AccountStatement9()
+    						.withEntry(List.of(new ReportEntry10()
+    								.withEntryDetails(List.of(new EntryDetails9()
+    										.withTransactionDetails(List.of(new EntryTransaction10()))))))))).getStatement().get(0).getEntry().get(0);
 			
-			PaymentTransactionInformation31 paymentTransactionInformation = document
-					.getFIToFIPmtCxlReq()
-					.getUndrlyg().get(0)
+			PaymentTransactionInformation27 paymentTransactionInformation = pacs004
+					.getPmtRtr()
 					.getTxInf().get(0);
 			
 			String originalDebtorBic = paymentTransactionInformation
@@ -327,8 +347,11 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 					.getDbtrAgt()
 					.getFinInstnId()
 					.getBIC();
+			
+			pacs004.getPmtRtr().getGrpHdr().getIntrBkSttlmDt();
 			String originalCreationDate = paymentTransactionInformation
-					.getOrgnlIntrBkSttlmDt()
+					.getOrgnlTxRef()
+					.getIntrBkSttlmDt()
 					.toGregorianCalendar()
 					.toZonedDateTime()
 					.toLocalDate()
@@ -338,25 +361,29 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 			
 			String internalCorrelationId = String.format("%s_%s_%s", originalDebtorBic, originalCreationDate, originalEndToEndId);
 			
-			String camt053 = objectMapper.writeValueAsString(statement);
+			ZoneId zi = TimeZone.getTimeZone("Europe/Budapest").toZoneId();
+	        ZonedDateTime zdt = pacs002.getFIToFIPmtStsRpt().getOrgnlGrpInfAndSts().getOrgnlCreDtTm().toGregorianCalendar().toZonedDateTime().withZoneSameInstant(zi);
+	        var copy = DatatypeFactory.newDefaultInstance().newXMLGregorianCalendar(GregorianCalendar.from(zdt));
+			camt053Entry.getValueDate().setAdditionalProperty("Date", copy);
+			
+			String camt053 = objectMapper.writeValueAsString(camt053Entry);
 			
 			String camt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
 			
 			DtSavingsTransactionDetails td = new DtSavingsTransactionDetails(
 					internalCorrelationId,
 					camt053,
-					document.getFIToFIPmtCxlReq().getUndrlyg().get(0).getTxInf().get(0).getOrgnlTxRef().getCdtrAcct().getId().getIBAN(),
+					paymentTransactionInformation.getOrgnlTxRef().getCdtrAcct().getId().getIBAN(),
 					paymentTypeCode,
 					internalCorrelationId,
-					document.getFIToFIPmtCxlReq().getUndrlyg().get(0).getTxInf().get(0).getOrgnlTxRef().getDbtr().getNm(),
-					document.getFIToFIPmtCxlReq().getUndrlyg().get(0).getTxInf().get(0).getOrgnlTxRef().getDbtrAcct().getId().getIBAN(),
+					paymentTransactionInformation.getOrgnlTxRef().getDbtr().getNm(),
+					paymentTransactionInformation.getOrgnlTxRef().getDbtrAcct().getId().getIBAN(),
 					null,
-					contactDetailsUtil.getId(document.getFIToFIPmtCxlReq().getUndrlyg().get(0).getTxInf().get(0).getOrgnlTxRef().getDbtr().getCtctDtls()),
-					Optional.ofNullable(document.getFIToFIPmtCxlReq().getUndrlyg().get(0).getTxInf().get(0).getOrgnlTxRef().getRmtInf())
-							.map(iso.std.iso._20022.tech.xsd.camt_056_001.RemittanceInformation5::getUstrd).map(List::toString).orElse(""),
+					contactDetailsUtil.getId(paymentTransactionInformation.getOrgnlTxRef().getDbtr().getCtctDtls()),
+					Optional.ofNullable(paymentTransactionInformation.getOrgnlTxRef().getRmtInf())
+							.map(iso.std.iso._20022.tech.xsd.pacs_004_001.RemittanceInformation5::getUstrd).map(List::toString).orElse(""),
 					transactionCategoryPurposeCode,
 					paymentScheme,
-					null,
 					conversionAccountAmsId,
 					null);
 			
