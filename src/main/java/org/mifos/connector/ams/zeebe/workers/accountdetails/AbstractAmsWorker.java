@@ -10,11 +10,13 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -92,14 +94,21 @@ public abstract class AbstractAmsWorker {
         httpHeaders.set("Fineract-Platform-TenantId", tenantId);
         log.trace("calling {} with HttpHeaders {}", urlTemplate, httpHeaders);
         return eventService.auditedEvent(
-                // TODO internalCorrelationId?
                 eventBuilder -> EventLogUtil.initFineractCall(calledFrom, -1, -1, null, eventBuilder),
-                eventBuilder ->
-                        restTemplate.exchange(
+                eventBuilder -> {
+                	var entity = new HttpEntity<>(httpHeaders);
+                	eventService.sendEvent(builder -> builder
+                			.setSourceModule(calledFrom)
+                			.setPayload(urlTemplate));
+                	ResponseEntity<T> response = restTemplate.exchange(
                                         urlTemplate,
                                         HttpMethod.GET,
-                                        new HttpEntity<>(httpHeaders),
-                                        responseType)
-                                .getBody());
+                                        entity,
+                                        responseType);
+                	eventService.sendEvent(builder -> builder
+                			.setSourceModule(calledFrom)
+                			.setPayload(response.toString()));
+                	return response.getBody();
+                	});
     }
 }

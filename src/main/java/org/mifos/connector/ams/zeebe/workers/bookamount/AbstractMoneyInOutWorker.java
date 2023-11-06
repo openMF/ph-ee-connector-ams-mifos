@@ -8,6 +8,7 @@ import java.net.ConnectException;
 import java.net.SocketTimeoutException;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.mifos.connector.ams.log.EventLogUtil;
 import org.mifos.connector.ams.log.IOTxLogger;
@@ -144,7 +145,7 @@ public abstract class AbstractMoneyInOutWorker {
                         conversionAccountId,
                         internalCorrelationId,
                         eventBuilder),
-                eventBuilder -> doBatchInternal(items, tenantId, internalCorrelationId));
+                eventBuilder -> doBatchInternal(items, tenantId, internalCorrelationId, calledFrom));
     }
 
     protected void doBatchOnUs(List<TransactionItem> items,
@@ -161,11 +162,11 @@ public abstract class AbstractMoneyInOutWorker {
                         creditorDisposalAccountAmsId,
                         internalCorrelationId,
                         eventBuilder),
-                eventBuilder -> doBatchInternal(items, tenantId, internalCorrelationId));
+                eventBuilder -> doBatchInternal(items, tenantId, internalCorrelationId, "transferTheAmountBetweenDisposalAccounts"));
     }
 
     @SuppressWarnings("unchecked")
-    private Void doBatchInternal(List<TransactionItem> items, String tenantId, String internalCorrelationId) {
+    private Void doBatchInternal(List<TransactionItem> items, String tenantId, String internalCorrelationId, String from) {
         HttpHeaders httpHeaders = new HttpHeaders();
         httpHeaders.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
         httpHeaders.set("Authorization", authTokenHelper.generateAuthToken());
@@ -189,9 +190,17 @@ public abstract class AbstractMoneyInOutWorker {
             String idempotencyKey = String.format("%s_%d", internalCorrelationId, idempotencyPostfix);
             httpHeaders.set(idempotencyKeyHeaderName, idempotencyKey);
             wireLogger.sending(items.toString());
+            eventService.sendEvent(builder -> builder
+            		.setSourceModule(from)
+            		.setCorrelationIds(Map.of("idempotencyKey", idempotencyKey))
+            		.setPayload(entity.toString()));
             ResponseEntity<Object> response;
             try {
                 response = restTemplate.exchange(urlTemplate, HttpMethod.POST, entity, Object.class);
+                eventService.sendEvent(builder -> builder
+                		.setSourceModule(from)
+                		.setCorrelationIds(Map.of("idempotencyKey", idempotencyKey))
+                		.setPayload(response.toString()));
                 wireLogger.receiving(response.toString());
             } catch (ResourceAccessException e) {
                 if (e.getCause() instanceof SocketTimeoutException || e.getCause() instanceof ConnectException) {
