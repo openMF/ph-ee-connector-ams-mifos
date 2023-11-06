@@ -1,6 +1,10 @@
 package org.mifos.connector.ams.zeebe.workers.utils;
 
+import java.util.List;
+
 import org.springframework.stereotype.Component;
+
+import iso.std.iso._20022.tech.json.pain_001_001.OtherContact1;
 
 @Component
 public class ContactDetailsUtil {
@@ -58,8 +62,9 @@ public class ContactDetailsUtil {
 			return contactDetails.getMobileNumber();
 		}
 		
-		if (contactDetails.getOther() != null) {
-			return contactDetails.getOther().toString();
+		List<OtherContact1> otherList = contactDetails.getOther();
+		if (otherList != null && !otherList.isEmpty()) {
+			return otherList.get(0).getIdentification();
 		}
 		
 		return null;
