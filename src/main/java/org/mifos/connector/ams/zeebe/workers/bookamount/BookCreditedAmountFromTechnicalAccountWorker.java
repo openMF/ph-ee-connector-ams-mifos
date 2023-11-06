@@ -1,8 +1,14 @@
 package org.mifos.connector.ams.zeebe.workers.bookamount;
 
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Optional;
+import java.util.TimeZone;
+
+import javax.xml.datatype.DatatypeFactory;
 
 import org.mifos.connector.ams.fineract.Config;
 import org.mifos.connector.ams.fineract.ConfigFactory;
@@ -26,11 +32,13 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import hu.dpc.rt.utils.converter.Pacs004ToCamt053Converter;
 import io.camunda.zeebe.client.api.response.ActivatedJob;
 import io.camunda.zeebe.client.api.worker.JobClient;
 import io.camunda.zeebe.spring.client.annotation.JobWorker;
 import io.camunda.zeebe.spring.client.annotation.Variable;
 import io.camunda.zeebe.spring.client.exception.ZeebeBpmnError;
+import iso.std.iso._20022.tech.json.camt_053_001.BankToCustomerStatementV08;
 import iso.std.iso._20022.tech.json.camt_053_001.ReportEntry10;
 import iso.std.iso._20022.tech.xsd.pacs_008_001.RemittanceInformation5;
 import jakarta.xml.bind.JAXBException;
@@ -59,7 +67,9 @@ public class BookCreditedAmountFromTechnicalAccountWorker extends AbstractMoneyI
     private JAXBUtils jaxbUtils;
 
     @Autowired
-    private Pacs008Camt053Mapper camt053Mapper;
+    private Pacs008Camt053Mapper pacs008Camt053Mapper;
+    
+    private Pacs004ToCamt053Converter pacs004Camt053Mapper = new Pacs004ToCamt053Converter();
     
     @Autowired
     private ContactDetailsUtil contactDetailsUtil;
@@ -86,6 +96,8 @@ public class BookCreditedAmountFromTechnicalAccountWorker extends AbstractMoneyI
                                                        @Variable String internalCorrelationId,
                                                        @Variable String transactionGroupId,
                                                        @Variable String transactionCategoryPurposeCode,
+                                                       @Variable String generatedPacs004Fragment,
+                                                       @Variable String pacs002,
                                                        @Variable String caseIdentifier) {
         log.info("bookCreditedAmountFromTechnicalAccount");
         eventService.auditedEvent(
@@ -99,6 +111,8 @@ public class BookCreditedAmountFromTechnicalAccountWorker extends AbstractMoneyI
                         internalCorrelationId,
                         transactionGroupId,
                         transactionCategoryPurposeCode,
+                        generatedPacs004Fragment,
+                        pacs002,
                         caseIdentifier,
                         eventBuilder));
     }
@@ -112,6 +126,8 @@ public class BookCreditedAmountFromTechnicalAccountWorker extends AbstractMoneyI
                                                         String internalCorrelationId,
                                                         String transactionGroupId,
                                                         String transactionCategoryPurposeCode,
+                                                        String originalPacs004,
+                                                        String originalPacs002,
                                                         String caseIdentifier,
                                                         Event.Builder eventBuilder) {
         try {
@@ -120,6 +136,10 @@ public class BookCreditedAmountFromTechnicalAccountWorker extends AbstractMoneyI
             List<TransactionItem> items = new ArrayList<>();
 
             iso.std.iso._20022.tech.xsd.pacs_008_001.Document pacs008 = jaxbUtils.unmarshalPacs008(originalPacs008);
+            
+            iso.std.iso._20022.tech.xsd.pacs_004_001.Document pacs004 = jaxbUtils.unmarshalPacs004(originalPacs004);
+            
+            iso.std.iso._20022.tech.xsd.pacs_002_001.Document pacs002 = jaxbUtils.unmarshalPacs002(originalPacs002);
 
             batchItemBuilder.tenantId(tenantIdentifier);
 
@@ -148,8 +168,15 @@ public class BookCreditedAmountFromTechnicalAccountWorker extends AbstractMoneyI
 
             batchItemBuilder.add(items, technicalAccountWithdrawalRelativeUrl, bodyItem, false);
 
-            ReportEntry10 convertedCamt053Entry = camt053Mapper.toCamt053Entry(pacs008);
+            BankToCustomerStatementV08 intermediateCamt053 = pacs008Camt053Mapper.toCamt053Entry(pacs008);
+            ReportEntry10 convertedCamt053Entry = pacs004Camt053Mapper.convert(pacs004, intermediateCamt053).getStatement().get(0).getEntry().get(0);
             convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
+            
+            ZoneId zi = TimeZone.getTimeZone("Europe/Budapest").toZoneId();
+	        ZonedDateTime zdt = pacs002.getFIToFIPmtStsRpt().getTxInfAndSts().get(0).getAccptncDtTm().toGregorianCalendar().toZonedDateTime().withZoneSameInstant(zi);
+	        var copy = DatatypeFactory.newDefaultInstance().newXMLGregorianCalendar(GregorianCalendar.from(zdt));
+	        convertedCamt053Entry.getValueDate().setAdditionalProperty("Date", copy);
+            
             String camt053Entry = objectMapper.writeValueAsString(convertedCamt053Entry);
 
             String camt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
@@ -167,7 +194,6 @@ public class BookCreditedAmountFromTechnicalAccountWorker extends AbstractMoneyI
     				Optional.ofNullable(pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getRmtInf()).map(RemittanceInformation5::getUstrd).map(List::toString).orElse(""),
     				transactionCategoryPurposeCode,
     				paymentScheme,
-    				null,
     				null,
     				null);
 

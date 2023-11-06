@@ -157,7 +157,6 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 							.map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(List::toString).orElse(""),
 					categoryPurpose,
 					paymentScheme,
-					null,
 					disposalAccountAmsId,
 					null);
 			
@@ -200,7 +199,6 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 							.map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(List::toString).orElse(""),
 					categoryPurpose,
 					paymentScheme,
-					null,
 					disposalAccountAmsId,
 					null);
 			
@@ -243,7 +241,6 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 							.map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(List::toString).orElse(""),
 					categoryPurpose,
 					paymentScheme,
-					null,
 					disposalAccountAmsId,
 					null);
 			
@@ -263,7 +260,7 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 			return Map.of("transactionDate", transactionDate);
 		} catch (Exception e) {
 			log.error(e.getMessage(), e);
-			throw new ZeebeBpmnError("Error_InsufficientFunds", e.getMessage());
+			throw new RuntimeException(e);
 		} finally {
 			MDC.remove("internalCorrelationId");
 		}
