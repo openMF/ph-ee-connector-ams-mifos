@@ -282,7 +282,7 @@ public abstract class AbstractMoneyInOutWorker {
     	            	throw new RuntimeException(responseItemBody);
     	            }
     	            
-    	            CommandProcessingResult commandProcessingResult = objectMapper.readValue(responseBody, new TypeReference<CommandProcessingResult>() {});
+    	            CommandProcessingResult commandProcessingResult = objectMapper.readValue(responseItemBody, CommandProcessingResult.class);
     	            return commandProcessingResult.getResourceId();
                 } catch (JsonProcessingException j) {
                 	throw new RuntimeException("An unexpected error occurred for hold request " + idempotencyKey + ": " + rootNode);
