@@ -172,7 +172,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			List<TransactionItem> items = new ArrayList<>();
 			batchItemBuilder.tenantId(tenantIdentifier);
 			
-			String holdTransactionUrl = String.format("%s%d/transactions/command=holdAmount", incomingMoneyApi.substring(1), disposalAccountAmsId);
+			String holdTransactionUrl = String.format("%s%d/transactions/?command=holdAmount", incomingMoneyApi.substring(1), disposalAccountAmsId);
 
 			Integer outHoldReasonId = paymentTypeConfig.findPaymentTypeIdByOperation(String.format("%s.%s", paymentScheme, "outHoldReasonId"));
 			HoldAmountBody body = new HoldAmountBody(
@@ -449,7 +449,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			List<TransactionItem> items = new ArrayList<>();
 			Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
 			
-			String holdTransactionUrl = String.format("%s%d/transactions/command=holdAmount", incomingMoneyApi.substring(1), disposalAccountAmsId);
+			String holdTransactionUrl = String.format("%s%d/transactions/?command=holdAmount", incomingMoneyApi.substring(1), disposalAccountAmsId);
 
 			Integer outHoldReasonId = paymentTypeConfig.findPaymentTypeIdByOperation(String.format("%s.%s", paymentScheme, "outHoldReasonId"));
 			HoldAmountBody holdAmountBody = new HoldAmountBody(
