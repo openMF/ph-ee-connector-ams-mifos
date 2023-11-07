@@ -176,7 +176,7 @@ try {
             batchItemBuilder.tenantId(tenantIdentifier);
             List<TransactionItem> items = new ArrayList<>();
             
-            String holdTransactionUrl = String.format("%s%d/transactions/?command=holdAmount", incomingMoneyApi.substring(1), debtorDisposalAccountAmsId);
+            String holdTransactionUrl = String.format("%s%d/transactions?command=holdAmount", incomingMoneyApi.substring(1), debtorDisposalAccountAmsId);
 
 			Integer outHoldReasonId = paymentTypeConfig.findPaymentTypeIdByOperation(String.format("%s.%s", paymentScheme, "outHoldReasonId"));
 			HoldAmountBody body = new HoldAmountBody(
