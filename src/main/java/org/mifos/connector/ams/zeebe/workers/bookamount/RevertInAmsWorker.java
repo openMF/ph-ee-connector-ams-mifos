@@ -18,6 +18,13 @@ import javax.xml.datatype.DatatypeFactory;
 
 import org.mifos.connector.ams.fineract.Config;
 import org.mifos.connector.ams.fineract.ConfigFactory;
+import org.mifos.connector.ams.fineract.savingsaccounttransaction.request.TransactionQueryBaseQuery;
+import org.mifos.connector.ams.fineract.savingsaccounttransaction.request.TransactionQueryBody;
+import org.mifos.connector.ams.fineract.savingsaccounttransaction.request.TransactionQueryColumnFilter;
+import org.mifos.connector.ams.fineract.savingsaccounttransaction.request.TransactionQueryFilter;
+import org.mifos.connector.ams.fineract.savingsaccounttransaction.request.TransactionQueryRequest;
+import org.mifos.connector.ams.fineract.savingsaccounttransaction.response.TransactionQueryContent;
+import org.mifos.connector.ams.fineract.savingsaccounttransaction.response.TransactionQueryPayload;
 import org.mifos.connector.ams.log.EventLogUtil;
 import org.mifos.connector.ams.log.LogInternalCorrelationId;
 import org.mifos.connector.ams.log.TraceZeebeArguments;
@@ -29,11 +36,6 @@ import org.mifos.connector.ams.zeebe.workers.utils.DtSavingsTransactionDetails;
 import org.mifos.connector.ams.zeebe.workers.utils.JAXBUtils;
 import org.mifos.connector.ams.zeebe.workers.utils.TransactionBody;
 import org.mifos.connector.ams.zeebe.workers.utils.TransactionItem;
-import org.mifos.connector.ams.zeebe.workers.utils.TransactionQueryBaseQuery;
-import org.mifos.connector.ams.zeebe.workers.utils.TransactionQueryBody;
-import org.mifos.connector.ams.zeebe.workers.utils.TransactionQueryColumnFilter;
-import org.mifos.connector.ams.zeebe.workers.utils.TransactionQueryFilter;
-import org.mifos.connector.ams.zeebe.workers.utils.TransactionQueryRequest;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -374,11 +376,11 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 					.setEventType(EventType.audit)
 					.setPayload(tqEntity.toString())
 					.setCorrelationIds(Map.of("CorrelationId", internalCorrelationId)));
-			LinkedHashMap<String, Object> tqResponse = restTemplate.exchange(
+			TransactionQueryPayload tqResponse = restTemplate.exchange(
 					String.format("%s/%s%d/transactions/query", fineractApiUrl, incomingMoneyApi.substring(1), disposalAccountAmsId), 
 					HttpMethod.POST, 
 					tqEntity, 
-					LinkedHashMap.class)
+					TransactionQueryPayload.class)
 				.getBody();
 			eventService.sendEvent(builder -> builder
 					.setSourceModule("revertInAms")
@@ -386,8 +388,11 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 					.setPayload(tqResponse.toString())
 					.setCorrelationIds(Map.of("CorrelationId", internalCorrelationId)));
 			
-			List<LinkedHashMap<String, Object>> content = (List<LinkedHashMap<String, Object>>) tqResponse.get("content");
-			BigDecimal runningBalanceDerived = ((BigDecimal) content.get(0).get("running_balance_derived")).setScale(2, RoundingMode.HALF_UP);
+			List<TransactionQueryContent> content = tqResponse.content();
+			if (content.isEmpty()) {
+				return Map.of("availableBalance", -1);
+			}
+			BigDecimal runningBalanceDerived = content.get(0).runningBalanceDerived().setScale(2, RoundingMode.HALF_UP);
 			return Map.of("availableBalance", runningBalanceDerived);
 					 
     	} catch (JsonProcessingException e) {

@@ -1,4 +1,4 @@
-package org.mifos.connector.ams.zeebe.workers.utils;
+package org.mifos.connector.ams.fineract.savingsaccounttransaction.request;
 
 import lombok.Builder;
 import lombok.experimental.Accessors;
