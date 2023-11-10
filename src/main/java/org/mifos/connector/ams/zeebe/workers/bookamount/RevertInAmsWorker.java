@@ -386,8 +386,8 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 					.setPayload(tqResponse.toString())
 					.setCorrelationIds(Map.of("CorrelationId", internalCorrelationId)));
 			
-			LinkedHashMap<String, Object>[] content = (LinkedHashMap<String, Object>[]) tqResponse.get("content");
-			BigDecimal runningBalanceDerived = ((BigDecimal) content[0].get("running_balance_derived")).setScale(2, RoundingMode.HALF_UP);
+			List<LinkedHashMap<String, Object>> content = (List<LinkedHashMap<String, Object>>) tqResponse.get("content");
+			BigDecimal runningBalanceDerived = ((BigDecimal) content.get(0).get("running_balance_derived")).setScale(2, RoundingMode.HALF_UP);
 			return Map.of("availableBalance", runningBalanceDerived);
 					 
     	} catch (JsonProcessingException e) {
