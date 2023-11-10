@@ -14,6 +14,7 @@ import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.client.ClientHttpRequestFactory;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.web.client.RestTemplate;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -41,7 +42,8 @@ public class AmsConnectorApplication {
         return objectMapper
                 .setSerializationInclusion(JsonInclude.Include.NON_NULL)
                 .configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true)
-                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+                .enable(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS);
     }
 
     @Bean
@@ -69,6 +71,7 @@ public class AmsConnectorApplication {
     	ClientHttpRequestFactory requestFactory = new HttpComponentsClientHttpRequestFactory(httpClient);
     	
     	RestTemplate restTemplate = new RestTemplate(requestFactory);
+    	restTemplate.getMessageConverters().add(new MappingJackson2HttpMessageConverter(objectMapper()));
     	
 		return restTemplate;
     }
