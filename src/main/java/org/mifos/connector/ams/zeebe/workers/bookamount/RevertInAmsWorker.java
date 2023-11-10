@@ -1,13 +1,16 @@
 package org.mifos.connector.ams.zeebe.workers.bookamount;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.GregorianCalendar;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.TimeZone;
 
@@ -19,19 +22,30 @@ import org.mifos.connector.ams.log.EventLogUtil;
 import org.mifos.connector.ams.log.LogInternalCorrelationId;
 import org.mifos.connector.ams.log.TraceZeebeArguments;
 import org.mifos.connector.ams.mapstruct.Pain001Camt053Mapper;
+import org.mifos.connector.ams.zeebe.workers.utils.AuthTokenHelper;
 import org.mifos.connector.ams.zeebe.workers.utils.BatchItemBuilder;
 import org.mifos.connector.ams.zeebe.workers.utils.ContactDetailsUtil;
 import org.mifos.connector.ams.zeebe.workers.utils.DtSavingsTransactionDetails;
 import org.mifos.connector.ams.zeebe.workers.utils.JAXBUtils;
 import org.mifos.connector.ams.zeebe.workers.utils.TransactionBody;
 import org.mifos.connector.ams.zeebe.workers.utils.TransactionItem;
+import org.mifos.connector.ams.zeebe.workers.utils.TransactionQueryBaseQuery;
+import org.mifos.connector.ams.zeebe.workers.utils.TransactionQueryBody;
+import org.mifos.connector.ams.zeebe.workers.utils.TransactionQueryColumnFilter;
+import org.mifos.connector.ams.zeebe.workers.utils.TransactionQueryFilter;
+import org.mifos.connector.ams.zeebe.workers.utils.TransactionQueryRequest;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 
 import com.baasflow.commons.events.Event;
 import com.baasflow.commons.events.EventService;
+import com.baasflow.commons.events.EventType;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -41,8 +55,8 @@ import io.camunda.zeebe.client.api.response.ActivatedJob;
 import io.camunda.zeebe.client.api.worker.JobClient;
 import io.camunda.zeebe.spring.client.annotation.JobWorker;
 import io.camunda.zeebe.spring.client.annotation.Variable;
-import iso.std.iso._20022.tech.json.camt_053_001.ActiveOrHistoricCurrencyAndAmountRange2.CreditDebitCode;
 import iso.std.iso._20022.tech.json.camt_053_001.AccountStatement9;
+import iso.std.iso._20022.tech.json.camt_053_001.ActiveOrHistoricCurrencyAndAmountRange2.CreditDebitCode;
 import iso.std.iso._20022.tech.json.camt_053_001.BankToCustomerStatementV08;
 import iso.std.iso._20022.tech.json.camt_053_001.EntryDetails9;
 import iso.std.iso._20022.tech.json.camt_053_001.EntryTransaction10;
@@ -75,6 +89,9 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
     
     @Autowired
     private ContactDetailsUtil contactDetailsUtil;
+    
+    @Autowired
+    private AuthTokenHelper authTokenHelper;
 
     @Autowired
     private EventService eventService;
@@ -119,7 +136,8 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                         eventBuilder));
     }
 
-    private Void revertInAms(String internalCorrelationId,
+    @SuppressWarnings("unchecked")
+	private Map<String, Object> revertInAms(String internalCorrelationId,
                              String originalPain001,
                              Integer conversionAccountAmsId,
                              Integer disposalAccountAmsId,
@@ -319,20 +337,65 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			}
 
 			
-			 doBatch(items,
+			 String lastTransactionId = doBatch(items,
 	                 tenantIdentifier,
 	                 disposalAccountAmsId,
 	                 conversionAccountAmsId,
 	                 internalCorrelationId,
 	                 "revertInAms");
+			 
+			 TransactionQueryBody tqBody = TransactionQueryBody.builder()
+					 .request(TransactionQueryRequest.builder()
+							 .baseQuery(TransactionQueryBaseQuery.builder()
+									 .columnFilters(new TransactionQueryColumnFilter[] { TransactionQueryColumnFilter.builder()
+											 .column("id")
+											 .filters(new TransactionQueryFilter[] { TransactionQueryFilter.builder()
+													 .operator("EQ")
+													 .values(new String[]{ lastTransactionId })
+													 .build() })
+											 .build() })
+									 .resultColumns(new String[] { "running_balance_derived" })
+									 .build())
+							 .build())
+					 .dateFormat("yyyy-MM-dd")
+					 .locale("en")
+					 .page(0)
+					 .size(1)
+					 .sorts(new String[] {})
+					 .build();
+			 
+			HttpHeaders httpHeaders = new HttpHeaders();
+			httpHeaders.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
+			httpHeaders.set("Authorization", authTokenHelper.generateAuthToken());
+			httpHeaders.set("Fineract-Platform-TenantId", tenantIdentifier);
+			HttpEntity<TransactionQueryBody> tqEntity = new HttpEntity<>(tqBody, httpHeaders);
+			eventService.sendEvent(builder -> builder
+					.setSourceModule("revertInAms")
+					.setEventType(EventType.audit)
+					.setPayload(tqEntity.toString())
+					.setCorrelationIds(Map.of("CorrelationId", internalCorrelationId)));
+			LinkedHashMap<String, Object> tqResponse = restTemplate.exchange(
+					String.format("%s/%s%d/transactions/query", fineractApiUrl, incomingMoneyApi.substring(1), disposalAccountAmsId), 
+					HttpMethod.POST, 
+					tqEntity, 
+					LinkedHashMap.class)
+				.getBody();
+			eventService.sendEvent(builder -> builder
+					.setSourceModule("revertInAms")
+					.setEventType(EventType.audit)
+					.setPayload(tqResponse.toString())
+					.setCorrelationIds(Map.of("CorrelationId", internalCorrelationId)));
+			
+			LinkedHashMap<String, Object>[] content = (LinkedHashMap<String, Object>[]) tqResponse.get("content");
+			BigDecimal runningBalanceDerived = ((BigDecimal) content[0].get("running_balance_derived")).setScale(2, RoundingMode.HALF_UP);
+			return Map.of("availableBalance", runningBalanceDerived);
+					 
     	} catch (JsonProcessingException e) {
             // TODO technical error handling
             throw new RuntimeException("failed in revert", e);
         } finally {
         	MDC.remove("internalCorrelationId");
         }
-
-        return null;
     }
 
     @JobWorker

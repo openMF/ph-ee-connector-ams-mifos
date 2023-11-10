@@ -157,13 +157,13 @@ public abstract class AbstractMoneyInOutWorker {
     			eventBuilder -> holdBatchInternal(items, tenantId, internalCorrelationId, calledFrom));
     }
 
-    protected void doBatch(List<TransactionItem> items,
+    protected String doBatch(List<TransactionItem> items,
                            String tenantId,
                            Integer disposalAccountId,
                            Integer conversionAccountId,
                            String internalCorrelationId,
                            String calledFrom) {
-        eventService.auditedEvent(
+        return eventService.auditedEvent(
                 eventBuilder -> EventLogUtil.initFineractBatchCall(calledFrom,
                         items,
                         disposalAccountId,
@@ -308,7 +308,7 @@ public abstract class AbstractMoneyInOutWorker {
         throw new RuntimeException("Failed to execute transaction " + internalCorrelationId);
     }
 
-    private Void doBatchInternal(List<TransactionItem> items, String tenantId, String internalCorrelationId, String from) {
+    private String doBatchInternal(List<TransactionItem> items, String tenantId, String internalCorrelationId, String from) {
         HttpHeaders httpHeaders = new HttpHeaders();
         httpHeaders.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
         httpHeaders.set("Authorization", authTokenHelper.generateAuthToken());
@@ -406,8 +406,18 @@ public abstract class AbstractMoneyInOutWorker {
                     default -> throw new RuntimeException("An unexpected error occurred for request " + idempotencyKey + ": " + statusCode);
                 }
             }
-            log.info("Request [{}] successful", idempotencyKey);
-            return null;
+            BatchResponse lastResponseItem = batchResponseList.get(batchResponseList.size() - 1);
+            
+            String lastResponseBody = lastResponseItem.getBody();
+            try {
+				CommandProcessingResult cpResult = objectMapper.readValue(lastResponseBody, CommandProcessingResult.class);
+	            return cpResult.getTransactionId();
+			} catch (JsonProcessingException j) {
+				log.error(j.getMessage(), j);
+				throw new RuntimeException(j);
+			} finally {
+				log.info("Request [{}] successful", idempotencyKey);
+			}
         }
 
         log.error("Failed to execute transaction request [{}] in {} tries.", internalCorrelationId, idempotencyRetryCount - retryCount + 1);
