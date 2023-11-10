@@ -406,7 +406,7 @@ public abstract class AbstractMoneyInOutWorker {
                     default -> throw new RuntimeException("An unexpected error occurred for request " + idempotencyKey + ": " + statusCode);
                 }
             }
-            BatchResponse lastResponseItem = batchResponseList.get(batchResponseList.size() - 1);
+            BatchResponse lastResponseItem = batchResponseList.get(Math.min(4, batchResponseList.size()) - 1);
             
             String lastResponseBody = lastResponseItem.getBody();
             try {
