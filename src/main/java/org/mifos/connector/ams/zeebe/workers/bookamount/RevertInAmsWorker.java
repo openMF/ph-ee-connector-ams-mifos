@@ -104,7 +104,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
     @JobWorker
     @LogInternalCorrelationId
     @TraceZeebeArguments
-    public void revertInAms(JobClient jobClient,
+    public Map<String, Object> revertInAms(JobClient jobClient,
                             ActivatedJob activatedJob,
                             @Variable String internalCorrelationId,
                             @Variable String originalPain001,
@@ -120,7 +120,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                             @Variable String tenantIdentifier,
                             @Variable String debtorIban) {
         log.info("revertInAms");
-        eventService.auditedEvent(
+        return eventService.auditedEvent(
                 eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "revertInAms", internalCorrelationId, transactionGroupId, eventBuilder),
                 eventBuilder -> revertInAms(internalCorrelationId,
                         originalPain001,
