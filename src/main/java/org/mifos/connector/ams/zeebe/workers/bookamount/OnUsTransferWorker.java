@@ -229,7 +229,7 @@ try {
 					new HttpEntity<>(httpHeaders),
 					Object.class
 				);
-				throw new ZeebeBpmnError("Error_InsufficientFunds", "Insufficient funds");
+				throw new ZeebeBpmnError("Error_FailedCreditTransfer", "Insufficient funds");
 			}
 			
 			items.clear();
@@ -473,6 +473,12 @@ try {
 		} catch (JsonProcessingException e) {
 			log.error(e.getMessage(), e);
 			throw new RuntimeException("failed to create camt.053", e);
+		} catch (ZeebeBpmnError e) {
+			throw e;
+		} catch (RuntimeException re) {
+			throw re;
+		} catch (Throwable t) {
+			throw new RuntimeException(t);
 		}
     }
     
