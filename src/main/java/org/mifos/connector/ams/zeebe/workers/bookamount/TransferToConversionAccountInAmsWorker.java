@@ -568,7 +568,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			
 			String conversionAccountDepositRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "deposit");
 			
-			addExchange(amount, paymentScheme, transactionDate, objectMapper, paymentTypeConfig, batchItemBuilder, items, conversionAccountDepositRelativeUrl, "transferToConversionAccountInAms.ConversionAccount.DepositTransactionAmount");
+			addExchange(amount, paymentScheme, transactionDate, objectMapper, paymentTypeConfig, batchItemBuilder, items, conversionAccountDepositRelativeUrl, "withdrawTheAmountFromDisposalAccountInAMS.ConversionAccount.DepositTransactionAmount");
 			
 			camt053Body = objectMapper.writeValueAsString(td);
 			batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
