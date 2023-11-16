@@ -202,10 +202,9 @@ try {
 			String unstructured = Optional.ofNullable(pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getRemittanceInformation())
 					.map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(List::toString).orElse("");
     		
-			String holdAmountOperation = "transferTheAmountBetweenDisposalAccounts.Debtor.DisposalAccount.HoldTransactionAmount";
     		addDetails(internalCorrelationId, transactionCategoryPurposeCode, internalCorrelationId, 
 					objectMapper, batchItemBuilder, items, camt053Entry, camt053RelativeUrl, debtorIban, 
-					paymentTypeConfig, paymentScheme, holdAmountOperation, partnerName, partnerAccountIban, 
+					paymentTypeConfig, paymentScheme, null, partnerName, partnerAccountIban, 
 					partnerAccountSecondaryIdentifier, unstructured, debtorDisposalAccountAmsId, creditorDisposalAccountAmsId);
     		
 			Long lastHoldTransactionId = holdBatch(items, tenantIdentifier, debtorDisposalAccountAmsId, creditorDisposalAccountAmsId, internalCorrelationId, "transferToConversionAccountInAms");

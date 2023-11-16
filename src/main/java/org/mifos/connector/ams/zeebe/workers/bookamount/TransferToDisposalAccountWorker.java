@@ -296,7 +296,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 			Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
 			
 			String disposalAccountDepositRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), disposalAccountAmsId, "deposit");
-			String depositAmountOperation = "transferToDisposalAccount.DisposalAccount.DepositTransactionAmount";
+			String depositAmountOperation = "transferToDisposalAccountInRecall.DisposalAccount.DepositTransactionAmount";
 			String depositAmountConfigOperationKey = String.format("%s.%s", paymentScheme, depositAmountOperation);
 			var paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(depositAmountConfigOperationKey);
 			var paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(depositAmountConfigOperationKey);
@@ -345,7 +345,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 			
 			String conversionAccountWithdrawRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "withdrawal");
 			
-			String withdrawAmountOperation = "transferToDisposalAccount.ConversionAccount.WithdrawTransactionAmount";
+			String withdrawAmountOperation = "transferToDisposalAccountInRecall.ConversionAccount.WithdrawTransactionAmount";
 			String withdrawAmountConfigOperationKey = String.format("%s.%s", paymentScheme, withdrawAmountOperation);
 			paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(withdrawAmountConfigOperationKey);
 			paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(withdrawAmountConfigOperationKey);
@@ -452,7 +452,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 			batchItemBuilder.tenantId(tenantIdentifier);
 			
 			String disposalAccountDepositRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), disposalAccountAmsId, "deposit");
-			String depositAmountOperation = "transferToDisposalAccount.DisposalAccount.DepositTransactionAmount";
+			String depositAmountOperation = "transferToDisposalAccountInReturn.DisposalAccount.DepositTransactionAmount";
 			String depositAmountConfigOperationKey = String.format("%s.%s", paymentScheme, depositAmountOperation);
 			Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
 			var paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(depositAmountConfigOperationKey);
@@ -509,7 +509,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 
 			String conversionAccountWithdrawRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "withdrawal");
 
-			String withdrawAmountOperation = "transferToDisposalAccount.ConversionAccount.WithdrawTransactionAmount";
+			String withdrawAmountOperation = "transferToDisposalAccountInReturn.ConversionAccount.WithdrawTransactionAmount";
 			String withdrawAmountConfigOperationKey = String.format("%s.%s", paymentScheme, withdrawAmountOperation);
 			paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(withdrawAmountConfigOperationKey);
 			paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(withdrawAmountConfigOperationKey);

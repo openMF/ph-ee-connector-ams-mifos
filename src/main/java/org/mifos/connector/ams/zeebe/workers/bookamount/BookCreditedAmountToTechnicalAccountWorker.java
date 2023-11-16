@@ -141,7 +141,7 @@ public class BookCreditedAmountToTechnicalAccountWorker extends AbstractMoneyInO
     		String conversionAccountWithdrawalRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), recallTechnicalAccountId, "deposit");
     		
     		Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
-    		String configOperationKey = String.format("%s.%s.%s", paymentScheme, "bookToTechnicalAccount", caseIdentifier);
+    		String configOperationKey = String.format("%s.%s.%s", paymentScheme, "bookCreditedAmountToTechnicalAccount", caseIdentifier);
 			Integer paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(configOperationKey);
 			String paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(configOperationKey);
     		

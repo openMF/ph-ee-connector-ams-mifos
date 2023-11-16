@@ -1,9 +1,9 @@
 package org.mifos.connector.ams.zeebe.workers.accountdetails;
 
-import com.baasflow.commons.events.EventService;
-import com.baasflow.commons.events.EventType;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.stream.Collectors;
 
-import lombok.extern.slf4j.Slf4j;
 import org.mifos.connector.ams.log.EventLogUtil;
 import org.mifos.connector.ams.zeebe.workers.utils.AuthTokenHelper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,10 +16,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
+import com.baasflow.commons.events.EventLogLevel;
+import com.baasflow.commons.events.EventService;
+import com.baasflow.commons.events.EventType;
+
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public abstract class AbstractAmsWorker {
@@ -71,6 +72,7 @@ public abstract class AbstractAmsWorker {
                         .encode().toUriString(),
                 AmsDataTableQueryResponse[].class,
                 tenantId,
+                "ams_connector",
                 "lookupAccount");
     }
 
@@ -85,11 +87,12 @@ public abstract class AbstractAmsWorker {
                         .encode().toUriString(),
                 List.class,
                 tenantId,
+                "ams_connector",
                 "lookupFlags");
         return flags.stream().map(flagResult -> flagResult.get(flagsResultColumns)).collect(Collectors.toList());
     }
 
-    protected <T> T exchange(String urlTemplate, Class<T> responseType, String tenantId, String calledFrom) {
+    protected <T> T exchange(String urlTemplate, Class<T> responseType, String tenantId, String calledFrom, String eventName) {
         HttpHeaders httpHeaders = new HttpHeaders();
         httpHeaders.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
         httpHeaders.set("Authorization", authTokenHelper.generateAuthToken());
@@ -101,6 +104,8 @@ public abstract class AbstractAmsWorker {
                 	var entity = new HttpEntity<>(httpHeaders);
                 	eventService.sendEvent(builder -> builder
                 			.setSourceModule(calledFrom)
+                			.setEventLogLevel(EventLogLevel.INFO)
+                			.setEvent(eventName)
                 			.setEventType(EventType.audit)
                 			.setPayload(urlTemplate));
                 	ResponseEntity<T> response = restTemplate.exchange(
@@ -110,6 +115,8 @@ public abstract class AbstractAmsWorker {
                                         responseType);
                 	eventService.sendEvent(builder -> builder
                 			.setSourceModule(calledFrom)
+                			.setEventLogLevel(EventLogLevel.INFO)
+                			.setEvent(eventName)
                 			.setEventType(EventType.audit)
                 			.setPayload(response.toString()));
                 	return response.getBody();

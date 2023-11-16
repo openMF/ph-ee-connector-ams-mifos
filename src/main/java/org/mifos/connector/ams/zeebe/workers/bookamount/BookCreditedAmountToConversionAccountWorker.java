@@ -248,7 +248,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
             String conversionAccountWithdrawalRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "deposit");
 
             Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
-            String configOperationKey = String.format("%s.%s", paymentScheme, "bookCreditedAmountToConversionAccount.ConversionAccount.DepositTransactionAmount");
+            String configOperationKey = String.format("%s.%s", paymentScheme, "bookCreditedAmountToConversionAccountInRecall.ConversionAccount.DepositTransactionAmount");
             Integer paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(configOperationKey);
             String paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(configOperationKey);
 
@@ -361,7 +361,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
             String conversionAccountWithdrawalRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "deposit");
 
             Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
-            String depositAmountOperation = "bookCreditedAmountToConversionAccount.ConversionAccount.DepositTransactionAmount";
+            String depositAmountOperation = "bookCreditedAmountToConversionAccountInReturn.ConversionAccount.DepositTransactionAmount";
 			String configOperationKey = String.format("%s.%s", paymentScheme, depositAmountOperation);
 			Integer paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(configOperationKey);
 			String paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(configOperationKey);

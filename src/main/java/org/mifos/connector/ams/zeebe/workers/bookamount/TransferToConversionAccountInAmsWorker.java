@@ -477,7 +477,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			String unstructured = Optional.ofNullable(document.getFIToFIPmtCxlReq().getUndrlyg().get(0).getTxInf().get(0).getOrgnlTxRef().getRmtInf())
 					.map(iso.std.iso._20022.tech.xsd.camt_056_001.RemittanceInformation5::getUstrd).map(List::toString).orElse("");
     		
-			String holdAmountOperation = "transferToConversionAccountInAms.DisposalAccount.HoldTransactionAmount";
+			String holdAmountOperation = "withdrawTheAmountFromDisposalAccountInAMS.DisposalAccount.HoldTransactionAmount";
     		addDetails(internalCorrelationId, transactionCategoryPurposeCode, internalCorrelationId, 
 					objectMapper, batchItemBuilder, items, camt053Entry, camt053RelativeUrl, iban, 
 					paymentTypeConfig, paymentScheme, holdAmountOperation, partnerName, partnerAccountIban, 
@@ -511,7 +511,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			
 			String releaseTransactionUrl = String.format("%s%d/transactions/%d?command=releaseAmount", incomingMoneyApi.substring(1), disposalAccountAmsId, lastHoldTransactionId);
 			batchItemBuilder.add(items, releaseTransactionUrl, null, false);
-			String releaseAmountOperation = "transferToConversionAccountInAms.DisposalAccount.ReleaseTransactionAmount";
+			String releaseAmountOperation = "withdrawTheAmountFromDisposalAccountInAMS.DisposalAccount.ReleaseTransactionAmount";
 			addDetails(internalCorrelationId, transactionCategoryPurposeCode, internalCorrelationId, 
 					objectMapper, batchItemBuilder, items, camt053Entry, camt053RelativeUrl, iban, 
 					paymentTypeConfig, paymentScheme, releaseAmountOperation, partnerName, partnerAccountIban, 
@@ -519,7 +519,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			
 			String disposalAccountWithdrawRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), disposalAccountAmsId, "withdrawal");
 			
-			String withdrawAmountOperation = "transferToConversionAccountInAms.DisposalAccount.WithdrawTransactionAmount";
+			String withdrawAmountOperation = "withdrawTheAmountFromDisposalAccountInAMS.DisposalAccount.WithdrawTransactionAmount";
 			String configOperationKey = String.format("%s.%s", paymentScheme, withdrawAmountOperation);
 			Integer paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(configOperationKey);
 			String paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(configOperationKey);

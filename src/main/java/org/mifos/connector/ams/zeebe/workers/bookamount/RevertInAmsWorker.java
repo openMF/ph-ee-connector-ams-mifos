@@ -597,7 +597,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			String disposalAccountDepositRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), disposalAccountAmsId, "deposit");
 			Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
 			
-			String depositAmountOperation = "revertInAms.DisposalAccount.DepositTransactionAmount";
+			String depositAmountOperation = "depositTheAmountOnDisposalInAms.DisposalAccount.DepositTransactionAmount";
 			String depositAmountConfigOperationKey = String.format("%s.%s", paymentScheme, depositAmountOperation);
 			var paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(depositAmountConfigOperationKey);
 			var paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(depositAmountConfigOperationKey);
@@ -676,7 +676,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			
 			String conversionAccountWithdrawRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "withdrawal");
 			
-			String withdrawAmountOperation = "revertInAms.ConversionAccount.WithdrawTransactionAmount";
+			String withdrawAmountOperation = "depositTheAmountOnDisposalInAms.ConversionAccount.WithdrawTransactionAmount";
 			String withdrawAmountConfigOperationKey = String.format("%s.%s", paymentScheme, withdrawAmountOperation);
 			paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(withdrawAmountConfigOperationKey);
 			paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(withdrawAmountConfigOperationKey);

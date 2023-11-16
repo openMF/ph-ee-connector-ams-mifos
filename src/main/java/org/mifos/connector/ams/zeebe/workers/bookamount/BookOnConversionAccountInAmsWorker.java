@@ -309,7 +309,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 			String conversionAccountWithdrawalRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "withdrawal");
 			
 			Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
-			String withdrawAmountOperation = "bookOnConversionAccountInAms.ConversionAccount.WithdrawTransactionAmount";
+			String withdrawAmountOperation = "withdrawTheAmountFromConversionAccountInAms.ConversionAccount.WithdrawTransactionAmount";
 			String configOperationKey = String.format("%s.%s", paymentScheme, withdrawAmountOperation);
 			Integer paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(configOperationKey);
 			String paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(configOperationKey);
