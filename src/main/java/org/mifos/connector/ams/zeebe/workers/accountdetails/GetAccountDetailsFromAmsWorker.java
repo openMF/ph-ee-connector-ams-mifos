@@ -153,6 +153,7 @@ public class GetAccountDetailsFromAmsWorker extends AbstractAmsWorker {
                         .encode().toUriString(),
                 GetSavingsAccountsAccountIdResponse.class,
                 tenantId,
-                "getAccountDetailsFromAms");
+                "getAccountDetailsFromAms",
+                "retrieveCurrencyIdAndStatus");
     }
 }
