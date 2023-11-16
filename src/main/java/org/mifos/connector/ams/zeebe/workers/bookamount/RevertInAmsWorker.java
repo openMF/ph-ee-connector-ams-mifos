@@ -1,13 +1,16 @@
 package org.mifos.connector.ams.zeebe.workers.bookamount;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.GregorianCalendar;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.TimeZone;
 
@@ -15,10 +18,18 @@ import javax.xml.datatype.DatatypeFactory;
 
 import org.mifos.connector.ams.fineract.Config;
 import org.mifos.connector.ams.fineract.ConfigFactory;
+import org.mifos.connector.ams.fineract.savingsaccounttransaction.request.TransactionQueryBaseQuery;
+import org.mifos.connector.ams.fineract.savingsaccounttransaction.request.TransactionQueryBody;
+import org.mifos.connector.ams.fineract.savingsaccounttransaction.request.TransactionQueryColumnFilter;
+import org.mifos.connector.ams.fineract.savingsaccounttransaction.request.TransactionQueryFilter;
+import org.mifos.connector.ams.fineract.savingsaccounttransaction.request.TransactionQueryRequest;
+import org.mifos.connector.ams.fineract.savingsaccounttransaction.response.TransactionQueryContent;
+import org.mifos.connector.ams.fineract.savingsaccounttransaction.response.TransactionQueryPayload;
 import org.mifos.connector.ams.log.EventLogUtil;
 import org.mifos.connector.ams.log.LogInternalCorrelationId;
 import org.mifos.connector.ams.log.TraceZeebeArguments;
 import org.mifos.connector.ams.mapstruct.Pain001Camt053Mapper;
+import org.mifos.connector.ams.zeebe.workers.utils.AuthTokenHelper;
 import org.mifos.connector.ams.zeebe.workers.utils.BatchItemBuilder;
 import org.mifos.connector.ams.zeebe.workers.utils.ContactDetailsUtil;
 import org.mifos.connector.ams.zeebe.workers.utils.DtSavingsTransactionDetails;
@@ -28,10 +39,15 @@ import org.mifos.connector.ams.zeebe.workers.utils.TransactionItem;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 
 import com.baasflow.commons.events.Event;
 import com.baasflow.commons.events.EventService;
+import com.baasflow.commons.events.EventType;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -41,8 +57,8 @@ import io.camunda.zeebe.client.api.response.ActivatedJob;
 import io.camunda.zeebe.client.api.worker.JobClient;
 import io.camunda.zeebe.spring.client.annotation.JobWorker;
 import io.camunda.zeebe.spring.client.annotation.Variable;
-import iso.std.iso._20022.tech.json.camt_053_001.ActiveOrHistoricCurrencyAndAmountRange2.CreditDebitCode;
 import iso.std.iso._20022.tech.json.camt_053_001.AccountStatement9;
+import iso.std.iso._20022.tech.json.camt_053_001.ActiveOrHistoricCurrencyAndAmountRange2.CreditDebitCode;
 import iso.std.iso._20022.tech.json.camt_053_001.BankToCustomerStatementV08;
 import iso.std.iso._20022.tech.json.camt_053_001.EntryDetails9;
 import iso.std.iso._20022.tech.json.camt_053_001.EntryTransaction10;
@@ -75,6 +91,9 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
     
     @Autowired
     private ContactDetailsUtil contactDetailsUtil;
+    
+    @Autowired
+    private AuthTokenHelper authTokenHelper;
 
     @Autowired
     private EventService eventService;
@@ -85,7 +104,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
     @JobWorker
     @LogInternalCorrelationId
     @TraceZeebeArguments
-    public void revertInAms(JobClient jobClient,
+    public Map<String, Object> revertInAms(JobClient jobClient,
                             ActivatedJob activatedJob,
                             @Variable String internalCorrelationId,
                             @Variable String originalPain001,
@@ -101,7 +120,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                             @Variable String tenantIdentifier,
                             @Variable String debtorIban) {
         log.info("revertInAms");
-        eventService.auditedEvent(
+        return eventService.auditedEvent(
                 eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "revertInAms", internalCorrelationId, transactionGroupId, eventBuilder),
                 eventBuilder -> revertInAms(internalCorrelationId,
                         originalPain001,
@@ -119,7 +138,8 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                         eventBuilder));
     }
 
-    private Void revertInAms(String internalCorrelationId,
+    @SuppressWarnings("unchecked")
+	private Map<String, Object> revertInAms(String internalCorrelationId,
                              String originalPain001,
                              Integer conversionAccountAmsId,
                              Integer disposalAccountAmsId,
@@ -319,20 +339,68 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			}
 
 			
-			 doBatch(items,
+			 String lastTransactionId = doBatch(items,
 	                 tenantIdentifier,
 	                 disposalAccountAmsId,
 	                 conversionAccountAmsId,
 	                 internalCorrelationId,
 	                 "revertInAms");
+			 
+			 TransactionQueryBody tqBody = TransactionQueryBody.builder()
+					 .request(TransactionQueryRequest.builder()
+							 .baseQuery(TransactionQueryBaseQuery.builder()
+									 .columnFilters(new TransactionQueryColumnFilter[] { TransactionQueryColumnFilter.builder()
+											 .column("id")
+											 .filters(new TransactionQueryFilter[] { TransactionQueryFilter.builder()
+													 .operator("EQ")
+													 .values(new String[]{ lastTransactionId })
+													 .build() })
+											 .build() })
+									 .resultColumns(new String[] { "running_balance_derived" })
+									 .build())
+							 .build())
+					 .dateFormat("yyyy-MM-dd")
+					 .locale("en")
+					 .page(0)
+					 .size(1)
+					 .sorts(new String[] {})
+					 .build();
+			 
+			HttpHeaders httpHeaders = new HttpHeaders();
+			httpHeaders.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
+			httpHeaders.set("Authorization", authTokenHelper.generateAuthToken());
+			httpHeaders.set("Fineract-Platform-TenantId", tenantIdentifier);
+			HttpEntity<TransactionQueryBody> tqEntity = new HttpEntity<>(tqBody, httpHeaders);
+			eventService.sendEvent(builder -> builder
+					.setSourceModule("revertInAms")
+					.setEventType(EventType.audit)
+					.setPayload(tqEntity.toString())
+					.setCorrelationIds(Map.of("CorrelationId", internalCorrelationId)));
+			TransactionQueryPayload tqResponse = restTemplate.exchange(
+					String.format("%s/%s%d/transactions/query", fineractApiUrl, incomingMoneyApi.substring(1), disposalAccountAmsId), 
+					HttpMethod.POST, 
+					tqEntity, 
+					TransactionQueryPayload.class)
+				.getBody();
+			eventService.sendEvent(builder -> builder
+					.setSourceModule("revertInAms")
+					.setEventType(EventType.audit)
+					.setPayload(tqResponse.toString())
+					.setCorrelationIds(Map.of("CorrelationId", internalCorrelationId)));
+			
+			List<TransactionQueryContent> content = tqResponse.content();
+			if (content.isEmpty()) {
+				return Map.of("availableBalance", -1);
+			}
+			BigDecimal runningBalanceDerived = content.get(0).runningBalanceDerived().setScale(2, RoundingMode.HALF_UP);
+			return Map.of("availableBalance", runningBalanceDerived);
+					 
     	} catch (JsonProcessingException e) {
             // TODO technical error handling
             throw new RuntimeException("failed in revert", e);
         } finally {
         	MDC.remove("internalCorrelationId");
         }
-
-        return null;
     }
 
     @JobWorker
