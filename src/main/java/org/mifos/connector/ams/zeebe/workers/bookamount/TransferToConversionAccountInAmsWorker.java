@@ -355,6 +355,9 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			Integer sourceAmsAccountId,
 			Integer targetAmsAccountId) throws JsonProcessingException {
     	String paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(String.format("%s.%s", paymentScheme, paymentTypeOperation));
+    	if (paymentTypeCode == null) {
+    		paymentTypeCode = "";
+    	}
 		DtSavingsTransactionDetails td = new DtSavingsTransactionDetails(
 				internalCorrelationId,
 				camt053,
