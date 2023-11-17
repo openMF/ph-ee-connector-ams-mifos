@@ -186,8 +186,8 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 							.map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(List::toString).orElse(""),
 					transactionCategoryPurposeCode,
 					paymentScheme,
-					null,
-					conversionAccountAmsId);
+					conversionAccountAmsId,
+					null);
 			
 			String camt053Body = objectMapper.writeValueAsString(td);
 	
@@ -228,8 +228,8 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 								.map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(List::toString).orElse(""),
 						transactionFeeCategoryPurposeCode,
 						paymentScheme,
-						null,
-						conversionAccountAmsId);
+						conversionAccountAmsId,
+						null);
 				camt053Body = objectMapper.writeValueAsString(td);
 				batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 			}
