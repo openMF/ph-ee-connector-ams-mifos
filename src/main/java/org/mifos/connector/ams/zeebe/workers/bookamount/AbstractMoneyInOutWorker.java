@@ -273,6 +273,9 @@ public abstract class AbstractMoneyInOutWorker {
 				throw new RuntimeException(j);
 			}
 			if (batchResponseList.size() != 2) {
+				if (batchResponseList.get(0).getBody().contains("validation.msg.savingsaccount.insufficient.balance")) {
+	            	throw new ZeebeBpmnError("Error_FailedCreditTransfer", "Insufficient balance error");
+	            }
 				throw new RuntimeException("An unexpected error occurred for hold request " + idempotencyKey);
 			}
             BatchResponse responseItem = batchResponseList.get(0);
@@ -295,9 +298,6 @@ public abstract class AbstractMoneyInOutWorker {
                 }
             }
             log.debug("Got error {}, response item '{}' for request [{}]", statusCode, responseItem, idempotencyKey);
-            if (responseItem.getBody().contains("validation.msg.savingsaccount.insufficient.balance")) {
-            	throw new ZeebeBpmnError("Error_FailedCreditTransfer", "Insufficient balance error");
-            }
             switch (statusCode) {
                 case SC_CONFLICT -> {
                     log.warn("Transaction request [{}] is already executing, has not completed yet", idempotencyKey);
