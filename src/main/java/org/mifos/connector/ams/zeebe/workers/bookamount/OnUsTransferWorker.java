@@ -205,7 +205,7 @@ try {
     		addDetails(internalCorrelationId, transactionCategoryPurposeCode, internalCorrelationId, 
 					objectMapper, batchItemBuilder, items, camt053Entry, camt053RelativeUrl, debtorIban, 
 					paymentTypeConfig, paymentScheme, null, partnerName, partnerAccountIban, 
-					partnerAccountSecondaryIdentifier, unstructured, debtorDisposalAccountAmsId, creditorDisposalAccountAmsId);
+					partnerAccountSecondaryIdentifier, unstructured, null, null);
     		
 			Long lastHoldTransactionId = holdBatch(items, tenantIdentifier, debtorDisposalAccountAmsId, creditorDisposalAccountAmsId, internalCorrelationId, "transferToConversionAccountInAms");
 			
@@ -239,7 +239,7 @@ try {
 			addDetails(internalCorrelationId, transactionCategoryPurposeCode, internalCorrelationId, 
 					objectMapper, batchItemBuilder, items, camt053Entry, camt053RelativeUrl, debtorIban, 
 					paymentTypeConfig, paymentScheme, releaseAmountOperation, partnerName, partnerAccountIban, 
-					partnerAccountSecondaryIdentifier, unstructured, debtorDisposalAccountAmsId, creditorDisposalAccountAmsId);
+					partnerAccountSecondaryIdentifier, unstructured, null, null);
 			
     		String debtorDisposalWithdrawalRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), debtorDisposalAccountAmsId, "withdrawal");
     		
