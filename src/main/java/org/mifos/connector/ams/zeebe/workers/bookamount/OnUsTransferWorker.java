@@ -400,7 +400,7 @@ try {
     				transactionGroupId,
     				pain001.getDocument().getPaymentInformation().get(0).getDebtor().getName(),
     				pain001.getDocument().getPaymentInformation().get(0).getDebtorAccount().getIdentification().getIban(),
-    				partnerAccountIban.substring(partnerAccountIban.length() - 8),
+    				debtorIban.substring(debtorIban.length() - 8),
     				contactDetailsUtil.getId(pain001.getDocument().getPaymentInformation().get(0).getDebtor().getContactDetails()),
     				Optional.ofNullable(pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getRemittanceInformation())
 							.map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(List::toString).orElse(""),
