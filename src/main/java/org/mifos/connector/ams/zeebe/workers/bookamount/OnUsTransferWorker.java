@@ -149,7 +149,6 @@ try {
 			log.debug("Incoming pain.001: {}", originalPain001);
 			
 			Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
-			String transactionDate = LocalDate.now().format(PATTERN);
 			objectMapper.setSerializationInclusion(Include.NON_NULL);
 			Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001 = objectMapper.readValue(originalPain001, Pain00100110CustomerCreditTransferInitiationV10MessageSchema.class);
 			
@@ -270,8 +269,8 @@ try {
     				paymentTypeCode,
     				transactionGroupId,
     				pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditor().getName(),
-    				pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditorAccount().getIdentification().getIban(),
-    				null,
+    				partnerAccountIban,
+    				partnerAccountIban.substring(partnerAccountIban.length() - 8),
     				contactDetailsUtil.getId(pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditor().getContactDetails()),
     				Optional.ofNullable(pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getRemittanceInformation())
 							.map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(List::toString).orElse(""),
@@ -315,7 +314,7 @@ try {
 	    				transactionGroupId,
 	    				pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditor().getName(),
 	    				pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditorAccount().getIdentification().getIban(),
-	    				null,
+	    				creditorIban.substring(creditorIban.length() - 8),
 	    				contactDetailsUtil.getId(pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditor().getContactDetails()),
 	    				Optional.ofNullable(pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getRemittanceInformation())
 								.map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(List::toString).orElse(""),
@@ -356,7 +355,7 @@ try {
 	    				transactionGroupId,
 	    				pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditor().getName(),
 	    				pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditorAccount().getIdentification().getIban(),
-	    				null,
+	    				partnerAccountIban.substring(partnerAccountIban.length() - 8),
 	    				contactDetailsUtil.getId(pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditor().getContactDetails()),
 	    				Optional.ofNullable(pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getRemittanceInformation())
 								.map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(List::toString).orElse(""),
@@ -401,7 +400,7 @@ try {
     				transactionGroupId,
     				pain001.getDocument().getPaymentInformation().get(0).getDebtor().getName(),
     				pain001.getDocument().getPaymentInformation().get(0).getDebtorAccount().getIdentification().getIban(),
-    				null,
+    				partnerAccountIban.substring(partnerAccountIban.length() - 8),
     				contactDetailsUtil.getId(pain001.getDocument().getPaymentInformation().get(0).getDebtor().getContactDetails()),
     				Optional.ofNullable(pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getRemittanceInformation())
 							.map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(List::toString).orElse(""),
@@ -511,7 +510,7 @@ try {
 				transactionGroupId,
 				partnerName,
 				partnerAccountIban,
-				null,
+				partnerAccountIban.substring(partnerAccountIban.length() - 8),
 				partnerAccountSecondaryIdentifier,
 				unstructured,
 				transactionFeeCategoryPurposeCode,
