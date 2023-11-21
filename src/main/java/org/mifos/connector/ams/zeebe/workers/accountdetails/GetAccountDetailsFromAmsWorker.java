@@ -85,7 +85,7 @@ public class GetAccountDetailsFromAmsWorker extends AbstractAmsWorker {
                     "conversionAccountAmsId", "NOT_PROVIDED",
                     "internalAccountId", "NOT_PROVIDED",
                     "disposalAccountAmsId", "NOT_PROVIDED",
-                    "disposalAccountFlags", "NOT_PROVIDED",
+                    "disposalAccountFlags", List.of("NOT_PROVIDED"),
                     "disposalAccountAmsStatusType", "NOT_PROVIDED"
             );
         }
