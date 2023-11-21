@@ -8,7 +8,6 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.GregorianCalendar;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -46,6 +45,7 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 
 import com.baasflow.commons.events.Event;
+import com.baasflow.commons.events.EventLogLevel;
 import com.baasflow.commons.events.EventService;
 import com.baasflow.commons.events.EventType;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
@@ -138,7 +138,6 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                         eventBuilder));
     }
 
-    @SuppressWarnings("unchecked")
 	private Map<String, Object> revertInAms(String internalCorrelationId,
                              String originalPain001,
                              Integer conversionAccountAmsId,
@@ -372,7 +371,9 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			httpHeaders.set("Fineract-Platform-TenantId", tenantIdentifier);
 			HttpEntity<TransactionQueryBody> tqEntity = new HttpEntity<>(tqBody, httpHeaders);
 			eventService.sendEvent(builder -> builder
-					.setSourceModule("revertInAms")
+					.setSourceModule("ams_connector")
+					.setEvent("revertInAms")
+					.setEventLogLevel(EventLogLevel.INFO)
 					.setEventType(EventType.audit)
 					.setPayload(tqEntity.toString())
 					.setCorrelationIds(Map.of("CorrelationId", internalCorrelationId)));
@@ -383,7 +384,9 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 					TransactionQueryPayload.class)
 				.getBody();
 			eventService.sendEvent(builder -> builder
-					.setSourceModule("revertInAms")
+					.setEvent("revertInAms")
+					.setSourceModule("ams_connector")
+					.setEventLogLevel(EventLogLevel.INFO)
 					.setEventType(EventType.audit)
 					.setPayload(tqResponse.toString())
 					.setCorrelationIds(Map.of("CorrelationId", internalCorrelationId)));
