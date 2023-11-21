@@ -227,7 +227,7 @@ try {
 					new HttpEntity<>(httpHeaders),
 					Object.class
 				);
-				throw new ZeebeBpmnError("Error_FailedCreditTransfer", "Insufficient funds");
+				throw new ZeebeBpmnError("Error_InsufficientFunds", "Insufficient funds");
 			}
 			
 			items.clear();

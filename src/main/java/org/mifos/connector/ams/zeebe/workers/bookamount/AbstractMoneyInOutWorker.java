@@ -274,7 +274,7 @@ public abstract class AbstractMoneyInOutWorker {
 			}
 			if (batchResponseList.size() != 2) {
 				if (batchResponseList.get(0).getBody().contains("validation.msg.savingsaccount.insufficient.balance")) {
-	            	throw new ZeebeBpmnError("Error_FailedCreditTransfer", "Insufficient balance error");
+	            	throw new ZeebeBpmnError("Error_InsufficientFunds", "Insufficient balance error");
 	            }
 				throw new RuntimeException("An unexpected error occurred for hold request " + idempotencyKey);
 			}
