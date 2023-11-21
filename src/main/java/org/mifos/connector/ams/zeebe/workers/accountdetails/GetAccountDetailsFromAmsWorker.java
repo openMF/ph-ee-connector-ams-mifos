@@ -1,5 +1,6 @@
 package org.mifos.connector.ams.zeebe.workers.accountdetails;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -85,7 +86,7 @@ public class GetAccountDetailsFromAmsWorker extends AbstractAmsWorker {
                     "conversionAccountAmsId", "NOT_PROVIDED",
                     "internalAccountId", "NOT_PROVIDED",
                     "disposalAccountAmsId", "NOT_PROVIDED",
-                    "disposalAccountFlags", List.of("NOT_PROVIDED"),
+                    "disposalAccountFlags", Collections.emptyList(),
                     "disposalAccountAmsStatusType", "NOT_PROVIDED"
             );
         }
