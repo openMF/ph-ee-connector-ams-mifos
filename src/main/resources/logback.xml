@@ -16,9 +16,9 @@
         <file>logs/console.log</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
             <fileNamePattern>logs/console-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
-            <maxFileSize>300MB</maxFileSize>
-            <maxHistory>3</maxHistory>
-            <totalSizeCap>750MB</totalSizeCap>
+            <maxFileSize>${LOG_CONSOLE_MAXFILESIZE:-100MB}</maxFileSize>
+            <maxHistory>${LOG_CONSOLE_MAXHISTORY:-7}</maxHistory>
+            <totalSizeCap>${LOG_CONSOLE_TOTALSIZECAP:-300MB}</totalSizeCap>
         </rollingPolicy>
         <encoder>
             <pattern>${CONSOLE_LOG_PATTERN}</pattern>
@@ -30,9 +30,9 @@
         <file>logs/http.log</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
             <fileNamePattern>wire-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
-            <maxFileSize>200MB</maxFileSize>
-            <maxHistory>10</maxHistory>
-            <totalSizeCap>200MB</totalSizeCap>
+            <maxFileSize>${LOG_WIRE_MAXSIZE:-100MB}</maxFileSize>
+            <maxHistory>${LOG_WIRE_MAXHISTORY:-7}</maxHistory>
+            <totalSizeCap>${LOG_WIRE_TOTALSIZECAP:-300MB}</totalSizeCap>
         </rollingPolicy>
         <encoder>
             <pattern>${CONSOLE_LOG_PATTERN}</pattern>
