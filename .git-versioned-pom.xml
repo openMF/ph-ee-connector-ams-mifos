@@ -13,7 +13,7 @@
 
     <groupId>org.mifos</groupId>
     <artifactId>ph-ee-connector-ams-mifos</artifactId>
-    <version>1.27.1-NEOB-1898_Failed_credit_transfer_for_OnUs-SNAPSHOT</version>
+    <version>1.28.1</version>
 
     <properties>
         <java.version>17</java.version>
@@ -57,7 +57,7 @@
         <dependency>
             <groupId>hu.dpc.rt</groupId>
             <artifactId>payment-schemas</artifactId>
-            <version>1.28.0</version>
+            <version>1.28.3</version>
             <exclusions>
                 <exclusion>
                     <groupId>com.fasterxml.jackson.core</groupId>

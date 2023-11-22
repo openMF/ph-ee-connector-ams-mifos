@@ -168,6 +168,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 		
 			ReportEntry10 convertedcamt053Entry = camt053Mapper.toCamt053Entry(pain001.getDocument());
 			convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.DBIT);
+			convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
 			String camt053Entry = objectMapper.writeValueAsString(convertedcamt053Entry);
 			
 			String camt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
@@ -201,6 +202,11 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 				String withdrawFeeConfigOperationKey = String.format("%s.%s", paymentScheme, withdrawFeeOperation);
 				paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(withdrawFeeConfigOperationKey);
 				paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(withdrawFeeConfigOperationKey);
+				convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
+				
+				camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001.getDocument(), convertedcamt053Entry, transactionFeeCategoryPurposeCode);
+				
+				camt053Entry = objectMapper.writeValueAsString(convertedcamt053Entry);
 				
 				body = new TransactionBody(
 						transactionDate,
@@ -365,6 +371,8 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 	        ZonedDateTime zdt = pacs002.getFIToFIPmtStsRpt().getOrgnlGrpInfAndSts().getOrgnlCreDtTm().toGregorianCalendar().toZonedDateTime().withZoneSameInstant(zi);
 	        var copy = DatatypeFactory.newDefaultInstance().newXMLGregorianCalendar(GregorianCalendar.from(zdt));
 			camt053Entry.getValueDate().setAdditionalProperty("Date", copy);
+			
+			camt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
 			
 			String camt053 = objectMapper.writeValueAsString(camt053Entry);
 			

@@ -202,7 +202,7 @@ try {
 					.map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(List::toString).orElse("");
     		
     		addDetails(internalCorrelationId, transactionCategoryPurposeCode, internalCorrelationId, 
-					objectMapper, batchItemBuilder, items, camt053Entry, camt053RelativeUrl, debtorIban, 
+					objectMapper, batchItemBuilder, items, convertedcamt053Entry, camt053RelativeUrl, debtorIban, 
 					paymentTypeConfig, paymentScheme, null, partnerName, partnerAccountIban, 
 					partnerAccountSecondaryIdentifier, unstructured, null, null);
     		
@@ -236,7 +236,7 @@ try {
 			batchItemBuilder.add(items, releaseTransactionUrl, null, false);
 			String releaseAmountOperation = "transferTheAmountBetweenDisposalAccounts.Debtor.DisposalAccount.ReleaseTransactionAmount";
 			addDetails(internalCorrelationId, transactionCategoryPurposeCode, internalCorrelationId, 
-					objectMapper, batchItemBuilder, items, camt053Entry, camt053RelativeUrl, debtorIban, 
+					objectMapper, batchItemBuilder, items, convertedcamt053Entry, camt053RelativeUrl, debtorIban, 
 					paymentTypeConfig, paymentScheme, releaseAmountOperation, partnerName, partnerAccountIban, 
 					partnerAccountSecondaryIdentifier, unstructured, null, null);
 			
@@ -304,6 +304,8 @@ try {
 	    		convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getSupplementaryData().get(0).getEnvelope().setAdditionalProperty("InternalCorrelationId", transactionFeeInternalCorrelationId);
 	    		convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getAmountDetails().getInstructedAmount().getAmount().setAmount(transactionFeeAmount);
 	    		convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getAmountDetails().getTransactionAmount().getAmount().setAmount(transactionFeeAmount);
+	    		convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
+	    		camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001.getDocument(), convertedcamt053Entry, transactionFeeCategoryPurposeCode);
 				camt053Entry = objectMapper.writeValueAsString(convertedcamt053Entry);
 	    		
 	    		td = new DtSavingsTransactionDetails(
@@ -332,6 +334,9 @@ try {
 				String depositFeeConfigOperationKey = String.format("%s.%s", paymentScheme, depositFeeOperation);
 				paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(depositFeeConfigOperationKey);
 				paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(depositFeeConfigOperationKey);
+				convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
+				camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001.getDocument(), convertedcamt053Entry, transactionFeeCategoryPurposeCode);
+				camt053Entry = objectMapper.writeValueAsString(convertedcamt053Entry);
 	    		
 				transactionBody = new TransactionBody(
 	    				interbankSettlementDate,
@@ -372,6 +377,9 @@ try {
 			String depositAmountConfigOperationKey = String.format("%s.%s", paymentScheme, depositAmountOperation);
 			paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(depositAmountConfigOperationKey);
 			paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(depositAmountConfigOperationKey);
+			convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
+			camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001.getDocument(), convertedcamt053Entry, transactionCategoryPurposeCode);
+			camt053Entry = objectMapper.writeValueAsString(convertedcamt053Entry);
     		
 			transactionBody = new TransactionBody(
     				interbankSettlementDate,
@@ -418,6 +426,9 @@ try {
 				String withdrawFeeConversionConfigOperationKey = String.format("%s.%s", paymentScheme, withdrawFeeConversionOperation);
 				paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(withdrawFeeConversionConfigOperationKey);
 				paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(withdrawFeeConversionConfigOperationKey);
+				convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
+				camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001.getDocument(), convertedcamt053Entry, transactionFeeCategoryPurposeCode);
+				camt053Entry = objectMapper.writeValueAsString(convertedcamt053Entry);
 	    		
 				transactionBody = new TransactionBody(
 	    				interbankSettlementDate,
@@ -436,6 +447,7 @@ try {
 	    		convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getSupplementaryData().get(0).getEnvelope().setAdditionalProperty("InternalCorrelationId", transactionFeeInternalCorrelationId);
 	    		convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getAmountDetails().getInstructedAmount().getAmount().setAmount(transactionFeeAmount);
 	    		convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getAmountDetails().getTransactionAmount().getAmount().setAmount(transactionFeeAmount);
+	    		camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001.getDocument(), convertedcamt053Entry, transactionFeeCategoryPurposeCode);
 				camt053Entry = objectMapper.writeValueAsString(convertedcamt053Entry);
 				
 				td = new DtSavingsTransactionDetails(
@@ -486,7 +498,7 @@ try {
 			ObjectMapper om, 
 			BatchItemBuilder batchItemBuilder, 
 			List<TransactionItem> items,
-			String camt053, 
+			ReportEntry10 convertedcamt053Entry, 
 			String camt053RelativeUrl,
 			String accountIban,
 			Config paymentTypeConfig,
@@ -502,6 +514,8 @@ try {
     	if (paymentTypeCode == null) {
     		paymentTypeCode = "";
     	}
+    	convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
+    	String camt053 = objectMapper.writeValueAsString(convertedcamt053Entry);
 		DtSavingsTransactionDetails td = new DtSavingsTransactionDetails(
 				internalCorrelationId,
 				camt053,

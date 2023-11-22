@@ -36,6 +36,7 @@ import iso.std.iso._20022.tech.json.camt_053_001.ActiveOrHistoricCurrencyAndAmou
 import iso.std.iso._20022.tech.json.camt_053_001.BankToCustomerStatementV08;
 import iso.std.iso._20022.tech.json.camt_053_001.ReportEntry10;
 import iso.std.iso._20022.tech.xsd.pacs_008_001.RemittanceInformation5;
+import jakarta.xml.bind.JAXBException;
 import lombok.extern.slf4j.Slf4j;
 
 @Component
@@ -126,8 +127,6 @@ public class BookCreditedAmountToTechnicalAccountWorker extends AbstractMoneyInO
 
             iso.std.iso._20022.tech.xsd.pacs_008_001.Document pacs008 = jaxbUtils.unmarshalPacs008(originalPacs008);
             
-            iso.std.iso._20022.tech.xsd.pacs_004_001.Document pacs004 = jaxbUtils.unmarshalPacs004(originalPacs004);
-
             MDC.put("internalCorrelationId", internalCorrelationId);
 
             batchItemBuilder.tenantId(tenantIdentifier);
@@ -162,10 +161,11 @@ public class BookCreditedAmountToTechnicalAccountWorker extends AbstractMoneyInO
     		batchItemBuilder.add(items, conversionAccountWithdrawalRelativeUrl, bodyItem, false);
     	
     		BankToCustomerStatementV08 intermediateCamt053 = pacs008Camt053Mapper.toCamt053Entry(pacs008);
-    		ReportEntry10 convertedCamt053Entry = pacs004Camt053Mapper.convert(pacs004, intermediateCamt053).getStatement().get(0).getEntry().get(0);
-    		convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.CRDT);
-    		convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
-    		String camt053Entry = objectMapper.writeValueAsString(convertedCamt053Entry);
+    		intermediateCamt053.getStatement().get(0).getEntry().get(0).getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
+    		String camt053Entry = objectMapper.writeValueAsString(
+    				originalPacs004 == null
+    				? intermediateCamt053.getStatement().get(0).getEntry().get(0)
+    				: enahanceFromPacs004(originalPacs004, paymentTypeCode, intermediateCamt053));
     		
     		String camt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
     		
@@ -203,4 +203,13 @@ public class BookCreditedAmountToTechnicalAccountWorker extends AbstractMoneyInO
         }
         return null;
     }
+
+	private ReportEntry10 enahanceFromPacs004(String originalPacs004,
+			String paymentTypeCode, BankToCustomerStatementV08 intermediateCamt053) throws JAXBException {
+		iso.std.iso._20022.tech.xsd.pacs_004_001.Document pacs004 = jaxbUtils.unmarshalPacs004(originalPacs004);
+		ReportEntry10 convertedCamt053Entry = pacs004Camt053Mapper.convert(pacs004, intermediateCamt053).getStatement().get(0).getEntry().get(0);
+		convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.CRDT);
+		convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
+		return convertedCamt053Entry;
+	}
 }

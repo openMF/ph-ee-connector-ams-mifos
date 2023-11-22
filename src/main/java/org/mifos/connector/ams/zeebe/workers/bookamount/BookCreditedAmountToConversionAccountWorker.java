@@ -389,6 +389,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
             								.withEntryDetails(List.of(new EntryDetails9()
             										.withTransactionDetails(List.of(new EntryTransaction10())))))))));
             ReportEntry10 convertedCamt053Entry = camt053.getStatement().get(0).getEntry().get(0);
+            convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
 
             String camt053Entry = objectMapper.writeValueAsString(convertedCamt053Entry);
 

@@ -189,6 +189,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			
 			ReportEntry10 convertedcamt053Entry = pain001Camt053Mapper.toCamt053Entry(pain001.getDocument());
 			convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.DBIT);
+			convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
 			String camt053Entry = objectMapper.writeValueAsString(convertedcamt053Entry);
 			
 			var td = new DtSavingsTransactionDetails(
@@ -221,6 +222,9 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 				String depositFeeConfigOperationKey = String.format("%s.%s", paymentScheme, depositFeeOperation);
 				paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(depositFeeConfigOperationKey);
 				paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(depositFeeConfigOperationKey);
+				convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
+				pain001Camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001.getDocument(), convertedcamt053Entry, transactionFeeCategoryPurposeCode);
+				camt053Entry = objectMapper.writeValueAsString(convertedcamt053Entry);
 				
 				body = new TransactionBody(
 						transactionDate,
@@ -260,6 +264,9 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			String withdrawAmountConfigOperationKey = String.format("%s.%s", paymentScheme, withdrawAmountOperation);
 			paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(withdrawAmountConfigOperationKey);
 			paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(withdrawAmountConfigOperationKey);
+			convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
+			pain001Camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001.getDocument(), convertedcamt053Entry, transactionCategoryPurposeCode);
+			camt053Entry = objectMapper.writeValueAsString(convertedcamt053Entry);
 			
 			body = new TransactionBody(
 					transactionDate,
@@ -304,6 +311,9 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 				String withdrawFeeConfigOperationKey = String.format("%s.%s", paymentScheme, withdrawFeeOperation);
 				paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(withdrawFeeConfigOperationKey);
 				paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(withdrawFeeConfigOperationKey);
+				convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
+				pain001Camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001.getDocument(), convertedcamt053Entry, transactionFeeCategoryPurposeCode);
+				camt053Entry = objectMapper.writeValueAsString(convertedcamt053Entry);
 				
 				body = new TransactionBody(
 						transactionDate,
@@ -492,6 +502,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			
 			ReportEntry10 convertedcamt053Entry = pain001Camt053Mapper.toCamt053Entry(pain001.getDocument());
 			convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.DBIT);
+			convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
 			String camt053Entry = objectMapper.writeValueAsString(convertedcamt053Entry);
 			
 			var td = new DtSavingsTransactionDetails(
@@ -524,6 +535,8 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			String withdrawAmountConfigOperationKey = String.format("%s.%s", paymentScheme, withdrawAmountOperation);
 			paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(withdrawAmountConfigOperationKey);
 			paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(withdrawAmountConfigOperationKey);
+			convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
+			camt053Entry = objectMapper.writeValueAsString(convertedcamt053Entry);
 			
 			body = new TransactionBody(
 					transactionDate,
@@ -565,6 +578,9 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 				String withdrawFeeConfigOperationKey = String.format("%s.%s", paymentScheme, withdrawFeeOperation);
 				paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(withdrawFeeConfigOperationKey);
 				paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(withdrawFeeConfigOperationKey);
+				convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
+				pain001Camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001.getDocument(), convertedcamt053Entry, transactionFeeCategoryPurposeCode);
+				camt053Entry = objectMapper.writeValueAsString(convertedcamt053Entry);
 				
 				body = new TransactionBody(
 						transactionDate,
@@ -722,6 +738,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 	        ZonedDateTime zdt = pacs002.getFIToFIPmtStsRpt().getTxInfAndSts().get(0).getAccptncDtTm().toGregorianCalendar().toZonedDateTime().withZoneSameInstant(zi);
 	        var copy = DatatypeFactory.newDefaultInstance().newXMLGregorianCalendar(GregorianCalendar.from(zdt));
 			camt053Entry.getValueDate().setAdditionalProperty("Date", copy);
+			camt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
 			
 			String camt053 = objectMapper.writeValueAsString(camt053Entry);
 			
@@ -751,6 +768,8 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			String withdrawAmountConfigOperationKey = String.format("%s.%s", paymentScheme, withdrawAmountOperation);
 			paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(withdrawAmountConfigOperationKey);
 			paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(withdrawAmountConfigOperationKey);
+			camt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
+			camt053 = objectMapper.writeValueAsString(camt053Entry);
 			
 			body = new TransactionBody(
 					transactionDate,
