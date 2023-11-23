@@ -1,6 +1,7 @@
 package org.mifos.connector.ams.zeebe.workers.bookamount;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -306,6 +307,10 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
                                                              Event.Builder eventBuilder) {
     	try {
 			log.info("Withdrawing amount {} from conversion account {} of tenant {}", amount, conversionAccountAmsId, tenantIdentifier);
+			
+			if (transactionDate == null) {
+				transactionDate = LocalDate.now().format(DateTimeFormatter.ofPattern(FORMAT));
+			}
 			
 			iso.std.iso._20022.tech.xsd.pacs_004_001.Document pacs004 = jaxbUtils.unmarshalPacs004(originalPacs004);
 			
