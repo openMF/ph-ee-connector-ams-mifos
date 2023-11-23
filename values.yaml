@@ -1,7 +1,0 @@
-ENV: dev
-replicas: 1
-pod_cpu_request: 100m
-pod_memory_request: 100M
-pod_memory_limit: 4G
-pod_cpu_limit: 4
-java_memory_heap_percentage: 75
