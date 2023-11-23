@@ -2,6 +2,7 @@ package org.mifos.connector.ams.zeebe.workers.bookamount;
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.GregorianCalendar;
 import java.util.List;
@@ -40,6 +41,7 @@ import io.camunda.zeebe.spring.client.annotation.Variable;
 import io.camunda.zeebe.spring.client.exception.ZeebeBpmnError;
 import iso.std.iso._20022.tech.json.camt_053_001.BankToCustomerStatementV08;
 import iso.std.iso._20022.tech.json.camt_053_001.ReportEntry10;
+import iso.std.iso._20022.tech.json.camt_053_001.ActiveOrHistoricCurrencyAndAmountRange2.CreditDebitCode;
 import iso.std.iso._20022.tech.xsd.pacs_008_001.RemittanceInformation5;
 import jakarta.xml.bind.JAXBException;
 import lombok.extern.slf4j.Slf4j;
@@ -175,7 +177,7 @@ public class BookCreditedAmountFromTechnicalAccountWorker extends AbstractMoneyI
             ZoneId zi = TimeZone.getTimeZone("Europe/Budapest").toZoneId();
 	        ZonedDateTime zdt = pacs002.getFIToFIPmtStsRpt().getTxInfAndSts().get(0).getAccptncDtTm().toGregorianCalendar().toZonedDateTime().withZoneSameInstant(zi);
 	        var copy = DatatypeFactory.newDefaultInstance().newXMLGregorianCalendar(GregorianCalendar.from(zdt));
-	        convertedCamt053Entry.getValueDate().setAdditionalProperty("Date", copy);
+	        convertedCamt053Entry.getValueDate().setAdditionalProperty("Date", copy.toGregorianCalendar().toZonedDateTime().format(DateTimeFormatter.ISO_LOCAL_DATE));
             
             String camt053Entry = objectMapper.writeValueAsString(convertedCamt053Entry);
 

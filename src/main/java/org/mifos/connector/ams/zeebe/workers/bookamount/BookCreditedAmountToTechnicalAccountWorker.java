@@ -208,7 +208,6 @@ public class BookCreditedAmountToTechnicalAccountWorker extends AbstractMoneyInO
 			String paymentTypeCode, BankToCustomerStatementV08 intermediateCamt053) throws JAXBException {
 		iso.std.iso._20022.tech.xsd.pacs_004_001.Document pacs004 = jaxbUtils.unmarshalPacs004(originalPacs004);
 		ReportEntry10 convertedCamt053Entry = pacs004Camt053Mapper.convert(pacs004, intermediateCamt053).getStatement().get(0).getEntry().get(0);
-		convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.CRDT);
 		convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
 		return convertedCamt053Entry;
 	}
