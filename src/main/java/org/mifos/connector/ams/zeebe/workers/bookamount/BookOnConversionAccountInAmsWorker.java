@@ -1,7 +1,6 @@
 package org.mifos.connector.ams.zeebe.workers.bookamount;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -12,6 +11,7 @@ import java.util.Optional;
 import java.util.TimeZone;
 
 import javax.xml.datatype.DatatypeFactory;
+import javax.xml.datatype.XMLGregorianCalendar;
 
 import org.mifos.connector.ams.fineract.Config;
 import org.mifos.connector.ams.fineract.ConfigFactory;
@@ -41,8 +41,8 @@ import io.camunda.zeebe.client.api.response.ActivatedJob;
 import io.camunda.zeebe.client.api.worker.JobClient;
 import io.camunda.zeebe.spring.client.annotation.JobWorker;
 import io.camunda.zeebe.spring.client.annotation.Variable;
-import iso.std.iso._20022.tech.json.camt_053_001.ActiveOrHistoricCurrencyAndAmountRange2.CreditDebitCode;
 import iso.std.iso._20022.tech.json.camt_053_001.AccountStatement9;
+import iso.std.iso._20022.tech.json.camt_053_001.ActiveOrHistoricCurrencyAndAmountRange2.CreditDebitCode;
 import iso.std.iso._20022.tech.json.camt_053_001.BankToCustomerStatementV08;
 import iso.std.iso._20022.tech.json.camt_053_001.EntryDetails9;
 import iso.std.iso._20022.tech.json.camt_053_001.EntryTransaction10;
@@ -271,7 +271,8 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
                                                             @Variable String camt056,
                                                             @Variable String debtorIban,
                                                             @Variable String generatedPacs004,
-                                                            @Variable String pacs002) {
+                                                            @Variable String pacs002,
+                                                            @Variable String transactionDate) {
         log.info("withdrawTheAmountFromConversionAccountInAms");
         eventService.auditedEvent(
                 eventBuilder -> EventLogUtil.initZeebeJob(activatedJob,
@@ -288,6 +289,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
                         debtorIban,
                         generatedPacs004,
                         pacs002,
+                        transactionDate,
                         eventBuilder));
     }
 
@@ -300,11 +302,10 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
                                                              String debtorIban,
                                                              String originalPacs004,
                                                              String originalPacs002,
+                                                             String transactionDate,
                                                              Event.Builder eventBuilder) {
     	try {
 			log.info("Withdrawing amount {} from conversion account {} of tenant {}", amount, conversionAccountAmsId, tenantIdentifier);
-			
-			String transactionDate = LocalDate.now().format(DateTimeFormatter.ofPattern(FORMAT));
 			
 			iso.std.iso._20022.tech.xsd.pacs_004_001.Document pacs004 = jaxbUtils.unmarshalPacs004(originalPacs004);
 			
@@ -367,10 +368,16 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 			
 			String internalCorrelationId = String.format("%s_%s_%s", originalDebtorBic, originalCreationDate, originalEndToEndId);
 			
-			ZoneId zi = TimeZone.getTimeZone("Europe/Budapest").toZoneId();
-	        ZonedDateTime zdt = pacs002.getFIToFIPmtStsRpt().getOrgnlGrpInfAndSts().getOrgnlCreDtTm().toGregorianCalendar().toZonedDateTime().withZoneSameInstant(zi);
-	        var copy = DatatypeFactory.newDefaultInstance().newXMLGregorianCalendar(GregorianCalendar.from(zdt));
-			camt053Entry.getValueDate().setAdditionalProperty("Date", copy);
+			XMLGregorianCalendar orgnlCreDtTm = pacs002.getFIToFIPmtStsRpt().getOrgnlGrpInfAndSts().getOrgnlCreDtTm();
+			if (orgnlCreDtTm == null) {
+				camt053Entry.getValueDate().setAdditionalProperty("Date", transactionDate);
+			} else {
+				ZoneId zi = TimeZone.getTimeZone("Europe/Budapest").toZoneId();
+				ZonedDateTime zdt = orgnlCreDtTm.toGregorianCalendar().toZonedDateTime().withZoneSameInstant(zi);
+				var copy = DatatypeFactory.newDefaultInstance().newXMLGregorianCalendar(GregorianCalendar.from(zdt));
+				String date = copy.toGregorianCalendar().toZonedDateTime().format(DateTimeFormatter.ISO_LOCAL_DATE);
+				camt053Entry.getValueDate().setAdditionalProperty("Date", date);
+			}
 			
 			camt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
 			
