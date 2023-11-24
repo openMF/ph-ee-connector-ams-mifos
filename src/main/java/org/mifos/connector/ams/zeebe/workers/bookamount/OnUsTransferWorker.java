@@ -267,8 +267,8 @@ try {
     		convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getAmountDetails().getTransactionAmount().getAmount().setAmount(amount);
     		convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
     		convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.DBIT);
-    		((LinkedHashMap<String, Object>) convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getRelatedParties().getDebtorAccount().getIdentification().getAdditionalProperties().get("Other")).put("Identification", debtorInternalAccountId);
-    		((LinkedHashMap<String, Object>) convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getRelatedParties().getCreditorAccount().getIdentification().getAdditionalProperties().get("Other")).put("Identification", creditorInternalAccountId);
+    		((GenericAccountIdentification1) convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getRelatedParties().getDebtorAccount().getIdentification().getAdditionalProperties().get("Other")).id(debtorInternalAccountId);
+    		((GenericAccountIdentification1) convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getRelatedParties().getCreditorAccount().getIdentification().getAdditionalProperties().get("Other")).id(creditorInternalAccountId);
     		camt053Entry = objectMapper.writeValueAsString(convertedcamt053Entry);
     	
     		camt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
