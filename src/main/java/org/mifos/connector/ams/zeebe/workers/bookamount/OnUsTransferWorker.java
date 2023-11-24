@@ -164,13 +164,13 @@ try {
 							.withInstructedAmount(withAmountAndCurrency));
 			
 			GenericAccountIdentification1 debtorAccountIdOther = (GenericAccountIdentification1) convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getRelatedParties().getDebtorAccount().getIdentification().getAdditionalProperties().getOrDefault("Other", GenericAccountIdentification1.builder().build());
-			debtorAccountIdOther.id(debtorInternalAccountId);
-			debtorAccountIdOther.schemeName(AccountSchemeName1Choice.builder().code("IAID").build());
+			debtorAccountIdOther.setId(debtorInternalAccountId);
+			debtorAccountIdOther.setSchemeName(AccountSchemeName1Choice.builder().code("IAID").build());
 			convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getRelatedParties().getDebtorAccount().getIdentification().setAdditionalProperty("Other", debtorAccountIdOther);
 			GenericAccountIdentification1 creditorAccountIdOther = (GenericAccountIdentification1) convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getRelatedParties().getCreditorAccount().getIdentification().getAdditionalProperties().getOrDefault("Other", GenericAccountIdentification1.builder().build());
-			creditorAccountIdOther.id(creditorInternalAccountId);
-			creditorAccountIdOther.schemeName(AccountSchemeName1Choice.builder().code("IAID").build());
-			convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getRelatedParties().getCreditorAccount().getIdentification().setAdditionalProperty("Other", debtorAccountIdOther);
+			creditorAccountIdOther.setId(creditorInternalAccountId);
+			creditorAccountIdOther.setSchemeName(AccountSchemeName1Choice.builder().code("IAID").build());
+			convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getRelatedParties().getCreditorAccount().getIdentification().setAdditionalProperty("Other", creditorAccountIdOther);
 			String camt053Entry = objectMapper.writeValueAsString(convertedcamt053Entry);
 			
 			String interbankSettlementDate = LocalDate.now().format(PATTERN);
@@ -267,8 +267,6 @@ try {
     		convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getAmountDetails().getTransactionAmount().getAmount().setAmount(amount);
     		convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
     		convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.DBIT);
-    		((GenericAccountIdentification1) convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getRelatedParties().getDebtorAccount().getIdentification().getAdditionalProperties().get("Other")).id(debtorInternalAccountId);
-    		((GenericAccountIdentification1) convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getRelatedParties().getCreditorAccount().getIdentification().getAdditionalProperties().get("Other")).id(creditorInternalAccountId);
     		camt053Entry = objectMapper.writeValueAsString(convertedcamt053Entry);
     	
     		camt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
