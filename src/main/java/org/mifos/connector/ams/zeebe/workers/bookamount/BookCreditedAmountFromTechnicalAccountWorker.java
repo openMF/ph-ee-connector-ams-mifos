@@ -10,6 +10,7 @@ import java.util.Optional;
 import java.util.TimeZone;
 
 import javax.xml.datatype.DatatypeFactory;
+import javax.xml.datatype.XMLGregorianCalendar;
 
 import org.mifos.connector.ams.fineract.Config;
 import org.mifos.connector.ams.fineract.ConfigFactory;
@@ -174,10 +175,15 @@ public class BookCreditedAmountFromTechnicalAccountWorker extends AbstractMoneyI
             ReportEntry10 convertedCamt053Entry = pacs004Camt053Mapper.convert(pacs004, intermediateCamt053).getStatement().get(0).getEntry().get(0);
             convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
             
-            ZoneId zi = TimeZone.getTimeZone("Europe/Budapest").toZoneId();
-	        ZonedDateTime zdt = pacs002.getFIToFIPmtStsRpt().getTxInfAndSts().get(0).getAccptncDtTm().toGregorianCalendar().toZonedDateTime().withZoneSameInstant(zi);
-	        var copy = DatatypeFactory.newDefaultInstance().newXMLGregorianCalendar(GregorianCalendar.from(zdt));
-	        convertedCamt053Entry.getValueDate().setAdditionalProperty("Date", copy.toGregorianCalendar().toZonedDateTime().format(DateTimeFormatter.ISO_LOCAL_DATE));
+            XMLGregorianCalendar pacs002AccptncDtTm = pacs002.getFIToFIPmtStsRpt().getTxInfAndSts().get(0).getAccptncDtTm();
+            if (pacs002AccptncDtTm == null) {
+            	convertedCamt053Entry.getValueDate().setAdditionalProperty("Date", transactionDate);
+            } else {
+	            ZoneId zi = TimeZone.getTimeZone("Europe/Budapest").toZoneId();
+				ZonedDateTime zdt = pacs002AccptncDtTm.toGregorianCalendar().toZonedDateTime().withZoneSameInstant(zi);
+		        var copy = DatatypeFactory.newDefaultInstance().newXMLGregorianCalendar(GregorianCalendar.from(zdt));
+		        convertedCamt053Entry.getValueDate().setAdditionalProperty("Date", copy.toGregorianCalendar().toZonedDateTime().format(DateTimeFormatter.ISO_LOCAL_DATE));
+            }
             
             String camt053Entry = objectMapper.writeValueAsString(convertedCamt053Entry);
 
