@@ -88,6 +88,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
                                              ActivatedJob activatedJob,
                                              @Variable String originalPain001,
                                              @Variable String internalCorrelationId,
+                                             @Variable String transactionFeeInternalCorrelationId,
                                              @Variable String paymentScheme,
                                              @Variable String transactionDate,
                                              @Variable Integer conversionAccountAmsId,
@@ -103,6 +104,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
                 eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "bookOnConversionAccountInAms", internalCorrelationId, transactionGroupId, eventBuilder),
                 eventBuilder -> bookOnConversionAccountInAms(originalPain001,
                         internalCorrelationId,
+                        transactionFeeInternalCorrelationId,
                         paymentScheme,
                         transactionDate,
                         conversionAccountAmsId,
@@ -118,6 +120,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 
     private Void bookOnConversionAccountInAms(String originalPain001,
                                               String internalCorrelationId,
+                                              String transactionFeeInternalCorrelationId,
                                               String paymentScheme,
                                               String transactionDate,
                                               Integer conversionAccountAmsId,
@@ -222,7 +225,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 				batchItemBuilder.add(items, conversionAccountWithdrawalRelativeUrl, bodyItem, false);
 			
 				td = new DtSavingsTransactionDetails(
-						internalCorrelationId,
+						transactionFeeInternalCorrelationId,
 						camt053Entry,
 						pain001.getDocument().getPaymentInformation().get(0).getDebtorAccount().getIdentification().getIban(),
 						paymentTypeCode,

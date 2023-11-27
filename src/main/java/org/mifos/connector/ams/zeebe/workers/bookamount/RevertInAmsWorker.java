@@ -107,6 +107,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
     public Map<String, Object> revertInAms(JobClient jobClient,
                             ActivatedJob activatedJob,
                             @Variable String internalCorrelationId,
+                            @Variable String transactionFeeInternalCorrelationId,
                             @Variable String originalPain001,
                             @Variable Integer conversionAccountAmsId,
                             @Variable Integer disposalAccountAmsId,
@@ -123,6 +124,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
         return eventService.auditedEvent(
                 eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "revertInAms", internalCorrelationId, transactionGroupId, eventBuilder),
                 eventBuilder -> revertInAms(internalCorrelationId,
+                		transactionFeeInternalCorrelationId,
                         originalPain001,
                         conversionAccountAmsId,
                         disposalAccountAmsId,
@@ -139,19 +141,20 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
     }
 
 	private Map<String, Object> revertInAms(String internalCorrelationId,
-                             String originalPain001,
-                             Integer conversionAccountAmsId,
-                             Integer disposalAccountAmsId,
-                             String transactionDate,
-                             String paymentScheme,
-                             String transactionGroupId,
-                             String transactionCategoryPurposeCode,
-                             BigDecimal amount,
-                             String transactionFeeCategoryPurposeCode,
-                             BigDecimal transactionFeeAmount,
-                             String tenantIdentifier,
-                             String debtorIban,
-                             Event.Builder eventBuilder) {
+							String transactionFeeInternalCorrelationId,
+                            String originalPain001,
+                            Integer conversionAccountAmsId,
+                            Integer disposalAccountAmsId,
+                            String transactionDate,
+                            String paymentScheme,
+                            String transactionGroupId,
+                            String transactionCategoryPurposeCode,
+                            BigDecimal amount,
+                            String transactionFeeCategoryPurposeCode,
+                            BigDecimal transactionFeeAmount,
+                            String tenantIdentifier,
+                            String debtorIban,
+                            Event.Builder eventBuilder) {
     	
     	try {
 	    	MDC.put("internalCorrelationId", internalCorrelationId);
@@ -240,7 +243,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 				batchItemBuilder.add(items, disposalAccountDepositRelativeUrl, bodyItem, false);
 				
 				td = new DtSavingsTransactionDetails(
-						internalCorrelationId,
+						transactionFeeInternalCorrelationId,
 						camt053Entry,
 						pain001.getDocument().getPaymentInformation().get(0).getDebtorAccount().getIdentification().getIban(),
 						paymentTypeCode,
@@ -331,7 +334,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 				batchItemBuilder.add(items, conversionAccountWithdrawRelativeUrl, bodyItem, false);
 				
 				td = new DtSavingsTransactionDetails(
-						internalCorrelationId,
+						transactionFeeInternalCorrelationId,
 						camt053Entry,
 						pain001.getDocument().getPaymentInformation().get(0).getDebtorAccount().getIdentification().getIban(),
 						paymentTypeCode,
