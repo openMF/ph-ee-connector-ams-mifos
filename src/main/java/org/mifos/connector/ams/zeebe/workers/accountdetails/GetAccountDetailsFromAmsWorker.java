@@ -111,9 +111,12 @@ public class GetAccountDetailsFromAmsWorker extends AbstractAmsWorker {
         Integer conversionAccountAmsId = conversion.getId();
 
         if (currency.equalsIgnoreCase(conversion.getCurrency().getCode())
+        		&& currency.equalsIgnoreCase(disposal.getCurrency().getCode())
                 && conversion.getStatus().getId() == 300
                 && disposal.getStatus().getId() == 300) {
             status = AccountAmsStatus.READY_TO_RECEIVE_MONEY.name();
+        } else {
+        	log.info("Conversion account currency: {}, disposal account: {}. Account is not ready to receive money.", conversion, disposal);
         }
 
         List<Object> flags = lookupFlags(accountDisposalId, tenantIdentifier);
