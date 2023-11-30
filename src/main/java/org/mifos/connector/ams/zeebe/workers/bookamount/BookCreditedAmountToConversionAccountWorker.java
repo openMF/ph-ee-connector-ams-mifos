@@ -274,6 +274,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
             if (convertedCamt053Entry.getValueDate().getAdditionalProperties().get("Date") == null) {
             	convertedCamt053Entry.getValueDate().setAdditionalProperty("Date", transactionDate);
             }
+            convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.CRDT);
             String camt053Entry = objectMapper.writeValueAsString(convertedCamt053Entry);
 
             String camt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
@@ -393,7 +394,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
             										.withTransactionDetails(List.of(new EntryTransaction10())))))))));
             ReportEntry10 convertedCamt053Entry = camt053.getStatement().get(0).getEntry().get(0);
             convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
-
+            convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.CRDT);
             String camt053Entry = objectMapper.writeValueAsString(convertedCamt053Entry);
 
             String camt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
