@@ -33,7 +33,7 @@ import io.camunda.zeebe.client.api.response.ActivatedJob;
 import io.camunda.zeebe.client.api.worker.JobClient;
 import io.camunda.zeebe.spring.client.annotation.JobWorker;
 import io.camunda.zeebe.spring.client.annotation.Variable;
-import io.camunda.zeebe.spring.client.exception.ZeebeBpmnError;
+import iso.std.iso._20022.tech.json.camt_053_001.BankToCustomerStatementV08;
 import iso.std.iso._20022.tech.json.camt_053_001.ReportEntry10;
 import iso.std.iso._20022.tech.json.pain_001_001.Pain00100110CustomerCreditTransferInitiationV10MessageSchema;
 import lombok.extern.slf4j.Slf4j;
@@ -138,7 +138,8 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 			
 			batchItemBuilder.add(items, disposalAccountWithdrawRelativeUrl, bodyItem, false);
 			
-			ReportEntry10 convertedcamt053 = camt053Mapper.toCamt053Entry(pain001.getDocument());
+			BankToCustomerStatementV08 convertedStatement = camt053Mapper.toCamt053Entry(pain001.getDocument());
+			ReportEntry10 convertedcamt053 = convertedStatement.getStatement().get(0).getEntry().get(0);
 			convertedcamt053.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
 			String camt053Entry = objectMapper.writeValueAsString(convertedcamt053);
 			

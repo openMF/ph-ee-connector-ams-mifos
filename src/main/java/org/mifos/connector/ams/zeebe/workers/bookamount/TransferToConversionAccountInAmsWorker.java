@@ -189,7 +189,8 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
     		
     		batchItemBuilder.add(items, holdTransactionUrl, bodyItem, false);
     		
-    		ReportEntry10 convertedCamt053Entry = camt053Mapper.toCamt053Entry(pain001.getDocument());
+    		BankToCustomerStatementV08 convertedStatement = camt053Mapper.toCamt053Entry(pain001.getDocument());
+			ReportEntry10 convertedCamt053Entry = convertedStatement.getStatement().get(0).getEntry().get(0);
 			convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getAmountDetails().getInstructedAmount().getAmount().setAmount(hasFee ? amount.add(transactionFeeAmount) : amount);
 			String camt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
 
@@ -369,8 +370,11 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
     	}
     	convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
     	convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getSupplementaryData().clear();
-    	if (pain001 != null && includeSupplementary) {
-    		camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001, convertedCamt053Entry, transactionFeeCategoryPurposeCode);
+    	if (pain001 != null) {
+    		if (includeSupplementary) {
+    			camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001, convertedCamt053Entry, transactionFeeCategoryPurposeCode);
+    		}
+    		camt053Mapper.moveOtherIdentificationToSupplementaryData(convertedCamt053Entry);
     	}
     	String camt053 = objectMapper.writeValueAsString(convertedCamt053Entry);
 		DtSavingsTransactionDetails td = new DtSavingsTransactionDetails(
