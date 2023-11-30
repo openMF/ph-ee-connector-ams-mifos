@@ -374,7 +374,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
     		if (includeSupplementary) {
     			camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001, convertedCamt053Entry, transactionFeeCategoryPurposeCode);
     		}
-    		camt053Mapper.moveOtherIdentificationToSupplementaryData(convertedCamt053Entry);
+    		camt053Mapper.moveOtherIdentificationToSupplementaryData(convertedCamt053Entry, pain001);
     	}
     	String camt053 = objectMapper.writeValueAsString(convertedCamt053Entry);
 		DtSavingsTransactionDetails td = new DtSavingsTransactionDetails(

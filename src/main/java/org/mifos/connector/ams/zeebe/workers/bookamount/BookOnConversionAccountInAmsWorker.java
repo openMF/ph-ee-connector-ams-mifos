@@ -210,7 +210,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 				convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
 				convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getSupplementaryData().clear();
 				camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001.getDocument(), convertedcamt053Entry, transactionFeeCategoryPurposeCode);
-				camt053Mapper.moveOtherIdentificationToSupplementaryData(convertedcamt053Entry);
+				camt053Mapper.moveOtherIdentificationToSupplementaryData(convertedcamt053Entry, pain001.getDocument());
 				
 				camt053Entry = objectMapper.writeValueAsString(convertedcamt053Entry);
 				
