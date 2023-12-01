@@ -52,8 +52,10 @@ import iso.std.iso._20022.tech.json.camt_053_001.AmountAndCurrencyExchange3;
 import iso.std.iso._20022.tech.json.camt_053_001.AmountAndCurrencyExchangeDetails3;
 import iso.std.iso._20022.tech.json.camt_053_001.BankToCustomerStatementV08;
 import iso.std.iso._20022.tech.json.camt_053_001.EntryStatus1Choice;
+import iso.std.iso._20022.tech.json.camt_053_001.EntryTransaction10;
 import io.camunda.zeebe.spring.client.exception.ZeebeBpmnError;
 import iso.std.iso._20022.tech.json.camt_053_001.ReportEntry10;
+import iso.std.iso._20022.tech.json.camt_053_001.SupplementaryData1;
 import iso.std.iso._20022.tech.json.camt_053_001.ActiveOrHistoricCurrencyAndAmountRange2.CreditDebitCode;
 import iso.std.iso._20022.tech.json.pain_001_001.CustomerCreditTransferInitiationV10;
 import iso.std.iso._20022.tech.json.pain_001_001.Pain00100110CustomerCreditTransferInitiationV10MessageSchema;
@@ -177,19 +179,28 @@ try {
 					.withAmount(new ActiveOrHistoricCurrencyAndAmount()
 							.withAmount(amount.add(transactionFeeAmount))
 							.withCurrency(pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getAmount().getInstructedAmount().getCurrency()));
-			convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).withAmountDetails(
+			EntryTransaction10 transactionDetails = convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0);
+			transactionDetails.withAmountDetails(
 					new AmountAndCurrencyExchange3()
 							.withTransactionAmount(withAmountAndCurrency)
 							.withInstructedAmount(withAmountAndCurrency));
 			
-			GenericAccountIdentification1 debtorAccountIdOther = (GenericAccountIdentification1) convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getRelatedParties().getDebtorAccount().getIdentification().getAdditionalProperties().getOrDefault("Other", GenericAccountIdentification1.builder().build());
-			debtorAccountIdOther.setId(debtorInternalAccountId);
-			debtorAccountIdOther.setSchemeName(AccountSchemeName1Choice.builder().code("IAID").build());
-			convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getRelatedParties().getDebtorAccount().getIdentification().setAdditionalProperty("Other", debtorAccountIdOther);
-			GenericAccountIdentification1 creditorAccountIdOther = (GenericAccountIdentification1) convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getRelatedParties().getCreditorAccount().getIdentification().getAdditionalProperties().getOrDefault("Other", GenericAccountIdentification1.builder().build());
-			creditorAccountIdOther.setId(creditorInternalAccountId);
-			creditorAccountIdOther.setSchemeName(AccountSchemeName1Choice.builder().code("IAID").build());
-			convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getRelatedParties().getCreditorAccount().getIdentification().setAdditionalProperty("Other", creditorAccountIdOther);
+			for (SupplementaryData1 supplementaryData : transactionDetails.getSupplementaryData()) {
+				if ("OrderManagerSupplementaryData".equalsIgnoreCase(supplementaryData.getPlaceAndName())) {
+					LinkedHashMap<String, Object> otherIdentification = (LinkedHashMap<String, Object>) supplementaryData.getEnvelope().getAdditionalProperties().get("OtherIdentification");
+					
+					GenericAccountIdentification1 debtorAccountIdOther = (GenericAccountIdentification1) transactionDetails.getRelatedParties().getDebtorAccount().getIdentification().getAdditionalProperties().getOrDefault("Other", GenericAccountIdentification1.builder().build());
+					debtorAccountIdOther.setId(debtorInternalAccountId);
+					debtorAccountIdOther.setSchemeName(AccountSchemeName1Choice.builder().code("IAID").build());
+					otherIdentification.put("DebtorAccount", debtorAccountIdOther);
+					
+					GenericAccountIdentification1 creditorAccountIdOther = (GenericAccountIdentification1) transactionDetails.getRelatedParties().getCreditorAccount().getIdentification().getAdditionalProperties().getOrDefault("Other", GenericAccountIdentification1.builder().build());
+					creditorAccountIdOther.setId(creditorInternalAccountId);
+					creditorAccountIdOther.setSchemeName(AccountSchemeName1Choice.builder().code("IAID").build());
+					otherIdentification.put("CreditorAccount", creditorAccountIdOther);
+				}
+			}
+			
 			
 			String interbankSettlementDate = LocalDate.now().format(PATTERN);
 			
@@ -281,10 +292,10 @@ try {
     		
     		batchItemBuilder.add(items, debtorDisposalWithdrawalRelativeUrl, bodyItem, false);
     		
-    		convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getAmountDetails().getInstructedAmount().getAmount().setAmount(amount);
-    		convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getAmountDetails().getTransactionAmount().getAmount().setAmount(amount);
-    		convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
-    		convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.DBIT);
+    		transactionDetails.getAmountDetails().getInstructedAmount().getAmount().setAmount(amount);
+    		transactionDetails.getAmountDetails().getTransactionAmount().getAmount().setAmount(amount);
+    		transactionDetails.setAdditionalTransactionInformation(paymentTypeCode);
+    		transactionDetails.setCreditDebitIndicator(CreditDebitCode.DBIT);
     		convertedcamt053Entry.setCreditDebitIndicator(CreditDebitCode.DBIT);
     		convertedcamt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "BOOKED"));
     		String camt053Entry = objectMapper.writeValueAsString(convertedcamt053Entry);
@@ -330,13 +341,12 @@ try {
 	    		
 	    		batchItemBuilder.add(items, debtorDisposalWithdrawalRelativeUrl, bodyItem, false);
 	    	
-	    		convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getSupplementaryData().get(0).getEnvelope().setAdditionalProperty("InternalCorrelationId", transactionFeeInternalCorrelationId);
-	    		convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getAmountDetails().getInstructedAmount().getAmount().setAmount(transactionFeeAmount);
-	    		convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getAmountDetails().getTransactionAmount().getAmount().setAmount(transactionFeeAmount);
-	    		convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
-	    		convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getSupplementaryData().clear();
+	    		transactionDetails.getSupplementaryData().get(0).getEnvelope().setAdditionalProperty("InternalCorrelationId", transactionFeeInternalCorrelationId);
+	    		transactionDetails.getAmountDetails().getInstructedAmount().getAmount().setAmount(transactionFeeAmount);
+	    		transactionDetails.getAmountDetails().getTransactionAmount().getAmount().setAmount(transactionFeeAmount);
+	    		transactionDetails.setAdditionalTransactionInformation(paymentTypeCode);
+	    		transactionDetails.getSupplementaryData().clear();
 	    		camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001.getDocument(), convertedcamt053Entry, transactionFeeCategoryPurposeCode);
-	    		camt053Mapper.moveOtherIdentificationToSupplementaryData(convertedcamt053Entry, pain001.getDocument());
 	    		camt053Entry = objectMapper.writeValueAsString(convertedcamt053Entry);
 	    		
 	    		td = new DtSavingsTransactionDetails(
@@ -365,13 +375,12 @@ try {
 				String depositFeeConfigOperationKey = String.format("%s.%s", paymentScheme, depositFeeOperation);
 				paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(depositFeeConfigOperationKey);
 				paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(depositFeeConfigOperationKey);
-				convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
-				convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getSupplementaryData().clear();
-				convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.CRDT);
+				transactionDetails.setAdditionalTransactionInformation(paymentTypeCode);
+				transactionDetails.getSupplementaryData().clear();
+				transactionDetails.setCreditDebitIndicator(CreditDebitCode.CRDT);
 				convertedcamt053Entry.setCreditDebitIndicator(CreditDebitCode.CRDT);
 				convertedcamt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "BOOKED"));
 				camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001.getDocument(), convertedcamt053Entry, transactionFeeCategoryPurposeCode);
-				camt053Mapper.moveOtherIdentificationToSupplementaryData(convertedcamt053Entry, pain001.getDocument());
 				camt053Entry = objectMapper.writeValueAsString(convertedcamt053Entry);
 	    		
 				transactionBody = new TransactionBody(
@@ -413,10 +422,9 @@ try {
 			String depositAmountConfigOperationKey = String.format("%s.%s", paymentScheme, depositAmountOperation);
 			paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(depositAmountConfigOperationKey);
 			paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(depositAmountConfigOperationKey);
-			convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
-			convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getSupplementaryData().clear();
+			transactionDetails.setAdditionalTransactionInformation(paymentTypeCode);
+			transactionDetails.getSupplementaryData().clear();
 			camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001.getDocument(), convertedcamt053Entry, transactionCategoryPurposeCode);
-			camt053Mapper.moveOtherIdentificationToSupplementaryData(convertedcamt053Entry, pain001.getDocument());
     		
 			transactionBody = new TransactionBody(
     				interbankSettlementDate,
@@ -432,10 +440,10 @@ try {
 	    		
     		batchItemBuilder.add(items, creditorDisposalDepositRelativeUrl, bodyItem, false);
 	    	
-    		convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getSupplementaryData().get(0).getEnvelope().setAdditionalProperty("InternalCorrelationId", internalCorrelationId);
-    		convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getAmountDetails().getInstructedAmount().getAmount().setAmount(amount);
-    		convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getAmountDetails().getTransactionAmount().getAmount().setAmount(amount);
-    		convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.CRDT);
+    		transactionDetails.getSupplementaryData().get(0).getEnvelope().setAdditionalProperty("InternalCorrelationId", internalCorrelationId);
+    		transactionDetails.getAmountDetails().getInstructedAmount().getAmount().setAmount(amount);
+    		transactionDetails.getAmountDetails().getTransactionAmount().getAmount().setAmount(amount);
+    		transactionDetails.setCreditDebitIndicator(CreditDebitCode.CRDT);
     		convertedcamt053Entry.setCreditDebitIndicator(CreditDebitCode.CRDT);
     		convertedcamt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "BOOKED"));
     		camt053Entry = objectMapper.writeValueAsString(convertedcamt053Entry);
@@ -466,13 +474,12 @@ try {
 				String withdrawFeeConversionConfigOperationKey = String.format("%s.%s", paymentScheme, withdrawFeeConversionOperation);
 				paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(withdrawFeeConversionConfigOperationKey);
 				paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(withdrawFeeConversionConfigOperationKey);
-				convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
-				convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getSupplementaryData().clear();
-				convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.DBIT);
+				transactionDetails.setAdditionalTransactionInformation(paymentTypeCode);
+				transactionDetails.getSupplementaryData().clear();
+				transactionDetails.setCreditDebitIndicator(CreditDebitCode.DBIT);
 				convertedcamt053Entry.setCreditDebitIndicator(CreditDebitCode.DBIT);
 				convertedcamt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "BOOKED"));
 				camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001.getDocument(), convertedcamt053Entry, transactionFeeCategoryPurposeCode);
-				camt053Mapper.moveOtherIdentificationToSupplementaryData(convertedcamt053Entry, pain001.getDocument());
 	    		
 				transactionBody = new TransactionBody(
 	    				interbankSettlementDate,
@@ -488,12 +495,11 @@ try {
 		    		
 	    		batchItemBuilder.add(items, debtorConversionWithdrawRelativeUrl, bodyItem, false);
 		    	
-	    		convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getSupplementaryData().get(0).getEnvelope().setAdditionalProperty("InternalCorrelationId", transactionFeeInternalCorrelationId);
-	    		convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getAmountDetails().getInstructedAmount().getAmount().setAmount(transactionFeeAmount);
-	    		convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getAmountDetails().getTransactionAmount().getAmount().setAmount(transactionFeeAmount);
-	    		convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getSupplementaryData().clear();
+	    		transactionDetails.getSupplementaryData().get(0).getEnvelope().setAdditionalProperty("InternalCorrelationId", transactionFeeInternalCorrelationId);
+	    		transactionDetails.getAmountDetails().getInstructedAmount().getAmount().setAmount(transactionFeeAmount);
+	    		transactionDetails.getAmountDetails().getTransactionAmount().getAmount().setAmount(transactionFeeAmount);
+	    		transactionDetails.getSupplementaryData().clear();
 	    		camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001.getDocument(), convertedcamt053Entry, transactionFeeCategoryPurposeCode);
-	    		camt053Mapper.moveOtherIdentificationToSupplementaryData(convertedcamt053Entry, pain001.getDocument());
 	    		camt053Entry = objectMapper.writeValueAsString(convertedcamt053Entry);
 				
 				td = new DtSavingsTransactionDetails(
@@ -562,7 +568,6 @@ try {
     		paymentTypeCode = "";
     	}
     	convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
-    	camt053Mapper.moveOtherIdentificationToSupplementaryData(convertedcamt053Entry, pain001);
     	String camt053 = objectMapper.writeValueAsString(convertedcamt053Entry);
 		DtSavingsTransactionDetails td = new DtSavingsTransactionDetails(
 				internalCorrelationId,
