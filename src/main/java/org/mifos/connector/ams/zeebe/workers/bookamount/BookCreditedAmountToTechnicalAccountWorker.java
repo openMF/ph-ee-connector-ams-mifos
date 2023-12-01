@@ -178,6 +178,7 @@ public class BookCreditedAmountToTechnicalAccountWorker extends AbstractMoneyInO
     		BankToCustomerStatementV08 intermediateCamt053 = pacs008Camt053Mapper.toCamt053Entry(pacs008);
     		intermediateCamt053.getStatement().get(0).getEntry().get(0).getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
     		intermediateCamt053.getStatement().get(0).getEntry().get(0).getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.CRDT);
+    		intermediateCamt053.getStatement().get(0).getEntry().get(0).setCreditDebitIndicator(CreditDebitCode.CRDT);
     		String camt053Entry = objectMapper.writeValueAsString(
     				originalPacs004 == null
     				? intermediateCamt053.getStatement().get(0).getEntry().get(0)

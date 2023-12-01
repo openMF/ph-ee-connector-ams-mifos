@@ -158,6 +158,7 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 			ReportEntry10 convertedcamt053 = convertedStatement.getStatement().get(0).getEntry().get(0);
 			convertedcamt053.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
 			convertedcamt053.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.DBIT);
+			convertedcamt053.setCreditDebitIndicator(CreditDebitCode.DBIT);
 			String camt053Entry = objectMapper.writeValueAsString(convertedcamt053);
 			
 			String camt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
@@ -191,6 +192,7 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 			paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(depositNonTxFeeConfigOperationKey);
 			convertedcamt053.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
 			convertedcamt053.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.CRDT);
+			convertedcamt053.setCreditDebitIndicator(CreditDebitCode.CRDT);
 			camt053Entry = objectMapper.writeValueAsString(convertedcamt053);
 			log.debug("Looking up {}, got payment type id {}", depositNonTxFeeConfigOperationKey, paymentTypeId);
 			body = new TransactionBody(
@@ -236,6 +238,7 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 			paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(withdrawNonTxFeeConversionConfigOperationKey);
 			convertedcamt053.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
 			convertedcamt053.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.DBIT);
+			convertedcamt053.setCreditDebitIndicator(CreditDebitCode.DBIT);
 			camt053Entry = objectMapper.writeValueAsString(convertedcamt053);
 			log.debug("Looking up {}, got payment type id {}", withdrawNonTxFeeConversionConfigOperationKey, paymentTypeId);
 			body = new TransactionBody(

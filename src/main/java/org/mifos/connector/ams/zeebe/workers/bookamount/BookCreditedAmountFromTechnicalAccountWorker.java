@@ -190,6 +190,7 @@ public class BookCreditedAmountFromTechnicalAccountWorker extends AbstractMoneyI
             ReportEntry10 convertedCamt053Entry = pacs004Camt053Mapper.convert(pacs004, intermediateCamt053).getStatement().get(0).getEntry().get(0);
             convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
             convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.DBIT);
+            convertedCamt053Entry.setCreditDebitIndicator(CreditDebitCode.DBIT);
             
             XMLGregorianCalendar pacs002AccptncDtTm = pacs002.getFIToFIPmtStsRpt().getTxInfAndSts().get(0).getAccptncDtTm();
             if (pacs002AccptncDtTm == null) {
