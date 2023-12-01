@@ -185,21 +185,7 @@ try {
 							.withTransactionAmount(withAmountAndCurrency)
 							.withInstructedAmount(withAmountAndCurrency));
 			
-			for (SupplementaryData1 supplementaryData : transactionDetails.getSupplementaryData()) {
-				if ("OrderManagerSupplementaryData".equalsIgnoreCase(supplementaryData.getPlaceAndName())) {
-					LinkedHashMap<String, Object> otherIdentification = (LinkedHashMap<String, Object>) supplementaryData.getEnvelope().getAdditionalProperties().get("OtherIdentification");
-					
-					GenericAccountIdentification1 debtorAccountIdOther = (GenericAccountIdentification1) transactionDetails.getRelatedParties().getDebtorAccount().getIdentification().getAdditionalProperties().getOrDefault("Other", GenericAccountIdentification1.builder().build());
-					debtorAccountIdOther.setId(debtorInternalAccountId);
-					debtorAccountIdOther.setSchemeName(AccountSchemeName1Choice.builder().code("IAID").build());
-					otherIdentification.put("DebtorAccount", debtorAccountIdOther);
-					
-					GenericAccountIdentification1 creditorAccountIdOther = (GenericAccountIdentification1) transactionDetails.getRelatedParties().getCreditorAccount().getIdentification().getAdditionalProperties().getOrDefault("Other", GenericAccountIdentification1.builder().build());
-					creditorAccountIdOther.setId(creditorInternalAccountId);
-					creditorAccountIdOther.setSchemeName(AccountSchemeName1Choice.builder().code("IAID").build());
-					otherIdentification.put("CreditorAccount", creditorAccountIdOther);
-				}
-			}
+			refillOtherId(debtorInternalAccountId, creditorInternalAccountId, transactionDetails);
 			
 			
 			String interbankSettlementDate = LocalDate.now().format(PATTERN);
@@ -347,7 +333,7 @@ try {
 	    		transactionDetails.setAdditionalTransactionInformation(paymentTypeCode);
 	    		transactionDetails.getSupplementaryData().clear();
 	    		camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001.getDocument(), convertedcamt053Entry, transactionFeeCategoryPurposeCode);
-	    		camt053Mapper.refillOtherIdentification(pain001.getDocument(), transactionDetails);
+	    		refillOtherId(debtorInternalAccountId, creditorInternalAccountId, transactionDetails);
 	    		camt053Entry = objectMapper.writeValueAsString(convertedcamt053Entry);
 	    		
 	    		td = new DtSavingsTransactionDetails(
@@ -382,7 +368,7 @@ try {
 				convertedcamt053Entry.setCreditDebitIndicator(CreditDebitCode.CRDT);
 				convertedcamt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "BOOKED"));
 				camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001.getDocument(), convertedcamt053Entry, transactionFeeCategoryPurposeCode);
-				camt053Mapper.refillOtherIdentification(pain001.getDocument(), transactionDetails);
+				refillOtherId(debtorInternalAccountId, creditorInternalAccountId, transactionDetails);
 				camt053Entry = objectMapper.writeValueAsString(convertedcamt053Entry);
 	    		
 				transactionBody = new TransactionBody(
@@ -427,7 +413,7 @@ try {
 			transactionDetails.setAdditionalTransactionInformation(paymentTypeCode);
 			transactionDetails.getSupplementaryData().clear();
 			camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001.getDocument(), convertedcamt053Entry, transactionCategoryPurposeCode);
-			camt053Mapper.refillOtherIdentification(pain001.getDocument(), transactionDetails);
+			refillOtherId(debtorInternalAccountId, creditorInternalAccountId, transactionDetails);
 			transactionBody = new TransactionBody(
     				interbankSettlementDate,
     				amount,
@@ -482,7 +468,7 @@ try {
 				convertedcamt053Entry.setCreditDebitIndicator(CreditDebitCode.DBIT);
 				convertedcamt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "BOOKED"));
 				camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001.getDocument(), convertedcamt053Entry, transactionFeeCategoryPurposeCode);
-				camt053Mapper.refillOtherIdentification(pain001.getDocument(), transactionDetails);
+				refillOtherId(debtorInternalAccountId, creditorInternalAccountId, transactionDetails);
 				transactionBody = new TransactionBody(
 	    				interbankSettlementDate,
 	    				transactionFeeAmount,
@@ -502,7 +488,7 @@ try {
 	    		transactionDetails.getAmountDetails().getTransactionAmount().getAmount().setAmount(transactionFeeAmount);
 	    		transactionDetails.getSupplementaryData().clear();
 	    		camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001.getDocument(), convertedcamt053Entry, transactionFeeCategoryPurposeCode);
-	    		camt053Mapper.refillOtherIdentification(pain001.getDocument(), transactionDetails);
+	    		refillOtherId(debtorInternalAccountId, creditorInternalAccountId, transactionDetails);
 	    		camt053Entry = objectMapper.writeValueAsString(convertedcamt053Entry);
 				
 				td = new DtSavingsTransactionDetails(
@@ -546,6 +532,25 @@ try {
 			throw new RuntimeException(t);
 		}
     }
+
+	private void refillOtherId(String debtorInternalAccountId, String creditorInternalAccountId,
+			EntryTransaction10 transactionDetails) {
+		for (SupplementaryData1 supplementaryData : transactionDetails.getSupplementaryData()) {
+			if ("OrderManagerSupplementaryData".equalsIgnoreCase(supplementaryData.getPlaceAndName())) {
+				LinkedHashMap<String, Object> otherIdentification = (LinkedHashMap<String, Object>) supplementaryData.getEnvelope().getAdditionalProperties().get("OtherIdentification");
+				
+				GenericAccountIdentification1 debtorAccountIdOther = (GenericAccountIdentification1) transactionDetails.getRelatedParties().getDebtorAccount().getIdentification().getAdditionalProperties().getOrDefault("Other", GenericAccountIdentification1.builder().build());
+				debtorAccountIdOther.setId(debtorInternalAccountId);
+				debtorAccountIdOther.setSchemeName(AccountSchemeName1Choice.builder().code("IAID").build());
+				otherIdentification.put("DebtorAccount", debtorAccountIdOther);
+				
+				GenericAccountIdentification1 creditorAccountIdOther = (GenericAccountIdentification1) transactionDetails.getRelatedParties().getCreditorAccount().getIdentification().getAdditionalProperties().getOrDefault("Other", GenericAccountIdentification1.builder().build());
+				creditorAccountIdOther.setId(creditorInternalAccountId);
+				creditorAccountIdOther.setSchemeName(AccountSchemeName1Choice.builder().code("IAID").build());
+				otherIdentification.put("CreditorAccount", creditorAccountIdOther);
+			}
+		}
+	}
     
     private void addDetails(String transactionGroupId, 
 			String transactionFeeCategoryPurposeCode,
