@@ -230,7 +230,6 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 				convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
 				convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getSupplementaryData().clear();
 				pain001Camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001.getDocument(), convertedcamt053Entry, transactionFeeCategoryPurposeCode);
-				pain001Camt053Mapper.moveOtherIdentificationToSupplementaryData(convertedcamt053Entry, pain001.getDocument());
 				camt053Entry = objectMapper.writeValueAsString(convertedcamt053Entry);
 				
 				body = new TransactionBody(
@@ -275,7 +274,6 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
 			convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getSupplementaryData().clear();
 			pain001Camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001.getDocument(), convertedcamt053Entry, transactionCategoryPurposeCode);
-			pain001Camt053Mapper.moveOtherIdentificationToSupplementaryData(convertedcamt053Entry, pain001.getDocument());
 			camt053Entry = objectMapper.writeValueAsString(convertedcamt053Entry);
 			
 			body = new TransactionBody(
@@ -324,7 +322,6 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 				convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
 				convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getSupplementaryData().clear();
 				pain001Camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001.getDocument(), convertedcamt053Entry, transactionFeeCategoryPurposeCode);
-				pain001Camt053Mapper.moveOtherIdentificationToSupplementaryData(convertedcamt053Entry, pain001.getDocument());
 				camt053Entry = objectMapper.writeValueAsString(convertedcamt053Entry);
 				
 				body = new TransactionBody(
@@ -595,7 +592,6 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 				convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
 				convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getSupplementaryData().clear();
 				pain001Camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001.getDocument(), convertedcamt053Entry, transactionFeeCategoryPurposeCode);
-				pain001Camt053Mapper.moveOtherIdentificationToSupplementaryData(convertedcamt053Entry, pain001.getDocument());
 				camt053Entry = objectMapper.writeValueAsString(convertedcamt053Entry);
 				
 				body = new TransactionBody(

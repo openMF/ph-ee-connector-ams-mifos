@@ -318,7 +318,6 @@ try {
 	    		convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
 	    		convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getSupplementaryData().clear();
 	    		camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001.getDocument(), convertedcamt053Entry, transactionFeeCategoryPurposeCode);
-	    		camt053Mapper.moveOtherIdentificationToSupplementaryData(convertedcamt053Entry, pain001.getDocument());
 	    		camt053Entry = objectMapper.writeValueAsString(convertedcamt053Entry);
 	    		
 	    		td = new DtSavingsTransactionDetails(
@@ -351,7 +350,6 @@ try {
 				convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getSupplementaryData().clear();
 				convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.CRDT);
 				camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001.getDocument(), convertedcamt053Entry, transactionFeeCategoryPurposeCode);
-				camt053Mapper.moveOtherIdentificationToSupplementaryData(convertedcamt053Entry, pain001.getDocument());
 				camt053Entry = objectMapper.writeValueAsString(convertedcamt053Entry);
 	    		
 				transactionBody = new TransactionBody(
@@ -396,8 +394,7 @@ try {
 			convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
 			convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getSupplementaryData().clear();
 			camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001.getDocument(), convertedcamt053Entry, transactionCategoryPurposeCode);
-			camt053Mapper.moveOtherIdentificationToSupplementaryData(convertedcamt053Entry, pain001.getDocument());
-    		
+
 			transactionBody = new TransactionBody(
     				interbankSettlementDate,
     				amount,
@@ -448,8 +445,7 @@ try {
 				convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getSupplementaryData().clear();
 				convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.DBIT);
 				camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001.getDocument(), convertedcamt053Entry, transactionFeeCategoryPurposeCode);
-				camt053Mapper.moveOtherIdentificationToSupplementaryData(convertedcamt053Entry, pain001.getDocument());
-	    		
+
 				transactionBody = new TransactionBody(
 	    				interbankSettlementDate,
 	    				transactionFeeAmount,
@@ -469,7 +465,6 @@ try {
 	    		convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getAmountDetails().getTransactionAmount().getAmount().setAmount(transactionFeeAmount);
 	    		convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getSupplementaryData().clear();
 	    		camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001.getDocument(), convertedcamt053Entry, transactionFeeCategoryPurposeCode);
-	    		camt053Mapper.moveOtherIdentificationToSupplementaryData(convertedcamt053Entry, pain001.getDocument());
 	    		camt053Entry = objectMapper.writeValueAsString(convertedcamt053Entry);
 				
 				td = new DtSavingsTransactionDetails(
@@ -538,7 +533,6 @@ try {
     		paymentTypeCode = "";
     	}
     	convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
-    	camt053Mapper.moveOtherIdentificationToSupplementaryData(convertedcamt053Entry, pain001);
     	String camt053 = objectMapper.writeValueAsString(convertedcamt053Entry);
 		DtSavingsTransactionDetails td = new DtSavingsTransactionDetails(
 				internalCorrelationId,
