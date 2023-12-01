@@ -91,6 +91,11 @@
             <version>0.0.0.0-0e6f5eab9</version>
         </dependency>
         <dependency>
+   			<groupId>com.networknt</groupId>
+   			<artifactId>json-schema-validator</artifactId>
+  			<version>1.0.87</version>
+		</dependency>
+        <dependency>
       		<groupId>com.baasflow.events</groupId>
       		<artifactId>baasflow-events-spring-boot-starter</artifactId>
       		<version>${baasflow-events-spring-boot-starter.version}</version>

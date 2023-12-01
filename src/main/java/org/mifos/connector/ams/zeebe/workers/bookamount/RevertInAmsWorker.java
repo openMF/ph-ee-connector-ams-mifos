@@ -48,9 +48,14 @@ import com.baasflow.commons.events.Event;
 import com.baasflow.commons.events.EventLogLevel;
 import com.baasflow.commons.events.EventService;
 import com.baasflow.commons.events.EventType;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.fasterxml.jackson.module.afterburner.AfterburnerModule;
 
 import hu.dpc.rt.utils.converter.Pacs004ToCamt053Converter;
 import io.camunda.zeebe.client.api.response.ActivatedJob;
@@ -98,8 +103,18 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
     @Autowired
     private EventService eventService;
 
-    @Autowired
-    private ObjectMapper objectMapper;
+    private ObjectMapper objectMapper = new ObjectMapper() {
+		private static final long serialVersionUID = 1L;
+
+		{
+    		registerModule(new AfterburnerModule());
+    		registerModule(new JavaTimeModule());
+    		configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+    		setSerializationInclusion(JsonInclude.Include.NON_EMPTY)
+            .configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true)
+            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+    	}
+    };
 
     @JobWorker
     @LogInternalCorrelationId
