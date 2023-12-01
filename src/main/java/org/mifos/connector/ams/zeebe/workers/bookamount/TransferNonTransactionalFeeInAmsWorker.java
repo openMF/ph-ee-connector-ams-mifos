@@ -39,6 +39,7 @@ import io.camunda.zeebe.client.api.worker.JobClient;
 import io.camunda.zeebe.spring.client.annotation.JobWorker;
 import io.camunda.zeebe.spring.client.annotation.Variable;
 import iso.std.iso._20022.tech.json.camt_053_001.BankToCustomerStatementV08;
+import iso.std.iso._20022.tech.json.camt_053_001.EntryStatus1Choice;
 import iso.std.iso._20022.tech.json.camt_053_001.ReportEntry10;
 import iso.std.iso._20022.tech.json.camt_053_001.ActiveOrHistoricCurrencyAndAmountRange2.CreditDebitCode;
 import iso.std.iso._20022.tech.json.pain_001_001.Pain00100110CustomerCreditTransferInitiationV10MessageSchema;
@@ -159,6 +160,7 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 			convertedcamt053.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
 			convertedcamt053.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.DBIT);
 			convertedcamt053.setCreditDebitIndicator(CreditDebitCode.DBIT);
+			convertedcamt053.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "BOOKED"));
 			String camt053Entry = objectMapper.writeValueAsString(convertedcamt053);
 			
 			String camt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
@@ -193,6 +195,7 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 			convertedcamt053.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
 			convertedcamt053.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.CRDT);
 			convertedcamt053.setCreditDebitIndicator(CreditDebitCode.CRDT);
+			convertedcamt053.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "BOOKED"));
 			camt053Entry = objectMapper.writeValueAsString(convertedcamt053);
 			log.debug("Looking up {}, got payment type id {}", depositNonTxFeeConfigOperationKey, paymentTypeId);
 			body = new TransactionBody(
@@ -239,6 +242,7 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 			convertedcamt053.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
 			convertedcamt053.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.DBIT);
 			convertedcamt053.setCreditDebitIndicator(CreditDebitCode.DBIT);
+			convertedcamt053.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "BOOKED"));
 			camt053Entry = objectMapper.writeValueAsString(convertedcamt053);
 			log.debug("Looking up {}, got payment type id {}", withdrawNonTxFeeConversionConfigOperationKey, paymentTypeId);
 			body = new TransactionBody(

@@ -66,6 +66,7 @@ import iso.std.iso._20022.tech.json.camt_053_001.AccountStatement9;
 import iso.std.iso._20022.tech.json.camt_053_001.ActiveOrHistoricCurrencyAndAmountRange2.CreditDebitCode;
 import iso.std.iso._20022.tech.json.camt_053_001.BankToCustomerStatementV08;
 import iso.std.iso._20022.tech.json.camt_053_001.EntryDetails9;
+import iso.std.iso._20022.tech.json.camt_053_001.EntryStatus1Choice;
 import iso.std.iso._20022.tech.json.camt_053_001.EntryTransaction10;
 import iso.std.iso._20022.tech.json.camt_053_001.ReportEntry10;
 import iso.std.iso._20022.tech.json.pain_001_001.Pain00100110CustomerCreditTransferInitiationV10MessageSchema;
@@ -210,6 +211,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			ReportEntry10 convertedcamt053Entry = convertedStatement.getStatement().get(0).getEntry().get(0);
 			convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.CRDT);
 			convertedcamt053Entry.setCreditDebitIndicator(CreditDebitCode.CRDT);
+			convertedcamt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "BOOKED"));
 			convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
 			String camt053Entry = objectMapper.writeValueAsString(convertedcamt053Entry);
 			
@@ -289,6 +291,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(withdrawAmountConfigOperationKey);
 			convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.DBIT);
 			convertedcamt053Entry.setCreditDebitIndicator(CreditDebitCode.DBIT);
+			convertedcamt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "BOOKED"));
 			convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
 			convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getSupplementaryData().clear();
 			pain001Camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001.getDocument(), convertedcamt053Entry, transactionCategoryPurposeCode);
@@ -533,6 +536,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			ReportEntry10 convertedcamt053Entry = convertedStatement.getStatement().get(0).getEntry().get(0);
 			convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.CRDT);
 			convertedcamt053Entry.setCreditDebitIndicator(CreditDebitCode.CRDT);
+			convertedcamt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "BOOKED"));
 			convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
 			String camt053Entry = objectMapper.writeValueAsString(convertedcamt053Entry);
 			
@@ -568,6 +572,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(withdrawAmountConfigOperationKey);
 			convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.DBIT);
 			convertedcamt053Entry.setCreditDebitIndicator(CreditDebitCode.DBIT);
+			convertedcamt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "BOOKED"));
 			convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
 			camt053Entry = objectMapper.writeValueAsString(convertedcamt053Entry);
 			
@@ -776,6 +781,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			camt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
 			camt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.CRDT);
 			camt053Entry.setCreditDebitIndicator(CreditDebitCode.CRDT);
+			camt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "BOOKED"));
 			
 			String camt053 = objectMapper.writeValueAsString(camt053Entry);
 			
@@ -808,6 +814,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			camt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
 			camt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.DBIT);
 			camt053Entry.setCreditDebitIndicator(CreditDebitCode.DBIT);
+			camt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "BOOKED"));
 			camt053 = objectMapper.writeValueAsString(camt053Entry);
 			
 			body = new TransactionBody(

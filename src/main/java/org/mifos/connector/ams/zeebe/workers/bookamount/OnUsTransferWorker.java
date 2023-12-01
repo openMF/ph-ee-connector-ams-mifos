@@ -51,6 +51,7 @@ import iso.std.iso._20022.tech.json.camt_053_001.ActiveOrHistoricCurrencyAndAmou
 import iso.std.iso._20022.tech.json.camt_053_001.AmountAndCurrencyExchange3;
 import iso.std.iso._20022.tech.json.camt_053_001.AmountAndCurrencyExchangeDetails3;
 import iso.std.iso._20022.tech.json.camt_053_001.BankToCustomerStatementV08;
+import iso.std.iso._20022.tech.json.camt_053_001.EntryStatus1Choice;
 import io.camunda.zeebe.spring.client.exception.ZeebeBpmnError;
 import iso.std.iso._20022.tech.json.camt_053_001.ReportEntry10;
 import iso.std.iso._20022.tech.json.camt_053_001.ActiveOrHistoricCurrencyAndAmountRange2.CreditDebitCode;
@@ -285,6 +286,7 @@ try {
     		convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
     		convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.DBIT);
     		convertedcamt053Entry.setCreditDebitIndicator(CreditDebitCode.DBIT);
+    		convertedcamt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "BOOKED"));
     		String camt053Entry = objectMapper.writeValueAsString(convertedcamt053Entry);
     	
     		camt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
@@ -367,6 +369,7 @@ try {
 				convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getSupplementaryData().clear();
 				convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.CRDT);
 				convertedcamt053Entry.setCreditDebitIndicator(CreditDebitCode.CRDT);
+				convertedcamt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "BOOKED"));
 				camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001.getDocument(), convertedcamt053Entry, transactionFeeCategoryPurposeCode);
 				camt053Mapper.moveOtherIdentificationToSupplementaryData(convertedcamt053Entry, pain001.getDocument());
 				camt053Entry = objectMapper.writeValueAsString(convertedcamt053Entry);
@@ -434,6 +437,7 @@ try {
     		convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getAmountDetails().getTransactionAmount().getAmount().setAmount(amount);
     		convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.CRDT);
     		convertedcamt053Entry.setCreditDebitIndicator(CreditDebitCode.CRDT);
+    		convertedcamt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "BOOKED"));
     		camt053Entry = objectMapper.writeValueAsString(convertedcamt053Entry);
 			
     		td = new DtSavingsTransactionDetails(
@@ -466,6 +470,7 @@ try {
 				convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getSupplementaryData().clear();
 				convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.DBIT);
 				convertedcamt053Entry.setCreditDebitIndicator(CreditDebitCode.DBIT);
+				convertedcamt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "BOOKED"));
 				camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001.getDocument(), convertedcamt053Entry, transactionFeeCategoryPurposeCode);
 				camt053Mapper.moveOtherIdentificationToSupplementaryData(convertedcamt053Entry, pain001.getDocument());
 	    		

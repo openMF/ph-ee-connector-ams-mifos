@@ -42,6 +42,7 @@ import iso.std.iso._20022.tech.json.camt_053_001.ActiveOrHistoricCurrencyAndAmou
 import iso.std.iso._20022.tech.json.camt_053_001.AccountStatement9;
 import iso.std.iso._20022.tech.json.camt_053_001.BankToCustomerStatementV08;
 import iso.std.iso._20022.tech.json.camt_053_001.EntryDetails9;
+import iso.std.iso._20022.tech.json.camt_053_001.EntryStatus1Choice;
 import iso.std.iso._20022.tech.json.camt_053_001.EntryTransaction10;
 import iso.std.iso._20022.tech.json.camt_053_001.ReportEntry10;
 import iso.std.iso._20022.tech.xsd.pacs_008_001.RemittanceInformation5;
@@ -167,6 +168,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 			ReportEntry10 convertedCamt053Entry = pacs008Camt053Mapper.toCamt053Entry(pacs008).getStatement().get(0).getEntry().get(0);
 			convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.CRDT);
 			convertedCamt053Entry.setCreditDebitIndicator(CreditDebitCode.CRDT);
+			convertedCamt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "BOOKED"));
 			convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
 			convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
 			String camt053Entry = objectMapper.writeValueAsString(convertedCamt053Entry);
@@ -338,6 +340,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 			ReportEntry10 convertedCamt053Entry = pacs004Camt053Mapper.convert(pacs004, intermediateCamt053).getStatement().get(0).getEntry().get(0);
 			convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.CRDT);
 			convertedCamt053Entry.setCreditDebitIndicator(CreditDebitCode.CRDT);
+			convertedCamt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "BOOKED"));
 			convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
 			String camt053Entry = objectMapper.writeValueAsString(convertedCamt053Entry);
 			

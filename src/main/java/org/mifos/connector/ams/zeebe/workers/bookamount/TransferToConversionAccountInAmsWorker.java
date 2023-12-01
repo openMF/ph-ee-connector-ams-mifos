@@ -50,6 +50,7 @@ import io.camunda.zeebe.spring.client.annotation.Variable;
 import io.camunda.zeebe.spring.client.exception.ZeebeBpmnError;
 import iso.std.iso._20022.tech.json.camt_053_001.ActiveOrHistoricCurrencyAndAmountRange2.CreditDebitCode;
 import iso.std.iso._20022.tech.json.camt_053_001.BankToCustomerStatementV08;
+import iso.std.iso._20022.tech.json.camt_053_001.EntryStatus1Choice;
 import iso.std.iso._20022.tech.json.camt_053_001.ReportEntry10;
 import iso.std.iso._20022.tech.json.pain_001_001.CustomerCreditTransferInitiationV10;
 import iso.std.iso._20022.tech.json.pain_001_001.Pain00100110CustomerCreditTransferInitiationV10MessageSchema;
@@ -258,6 +259,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			
 			convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.DBIT);
 			convertedCamt053Entry.setCreditDebitIndicator(CreditDebitCode.DBIT);
+			convertedCamt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "PENDING"));
 			
 			String disposalAccountWithdrawRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), disposalAccountAmsId, "withdrawal");
 
@@ -270,6 +272,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getAmountDetails().getInstructedAmount().getAmount().setAmount(amount);
 			convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.DBIT);
 			convertedCamt053Entry.setCreditDebitIndicator(CreditDebitCode.DBIT);
+			convertedCamt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "PENDING"));
 			addDetails(pain001.getDocument(), transactionGroupId, transactionCategoryPurposeCode, internalCorrelationId, 
 					objectMapper, batchItemBuilder, items, convertedCamt053Entry, camt053RelativeUrl, iban, 
 					paymentTypeConfig, paymentScheme, withdrawAmountOperation, partnerName, partnerAccountIban, 
@@ -302,6 +305,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getAmountDetails().getInstructedAmount().getAmount().setAmount(amount);
 			convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.CRDT);
 			convertedCamt053Entry.setCreditDebitIndicator(CreditDebitCode.CRDT);
+			convertedCamt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "PENDING"));
 			addDetails(pain001.getDocument(), transactionGroupId, transactionCategoryPurposeCode, internalCorrelationId, objectMapper, batchItemBuilder, items,
 					convertedCamt053Entry, camt053RelativeUrl, iban, paymentTypeConfig, paymentScheme, depositAmountOperation, partnerName, 
 					partnerAccountIban, partnerAccountSecondaryIdentifier, unstructured, disposalAccountAmsId, conversionAccountAmsId, true);
@@ -508,6 +512,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
     		ReportEntry10 convertedCamt053Entry = statement.getStatement().get(0).getEntry().get(0);
 			convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.DBIT);
 			convertedCamt053Entry.setCreditDebitIndicator(CreditDebitCode.DBIT);
+			convertedCamt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "PENDING"));
 			String camt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
 
 			
@@ -582,6 +587,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
 			convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.DBIT);
 			convertedCamt053Entry.setCreditDebitIndicator(CreditDebitCode.DBIT);
+			convertedCamt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "PENDING"));
 		
 			String camt053 = objectMapper.writeValueAsString(statement.getStatement().get(0));
 			

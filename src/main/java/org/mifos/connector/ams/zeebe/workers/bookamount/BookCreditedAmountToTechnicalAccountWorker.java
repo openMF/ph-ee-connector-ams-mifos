@@ -39,6 +39,7 @@ import io.camunda.zeebe.spring.client.annotation.Variable;
 import io.camunda.zeebe.spring.client.exception.ZeebeBpmnError;
 import iso.std.iso._20022.tech.json.camt_053_001.ActiveOrHistoricCurrencyAndAmountRange2.CreditDebitCode;
 import iso.std.iso._20022.tech.json.camt_053_001.BankToCustomerStatementV08;
+import iso.std.iso._20022.tech.json.camt_053_001.EntryStatus1Choice;
 import iso.std.iso._20022.tech.json.camt_053_001.ReportEntry10;
 import iso.std.iso._20022.tech.xsd.pacs_008_001.RemittanceInformation5;
 import jakarta.xml.bind.JAXBException;
@@ -179,6 +180,7 @@ public class BookCreditedAmountToTechnicalAccountWorker extends AbstractMoneyInO
     		intermediateCamt053.getStatement().get(0).getEntry().get(0).getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
     		intermediateCamt053.getStatement().get(0).getEntry().get(0).getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.CRDT);
     		intermediateCamt053.getStatement().get(0).getEntry().get(0).setCreditDebitIndicator(CreditDebitCode.CRDT);
+    		intermediateCamt053.getStatement().get(0).getEntry().get(0).setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "BOOKED"));
     		String camt053Entry = objectMapper.writeValueAsString(
     				originalPacs004 == null
     				? intermediateCamt053.getStatement().get(0).getEntry().get(0)
