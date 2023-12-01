@@ -533,11 +533,13 @@ try {
 		}
     }
 
+	@SuppressWarnings("unchecked")
 	private void refillOtherId(String debtorInternalAccountId, String creditorInternalAccountId,
 			EntryTransaction10 transactionDetails) {
 		for (SupplementaryData1 supplementaryData : transactionDetails.getSupplementaryData()) {
 			if ("OrderManagerSupplementaryData".equalsIgnoreCase(supplementaryData.getPlaceAndName())) {
-				LinkedHashMap<String, Object> otherIdentification = (LinkedHashMap<String, Object>) supplementaryData.getEnvelope().getAdditionalProperties().get("OtherIdentification");
+				LinkedHashMap<String, Object> otherIdentification = (LinkedHashMap<String, Object>) supplementaryData.getEnvelope().getAdditionalProperties().getOrDefault("OtherIdentification", new LinkedHashMap<>());
+				supplementaryData.getEnvelope().setAdditionalProperty("OtherIdentification", otherIdentification);
 				
 				GenericAccountIdentification1 debtorAccountIdOther = (GenericAccountIdentification1) transactionDetails.getRelatedParties().getDebtorAccount().getIdentification().getAdditionalProperties().getOrDefault("Other", GenericAccountIdentification1.builder().build());
 				debtorAccountIdOther.setId(debtorInternalAccountId);
