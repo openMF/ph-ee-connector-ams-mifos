@@ -202,6 +202,8 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 			paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(withdrawAmountConfigOperationKey);
 			paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(withdrawAmountConfigOperationKey);
 			convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
+			convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.DBIT);
+			convertedCamt053Entry.setCreditDebitIndicator(CreditDebitCode.DBIT);
 			camt053Entry = objectMapper.writeValueAsString(convertedCamt053Entry);
 			
 			body = new TransactionBody(
@@ -373,6 +375,8 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 			paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(withdrawAmountConfigOperationKey);
 			paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(withdrawAmountConfigOperationKey);
 			convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
+			convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.DBIT);
+			convertedCamt053Entry.setCreditDebitIndicator(CreditDebitCode.DBIT);
 			camt053Entry = objectMapper.writeValueAsString(convertedCamt053Entry);
 			
 			body = new TransactionBody(
@@ -508,6 +512,8 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
     										.withTransactionDetails(List.of(new EntryTransaction10())))))))));
 			ReportEntry10 convertedCamt053Entry = camt053.getStatement().get(0).getEntry().get(0);
 			convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
+			convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.CRDT);
+			convertedCamt053Entry.setCreditDebitIndicator(CreditDebitCode.CRDT);
 
 			String camt053Entry = objectMapper.writeValueAsString(convertedCamt053Entry);
 			
@@ -541,6 +547,8 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 			paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(withdrawAmountConfigOperationKey);
 			
 			convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
+			convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.DBIT);
+			convertedCamt053Entry.setCreditDebitIndicator(CreditDebitCode.DBIT);
 			camt053Entry = objectMapper.writeValueAsString(convertedCamt053Entry);
 			
 			body = new TransactionBody(
