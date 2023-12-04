@@ -314,7 +314,6 @@ try {
     		
     		batchItemBuilder.add(items, debtorDisposalWithdrawalRelativeUrl, bodyItem, false);
     		
-    		transactionDetails.getAmountDetails().getInstructedAmount().getAmount().setAmount(amount);
     		transactionDetails.getAmountDetails().getTransactionAmount().getAmount().setAmount(amount);
     		transactionDetails.setAdditionalTransactionInformation(paymentTypeCode);
     		transactionDetails.setCreditDebitIndicator(CreditDebitCode.DBIT);
@@ -366,7 +365,6 @@ try {
 	    		batchItemBuilder.add(items, debtorDisposalWithdrawalRelativeUrl, bodyItem, false);
 	    	
 	    		transactionDetails.getSupplementaryData().get(0).getEnvelope().setAdditionalProperty("InternalCorrelationId", transactionFeeInternalCorrelationId);
-	    		transactionDetails.getAmountDetails().getInstructedAmount().getAmount().setAmount(transactionFeeAmount);
 	    		transactionDetails.getAmountDetails().getTransactionAmount().getAmount().setAmount(transactionFeeAmount);
 	    		transactionDetails.setAdditionalTransactionInformation(paymentTypeCode);
 	    		transactionDetails.getSupplementaryData().clear();
@@ -467,7 +465,6 @@ try {
     		batchItemBuilder.add(items, creditorDisposalDepositRelativeUrl, bodyItem, false);
 	    	
     		transactionDetails.getSupplementaryData().get(0).getEnvelope().setAdditionalProperty("InternalCorrelationId", internalCorrelationId);
-    		transactionDetails.getAmountDetails().getInstructedAmount().getAmount().setAmount(amount);
     		transactionDetails.getAmountDetails().getTransactionAmount().getAmount().setAmount(amount);
     		transactionDetails.setCreditDebitIndicator(CreditDebitCode.CRDT);
     		convertedcamt053Entry.setCreditDebitIndicator(CreditDebitCode.CRDT);
@@ -520,7 +517,6 @@ try {
 		    		
 	    		batchItemBuilder.add(items, debtorConversionWithdrawRelativeUrl, bodyItem, false);
 		    	
-	    		transactionDetails.getAmountDetails().getInstructedAmount().getAmount().setAmount(transactionFeeAmount);
 	    		transactionDetails.getAmountDetails().getTransactionAmount().getAmount().setAmount(transactionFeeAmount);
 	    		transactionDetails.getSupplementaryData().clear();
 	    		camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001.getDocument(), convertedcamt053Entry, transactionFeeCategoryPurposeCode);
