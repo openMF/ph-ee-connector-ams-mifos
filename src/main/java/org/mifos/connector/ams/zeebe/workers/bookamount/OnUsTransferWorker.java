@@ -544,12 +544,22 @@ try {
 				GenericAccountIdentification1 debtorAccountIdOther = (GenericAccountIdentification1) transactionDetails.getRelatedParties().getDebtorAccount().getIdentification().getAdditionalProperties().getOrDefault("Other", GenericAccountIdentification1.builder().build());
 				debtorAccountIdOther.setId(debtorInternalAccountId);
 				debtorAccountIdOther.setSchemeName(AccountSchemeName1Choice.builder().code("IAID").build());
-				otherIdentification.put("DebtorAccount", debtorAccountIdOther);
 				
 				GenericAccountIdentification1 creditorAccountIdOther = (GenericAccountIdentification1) transactionDetails.getRelatedParties().getCreditorAccount().getIdentification().getAdditionalProperties().getOrDefault("Other", GenericAccountIdentification1.builder().build());
 				creditorAccountIdOther.setId(creditorInternalAccountId);
 				creditorAccountIdOther.setSchemeName(AccountSchemeName1Choice.builder().code("IAID").build());
-				otherIdentification.put("CreditorAccount", creditorAccountIdOther);
+				
+        		LinkedHashMap<String, Object> debtorAccountIdentificationOther = (LinkedHashMap<String, Object>) otherIdentification.getOrDefault("DebtorAccount", new LinkedHashMap<>());
+        		otherIdentification.put("DebtorAccount", debtorAccountIdentificationOther);
+        		LinkedHashMap<String, Object> daioAccountIdentification = (LinkedHashMap<String, Object>) debtorAccountIdentificationOther.getOrDefault("Identification", new LinkedHashMap<>());
+        		debtorAccountIdentificationOther.put("Identification", daioAccountIdentification);
+        		daioAccountIdentification.put("Other", debtorAccountIdOther);
+        		
+        		LinkedHashMap<String, Object> creditorAccountIdentificationOther = (LinkedHashMap<String, Object>) otherIdentification.getOrDefault("CreditorAccount", new LinkedHashMap<>());
+        		otherIdentification.put("CreditorAccount", creditorAccountIdentificationOther);
+        		LinkedHashMap<String, Object> caioAccountIdentification = (LinkedHashMap<String, Object>) creditorAccountIdentificationOther.getOrDefault("Identification", new LinkedHashMap<>());
+        		creditorAccountIdentificationOther.put("Identification", caioAccountIdentification);
+        		caioAccountIdentification.put("Other", creditorAccountIdOther);
 			}
 		}
 	}
