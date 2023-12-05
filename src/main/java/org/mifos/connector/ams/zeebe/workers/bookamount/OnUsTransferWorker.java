@@ -1,11 +1,9 @@
 package org.mifos.connector.ams.zeebe.workers.bookamount;
 
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,19 +34,10 @@ import com.baasflow.commons.events.Event;
 import com.baasflow.commons.events.EventService;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.BeanDescription;
 import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationConfig;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import com.fasterxml.jackson.databind.ser.BeanPropertyWriter;
-import com.fasterxml.jackson.databind.ser.BeanSerializerModifier;
-import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
-import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.module.afterburner.AfterburnerModule;
 
@@ -104,35 +93,9 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
     		registerModule(new AfterburnerModule());
     		registerModule(new JavaTimeModule());
     		configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
-    		setSerializationInclusion(JsonInclude.Include.CUSTOM)
+    		setSerializationInclusion(JsonInclude.Include.NON_EMPTY)
             .configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true)
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-    		
-    		SimpleFilterProvider filters = new SimpleFilterProvider();
-    		filters.addFilter("customFilter", SimpleBeanPropertyFilter.serializeAllExcept(new String [] {}));
-    		setFilterProvider(filters);
-    		
-    		setSerializerFactory(getSerializerFactory().withSerializerModifier(new BeanSerializerModifier() {
-    			
-    			@Override
-    			public List<BeanPropertyWriter> changeProperties(
-    					SerializationConfig config,
-    					BeanDescription beanDesc,
-    					List<BeanPropertyWriter> beanProperties) {
-    				for (BeanPropertyWriter writer : beanProperties) {
-    					writer.assignNullSerializer(new JsonSerializer<Object>() {
-    						@Override
-    						public void serialize(Object value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
-    							if (value instanceof Collection && ((Collection<?>) value).isEmpty()) {
-    								return;
-    							}
-    							gen.writeObject(value);
-    						}
-    					});
-    				}
-    				return beanProperties;
-    			}
-    		}));
     	}
     };
 
@@ -219,8 +182,7 @@ try {
 			EntryTransaction10 transactionDetails = convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0);
 			transactionDetails.withAmountDetails(
 					new AmountAndCurrencyExchange3()
-							.withTransactionAmount(withAmountAndCurrency)
-							.withInstructedAmount(withAmountAndCurrency));
+							.withTransactionAmount(withAmountAndCurrency));
 			
 			transactionDetails.getSupplementaryData().clear();
 			
