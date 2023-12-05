@@ -438,7 +438,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 				return Map.of("availableBalance", -1);
 			}
 			BigDecimal runningBalanceDerived = content.get(0).runningBalanceDerived().setScale(2, RoundingMode.HALF_UP);
-			return Map.of("availableBalance", runningBalanceDerived);
+			return Map.of("availableBalance", runningBalanceDerived.toString());
 					 
     	} catch (JsonProcessingException e) {
             // TODO technical error handling
