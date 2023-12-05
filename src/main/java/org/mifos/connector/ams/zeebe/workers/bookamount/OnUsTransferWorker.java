@@ -434,7 +434,7 @@ try {
     		camt053Entry = objectMapper.writeValueAsString(convertedcamt053Entry);
 			
     		td = new DtSavingsTransactionDetails(
-    				transactionFeeInternalCorrelationId,
+    				internalCorrelationId,
     				camt053Entry,
     				pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditorAccount().getIdentification().getIban(),
     				paymentTypeCode,
