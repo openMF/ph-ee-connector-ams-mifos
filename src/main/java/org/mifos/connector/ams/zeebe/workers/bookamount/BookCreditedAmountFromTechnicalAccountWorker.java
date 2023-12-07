@@ -196,7 +196,7 @@ public class BookCreditedAmountFromTechnicalAccountWorker extends AbstractMoneyI
             
             XMLGregorianCalendar pacs002AccptncDtTm = pacs002.getFIToFIPmtStsRpt().getTxInfAndSts().get(0).getAccptncDtTm();
             if (pacs002AccptncDtTm == null) {
-            	convertedCamt053Entry.getValueDate().setAdditionalProperty("Date", transactionDate);
+            	convertedCamt053Entry.getValueDate().setAdditionalProperty("Date", hyphenateDate(transactionDate));
             } else {
 	            ZoneId zi = TimeZone.getTimeZone("Europe/Budapest").toZoneId();
 				ZonedDateTime zdt = pacs002AccptncDtTm.toGregorianCalendar().toZonedDateTime().withZoneSameInstant(zi);
@@ -241,5 +241,9 @@ public class BookCreditedAmountFromTechnicalAccountWorker extends AbstractMoneyI
             throw new ZeebeBpmnError("Error_BookToConversionToBeHandledManually", e.getMessage());
         }
         return null;
+    }
+    
+    private String hyphenateDate(String date) {
+    	return date.substring(0, 4) + "-" + date.substring(4, 6) + "-" + date.substring(6);
     }
 }
