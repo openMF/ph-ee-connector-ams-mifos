@@ -211,7 +211,8 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 					transactionCategoryPurposeCode,
 					paymentScheme,
 					conversionAccountAmsId,
-					null);
+					null,
+					pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getPaymentIdentification().getEndToEndIdentification());
 			
 			String camt053Body = objectMapper.writeValueAsString(td);
 	
@@ -259,7 +260,8 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 						transactionFeeCategoryPurposeCode,
 						paymentScheme,
 						conversionAccountAmsId,
-						null);
+						null,
+						pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getPaymentIdentification().getEndToEndIdentification());
 				camt053Body = objectMapper.writeValueAsString(td);
 				batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 			}
@@ -372,6 +374,8 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
     						.withEntry(List.of(new ReportEntry10()
     								.withEntryDetails(List.of(new EntryDetails9()
     										.withTransactionDetails(List.of(new EntryTransaction10()))))))))).getStatement().get(0).getEntry().get(0);
+			camt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "BOOKED"));
+			camt053Entry.setCreditDebitIndicator(CreditDebitCode.DBIT);
 			
 			PaymentTransactionInformation27 paymentTransactionInformation = pacs004
 					.getPmtRtr()
@@ -428,7 +432,8 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 					transactionCategoryPurposeCode,
 					paymentScheme,
 					conversionAccountAmsId,
-					null);
+					null,
+					paymentTransactionInformation.getOrgnlEndToEndId());
 			
 			String camt053Body = objectMapper.writeValueAsString(td);
 	

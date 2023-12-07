@@ -187,7 +187,8 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 					transactionCategoryPurposeCode,
 					paymentScheme,
 					conversionAccountAmsId,
-					disposalAccountAmsId);
+					disposalAccountAmsId,
+					pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getPmtId().getEndToEndId());
 			
 			var camt053Body = objectMapper.writeValueAsString(td);
 			
@@ -232,7 +233,8 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 					transactionCategoryPurposeCode,
 					paymentScheme,
 					conversionAccountAmsId,
-					disposalAccountAmsId);
+					disposalAccountAmsId,
+					pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getPmtId().getEndToEndId());
 			
 			camt053Body = objectMapper.writeValueAsString(td);
 
@@ -349,18 +351,19 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 			var td = new DtSavingsTransactionDetails(
 					internalCorrelationId,
 					camt053Entry,
-					pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getCdtrAcct().getId().getIBAN(),
+					pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getDbtrAcct().getId().getIBAN(),
 					paymentTypeCode,
 					transactionGroupId,
-					pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getDbtr().getNm(),
-					pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getDbtrAcct().getId().getIBAN(),
+					pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getCdtr().getNm(),
+					pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getCdtrAcct().getId().getIBAN(),
 					null,
 					contactDetailsUtil.getId(pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getDbtr().getCtctDtls()),
 					Optional.ofNullable(pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getRmtInf()).map(RemittanceInformation5::getUstrd).map(List::toString).orElse(""),
 					transactionCategoryPurposeCode,
 					paymentScheme,
 					conversionAccountAmsId,
-					disposalAccountAmsId);
+					disposalAccountAmsId,
+					pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getPmtId().getEndToEndId());
 			
 			var camt053Body = objectMapper.writeValueAsString(td);
 			
@@ -394,18 +397,19 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 			td = new DtSavingsTransactionDetails(
 					internalCorrelationId,
 					camt053Entry,
-					pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getCdtrAcct().getId().getIBAN(),
+					pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getDbtrAcct().getId().getIBAN(),
 					paymentTypeCode,
 					transactionGroupId,
-					pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getDbtr().getNm(),
-					pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getDbtrAcct().getId().getIBAN(),
+					pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getCdtr().getNm(),
+					pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getCdtrAcct().getId().getIBAN(),
 					null,
 					contactDetailsUtil.getId(pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getDbtr().getCtctDtls()),
 					Optional.ofNullable(pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getRmtInf()).map(RemittanceInformation5::getUstrd).map(List::toString).orElse(""),
 					transactionCategoryPurposeCode,
 					paymentScheme,
 					conversionAccountAmsId,
-					disposalAccountAmsId);
+					disposalAccountAmsId,
+					pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getPmtId().getEndToEndId());
 			
 			camt053Body = objectMapper.writeValueAsString(td);
 
@@ -514,6 +518,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 			convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
 			convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.CRDT);
 			convertedCamt053Entry.setCreditDebitIndicator(CreditDebitCode.CRDT);
+			convertedCamt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "BOOKED"));
 
 			String camt053Entry = objectMapper.writeValueAsString(convertedCamt053Entry);
 			
@@ -533,7 +538,8 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 					transactionCategoryPurposeCode,
 					paymentScheme,
 					conversionAccountAmsId,
-					disposalAccountAmsId);
+					disposalAccountAmsId,
+					pacs_004.getPmtRtr().getTxInf().get(0).getOrgnlEndToEndId());
 
 			var camt053Body = objectMapper.writeValueAsString(td);
 
@@ -580,7 +586,8 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 					transactionCategoryPurposeCode,
 					paymentScheme,
 					conversionAccountAmsId,
-					disposalAccountAmsId);
+					disposalAccountAmsId,
+					pacs_004.getPmtRtr().getTxInf().get(0).getOrgnlEndToEndId());
 
 			camt053Body = objectMapper.writeValueAsString(td);
 

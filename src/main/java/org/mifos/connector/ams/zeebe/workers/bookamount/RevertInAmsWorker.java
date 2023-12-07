@@ -230,7 +230,8 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 					transactionCategoryPurposeCode,
 					paymentScheme,
 					conversionAccountAmsId,
-					disposalAccountAmsId);
+					disposalAccountAmsId,
+    				pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getPaymentIdentification().getEndToEndIdentification());
 			
 			var camt053Body = objectMapper.writeValueAsString(td);
 			
@@ -278,7 +279,8 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 						transactionFeeCategoryPurposeCode,
 						paymentScheme,
 						conversionAccountAmsId,
-						disposalAccountAmsId);
+						disposalAccountAmsId,
+	    				pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getPaymentIdentification().getEndToEndIdentification());
 				camt053Body = objectMapper.writeValueAsString(td);
 				batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 			}
@@ -328,7 +330,8 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 					transactionCategoryPurposeCode,
 					paymentScheme,
 					conversionAccountAmsId,
-					disposalAccountAmsId);
+					disposalAccountAmsId,
+    				pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getPaymentIdentification().getEndToEndIdentification());
 			
 			camt053Body = objectMapper.writeValueAsString(td);
 	
@@ -374,7 +377,8 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 						transactionFeeCategoryPurposeCode,
 						paymentScheme,
 						conversionAccountAmsId,
-						disposalAccountAmsId);
+						disposalAccountAmsId,
+	    				pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getPaymentIdentification().getEndToEndIdentification());
 				camt053Body = objectMapper.writeValueAsString(td);
 				batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 			}
@@ -555,7 +559,8 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 					transactionCategoryPurposeCode,
 					paymentScheme,
 					conversionAccountAmsId,
-					disposalAccountAmsId);
+					disposalAccountAmsId,
+    				pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getPaymentIdentification().getEndToEndIdentification());
 			
 			var camt053Body = objectMapper.writeValueAsString(td);
 			
@@ -603,7 +608,8 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 					transactionCategoryPurposeCode,
 					paymentScheme,
 					conversionAccountAmsId,
-					disposalAccountAmsId);
+					disposalAccountAmsId,
+    				pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getPaymentIdentification().getEndToEndIdentification());
 			
 			camt053Body = objectMapper.writeValueAsString(td);
 	
@@ -649,7 +655,8 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 						transactionFeeCategoryPurposeCode,
 						paymentScheme,
 						conversionAccountAmsId,
-						disposalAccountAmsId);
+						disposalAccountAmsId,
+	    				pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getPaymentIdentification().getEndToEndIdentification());
 				camt053Body = objectMapper.writeValueAsString(td);
 				batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 			}
@@ -799,7 +806,8 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 					transactionCategoryPurposeCode,
 					paymentScheme,
 					null,
-					disposalAccountAmsId);
+					disposalAccountAmsId,
+    				paymentTransactionInformation.getOrgnlEndToEndId());
 			
 			var camt053Body = objectMapper.writeValueAsString(td);
 			
@@ -847,7 +855,8 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 					transactionCategoryPurposeCode,
 					paymentScheme,
 					null,
-					disposalAccountAmsId);
+					disposalAccountAmsId,
+    				paymentTransactionInformation.getOrgnlEndToEndId());
 			
 			camt053Body = objectMapper.writeValueAsString(td);
 

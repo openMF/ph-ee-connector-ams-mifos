@@ -15,5 +15,6 @@ public record DtSavingsTransactionDetails(@JsonProperty("internal_correlation_id
 		@JsonProperty("category_purpose_code") String categoryPurposeCode,
 		@JsonProperty("payment_scheme") String paymentScheme,
 		@JsonProperty("source_ams_account_id") Integer sourceAmsAccountId,
-		@JsonProperty("target_ams_account_id") Integer targetAmsAccountId) {
+		@JsonProperty("target_ams_account_id") Integer targetAmsAccountId,
+		@JsonProperty("end_to_end_id") String endToEndId) {
 }

@@ -302,7 +302,8 @@ try {
     				transactionCategoryPurposeCode,
     				paymentScheme,
     				debtorDisposalAccountAmsId,
-    				creditorDisposalAccountAmsId);
+    				creditorDisposalAccountAmsId,
+    				pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getPaymentIdentification().getEndToEndIdentification());
     		
     		String camt053Body = objectMapper.writeValueAsString(td);
 
@@ -349,7 +350,8 @@ try {
 	    				transactionFeeCategoryPurposeCode,
 	    				paymentScheme,
 	    				debtorDisposalAccountAmsId,
-	    				debtorConversionAccountAmsId);
+	    				debtorConversionAccountAmsId,
+	    				pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getPaymentIdentification().getEndToEndIdentification());
 	    		
 	    		camt053Body = objectMapper.writeValueAsString(td);
 	    		batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
@@ -398,7 +400,8 @@ try {
 	    				transactionFeeCategoryPurposeCode,
 	    				paymentScheme,
 	    				debtorDisposalAccountAmsId,
-	    				debtorConversionAccountAmsId);
+	    				debtorConversionAccountAmsId,
+	    				pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getPaymentIdentification().getEndToEndIdentification());
 	    		
 	    		camt053Body = objectMapper.writeValueAsString(td);
 	    		batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
@@ -448,7 +451,8 @@ try {
     				transactionCategoryPurposeCode,
     				paymentScheme,
     				debtorDisposalAccountAmsId,
-    				creditorDisposalAccountAmsId);
+    				creditorDisposalAccountAmsId,
+    				pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getPaymentIdentification().getEndToEndIdentification());
     		
     		camt053Body = objectMapper.writeValueAsString(td);
     		batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
@@ -501,7 +505,8 @@ try {
 	    				transactionFeeCategoryPurposeCode,
 	    				paymentScheme,
 	    				debtorConversionAccountAmsId,
-	    				null);
+	    				null,
+	    				pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getPaymentIdentification().getEndToEndIdentification());
 	    		
 	    		camt053Body = objectMapper.writeValueAsString(td);
 			    		
@@ -598,7 +603,8 @@ try {
 				transactionFeeCategoryPurposeCode,
 				paymentScheme,
 				sourceAmsAccountId,
-				targetAmsAccountId);
+				targetAmsAccountId,
+				pain001.getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getPaymentIdentification().getEndToEndIdentification());
 		
 		String camt053Body = om.writeValueAsString(td);
 		batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);

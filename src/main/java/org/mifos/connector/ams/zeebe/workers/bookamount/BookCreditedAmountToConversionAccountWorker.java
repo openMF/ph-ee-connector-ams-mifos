@@ -185,7 +185,8 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
     				transactionCategoryPurposeCode,
     				paymentScheme,
     				null,
-    				conversionAccountAmsId);
+    				conversionAccountAmsId,
+    				pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getPmtId().getEndToEndId());
     		
     		String camt053Body = objectMapper.writeValueAsString(td);
 
@@ -302,18 +303,19 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
             DtSavingsTransactionDetails td = new DtSavingsTransactionDetails(
     				internalCorrelationId,
     				camt053Entry,
-    				pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getCdtrAcct().getId().getIBAN(),
+    				pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getDbtrAcct().getId().getIBAN(),
     				paymentTypeCode,
     				transactionGroupId,
-    				pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getDbtr().getNm(),
-    				pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getDbtrAcct().getId().getIBAN(),
+    				pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getCdtr().getNm(),
+    				pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getCdtrAcct().getId().getIBAN(),
     				null,
     				contactDetailsUtil.getId(pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getDbtr().getCtctDtls()),
     				Optional.ofNullable(pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getRmtInf()).map(RemittanceInformation5::getUstrd).map(List::toString).orElse(""),
     				transactionCategoryPurposeCode,
     				paymentScheme,
     				null,
-    				conversionAccountAmsId);
+    				conversionAccountAmsId,
+    				pacs004.getPmtRtr().getTxInf().get(0).getOrgnlEndToEndId());
 
             String camt053Body = objectMapper.writeValueAsString(td);
 
@@ -436,7 +438,8 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
                     transactionCategoryPurposeCode,
                     paymentScheme,
                     null,
-                    conversionAccountAmsId);
+                    conversionAccountAmsId,
+                    pacs_004.getPmtRtr().getTxInf().get(0).getOrgnlEndToEndId());
 
             String camt053Body = objectMapper.writeValueAsString(td);
 

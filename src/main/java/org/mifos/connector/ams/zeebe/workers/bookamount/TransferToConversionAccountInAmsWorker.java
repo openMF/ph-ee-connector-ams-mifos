@@ -413,7 +413,8 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 				transactionFeeCategoryPurposeCode,
 				paymentScheme,
 				sourceAmsAccountId,
-				targetAmsAccountId);
+				targetAmsAccountId,
+				pain001.getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getPaymentIdentification().getEndToEndIdentification());
 		
 		String camt053Body = om.writeValueAsString(td);
 		batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
@@ -516,8 +517,8 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			String camt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
 
 			
-			String partnerName = document.getFIToFIPmtCxlReq().getUndrlyg().get(0).getTxInf().get(0).getOrgnlTxRef().getCdtr().getNm();
-			String partnerAccountIban = document.getFIToFIPmtCxlReq().getUndrlyg().get(0).getTxInf().get(0).getOrgnlTxRef().getCdtrAcct().getId().getIBAN();
+			String partnerName = document.getFIToFIPmtCxlReq().getUndrlyg().get(0).getTxInf().get(0).getOrgnlTxRef().getDbtr().getNm();
+			String partnerAccountIban = document.getFIToFIPmtCxlReq().getUndrlyg().get(0).getTxInf().get(0).getOrgnlTxRef().getDbtrAcct().getId().getIBAN();
 			String partnerAccountSecondaryIdentifier = contactDetailsUtil.getId(document.getFIToFIPmtCxlReq().getUndrlyg().get(0).getTxInf().get(0).getOrgnlTxRef().getCdtr().getCtctDtls());
 			String unstructured = Optional.ofNullable(document.getFIToFIPmtCxlReq().getUndrlyg().get(0).getTxInf().get(0).getOrgnlTxRef().getRmtInf())
 					.map(iso.std.iso._20022.tech.xsd.camt_056_001.RemittanceInformation5::getUstrd).map(List::toString).orElse("");
@@ -608,7 +609,8 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 					transactionCategoryPurposeCode,
 					paymentScheme,
 					disposalAccountAmsId,
-					null);
+					null,
+    				document.getFIToFIPmtCxlReq().getUndrlyg().get(0).getTxInf().get(0).getOrgnlEndToEndId());
 			
 			String camt053Body = objectMapper.writeValueAsString(td);
 	
