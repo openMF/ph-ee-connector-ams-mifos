@@ -220,7 +220,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
     		addDetails(pain001.getDocument(), transactionGroupId, transactionCategoryPurposeCode, internalCorrelationId, 
 					objectMapper, batchItemBuilder, items, convertedCamt053Entry, camt053RelativeUrl, iban, 
 					paymentTypeConfig, paymentScheme, holdAmountOperation, partnerName, partnerAccountIban, 
-					partnerAccountSecondaryIdentifier, unstructured, null, null, false);
+					partnerAccountSecondaryIdentifier, unstructured, null, null, false, pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getPaymentIdentification().getEndToEndIdentification());
     		
     		
 			Long lastHoldTransactionId = holdBatch(items, tenantIdentifier, disposalAccountAmsId, conversionAccountAmsId, internalCorrelationId, "transferToConversionAccountInAms");
@@ -255,7 +255,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			addDetails(pain001.getDocument(), transactionGroupId, transactionCategoryPurposeCode, internalCorrelationId, 
 					objectMapper, batchItemBuilder, items, convertedCamt053Entry, camt053RelativeUrl, iban, 
 					paymentTypeConfig, paymentScheme, releaseAmountOperation, partnerName, partnerAccountIban, 
-					partnerAccountSecondaryIdentifier, unstructured, null, null, false);
+					partnerAccountSecondaryIdentifier, unstructured, null, null, false, pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getPaymentIdentification().getEndToEndIdentification());
 			
 			convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.DBIT);
 			convertedCamt053Entry.setCreditDebitIndicator(CreditDebitCode.DBIT);
@@ -276,7 +276,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			addDetails(pain001.getDocument(), transactionGroupId, transactionCategoryPurposeCode, internalCorrelationId, 
 					objectMapper, batchItemBuilder, items, convertedCamt053Entry, camt053RelativeUrl, iban, 
 					paymentTypeConfig, paymentScheme, withdrawAmountOperation, partnerName, partnerAccountIban, 
-					partnerAccountSecondaryIdentifier, unstructured, disposalAccountAmsId, conversionAccountAmsId, true);
+					partnerAccountSecondaryIdentifier, unstructured, disposalAccountAmsId, conversionAccountAmsId, true, pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getPaymentIdentification().getEndToEndIdentification());
 
 			if (hasFee) {
 				log.debug("Withdrawing fee {} from disposal account {}", transactionFeeAmount, disposalAccountAmsId);
@@ -290,7 +290,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 					addDetails(pain001.getDocument(), transactionGroupId, transactionFeeCategoryPurposeCode, transactionFeeInternalCorrelationId, objectMapper,
 							batchItemBuilder, items, convertedCamt053Entry, camt053RelativeUrl, iban, paymentTypeConfig, paymentScheme, 
 							withdrawFeeOperation, partnerName, partnerAccountIban, partnerAccountSecondaryIdentifier, unstructured,
-							disposalAccountAmsId, conversionAccountAmsId, true);
+							disposalAccountAmsId, conversionAccountAmsId, true, pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getPaymentIdentification().getEndToEndIdentification());
 			}
 			
 			log.info("Depositing amount {} to conversion account {}", amount, conversionAccountAmsId);
@@ -308,7 +308,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			convertedCamt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "PENDING"));
 			addDetails(pain001.getDocument(), transactionGroupId, transactionCategoryPurposeCode, internalCorrelationId, objectMapper, batchItemBuilder, items,
 					convertedCamt053Entry, camt053RelativeUrl, iban, paymentTypeConfig, paymentScheme, depositAmountOperation, partnerName, 
-					partnerAccountIban, partnerAccountSecondaryIdentifier, unstructured, disposalAccountAmsId, conversionAccountAmsId, true);
+					partnerAccountIban, partnerAccountSecondaryIdentifier, unstructured, disposalAccountAmsId, conversionAccountAmsId, true, pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getPaymentIdentification().getEndToEndIdentification());
 		
 			
 			if (hasFee) {
@@ -322,7 +322,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 				
 				addDetails(pain001.getDocument(), transactionGroupId, transactionFeeCategoryPurposeCode, transactionFeeInternalCorrelationId, objectMapper, batchItemBuilder,
 						items, convertedCamt053Entry, camt053RelativeUrl, iban, paymentTypeConfig, paymentScheme, depositFeeOperation, partnerName, 
-						partnerAccountIban, partnerAccountSecondaryIdentifier, unstructured, disposalAccountAmsId, conversionAccountAmsId, true);
+						partnerAccountIban, partnerAccountSecondaryIdentifier, unstructured, disposalAccountAmsId, conversionAccountAmsId, true, pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getPaymentIdentification().getEndToEndIdentification());
 			}
     			
     		doBatch(items,
@@ -385,7 +385,8 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			String unstructured,
 			Integer sourceAmsAccountId,
 			Integer targetAmsAccountId,
-			boolean includeSupplementary) throws JsonProcessingException {
+			boolean includeSupplementary,
+			String endToEndId) throws JsonProcessingException {
     	String paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(String.format("%s.%s", paymentScheme, paymentTypeOperation));
     	if (paymentTypeCode == null) {
     		paymentTypeCode = "";
@@ -528,7 +529,8 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
     		addDetails(null, internalCorrelationId, transactionCategoryPurposeCode, internalCorrelationId, 
 					objectMapper, batchItemBuilder, items, convertedCamt053Entry, camt053RelativeUrl, iban, 
 					paymentTypeConfig, paymentScheme, holdAmountOperation, partnerName, partnerAccountIban, 
-					partnerAccountSecondaryIdentifier, unstructured, disposalAccountAmsId, conversionAccountAmsId, false);
+					partnerAccountSecondaryIdentifier, unstructured, disposalAccountAmsId, conversionAccountAmsId, false,
+					document.getFIToFIPmtCxlReq().getUndrlyg().get(0).getTxInf().get(0).getOrgnlEndToEndId());
     		
 			Long lastHoldTransactionId = holdBatch(items, tenantIdentifier, disposalAccountAmsId, conversionAccountAmsId, internalCorrelationId, "transferToConversionAccountInAms");
 			
@@ -562,7 +564,8 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			addDetails(null, internalCorrelationId, transactionCategoryPurposeCode, internalCorrelationId, 
 					objectMapper, batchItemBuilder, items, convertedCamt053Entry, camt053RelativeUrl, iban, 
 					paymentTypeConfig, paymentScheme, releaseAmountOperation, partnerName, partnerAccountIban, 
-					partnerAccountSecondaryIdentifier, unstructured, disposalAccountAmsId, conversionAccountAmsId, false);
+					partnerAccountSecondaryIdentifier, unstructured, disposalAccountAmsId, conversionAccountAmsId, false,
+					document.getFIToFIPmtCxlReq().getUndrlyg().get(0).getTxInf().get(0).getOrgnlEndToEndId());
 			
 			String disposalAccountWithdrawRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), disposalAccountAmsId, "withdrawal");
 			
