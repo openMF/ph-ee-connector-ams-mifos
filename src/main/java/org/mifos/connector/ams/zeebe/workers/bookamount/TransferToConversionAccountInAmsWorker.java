@@ -415,7 +415,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 				paymentScheme,
 				sourceAmsAccountId,
 				targetAmsAccountId,
-				pain001.getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getPaymentIdentification().getEndToEndIdentification());
+				endToEndId);
 		
 		String camt053Body = om.writeValueAsString(td);
 		batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
