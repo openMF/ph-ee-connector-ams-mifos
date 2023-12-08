@@ -231,6 +231,7 @@ public class BookCreditedAmountToTechnicalAccountWorker extends AbstractMoneyInO
 		convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
 		convertedCamt053Entry.setCreditDebitIndicator(CreditDebitCode.CRDT);
 		convertedCamt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "BOOKED"));
+		
 		return convertedCamt053Entry;
 	}
 }
