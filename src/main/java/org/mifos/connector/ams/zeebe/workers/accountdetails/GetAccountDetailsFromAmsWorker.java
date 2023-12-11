@@ -96,7 +96,7 @@ public class GetAccountDetailsFromAmsWorker extends AbstractAmsWorker {
         var responseItem = response[0];
         Long accountConversionId = responseItem.conversion_account_id();
         Long accountDisposalId = responseItem.disposal_account_id();
-        Long internalAccountId = responseItem.internal_account_id();
+        String internalAccountId = responseItem.internal_account_id();
 
         log.info("Retrieving conversion account data");
         GetSavingsAccountsAccountIdResponse conversion = retrieveCurrencyIdAndStatus(accountConversionId, tenantIdentifier);

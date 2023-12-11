@@ -519,7 +519,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			
 			Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
 			
-			String depositAmountOperation = "revertInAms.DisposalAccount.DepositTransactionAmount";
+			String depositAmountOperation = "revertWithoutFeeInAms.DisposalAccount.DepositTransactionAmount";
 			String depositAmountConfigOperationKey = String.format("%s.%s", paymentScheme, depositAmountOperation);
 			var paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(depositAmountConfigOperationKey);
 			var paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(depositAmountConfigOperationKey);
@@ -571,7 +571,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			String conversionAccountWithdrawRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "withdrawal");
 			
 			
-			String withdrawAmountOperation = "revertInAms.ConversionAccount.WithdrawTransactionAmount";
+			String withdrawAmountOperation = "revertWithoutFeeInAms.ConversionAccount.WithdrawTransactionAmount";
 			String withdrawAmountConfigOperationKey = String.format("%s.%s", paymentScheme, withdrawAmountOperation);
 			paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(withdrawAmountConfigOperationKey);
 			paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(withdrawAmountConfigOperationKey);
@@ -618,7 +618,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			if (!BigDecimal.ZERO.equals(transactionFeeAmount)) {
 				log.debug("Withdrawing fee {} from conversion account {}", transactionFeeAmount, conversionAccountAmsId);
 				
-				String withdrawFeeOperation = "revertInAms.ConversionAccount.WithdrawTransactionFee";
+				String withdrawFeeOperation = "revertWithoutFeeInAms.ConversionAccount.WithdrawTransactionFee";
 				String withdrawFeeConfigOperationKey = String.format("%s.%s", paymentScheme, withdrawFeeOperation);
 				paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(withdrawFeeConfigOperationKey);
 				paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(withdrawFeeConfigOperationKey);
