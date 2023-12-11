@@ -129,6 +129,10 @@ public class GetAccountDetailsFromAmsWorker extends AbstractAmsWorker {
                 break;
             }
         }
+        
+        if (AccountAmsStatus.NOT_READY_TO_RECEIVE_MONEY.name().equalsIgnoreCase(status) && SavingsAccountStatusType.ACTIVE.equals(statusType)) {
+        	statusType = SavingsAccountStatusType.INVALID;
+        }
 
         log.trace("IBAN {} status is {}", iban, status);
 
