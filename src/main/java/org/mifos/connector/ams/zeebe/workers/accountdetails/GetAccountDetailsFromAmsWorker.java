@@ -129,10 +129,6 @@ public class GetAccountDetailsFromAmsWorker extends AbstractAmsWorker {
                 break;
             }
         }
-        
-        if (AccountAmsStatus.NOT_READY_TO_RECEIVE_MONEY.name().equalsIgnoreCase(status) && SavingsAccountStatusType.ACTIVE.equals(statusType)) {
-        	statusType = SavingsAccountStatusType.INVALID;
-        }
 
         log.trace("IBAN {} status is {}", iban, status);
 
@@ -140,6 +136,11 @@ public class GetAccountDetailsFromAmsWorker extends AbstractAmsWorker {
         if (SavingsAccountStatusType.CLOSED.equals(statusType)) {
             reasonCode = accountClosedReasons.getOrDefault(paymentSchemePrefix + "-" + direction, "NOT_PROVIDED");
             log.info("CLOSED account, returning reasonCode based on scheme and direction: {}-{}: {}", paymentSchemePrefix, direction, reasonCode);
+        }
+        
+        if (AccountAmsStatus.NOT_READY_TO_RECEIVE_MONEY.name().equalsIgnoreCase(status) && SavingsAccountStatusType.ACTIVE.equals(statusType)) {
+        	statusType = SavingsAccountStatusType.INVALID;
+        	reasonCode = "AM03";
         }
 
         HashMap<String, Object> outputVariables = new HashMap<>();
