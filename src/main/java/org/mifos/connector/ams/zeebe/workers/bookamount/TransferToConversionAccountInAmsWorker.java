@@ -512,8 +512,6 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
     		batchItemBuilder.add(items, holdTransactionUrl, bodyItem, false);
     		
     		ReportEntry10 convertedCamt053Entry = statement.getStatement().get(0).getEntry().get(0);
-			convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.DBIT);
-			convertedCamt053Entry.setCreditDebitIndicator(CreditDebitCode.DBIT);
 			convertedCamt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "PENDING"));
 			String camt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
 
@@ -593,7 +591,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			convertedCamt053Entry.setCreditDebitIndicator(CreditDebitCode.DBIT);
 			convertedCamt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "PENDING"));
 		
-			String camt053 = objectMapper.writeValueAsString(statement.getStatement().get(0));
+			String camt053 = objectMapper.writeValueAsString(convertedCamt053Entry);
 			
 			camt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
 			
@@ -612,7 +610,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 					transactionCategoryPurposeCode,
 					paymentScheme,
 					disposalAccountAmsId,
-					null,
+					conversionAccountAmsId,
     				document.getFIToFIPmtCxlReq().getUndrlyg().get(0).getTxInf().get(0).getOrgnlEndToEndId());
 			
 			String camt053Body = objectMapper.writeValueAsString(td);
@@ -620,8 +618,34 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 			
 			String conversionAccountDepositRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "deposit");
+
+			String depositAmountOperation = "withdrawTheAmountFromDisposalAccountInAMS.ConversionAccount.DepositTransactionAmount";
+			addExchange(amount, paymentScheme, transactionDate, objectMapper, paymentTypeConfig, batchItemBuilder, items, conversionAccountDepositRelativeUrl, depositAmountOperation);
+			String.format("%s.%s", paymentScheme, depositAmountOperation);
+			paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(configOperationKey);
+			convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
+			convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.CRDT);
+			convertedCamt053Entry.setCreditDebitIndicator(CreditDebitCode.CRDT);
+			convertedCamt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "PENDING"));
+			camt053 = objectMapper.writeValueAsString(convertedCamt053Entry);
 			
-			addExchange(amount, paymentScheme, transactionDate, objectMapper, paymentTypeConfig, batchItemBuilder, items, conversionAccountDepositRelativeUrl, "withdrawTheAmountFromDisposalAccountInAMS.ConversionAccount.DepositTransactionAmount");
+			td = new DtSavingsTransactionDetails(
+					internalCorrelationId,
+					camt053,
+					document.getFIToFIPmtCxlReq().getUndrlyg().get(0).getTxInf().get(0).getOrgnlTxRef().getCdtrAcct().getId().getIBAN(),
+					paymentTypeCode,
+					internalCorrelationId,
+					document.getFIToFIPmtCxlReq().getUndrlyg().get(0).getTxInf().get(0).getOrgnlTxRef().getDbtr().getNm(),
+					document.getFIToFIPmtCxlReq().getUndrlyg().get(0).getTxInf().get(0).getOrgnlTxRef().getDbtrAcct().getId().getIBAN(),
+					null,
+					contactDetailsUtil.getId(document.getFIToFIPmtCxlReq().getUndrlyg().get(0).getTxInf().get(0).getOrgnlTxRef().getDbtr().getCtctDtls()),
+					Optional.ofNullable(document.getFIToFIPmtCxlReq().getUndrlyg().get(0).getTxInf().get(0).getOrgnlTxRef().getRmtInf())
+							.map(iso.std.iso._20022.tech.xsd.camt_056_001.RemittanceInformation5::getUstrd).map(List::toString).orElse(""),
+					transactionCategoryPurposeCode,
+					paymentScheme,
+					disposalAccountAmsId,
+					conversionAccountAmsId,
+    				document.getFIToFIPmtCxlReq().getUndrlyg().get(0).getTxInf().get(0).getOrgnlEndToEndId());
 			
 			camt053Body = objectMapper.writeValueAsString(td);
 			batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);

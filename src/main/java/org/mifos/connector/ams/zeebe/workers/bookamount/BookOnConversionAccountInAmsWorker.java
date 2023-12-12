@@ -402,7 +402,8 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 			
 			XMLGregorianCalendar orgnlCreDtTm = pacs002.getFIToFIPmtStsRpt().getOrgnlGrpInfAndSts().getOrgnlCreDtTm();
 			if (orgnlCreDtTm == null) {
-				camt053Entry.getValueDate().setAdditionalProperty("Date", transactionDate);
+				String hyphenatedDate = transactionDate.substring(0, 4) + "-" + transactionDate.substring(4, 6) + "-" + transactionDate.substring(6);
+				camt053Entry.getValueDate().setAdditionalProperty("Date", hyphenatedDate);
 			} else {
 				ZoneId zi = TimeZone.getTimeZone("Europe/Budapest").toZoneId();
 				ZonedDateTime zdt = orgnlCreDtTm.toGregorianCalendar().toZonedDateTime().withZoneSameInstant(zi);
