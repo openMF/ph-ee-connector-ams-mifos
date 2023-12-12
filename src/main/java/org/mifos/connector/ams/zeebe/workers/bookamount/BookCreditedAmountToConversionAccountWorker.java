@@ -343,6 +343,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
                                                               ActivatedJob activatedJob,
                                                               @Variable String pacs004,
                                                               @Variable String transactionDate,
+                                                              @Variable String acceptanceDate,
                                                               @Variable String transactionCategoryPurposeCode,
                                                               @Variable String transactionGroupId,
                                                               @Variable String internalCorrelationId,
