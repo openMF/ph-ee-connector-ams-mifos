@@ -185,6 +185,7 @@ try {
 							.withTransactionAmount(withAmountAndCurrency));
 			
 			transactionDetails.getSupplementaryData().clear();
+			camt053Mapper.fillOtherIdentification(pain001.getDocument(), transactionDetails);
 			
 			String interbankSettlementDate = LocalDate.now().format(PATTERN);
 			

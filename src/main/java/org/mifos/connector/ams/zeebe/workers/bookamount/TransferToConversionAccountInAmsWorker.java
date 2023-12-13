@@ -50,6 +50,7 @@ import io.camunda.zeebe.spring.client.annotation.Variable;
 import io.camunda.zeebe.spring.client.exception.ZeebeBpmnError;
 import iso.std.iso._20022.tech.json.camt_053_001.ActiveOrHistoricCurrencyAndAmountRange2.CreditDebitCode;
 import iso.std.iso._20022.tech.json.camt_053_001.BankToCustomerStatementV08;
+import iso.std.iso._20022.tech.json.camt_053_001.DateAndDateTime2Choice;
 import iso.std.iso._20022.tech.json.camt_053_001.EntryStatus1Choice;
 import iso.std.iso._20022.tech.json.camt_053_001.ReportEntry10;
 import iso.std.iso._20022.tech.json.pain_001_001.CustomerCreditTransferInitiationV10;
@@ -397,6 +398,8 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
     		if (includeSupplementary) {
     			camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001, convertedCamt053Entry, transactionFeeCategoryPurposeCode);
     			camt053Mapper.refillOtherIdentification(pain001, convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0));
+    		} else {
+    			camt053Mapper.fillOtherIdentification(pain001, convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0));
     		}
     	}
     	String camt053 = objectMapper.writeValueAsString(convertedCamt053Entry);
@@ -513,6 +516,8 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
     		
     		ReportEntry10 convertedCamt053Entry = statement.getStatement().get(0).getEntry().get(0);
 			convertedCamt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "PENDING"));
+			String hyphenatedDate = transactionDate.substring(0, 4) + "-" + transactionDate.substring(4, 6) + "-" + transactionDate.substring(6);
+			convertedCamt053Entry.setValueDate(new DateAndDateTime2Choice().withAdditionalProperty("Date", hyphenatedDate));
 			String camt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
 
 			
@@ -622,6 +627,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 			String depositAmountOperation = "withdrawTheAmountFromDisposalAccountInAMS.ConversionAccount.DepositTransactionAmount";
 			addExchange(amount, paymentScheme, transactionDate, objectMapper, paymentTypeConfig, batchItemBuilder, items, conversionAccountDepositRelativeUrl, depositAmountOperation);
 			String.format("%s.%s", paymentScheme, depositAmountOperation);
+			configOperationKey = String.format("%s.%s", paymentScheme, depositAmountOperation);
 			paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(configOperationKey);
 			convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
 			convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.CRDT);
