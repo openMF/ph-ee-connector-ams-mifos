@@ -284,6 +284,7 @@ try {
     		convertedcamt053Entry.setCreditDebitIndicator(CreditDebitCode.DBIT);
     		convertedcamt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "BOOKED"));
     		camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001.getDocument(), convertedcamt053Entry, transactionCategoryPurposeCode);
+    		transactionDetails.getSupplementaryData().clear();
     		refillOtherId(debtorInternalAccountId, creditorInternalAccountId, transactionDetails);
     		String camt053Entry = objectMapper.writeValueAsString(convertedcamt053Entry);
     	
