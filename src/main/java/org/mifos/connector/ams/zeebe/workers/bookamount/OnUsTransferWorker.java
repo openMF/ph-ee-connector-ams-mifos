@@ -57,6 +57,7 @@ import iso.std.iso._20022.tech.json.camt_053_001.EntryStatus1Choice;
 import iso.std.iso._20022.tech.json.camt_053_001.EntryTransaction10;
 import iso.std.iso._20022.tech.json.camt_053_001.ReportEntry10;
 import iso.std.iso._20022.tech.json.camt_053_001.SupplementaryData1;
+import iso.std.iso._20022.tech.json.camt_053_001.SupplementaryDataEnvelope1;
 import iso.std.iso._20022.tech.json.pain_001_001.CustomerCreditTransferInitiationV10;
 import iso.std.iso._20022.tech.json.pain_001_001.Pain00100110CustomerCreditTransferInitiationV10MessageSchema;
 import lombok.extern.slf4j.Slf4j;
@@ -185,7 +186,7 @@ try {
 							.withTransactionAmount(withAmountAndCurrency));
 			
 			transactionDetails.getSupplementaryData().clear();
-			camt053Mapper.fillOtherIdentification(pain001.getDocument(), transactionDetails);
+			refillOtherId(debtorInternalAccountId, creditorInternalAccountId, transactionDetails);
 			
 			String interbankSettlementDate = LocalDate.now().format(PATTERN);
 			
@@ -534,35 +535,58 @@ try {
 		}
     }
 
-	@SuppressWarnings("unchecked")
 	private void refillOtherId(String debtorInternalAccountId, String creditorInternalAccountId,
 			EntryTransaction10 transactionDetails) {
+		boolean isWritten = false;
 		for (SupplementaryData1 supplementaryData : transactionDetails.getSupplementaryData()) {
 			if ("OrderManagerSupplementaryData".equalsIgnoreCase(supplementaryData.getPlaceAndName())) {
-				LinkedHashMap<String, Object> otherIdentification = (LinkedHashMap<String, Object>) supplementaryData.getEnvelope().getAdditionalProperties().getOrDefault("OtherIdentification", new LinkedHashMap<>());
-				supplementaryData.getEnvelope().setAdditionalProperty("OtherIdentification", otherIdentification);
-				
-				GenericAccountIdentification1 debtorAccountIdOther = (GenericAccountIdentification1) transactionDetails.getRelatedParties().getDebtorAccount().getIdentification().getAdditionalProperties().getOrDefault("Other", GenericAccountIdentification1.builder().build());
-				debtorAccountIdOther.setId(debtorInternalAccountId);
-				debtorAccountIdOther.setSchemeName(AccountSchemeName1Choice.builder().code("IAID").build());
-				
-				GenericAccountIdentification1 creditorAccountIdOther = (GenericAccountIdentification1) transactionDetails.getRelatedParties().getCreditorAccount().getIdentification().getAdditionalProperties().getOrDefault("Other", GenericAccountIdentification1.builder().build());
-				creditorAccountIdOther.setId(creditorInternalAccountId);
-				creditorAccountIdOther.setSchemeName(AccountSchemeName1Choice.builder().code("IAID").build());
-				
-        		LinkedHashMap<String, Object> debtorAccountIdentificationOther = (LinkedHashMap<String, Object>) otherIdentification.getOrDefault("DebtorAccount", new LinkedHashMap<>());
-        		otherIdentification.put("DebtorAccount", debtorAccountIdentificationOther);
-        		LinkedHashMap<String, Object> daioAccountIdentification = (LinkedHashMap<String, Object>) debtorAccountIdentificationOther.getOrDefault("Identification", new LinkedHashMap<>());
-        		debtorAccountIdentificationOther.put("Identification", daioAccountIdentification);
-        		daioAccountIdentification.put("Other", debtorAccountIdOther);
-        		
-        		LinkedHashMap<String, Object> creditorAccountIdentificationOther = (LinkedHashMap<String, Object>) otherIdentification.getOrDefault("CreditorAccount", new LinkedHashMap<>());
-        		otherIdentification.put("CreditorAccount", creditorAccountIdentificationOther);
-        		LinkedHashMap<String, Object> caioAccountIdentification = (LinkedHashMap<String, Object>) creditorAccountIdentificationOther.getOrDefault("Identification", new LinkedHashMap<>());
-        		creditorAccountIdentificationOther.put("Identification", caioAccountIdentification);
-        		caioAccountIdentification.put("Other", creditorAccountIdOther);
+				SupplementaryDataEnvelope1 envelope = supplementaryData.getEnvelope();
+				doRefillOtherId(debtorInternalAccountId, creditorInternalAccountId, transactionDetails, envelope);
+        		isWritten = true;
 			}
 		}
+		
+		if (!isWritten) {
+			List<SupplementaryData1> sds = transactionDetails.getSupplementaryData();
+			if (sds.isEmpty()) {
+				sds.add(new SupplementaryData1());
+			}
+			SupplementaryData1 supplementaryData = sds.get(0);
+			SupplementaryDataEnvelope1 envelope = supplementaryData.getEnvelope();
+			if (envelope == null) {
+				envelope = new SupplementaryDataEnvelope1();
+				supplementaryData.setEnvelope(envelope);
+			}
+			
+			doRefillOtherId(debtorInternalAccountId, creditorInternalAccountId, transactionDetails, envelope);
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	private void doRefillOtherId(String debtorInternalAccountId, String creditorInternalAccountId,
+			EntryTransaction10 transactionDetails, SupplementaryDataEnvelope1 envelope) {
+		LinkedHashMap<String, Object> otherIdentification = (LinkedHashMap<String, Object>) envelope.getAdditionalProperties().getOrDefault("OtherIdentification", new LinkedHashMap<>());
+		envelope.setAdditionalProperty("OtherIdentification", otherIdentification);
+		
+		GenericAccountIdentification1 debtorAccountIdOther = (GenericAccountIdentification1) transactionDetails.getRelatedParties().getDebtorAccount().getIdentification().getAdditionalProperties().getOrDefault("Other", GenericAccountIdentification1.builder().build());
+		debtorAccountIdOther.setId(debtorInternalAccountId);
+		debtorAccountIdOther.setSchemeName(AccountSchemeName1Choice.builder().code("IAID").build());
+		
+		GenericAccountIdentification1 creditorAccountIdOther = (GenericAccountIdentification1) transactionDetails.getRelatedParties().getCreditorAccount().getIdentification().getAdditionalProperties().getOrDefault("Other", GenericAccountIdentification1.builder().build());
+		creditorAccountIdOther.setId(creditorInternalAccountId);
+		creditorAccountIdOther.setSchemeName(AccountSchemeName1Choice.builder().code("IAID").build());
+		
+		LinkedHashMap<String, Object> debtorAccountIdentificationOther = (LinkedHashMap<String, Object>) otherIdentification.getOrDefault("DebtorAccount", new LinkedHashMap<>());
+		otherIdentification.put("DebtorAccount", debtorAccountIdentificationOther);
+		LinkedHashMap<String, Object> daioAccountIdentification = (LinkedHashMap<String, Object>) debtorAccountIdentificationOther.getOrDefault("Identification", new LinkedHashMap<>());
+		debtorAccountIdentificationOther.put("Identification", daioAccountIdentification);
+		daioAccountIdentification.put("Other", debtorAccountIdOther);
+		
+		LinkedHashMap<String, Object> creditorAccountIdentificationOther = (LinkedHashMap<String, Object>) otherIdentification.getOrDefault("CreditorAccount", new LinkedHashMap<>());
+		otherIdentification.put("CreditorAccount", creditorAccountIdentificationOther);
+		LinkedHashMap<String, Object> caioAccountIdentification = (LinkedHashMap<String, Object>) creditorAccountIdentificationOther.getOrDefault("Identification", new LinkedHashMap<>());
+		creditorAccountIdentificationOther.put("Identification", caioAccountIdentification);
+		caioAccountIdentification.put("Other", creditorAccountIdOther);
 	}
     
     private void addDetails(String transactionGroupId, 
