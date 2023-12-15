@@ -134,8 +134,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                             @Variable BigDecimal amount,
                             @Variable String transactionFeeCategoryPurposeCode,
                             @Variable BigDecimal transactionFeeAmount,
-                            @Variable String tenantIdentifier,
-                            @Variable String debtorIban) {
+                            @Variable String tenantIdentifier) {
         log.info("revertInAms");
         return eventService.auditedEvent(
                 eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "revertInAms", internalCorrelationId, transactionGroupId, eventBuilder),
@@ -152,7 +151,6 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                         transactionFeeCategoryPurposeCode,
                         transactionFeeAmount,
                         tenantIdentifier,
-                        debtorIban,
                         eventBuilder));
     }
 
@@ -169,7 +167,6 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                             String transactionFeeCategoryPurposeCode,
                             BigDecimal transactionFeeAmount,
                             String tenantIdentifier,
-                            String debtorIban,
                             Event.Builder eventBuilder) {
     	
     	try {
@@ -467,8 +464,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                                       @Variable BigDecimal amount,
                                       @Variable String transactionFeeCategoryPurposeCode,
                                       @Variable BigDecimal transactionFeeAmount,
-                                      @Variable String tenantIdentifier,
-                                      @Variable String debtorIban) {
+                                      @Variable String tenantIdentifier) {
         log.info("revertWithoutFeeInAms");
         eventService.auditedEvent(
                 eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "revertWithoutFeeInAms", internalCorrelationId, transactionGroupId, eventBuilder),
@@ -483,7 +479,6 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                         transactionFeeCategoryPurposeCode,
                         transactionFeeAmount,
                         tenantIdentifier,
-                        debtorIban,
                         eventBuilder));
     }
 
@@ -498,7 +493,6 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                                        String transactionFeeCategoryPurposeCode,
                                        BigDecimal transactionFeeAmount,
                                        String tenantIdentifier,
-                                       String debtorIban,
                                        Event.Builder eventBuilder) {
     	try {
 	    	MDC.put("internalCorrelationId", internalCorrelationId);

@@ -6,6 +6,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.mifos.connector.ams.fineract.Config;
@@ -107,7 +108,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
     @JobWorker
     @LogInternalCorrelationId
     @TraceZeebeArguments
-    public void transferToConversionAccountInAms(JobClient jobClient,
+    public Map<String, Object> transferToConversionAccountInAms(JobClient jobClient,
                                                  ActivatedJob activatedJob,
                                                  @Variable String transactionGroupId,
                                                  @Variable String transactionCategoryPurposeCode,
@@ -123,7 +124,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
                                                  @Variable String iban,
                                                  @Variable String transactionFeeInternalCorrelationId) {
         log.info("transferToConversionAccountInAms");
-        eventService.auditedEvent(
+        return eventService.auditedEvent(
                 eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "transferToConversionAccountInAms", internalCorrelationId, transactionGroupId, eventBuilder),
                 eventBuilder -> transferToConversionAccountInAms(transactionGroupId,
                         transactionCategoryPurposeCode,
@@ -142,7 +143,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
     }
 
     @SuppressWarnings("unchecked")
-	private Void transferToConversionAccountInAms(String transactionGroupId,
+	private Map<String, Object> transferToConversionAccountInAms(String transactionGroupId,
                                                   String transactionCategoryPurposeCode,
                                                   String transactionFeeCategoryPurposeCode,
                                                   String originalPain001,
@@ -331,6 +332,8 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
                     conversionAccountAmsId,
                     internalCorrelationId,
                     "transferToConversionAccountInAms");
+    		
+    		return Map.of("transactionDate", transactionDate);
 
         } catch (ZeebeBpmnError z) {
         	throw z;
@@ -340,7 +343,6 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
         } finally {
         	MDC.remove("internalCorrelationId");
         }
-        return null;
     }
 
     private void addExchange(BigDecimal amount,

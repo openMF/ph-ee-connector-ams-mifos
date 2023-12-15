@@ -101,8 +101,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
                                                       @Variable String tenantIdentifier,
                                                       @Variable String paymentScheme,
                                                       @Variable BigDecimal amount,
-                                                      @Variable Integer conversionAccountAmsId,
-                                                      @Variable String creditorIban) {
+                                                      @Variable Integer conversionAccountAmsId) {
         log.info("bookCreditedAmountToConversionAccount");
         eventService.auditedEvent(
                 eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "bookCreditedAmountToConversionAccount", internalCorrelationId, transactionGroupId, eventBuilder),
@@ -115,7 +114,6 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
                         paymentScheme,
                         amount,
                         conversionAccountAmsId,
-                        creditorIban,
                         eventBuilder));
     }
 
@@ -128,7 +126,6 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
                                                        String paymentScheme,
                                                        BigDecimal amount,
                                                        Integer conversionAccountAmsId,
-                                                       String creditorIban,
                                                        Event.Builder eventBuilder) {
     	try {
             MDC.put("internalCorrelationId", internalCorrelationId);

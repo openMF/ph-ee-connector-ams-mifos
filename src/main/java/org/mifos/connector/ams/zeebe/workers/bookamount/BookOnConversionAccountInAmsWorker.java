@@ -113,8 +113,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
                                              @Variable String transactionFeeCategoryPurposeCode,
                                              @Variable BigDecimal amount,
                                              @Variable BigDecimal transactionFeeAmount,
-                                             @Variable String tenantIdentifier,
-                                             @Variable String debtorIban) {
+                                             @Variable String tenantIdentifier) {
         log.info("bookOnConversionAccountInAms");
         eventService.auditedEvent(
                 eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "bookOnConversionAccountInAms", internalCorrelationId, transactionGroupId, eventBuilder),
@@ -130,7 +129,6 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
                         amount,
                         transactionFeeAmount,
                         tenantIdentifier,
-                        debtorIban,
                         eventBuilder));
     }
 
@@ -146,7 +144,6 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
                                               BigDecimal amount,
                                               BigDecimal transactionFeeAmount,
                                               String tenantIdentifier,
-                                              String debtorIban,
                                               Event.Builder eventBuilder) {
     	try {
     		transactionDate = transactionDate.replaceAll("-", "");

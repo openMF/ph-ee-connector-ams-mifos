@@ -102,8 +102,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
                                           @Variable BigDecimal amount,
                                           @Variable Integer conversionAccountAmsId,
                                           @Variable Integer disposalAccountAmsId,
-                                          @Variable String tenantIdentifier,
-                                          @Variable String creditorIban) {
+                                          @Variable String tenantIdentifier) {
         log.info("transferToDisposalAccount");
         eventService.auditedEvent(
                 eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "transferToDisposalAccount", internalCorrelationId, transactionGroupId, eventBuilder),
@@ -117,7 +116,6 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
                         conversionAccountAmsId,
                         disposalAccountAmsId,
                         tenantIdentifier,
-                        creditorIban,
                         eventBuilder));
     }
 
@@ -131,7 +129,6 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
                                            Integer conversionAccountAmsId,
                                            Integer disposalAccountAmsId,
                                            String tenantIdentifier,
-                                           String creditorIban,
                                            Event.Builder eventBuilder) {
     	try {
 			MDC.put("internalCorrelationId", internalCorrelationId);
