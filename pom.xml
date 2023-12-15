@@ -57,7 +57,7 @@
         <dependency>
             <groupId>hu.dpc.rt</groupId>
             <artifactId>payment-schemas</artifactId>
-            <version>1.28.47</version>
+            <version>1.28.48</version>
             <exclusions>
                 <exclusion>
                     <groupId>com.fasterxml.jackson.core</groupId>
