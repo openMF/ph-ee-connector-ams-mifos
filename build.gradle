@@ -45,6 +45,7 @@ spotless {
     lineEndings 'UNIX'
 }
 
+
 dependencies {
     implementation 'org.mifos:ph-ee-connector-common:1.5.1-SNAPSHOT'
     implementation 'com.sun.xml.ws:jaxws-ri:2.3.2'
@@ -66,12 +67,13 @@ dependencies {
     implementation group: 'org.springframework', name: 'spring-web', version: '3.0.2.RELEASE'
     checkstyle 'com.puppycrawl.tools:checkstyle:10.9.3'
     checkstyle 'com.github.sevntu-checkstyle:sevntu-checks:1.44.1'
+    implementation 'org.springframework.boot:spring-boot-starter:2.5.2'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator:2.6.2'
+    implementation 'org.springframework.boot:spring-boot-starter-web:2.5.2'
+    implementation 'org.springframework.boot:spring-boot-starter-tomcat:2.5.2'
 }
 
 dependencies {
-    implementation "org.springframework.boot:spring-boot-starter-web:*"
-    implementation "org.springframework.boot:spring-boot-starter-tomcat:*"
-    implementation 'org.springframework.boot:spring-boot-starter-actuator:*'
     implementation "io.springfox:springfox-oas:3.0.0"
     implementation "io.springfox:springfox-swagger-ui:3.0.0"
     implementation "com.github.joschi.jackson:jackson-datatype-threetenbp:2.6.4"
