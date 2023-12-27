@@ -45,9 +45,6 @@ spotless {
     lineEndings 'UNIX'
 }
 
-ext {
-    springBootVersion = '2.6.2'
-}
 
 dependencies {
     implementation 'org.mifos:ph-ee-connector-common:1.5.1-SNAPSHOT'
