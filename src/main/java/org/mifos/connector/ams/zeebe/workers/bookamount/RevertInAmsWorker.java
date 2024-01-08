@@ -682,7 +682,6 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                                                 @Variable String tenantIdentifier,
                                                 @Variable String paymentScheme,
                                                 @Variable String transactionCategoryPurposeCode,
-                                                @Variable String camt056,
                                                 @Variable String generatedPacs004,
                                                 @Variable String pacs002,
                                                 @Variable String debtorIban) {
@@ -698,7 +697,6 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                         tenantIdentifier,
                         paymentScheme,
                         transactionCategoryPurposeCode,
-                        camt056,
                         generatedPacs004,
                         pacs002,
                         debtorIban,
@@ -711,7 +709,6 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                                                  String tenantIdentifier,
                                                  String paymentScheme,
                                                  String transactionCategoryPurposeCode,
-                                                 String camt056,
                                                  String originalPacs004,
                                                  String originalPacs002,
                                                  String debtorIban,
