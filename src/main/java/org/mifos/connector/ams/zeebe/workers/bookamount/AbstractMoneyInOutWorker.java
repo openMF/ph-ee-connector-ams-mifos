@@ -1,7 +1,7 @@
 package org.mifos.connector.ams.zeebe.workers.bookamount;
 
 import static org.apache.hc.core5.http.HttpStatus.SC_CONFLICT;
-import static org.apache.hc.core5.http.HttpStatus.SC_LOCKED;
+import static org.apache.hc.core5.http.HttpStatus.SC_TOO_EARLY;
 import static org.apache.hc.core5.http.HttpStatus.SC_OK;
 
 import java.net.ConnectException;
@@ -299,16 +299,17 @@ public abstract class AbstractMoneyInOutWorker {
             }
             log.debug("Got error {}, response item '{}' for request [{}]", statusCode, responseItem, idempotencyKey);
             switch (statusCode) {
-                case SC_CONFLICT -> {
-                    log.warn("Transaction request [{}] is already executing, has not completed yet", idempotencyKey);
-                    return null;
-                }
-                case SC_LOCKED -> {
-                    log.info("Locking exception detected, retrying request [{}]", idempotencyKey);
-                    idempotencyPostfix++;
-                    retryCount--;
-                    continue retry;
-                }
+	            case SC_CONFLICT -> {
+	                log.warn("Conflict detected, retrying request [{}]", idempotencyKey);
+	                idempotencyPostfix++;
+	                retryCount--;
+	                continue retry;
+	            }
+	            case SC_TOO_EARLY -> {
+	                log.info("Too early detected, retrying request [{}]", idempotencyKey);
+	                retryCount--;
+	                continue retry;
+	            }
                 default -> throw new RuntimeException("An unexpected error occurred for request " + idempotencyKey + ": " + statusCode);
             }
         }
@@ -407,12 +408,13 @@ public abstract class AbstractMoneyInOutWorker {
                 log.debug("Got error {}, response item '{}' for request [{}]", statusCode, responseItem, idempotencyKey);
                 switch (statusCode) {
                     case SC_CONFLICT -> {
-                        log.warn("Transaction request [{}] is already executing, has not completed yet", idempotencyKey);
-                        return null;
-                    }
-                    case SC_LOCKED -> {
-                        log.info("Locking exception detected, retrying request [{}]", idempotencyKey);
+                        log.warn("Conflict detected, retrying request [{}]", idempotencyKey);
                         idempotencyPostfix++;
+                        retryCount--;
+                        continue retry;
+                    }
+                    case SC_TOO_EARLY -> {
+                        log.info("Too early detected, retrying request [{}]", idempotencyKey);
                         retryCount--;
                         continue retry;
                     }
