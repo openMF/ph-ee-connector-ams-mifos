@@ -691,7 +691,8 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                                                 @Variable String camt056,
                                                 @Variable String generatedPacs004,
                                                 @Variable String pacs002,
-                                                @Variable String debtorIban) {
+                                                @Variable String debtorIban,
+                                                @Variable String internalCorrelationId) {
         log.info("depositTheAmountOnDisposalInAms");
         eventService.auditedEvent(
                 eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "depositTheAmountOnDisposalInAms",
@@ -708,6 +709,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                         generatedPacs004,
                         pacs002,
                         debtorIban,
+                        internalCorrelationId,
                         eventBuilder));
     }
 
@@ -721,6 +723,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                                                  String originalPacs004,
                                                  String originalPacs002,
                                                  String debtorIban,
+                                                 String internalCorrelationId,
                                                  Event.Builder eventBuilder) {
     	try {
 			batchItemBuilder.tenantId(tenantIdentifier);
@@ -757,23 +760,6 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			PaymentTransactionInformation27 paymentTransactionInformation = pacs004
 					.getPmtRtr()
 					.getTxInf().get(0);
-			
-			String originalDebtorBic = paymentTransactionInformation
-					.getOrgnlTxRef()
-					.getDbtrAgt()
-					.getFinInstnId()
-					.getBIC();
-			String originalCreationDate = paymentTransactionInformation
-					.getOrgnlTxRef()
-					.getIntrBkSttlmDt()
-					.toGregorianCalendar()
-					.toZonedDateTime()
-					.toLocalDate()
-					.format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-			String originalEndToEndId = paymentTransactionInformation
-					.getOrgnlEndToEndId();
-			
-			String internalCorrelationId = String.format("%s_%s_%s", originalDebtorBic, originalCreationDate, originalEndToEndId);
 			
 			ReportEntry10 camt053Entry = pacs004Camt053Mapper.convert(pacs004, 
             		new BankToCustomerStatementV08()
