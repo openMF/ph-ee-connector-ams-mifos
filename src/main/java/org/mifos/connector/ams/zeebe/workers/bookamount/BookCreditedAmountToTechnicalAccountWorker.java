@@ -145,8 +145,6 @@ public class BookCreditedAmountToTechnicalAccountWorker extends AbstractMoneyInO
             
             MDC.put("internalCorrelationId", internalCorrelationId);
 
-            batchItemBuilder.tenantId(tenantIdentifier);
-            
             Config technicalAccountConfig = technicalAccountConfigFactory.getConfig(tenantIdentifier);
             
             String taLookup = String.format("%s.%s", paymentScheme, caseIdentifier);
@@ -174,7 +172,7 @@ public class BookCreditedAmountToTechnicalAccountWorker extends AbstractMoneyInO
     		
     		List<TransactionItem> items = new ArrayList<>();
     		
-    		batchItemBuilder.add(items, conversionAccountWithdrawalRelativeUrl, bodyItem, false);
+    		batchItemBuilder.add(tenantIdentifier, items, conversionAccountWithdrawalRelativeUrl, bodyItem, false);
     	
     		BankToCustomerStatementV08 intermediateCamt053 = pacs008Camt053Mapper.toCamt053Entry(pacs008);
     		intermediateCamt053.getStatement().get(0).getEntry().get(0).getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
@@ -207,7 +205,7 @@ public class BookCreditedAmountToTechnicalAccountWorker extends AbstractMoneyInO
     		
     		String camt053Body = objectMapper.writeValueAsString(td);
 
-    		batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
+    		batchItemBuilder.add(tenantIdentifier, items, camt053RelativeUrl, camt053Body, true);
 
     		doBatch(items,
                     tenantIdentifier,

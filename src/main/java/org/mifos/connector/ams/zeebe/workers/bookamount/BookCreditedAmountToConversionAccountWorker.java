@@ -136,8 +136,6 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
 
             iso.std.iso._20022.tech.xsd.pacs_008_001.Document pacs008 = jaxbUtils.unmarshalPacs008(originalPacs008);
 
-            batchItemBuilder.tenantId(tenantIdentifier);
-    		
     		String conversionAccountWithdrawalRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "deposit");
     		
     		Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
@@ -160,7 +158,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
     		
     		List<TransactionItem> items = new ArrayList<>();
     		
-    		batchItemBuilder.add(items, conversionAccountWithdrawalRelativeUrl, bodyItem, false);
+    		batchItemBuilder.add(tenantIdentifier, items, conversionAccountWithdrawalRelativeUrl, bodyItem, false);
     	
     		ReportEntry10 convertedCamt053Entry = pacs008Camt053Mapper.toCamt053Entry(pacs008).getStatement().get(0).getEntry().get(0);
     		convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.CRDT);
@@ -190,7 +188,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
     		
     		String camt053Body = objectMapper.writeValueAsString(td);
 
-            batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
+            batchItemBuilder.add(tenantIdentifier, items, camt053RelativeUrl, camt053Body, true);
 
             doBatch(items,
                     tenantIdentifier,
@@ -260,8 +258,6 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
             
             iso.std.iso._20022.tech.xsd.pacs_004_001.Document pacs004 = jaxbUtils.unmarshalPacs004(originalPacs004);
 
-            batchItemBuilder.tenantId(tenantIdentifier);
-            
             //TODO: IG2-nél egyáltalán nincs pacs.002; AFR-nél van, de nem tesszük be a flow-ba
 
             String conversionAccountWithdrawalRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "deposit");
@@ -285,7 +281,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
 
             List<TransactionItem> items = new ArrayList<>();
 
-            batchItemBuilder.add(items, conversionAccountWithdrawalRelativeUrl, bodyItem, false);
+            batchItemBuilder.add(tenantIdentifier, items, conversionAccountWithdrawalRelativeUrl, bodyItem, false);
 
             BankToCustomerStatementV08 intermediateCamt053Entry = pacs008Camt053Mapper.toCamt053Entry(pacs008);
             ReportEntry10 convertedCamt053Entry = pacs004Camt053Mapper.convert(pacs004, intermediateCamt053Entry).getStatement().get(0).getEntry().get(0);
@@ -319,7 +315,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
 
             String camt053Body = objectMapper.writeValueAsString(td);
 
-            batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
+            batchItemBuilder.add(tenantIdentifier, items, camt053RelativeUrl, camt053Body, true);
 
             doBatch(items,
                     tenantIdentifier,
@@ -383,8 +379,6 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
             MDC.put("internalCorrelationId", internalCorrelationId);
             log.info("book to conversion account in return (pacs.004) {} started for {} on {} ", internalCorrelationId, paymentScheme, tenantIdentifier);
 
-            batchItemBuilder.tenantId(tenantIdentifier);
-
             String conversionAccountWithdrawalRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "deposit");
 
             Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
@@ -407,7 +401,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
 
             List<TransactionItem> items = new ArrayList<>();
 
-            batchItemBuilder.add(items, conversionAccountWithdrawalRelativeUrl, bodyItem, false);
+            batchItemBuilder.add(tenantIdentifier, items, conversionAccountWithdrawalRelativeUrl, bodyItem, false);
 
             BankToCustomerStatementV08 camt053 = pacs004Camt053Mapper.convert(pacs_004, 
             		new BankToCustomerStatementV08()
@@ -444,7 +438,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
 
             String camt053Body = objectMapper.writeValueAsString(td);
 
-            batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
+            batchItemBuilder.add(tenantIdentifier, items, camt053RelativeUrl, camt053Body, true);
 
             doBatch(items,
                     tenantIdentifier,

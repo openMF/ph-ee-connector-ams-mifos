@@ -181,7 +181,6 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			
 			log.debug("Withdrawing amount {} from conversion account {}", amount, conversionAccountAmsId);
 			
-			batchItemBuilder.tenantId(tenantIdentifier);
 			List<TransactionItem> items = new ArrayList<>();
 	
 			log.debug("Re-depositing amount {} in disposal account {}", amount, disposalAccountAmsId);
@@ -205,7 +204,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			
 			var bodyItem = objectMapper.writeValueAsString(body);
 			
-			batchItemBuilder.add(items, disposalAccountDepositRelativeUrl, bodyItem, false);
+			batchItemBuilder.add(tenantIdentifier, items, disposalAccountDepositRelativeUrl, bodyItem, false);
 			
 			BankToCustomerStatementV08 convertedStatement = pain001Camt053Mapper.toCamt053Entry(pain001.getDocument());
 			ReportEntry10 convertedcamt053Entry = convertedStatement.getStatement().get(0).getEntry().get(0);
@@ -237,7 +236,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			
 			String camt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
 			
-			batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
+			batchItemBuilder.add(tenantIdentifier, items, camt053RelativeUrl, camt053Body, true);
 			
 			if (!BigDecimal.ZERO.equals(transactionFeeAmount)) {
 				log.debug("Re-depositing fee {} in disposal account {}", transactionFeeAmount, disposalAccountAmsId);
@@ -262,7 +261,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 				
 				bodyItem = objectMapper.writeValueAsString(body);
 				
-				batchItemBuilder.add(items, disposalAccountDepositRelativeUrl, bodyItem, false);
+				batchItemBuilder.add(tenantIdentifier, items, disposalAccountDepositRelativeUrl, bodyItem, false);
 				
 				td = new DtSavingsTransactionDetails(
 						transactionFeeInternalCorrelationId,
@@ -282,7 +281,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 						disposalAccountAmsId,
 	    				pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getPaymentIdentification().getEndToEndIdentification());
 				camt053Body = objectMapper.writeValueAsString(td);
-				batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
+				batchItemBuilder.add(tenantIdentifier, items, camt053RelativeUrl, camt053Body, true);
 			}
 			
 			String conversionAccountWithdrawRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "withdrawal");
@@ -313,7 +312,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			bodyItem = objectMapper.writeValueAsString(body);
 			
 			
-			batchItemBuilder.add(items, conversionAccountWithdrawRelativeUrl, bodyItem, false);
+			batchItemBuilder.add(tenantIdentifier, items, conversionAccountWithdrawRelativeUrl, bodyItem, false);
 			
 			td = new DtSavingsTransactionDetails(
 					internalCorrelationId,
@@ -335,7 +334,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			
 			camt053Body = objectMapper.writeValueAsString(td);
 	
-			batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
+			batchItemBuilder.add(tenantIdentifier, items, camt053RelativeUrl, camt053Body, true);
 			
 			if (!BigDecimal.ZERO.equals(transactionFeeAmount)) {
 				log.debug("Withdrawing fee {} from conversion account {}", transactionFeeAmount, conversionAccountAmsId);
@@ -360,7 +359,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 				
 				bodyItem = objectMapper.writeValueAsString(body);
 				
-				batchItemBuilder.add(items, conversionAccountWithdrawRelativeUrl, bodyItem, false);
+				batchItemBuilder.add(tenantIdentifier, items, conversionAccountWithdrawRelativeUrl, bodyItem, false);
 				
 				td = new DtSavingsTransactionDetails(
 						transactionFeeInternalCorrelationId,
@@ -380,7 +379,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 						disposalAccountAmsId,
 	    				pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getPaymentIdentification().getEndToEndIdentification());
 				camt053Body = objectMapper.writeValueAsString(td);
-				batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
+				batchItemBuilder.add(tenantIdentifier, items, camt053RelativeUrl, camt053Body, true);
 			}
 
 			
@@ -511,8 +510,6 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			
 			log.debug("Withdrawing amount {} from conversion account {}", amount, conversionAccountAmsId);
 			
-			batchItemBuilder.tenantId(tenantIdentifier);
-			
 			List<TransactionItem> items = new ArrayList<>();
 			
 			String disposalAccountDepositRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), disposalAccountAmsId, "deposit");
@@ -534,7 +531,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			
 			var bodyItem = objectMapper.writeValueAsString(body);
 			
-			batchItemBuilder.add(items, disposalAccountDepositRelativeUrl, bodyItem, false);
+			batchItemBuilder.add(tenantIdentifier, items, disposalAccountDepositRelativeUrl, bodyItem, false);
 			
 			BankToCustomerStatementV08 convertedStatement = pain001Camt053Mapper.toCamt053Entry(pain001.getDocument());
 			ReportEntry10 convertedcamt053Entry = convertedStatement.getStatement().get(0).getEntry().get(0);
@@ -566,7 +563,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			
 			String camt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
 			
-			batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
+			batchItemBuilder.add(tenantIdentifier, items, camt053RelativeUrl, camt053Body, true);
 			
 			String conversionAccountWithdrawRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "withdrawal");
 			
@@ -591,7 +588,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			
 			bodyItem = objectMapper.writeValueAsString(body);
 			
-			batchItemBuilder.add(items, conversionAccountWithdrawRelativeUrl, bodyItem, false);
+			batchItemBuilder.add(tenantIdentifier, items, conversionAccountWithdrawRelativeUrl, bodyItem, false);
 			
 			td = new DtSavingsTransactionDetails(
 					internalCorrelationId,
@@ -613,7 +610,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			
 			camt053Body = objectMapper.writeValueAsString(td);
 	
-			batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
+			batchItemBuilder.add(tenantIdentifier, items, camt053RelativeUrl, camt053Body, true);
 			
 			if (!BigDecimal.ZERO.equals(transactionFeeAmount)) {
 				log.debug("Withdrawing fee {} from conversion account {}", transactionFeeAmount, conversionAccountAmsId);
@@ -638,7 +635,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 				
 				bodyItem = objectMapper.writeValueAsString(body);
 				
-				batchItemBuilder.add(items, conversionAccountWithdrawRelativeUrl, bodyItem, false);
+				batchItemBuilder.add(tenantIdentifier, items, conversionAccountWithdrawRelativeUrl, bodyItem, false);
 				
 				td = new DtSavingsTransactionDetails(
 						internalCorrelationId,
@@ -658,7 +655,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 						disposalAccountAmsId,
 	    				pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getPaymentIdentification().getEndToEndIdentification());
 				camt053Body = objectMapper.writeValueAsString(td);
-				batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
+				batchItemBuilder.add(tenantIdentifier, items, camt053RelativeUrl, camt053Body, true);
 			}
 	
 			doBatch(items,
@@ -726,8 +723,6 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                                                  String internalCorrelationId,
                                                  Event.Builder eventBuilder) {
     	try {
-			batchItemBuilder.tenantId(tenantIdentifier);
-			
 			String transactionDate = LocalDate.now().format(DateTimeFormatter.ofPattern(FORMAT));
 			List<TransactionItem> items = new ArrayList<>();
 			
@@ -749,7 +744,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			
 			var bodyItem = objectMapper.writeValueAsString(body);
 			
-			batchItemBuilder.add(items, disposalAccountDepositRelativeUrl, bodyItem, false);
+			batchItemBuilder.add(tenantIdentifier, items, disposalAccountDepositRelativeUrl, bodyItem, false);
 			
 			String camt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
 			
@@ -797,7 +792,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			
 			var camt053Body = objectMapper.writeValueAsString(td);
 			
-			batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
+			batchItemBuilder.add(tenantIdentifier, items, camt053RelativeUrl, camt053Body, true);
 			
 			String conversionAccountWithdrawRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "withdrawal");
 			
@@ -824,7 +819,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			bodyItem = objectMapper.writeValueAsString(body);
 			
 			
-			batchItemBuilder.add(items, conversionAccountWithdrawRelativeUrl, bodyItem, false);
+			batchItemBuilder.add(tenantIdentifier, items, conversionAccountWithdrawRelativeUrl, bodyItem, false);
 			
 			td = new DtSavingsTransactionDetails(
 					internalCorrelationId,
@@ -846,7 +841,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			
 			camt053Body = objectMapper.writeValueAsString(td);
 
-			batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
+			batchItemBuilder.add(tenantIdentifier, items, camt053RelativeUrl, camt053Body, true);
 			
 			doBatch(items,
                     tenantIdentifier,

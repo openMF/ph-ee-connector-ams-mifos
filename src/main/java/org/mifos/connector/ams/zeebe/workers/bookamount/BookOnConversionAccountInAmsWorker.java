@@ -162,8 +162,6 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 			
 			log.info("Withdrawing amount {} from conversion account {} of tenant {}", amount, conversionAccountAmsId, tenantIdentifier);
 			
-			batchItemBuilder.tenantId(tenantIdentifier);
-			
 			String conversionAccountWithdrawalRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "withdrawal");
 			
 			Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
@@ -184,7 +182,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 			
 			List<TransactionItem> items = new ArrayList<>();
 			
-			batchItemBuilder.add(items, conversionAccountWithdrawalRelativeUrl, bodyItem, false);
+			batchItemBuilder.add(tenantIdentifier, items, conversionAccountWithdrawalRelativeUrl, bodyItem, false);
 		
 			BankToCustomerStatementV08 convertedStatement = camt053Mapper.toCamt053Entry(pain001.getDocument());
 			ReportEntry10 convertedcamt053Entry = convertedStatement.getStatement().get(0).getEntry().get(0);
@@ -216,7 +214,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 			
 			String camt053Body = objectMapper.writeValueAsString(td);
 	
-			batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
+			batchItemBuilder.add(tenantIdentifier, items, camt053RelativeUrl, camt053Body, true);
 			
 			if (!BigDecimal.ZERO.equals(transactionFeeAmount)) {
 					
@@ -243,7 +241,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 				
 				bodyItem = objectMapper.writeValueAsString(body);
 				
-				batchItemBuilder.add(items, conversionAccountWithdrawalRelativeUrl, bodyItem, false);
+				batchItemBuilder.add(tenantIdentifier, items, conversionAccountWithdrawalRelativeUrl, bodyItem, false);
 			
 				td = new DtSavingsTransactionDetails(
 						transactionFeeInternalCorrelationId,
@@ -263,7 +261,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 						null,
 						pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getPaymentIdentification().getEndToEndIdentification());
 				camt053Body = objectMapper.writeValueAsString(td);
-				batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
+				batchItemBuilder.add(tenantIdentifier, items, camt053RelativeUrl, camt053Body, true);
 			}
 			
 			doBatch(items,
@@ -344,8 +342,6 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 			
 			iso.std.iso._20022.tech.xsd.pacs_002_001.Document pacs002 = jaxbUtils.unmarshalPacs002(originalPacs002);
 			
-			batchItemBuilder.tenantId(tenantIdentifier);
-			
 			String conversionAccountWithdrawalRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "withdrawal");
 			
 			Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
@@ -368,7 +364,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 			
 			List<TransactionItem> items = new ArrayList<>();
 			
-			batchItemBuilder.add(items, conversionAccountWithdrawalRelativeUrl, bodyItem, false);
+			batchItemBuilder.add(tenantIdentifier, items, conversionAccountWithdrawalRelativeUrl, bodyItem, false);
 		
 			Pacs004ToCamt053Converter converter = new Pacs004ToCamt053Converter();
 			ReportEntry10 camt053Entry = converter.convert(pacs004, 
@@ -422,7 +418,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 			
 			String camt053Body = objectMapper.writeValueAsString(td);
 	
-			batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
+			batchItemBuilder.add(tenantIdentifier, items, camt053RelativeUrl, camt053Body, true);
 			
 			doBatch(items,
                     tenantIdentifier,

@@ -160,8 +160,6 @@ public class BookCreditedAmountFromTechnicalAccountWorker extends AbstractMoneyI
             
             iso.std.iso._20022.tech.xsd.pacs_002_001.Document pacs002 = jaxbUtils.unmarshalPacs002(originalPacs002);
 
-            batchItemBuilder.tenantId(tenantIdentifier);
-
             Config technicalAccountConfig = technicalAccountConfigFactory.getConfig(tenantIdentifier);
 
             String taLookup = String.format("%s.%s", paymentScheme, caseIdentifier);
@@ -185,7 +183,7 @@ public class BookCreditedAmountFromTechnicalAccountWorker extends AbstractMoneyI
 
             String bodyItem = objectMapper.writeValueAsString(body);
 
-            batchItemBuilder.add(items, technicalAccountWithdrawalRelativeUrl, bodyItem, false);
+            batchItemBuilder.add(tenantIdentifier, items, technicalAccountWithdrawalRelativeUrl, bodyItem, false);
 
             BankToCustomerStatementV08 intermediateCamt053 = pacs008Camt053Mapper.toCamt053Entry(pacs008);
             ReportEntry10 convertedCamt053Entry = pacs004Camt053Mapper.convert(pacs004, intermediateCamt053).getStatement().get(0).getEntry().get(0);
@@ -227,7 +225,7 @@ public class BookCreditedAmountFromTechnicalAccountWorker extends AbstractMoneyI
 
             String camt053Body = objectMapper.writeValueAsString(td);
 
-            batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
+            batchItemBuilder.add(tenantIdentifier, items, camt053RelativeUrl, camt053Body, true);
 
             doBatch(items,
                     tenantIdentifier,
