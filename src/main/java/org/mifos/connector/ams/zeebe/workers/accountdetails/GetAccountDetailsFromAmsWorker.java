@@ -38,13 +38,15 @@ public class GetAccountDetailsFromAmsWorker extends AbstractAmsWorker {
     private Map<String, String> accountNotExistsReasons = Map.of(
             "HCT_INST-IN", "AC03",
             "IG2-IN", "AC01",
-            "ON_US-IN", "BX01"
+            "ON_US-IN", "BX01",
+            "HCT_INST-OUT", "AC02"
     );
 
     private Map<String, String> accountClosedReasons = Map.of(
             "HCT_INST-IN", "AC07",
             "IG2-IN", "AC04",
-            "ON_US-IN", "BX02"
+            "ON_US-IN", "BX02",
+            "HCT_INST-OUT", "AC04"
     );
 
 

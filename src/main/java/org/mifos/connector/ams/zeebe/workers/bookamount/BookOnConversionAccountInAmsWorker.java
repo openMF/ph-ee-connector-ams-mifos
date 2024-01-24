@@ -298,7 +298,8 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
                                                             @Variable String debtorIban,
                                                             @Variable String generatedPacs004,
                                                             @Variable String pacs002,
-                                                            @Variable String transactionDate) {
+                                                            @Variable String transactionDate,
+                                                            @Variable String internalCorrelationId) {
         log.info("withdrawTheAmountFromConversionAccountInAms");
         eventService.auditedEvent(
                 eventBuilder -> EventLogUtil.initZeebeJob(activatedJob,
@@ -316,6 +317,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
                         generatedPacs004,
                         pacs002,
                         transactionDate,
+                        internalCorrelationId,
                         eventBuilder));
     }
 
@@ -329,6 +331,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
                                                              String originalPacs004,
                                                              String originalPacs002,
                                                              String transactionDate,
+                                                             String internalCorrelationId,
                                                              Event.Builder eventBuilder) {
     	try {
 			log.info("Withdrawing amount {} from conversion account {} of tenant {}", amount, conversionAccountAmsId, tenantIdentifier);
@@ -380,25 +383,6 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 			PaymentTransactionInformation27 paymentTransactionInformation = pacs004
 					.getPmtRtr()
 					.getTxInf().get(0);
-			
-			String originalDebtorBic = paymentTransactionInformation
-					.getOrgnlTxRef()
-					.getDbtrAgt()
-					.getFinInstnId()
-					.getBIC();
-			
-			pacs004.getPmtRtr().getGrpHdr().getIntrBkSttlmDt();
-			String originalCreationDate = paymentTransactionInformation
-					.getOrgnlTxRef()
-					.getIntrBkSttlmDt()
-					.toGregorianCalendar()
-					.toZonedDateTime()
-					.toLocalDate()
-					.format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-			String originalEndToEndId = paymentTransactionInformation
-					.getOrgnlEndToEndId();
-			
-			String internalCorrelationId = String.format("%s_%s_%s", originalDebtorBic, originalCreationDate, originalEndToEndId);
 			
 			XMLGregorianCalendar orgnlCreDtTm = pacs002.getFIToFIPmtStsRpt().getOrgnlGrpInfAndSts().getOrgnlCreDtTm();
 			if (orgnlCreDtTm == null) {

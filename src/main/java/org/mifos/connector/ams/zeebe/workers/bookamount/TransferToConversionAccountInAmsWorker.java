@@ -55,7 +55,6 @@ import iso.std.iso._20022.tech.json.camt_053_001.EntryStatus1Choice;
 import iso.std.iso._20022.tech.json.camt_053_001.ReportEntry10;
 import iso.std.iso._20022.tech.json.pain_001_001.CustomerCreditTransferInitiationV10;
 import iso.std.iso._20022.tech.json.pain_001_001.Pain00100110CustomerCreditTransferInitiationV10MessageSchema;
-import iso.std.iso._20022.tech.xsd.camt_056_001.PaymentTransactionInformation31;
 import jakarta.xml.bind.JAXBException;
 import lombok.extern.slf4j.Slf4j;
 
@@ -436,7 +435,8 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
                                                           @Variable String paymentScheme,
                                                           @Variable String transactionCategoryPurposeCode,
                                                           @Variable String camt056,
-                                                          @Variable String iban) {
+                                                          @Variable String iban,
+                                                          @Variable String internalCorrelationId) {
         log.info("withdrawTheAmountFromDisposalAccountInAMS");
         eventService.auditedEvent(
                 eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "withdrawTheAmountFromDisposalAccountInAMS",
@@ -451,6 +451,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
                         transactionCategoryPurposeCode,
                         camt056,
                         iban,
+                        internalCorrelationId,
                         eventBuilder));
     }
 
@@ -463,6 +464,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
                                                            String transactionCategoryPurposeCode,
                                                            String camt056,
                                                            String iban,
+                                                           String internalCorrelationId,
                                                            Event.Builder eventBuilder) {
     	try {
 			String transactionDate = LocalDate.now().format(PATTERN);
@@ -473,27 +475,6 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
     		Camt056ToCamt053Converter converter = new Camt056ToCamt053Converter();
     		BankToCustomerStatementV08 statement = converter.convert(document, new BankToCustomerStatementV08());
     		
-    		PaymentTransactionInformation31 paymentTransactionInformation = document
-    				.getFIToFIPmtCxlReq()
-    				.getUndrlyg().get(0)
-    				.getTxInf().get(0);
-			
-			String originalDebtorBic = paymentTransactionInformation
-					.getOrgnlTxRef()
-					.getDbtrAgt()
-					.getFinInstnId()
-					.getBIC();
-    		String originalCreationDate = paymentTransactionInformation
-    				.getOrgnlIntrBkSttlmDt()
-    				.toGregorianCalendar()
-    				.toZonedDateTime()
-    				.toLocalDate()
-    				.format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-    		String originalTxId = paymentTransactionInformation
-    				.getOrgnlTxId();
-    		
-    		String internalCorrelationId = String.format("%s_%s_%s", originalDebtorBic, originalCreationDate, originalTxId);
-			
 			batchItemBuilder.tenantId(tenantIdentifier);
 			List<TransactionItem> items = new ArrayList<>();
 			Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
