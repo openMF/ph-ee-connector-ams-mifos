@@ -1,8 +1,12 @@
 package org.mifos.connector;
 
-import java.util.concurrent.TimeUnit;
-
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.module.afterburner.AfterburnerModule;
+import io.camunda.zeebe.spring.client.EnableZeebeClient;
 import org.apache.camel.Processor;
 import org.apache.hc.client5.http.classic.HttpClient;
 import org.apache.hc.client5.http.config.RequestConfig;
@@ -16,13 +20,7 @@ import org.springframework.http.client.ClientHttpRequestFactory;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.web.client.RestTemplate;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-
-import io.camunda.zeebe.spring.client.EnableZeebeClient;
+import java.util.concurrent.TimeUnit;
 
 @EnableZeebeClient
 @SpringBootApplication
@@ -48,28 +46,28 @@ public class AmsConnectorApplication {
     public Processor pojoToString(ObjectMapper objectMapper) {
         return exchange -> exchange.getIn().setBody(objectMapper.writeValueAsString(exchange.getIn().getBody()));
     }
-    
+
     @Bean
     public RestTemplate restTemplate(RestTemplateBuilder builder) {
-    	PoolingHttpClientConnectionManager connectionManager = new PoolingHttpClientConnectionManager();
-    	connectionManager.setMaxTotal(500);
-    	connectionManager.setDefaultMaxPerRoute(500);
-    	
-    	RequestConfig requestConfig = RequestConfig
-    			.custom()
-    			.setConnectionRequestTimeout(1000, TimeUnit.MILLISECONDS)
-    			.setConnectTimeout(1000, TimeUnit.MILLISECONDS)
-    			.build();
-    	
-    	HttpClient httpClient = HttpClientBuilder.create()
-    			.setConnectionManager(connectionManager)
-    			.setDefaultRequestConfig(requestConfig)
-    			.build();
-    	
-    	ClientHttpRequestFactory requestFactory = new HttpComponentsClientHttpRequestFactory(httpClient);
-    	
-    	RestTemplate restTemplate = new RestTemplate(requestFactory);
-    	
-		return restTemplate;
+        PoolingHttpClientConnectionManager connectionManager = new PoolingHttpClientConnectionManager();
+        connectionManager.setMaxTotal(500);
+        connectionManager.setDefaultMaxPerRoute(500);
+
+        RequestConfig requestConfig = RequestConfig
+                .custom()
+                .setConnectionRequestTimeout(1000, TimeUnit.MILLISECONDS)
+                .setConnectTimeout(1000, TimeUnit.MILLISECONDS)
+                .build();
+
+        HttpClient httpClient = HttpClientBuilder.create()
+                .setConnectionManager(connectionManager)
+                .setDefaultRequestConfig(requestConfig)
+                .build();
+
+        ClientHttpRequestFactory requestFactory = new HttpComponentsClientHttpRequestFactory(httpClient);
+
+        RestTemplate restTemplate = new RestTemplate(requestFactory);
+
+        return restTemplate;
     }
 }

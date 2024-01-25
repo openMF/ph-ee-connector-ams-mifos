@@ -34,7 +34,7 @@ public class CompositeX509TrustManager implements X509TrustManager {
 
     @Override
     public void checkServerTrusted(X509Certificate[] chain, String authType) throws CertificateException {
-        if(checkServerCert) {
+        if (checkServerCert) {
             for (X509TrustManager trustManager : trustManagers) {
                 try {
                     trustManager.checkServerTrusted(chain, authType);
