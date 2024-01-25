@@ -31,7 +31,6 @@ import org.springframework.stereotype.Component;
 
 import com.baasflow.commons.events.Event;
 import com.baasflow.commons.events.EventService;
-import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -137,8 +136,6 @@ public class BookCreditedAmountFromTechnicalAccountWorker extends AbstractMoneyI
                                                         String caseIdentifier,
                                                         Event.Builder eventBuilder) {
         try {
-            painMapper.setSerializationInclusion(Include.NON_NULL);
-
             List<TransactionItem> items = new ArrayList<>();
 
             iso.std.iso._20022.tech.xsd.pacs_008_001.Document pacs008 = jaxbUtils.unmarshalPacs008(originalPacs008);
@@ -146,8 +143,6 @@ public class BookCreditedAmountFromTechnicalAccountWorker extends AbstractMoneyI
             iso.std.iso._20022.tech.xsd.pacs_004_001.Document pacs004 = jaxbUtils.unmarshalPacs004(originalPacs004);
             
             iso.std.iso._20022.tech.xsd.pacs_002_001.Document pacs002 = jaxbUtils.unmarshalPacs002(originalPacs002);
-
-            batchItemBuilder.tenantId(tenantIdentifier);
 
             Config technicalAccountConfig = technicalAccountConfigFactory.getConfig(tenantIdentifier);
 
@@ -172,7 +167,7 @@ public class BookCreditedAmountFromTechnicalAccountWorker extends AbstractMoneyI
 
             String bodyItem = painMapper.writeValueAsString(body);
 
-            batchItemBuilder.add(items, technicalAccountWithdrawalRelativeUrl, bodyItem, false);
+            batchItemBuilder.add(tenantIdentifier, items, technicalAccountWithdrawalRelativeUrl, bodyItem, false);
 
             BankToCustomerStatementV08 intermediateCamt053 = pacs008Camt053Mapper.toCamt053Entry(pacs008);
             ReportEntry10 convertedCamt053Entry = pacs004Camt053Mapper.convert(pacs004, intermediateCamt053).getStatement().get(0).getEntry().get(0);
@@ -214,7 +209,7 @@ public class BookCreditedAmountFromTechnicalAccountWorker extends AbstractMoneyI
 
             String camt053Body = painMapper.writeValueAsString(td);
 
-            batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
+            batchItemBuilder.add(tenantIdentifier, items, camt053RelativeUrl, camt053Body, true);
 
             doBatch(items,
                     tenantIdentifier,

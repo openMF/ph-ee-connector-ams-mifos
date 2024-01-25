@@ -78,7 +78,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 
     @Autowired
     private BatchItemBuilder batchItemBuilder;
-    
+
     @Autowired
     private ContactDetailsUtil contactDetailsUtil;
 
@@ -129,7 +129,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
     }
 
     @SuppressWarnings("unchecked")
-	private Void transferToConversionAccountInAms(String transactionGroupId,
+    private Void transferToConversionAccountInAms(String transactionGroupId,
                                                   String transactionCategoryPurposeCode,
                                                   String transactionFeeCategoryPurposeCode,
                                                   String originalPain001,
@@ -144,12 +144,11 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
                                                   String transactionFeeInternalCorrelationId,
                                                   Event.Builder eventBuilder) {
         try {
-        	String transactionDate = LocalDate.now().format(PATTERN);
-    		log.debug("Debtor exchange worker starting");
-    		MDC.put("internalCorrelationId", internalCorrelationId);
-			painMapper.setSerializationInclusion(Include.NON_NULL);
-			Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001 = painMapper.readValue(originalPain001, Pain00100110CustomerCreditTransferInitiationV10MessageSchema.class);
-			
+            String transactionDate = LocalDate.now().format(PATTERN);
+            log.debug("Debtor exchange worker starting");
+            MDC.put("internalCorrelationId", internalCorrelationId);
+            Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001 = painMapper.readValue(originalPain001, Pain00100110CustomerCreditTransferInitiationV10MessageSchema.class);
+
 //			try {
 //				log.info(">>>>>>>>>>>>>>>>>> Validating incoming pain.001 <<<<<<<<<<<<<<<<");
 //
@@ -163,156 +162,155 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 //			} catch (JsonProcessingException e) {
 //				log.warn("Unable to validate pain.001: {}", e.getMessage());
 //			}
-			
-			
-			log.debug("Debtor exchange worker incoming variables:");
-		
-			log.debug("Withdrawing amount {} from disposal account {}", amount, disposalAccountAmsId);
-			
-			boolean hasFee = !BigDecimal.ZERO.equals(transactionFeeAmount);
 
-			Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
-			
-			List<TransactionItem> items = new ArrayList<>();
-			batchItemBuilder.tenantId(tenantIdentifier);
-			
-			String holdTransactionUrl = String.format("%s%d/transactions?command=holdAmount", incomingMoneyApi.substring(1), disposalAccountAmsId);
 
-			Integer outHoldReasonId = paymentTypeConfig.findPaymentTypeIdByOperation(String.format("%s.%s", paymentScheme, "outHoldReasonId"));
-			HoldAmountBody body = new HoldAmountBody(
-	                transactionDate,
-	                hasFee ? amount.add(transactionFeeAmount) : amount,
-	                outHoldReasonId,
-	                locale,
-	                FORMAT
-	        );
-			
-			painMapper.setSerializationInclusion(Include.NON_NULL);
-    		String bodyItem = painMapper.writeValueAsString(body);
-    		
-    		batchItemBuilder.add(items, holdTransactionUrl, bodyItem, false);
-    		
-    		BankToCustomerStatementV08 convertedStatement = camt053Mapper.toCamt053Entry(pain001.getDocument());
-			ReportEntry10 convertedCamt053Entry = convertedStatement.getStatement().get(0).getEntry().get(0);
-			convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getAmountDetails().getTransactionAmount().getAmount().setAmount(hasFee ? amount.add(transactionFeeAmount) : amount);
-			String camt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
+            log.debug("Debtor exchange worker incoming variables:");
 
-			String partnerName = pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditor().getName();
-			String partnerAccountIban = pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditorAccount().getIdentification().getIban();
-			String partnerAccountSecondaryIdentifier = contactDetailsUtil.getId(pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditor().getContactDetails());
-			String unstructured = Optional.ofNullable(pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getRemittanceInformation())
-					.map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(List::toString).orElse("");
-    		
-			String holdAmountOperation = "transferToConversionAccountInAms.DisposalAccount.HoldTransactionAmount";
-    		addDetails(pain001.getDocument(), transactionGroupId, transactionCategoryPurposeCode, internalCorrelationId, 
-					painMapper, batchItemBuilder, items, convertedCamt053Entry, camt053RelativeUrl, iban, 
-					paymentTypeConfig, paymentScheme, holdAmountOperation, partnerName, partnerAccountIban, 
-					partnerAccountSecondaryIdentifier, unstructured, null, null, false, pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getPaymentIdentification().getEndToEndIdentification());
-    		
-    		
-			Long lastHoldTransactionId = holdBatch(items, tenantIdentifier, disposalAccountAmsId, conversionAccountAmsId, internalCorrelationId, "transferToConversionAccountInAms");
-			
-			HttpHeaders httpHeaders = new HttpHeaders();
-			httpHeaders.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
-			httpHeaders.set("Authorization", authTokenHelper.generateAuthToken());
-			httpHeaders.set("Fineract-Platform-TenantId", tenantIdentifier);
-			LinkedHashMap<String, Object> accountDetails = restTemplate.exchange(
-					String.format("%s/%s%d", fineractApiUrl, incomingMoneyApi.substring(1), disposalAccountAmsId), 
-					HttpMethod.GET, 
-					new HttpEntity<>(httpHeaders), 
-					LinkedHashMap.class)
-				.getBody();
-			LinkedHashMap<String, Object> summary = (LinkedHashMap<String, Object>) accountDetails.get("summary");
-			BigDecimal availableBalance = new BigDecimal(summary.get("availableBalance").toString());
-			if (availableBalance.signum() < 0) {
-				restTemplate.exchange(
-					String.format("%s/%ssavingsaccounts/%d/transactions/%d?command=releaseAmount", fineractApiUrl, incomingMoneyApi.substring(1), disposalAccountAmsId, lastHoldTransactionId),
-					HttpMethod.POST,
-					new HttpEntity<>(httpHeaders),
-					Object.class
-				);
-				throw new ZeebeBpmnError("Error_InsufficientFunds", "Insufficient funds");
-			}
-			
-			items.clear();
-			
-			String releaseTransactionUrl = String.format("%s%d/transactions/%d?command=releaseAmount", incomingMoneyApi.substring(1), disposalAccountAmsId, lastHoldTransactionId);
-			batchItemBuilder.add(items, releaseTransactionUrl, null, false);
-			String releaseAmountOperation = "transferToConversionAccountInAms.DisposalAccount.ReleaseTransactionAmount";
-			addDetails(pain001.getDocument(), transactionGroupId, transactionCategoryPurposeCode, internalCorrelationId, 
-					painMapper, batchItemBuilder, items, convertedCamt053Entry, camt053RelativeUrl, iban, 
-					paymentTypeConfig, paymentScheme, releaseAmountOperation, partnerName, partnerAccountIban, 
-					partnerAccountSecondaryIdentifier, unstructured, null, null, false, pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getPaymentIdentification().getEndToEndIdentification());
-			
-			convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.DBIT);
-			convertedCamt053Entry.setCreditDebitIndicator(CreditDebitCode.DBIT);
-			convertedCamt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "PENDING"));
-			
-			String disposalAccountWithdrawRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), disposalAccountAmsId, "withdrawal");
+            log.debug("Withdrawing amount {} from disposal account {}", amount, disposalAccountAmsId);
 
-			
-			String withdrawAmountOperation = "transferToConversionAccountInAms.DisposalAccount.WithdrawTransactionAmount";
-			addExchange(amount, paymentScheme, transactionDate, painMapper, paymentTypeConfig, batchItemBuilder, items, disposalAccountWithdrawRelativeUrl, withdrawAmountOperation);
-			
-			iban = pain001.getDocument().getPaymentInformation().get(0).getDebtorAccount().getIdentification().getIban();
-			
-			convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getAmountDetails().getTransactionAmount().getAmount().setAmount(amount);
-			convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.DBIT);
-			convertedCamt053Entry.setCreditDebitIndicator(CreditDebitCode.DBIT);
-			convertedCamt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "PENDING"));
-			addDetails(pain001.getDocument(), transactionGroupId, transactionCategoryPurposeCode, internalCorrelationId, 
-					painMapper, batchItemBuilder, items, convertedCamt053Entry, camt053RelativeUrl, iban, 
-					paymentTypeConfig, paymentScheme, withdrawAmountOperation, partnerName, partnerAccountIban, 
-					partnerAccountSecondaryIdentifier, unstructured, disposalAccountAmsId, conversionAccountAmsId, true, pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getPaymentIdentification().getEndToEndIdentification());
+            boolean hasFee = !BigDecimal.ZERO.equals(transactionFeeAmount);
 
-			if (hasFee) {
-				log.debug("Withdrawing fee {} from disposal account {}", transactionFeeAmount, disposalAccountAmsId);
-					String withdrawFeeOperation = "transferToConversionAccountInAms.DisposalAccount.WithdrawTransactionFee";
-					addExchange(transactionFeeAmount, paymentScheme, transactionDate, painMapper, paymentTypeConfig, batchItemBuilder, items, disposalAccountWithdrawRelativeUrl, withdrawFeeOperation);
-					
-					convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getSupplementaryData().get(0).getEnvelope().setAdditionalProperty("InternalCorrelationId", transactionFeeInternalCorrelationId);
-					
-					convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getAmountDetails().getTransactionAmount().getAmount().setAmount(transactionFeeAmount);
-					
-					addDetails(pain001.getDocument(), transactionGroupId, transactionFeeCategoryPurposeCode, transactionFeeInternalCorrelationId, painMapper,
-							batchItemBuilder, items, convertedCamt053Entry, camt053RelativeUrl, iban, paymentTypeConfig, paymentScheme, 
-							withdrawFeeOperation, partnerName, partnerAccountIban, partnerAccountSecondaryIdentifier, unstructured,
-							disposalAccountAmsId, conversionAccountAmsId, true, pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getPaymentIdentification().getEndToEndIdentification());
-			}
-			
-			log.info("Depositing amount {} to conversion account {}", amount, conversionAccountAmsId);
-			
-			String conversionAccountDepositRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "deposit");
-			
-			String depositAmountOperation = "transferToConversionAccountInAms.ConversionAccount.DepositTransactionAmount";
-			addExchange(amount, paymentScheme, transactionDate, painMapper, paymentTypeConfig, batchItemBuilder, items, conversionAccountDepositRelativeUrl, depositAmountOperation);
-			
-			convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getSupplementaryData().get(0).getEnvelope().setAdditionalProperty("InternalCorrelationId", internalCorrelationId);
-			
-			convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getAmountDetails().getTransactionAmount().getAmount().setAmount(amount);
-			convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.CRDT);
-			convertedCamt053Entry.setCreditDebitIndicator(CreditDebitCode.CRDT);
-			convertedCamt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "PENDING"));
-			addDetails(pain001.getDocument(), transactionGroupId, transactionCategoryPurposeCode, internalCorrelationId, painMapper, batchItemBuilder, items,
-					convertedCamt053Entry, camt053RelativeUrl, iban, paymentTypeConfig, paymentScheme, depositAmountOperation, partnerName, 
-					partnerAccountIban, partnerAccountSecondaryIdentifier, unstructured, disposalAccountAmsId, conversionAccountAmsId, true, pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getPaymentIdentification().getEndToEndIdentification());
-		
-			
-			if (hasFee) {
-				log.debug("Depositing fee {} to conversion account {}", transactionFeeAmount, conversionAccountAmsId);
-				String depositFeeOperation = "transferToConversionAccountInAms.ConversionAccount.DepositTransactionFee";
-				addExchange(transactionFeeAmount, paymentScheme, transactionDate, painMapper, paymentTypeConfig, batchItemBuilder, items, conversionAccountDepositRelativeUrl, depositFeeOperation);
-				
-				convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getSupplementaryData().get(0).getEnvelope().setAdditionalProperty("InternalCorrelationId", transactionFeeInternalCorrelationId);
-				
-				convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getAmountDetails().getTransactionAmount().getAmount().setAmount(transactionFeeAmount);
-				
-				addDetails(pain001.getDocument(), transactionGroupId, transactionFeeCategoryPurposeCode, transactionFeeInternalCorrelationId, painMapper, batchItemBuilder,
-						items, convertedCamt053Entry, camt053RelativeUrl, iban, paymentTypeConfig, paymentScheme, depositFeeOperation, partnerName, 
-						partnerAccountIban, partnerAccountSecondaryIdentifier, unstructured, disposalAccountAmsId, conversionAccountAmsId, true, pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getPaymentIdentification().getEndToEndIdentification());
-			}
-    			
-    		doBatch(items,
+            Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
+
+            List<TransactionItem> items = new ArrayList<>();
+
+            String holdTransactionUrl = String.format("%s%d/transactions?command=holdAmount", incomingMoneyApi.substring(1), disposalAccountAmsId);
+
+            Integer outHoldReasonId = paymentTypeConfig.findPaymentTypeIdByOperation(String.format("%s.%s", paymentScheme, "outHoldReasonId"));
+            HoldAmountBody body = new HoldAmountBody(
+                    transactionDate,
+                    hasFee ? amount.add(transactionFeeAmount) : amount,
+                    outHoldReasonId,
+                    locale,
+                    FORMAT
+            );
+
+            painMapper.setSerializationInclusion(Include.NON_NULL);
+            String bodyItem = painMapper.writeValueAsString(body);
+
+            batchItemBuilder.add(tenantIdentifier, items, holdTransactionUrl, bodyItem, false);
+
+            BankToCustomerStatementV08 convertedStatement = camt053Mapper.toCamt053Entry(pain001.getDocument());
+            ReportEntry10 convertedCamt053Entry = convertedStatement.getStatement().get(0).getEntry().get(0);
+            convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getAmountDetails().getTransactionAmount().getAmount().setAmount(hasFee ? amount.add(transactionFeeAmount) : amount);
+            String camt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
+
+            String partnerName = pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditor().getName();
+            String partnerAccountIban = pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditorAccount().getIdentification().getIban();
+            String partnerAccountSecondaryIdentifier = contactDetailsUtil.getId(pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditor().getContactDetails());
+            String unstructured = Optional.ofNullable(pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getRemittanceInformation())
+                    .map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(List::toString).orElse("");
+
+            String holdAmountOperation = "transferToConversionAccountInAms.DisposalAccount.HoldTransactionAmount";
+            addDetails(tenantIdentifier, pain001.getDocument(), transactionGroupId, transactionCategoryPurposeCode, internalCorrelationId,
+                    painMapper, batchItemBuilder, items, convertedCamt053Entry, camt053RelativeUrl, iban,
+                    paymentTypeConfig, paymentScheme, holdAmountOperation, partnerName, partnerAccountIban,
+                    partnerAccountSecondaryIdentifier, unstructured, null, null, false, pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getPaymentIdentification().getEndToEndIdentification());
+
+
+            Long lastHoldTransactionId = holdBatch(items, tenantIdentifier, disposalAccountAmsId, conversionAccountAmsId, internalCorrelationId, "transferToConversionAccountInAms");
+
+            HttpHeaders httpHeaders = new HttpHeaders();
+            httpHeaders.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
+            httpHeaders.set("Authorization", authTokenHelper.generateAuthToken());
+            httpHeaders.set("Fineract-Platform-TenantId", tenantIdentifier);
+            LinkedHashMap<String, Object> accountDetails = restTemplate.exchange(
+                            String.format("%s/%s%d", fineractApiUrl, incomingMoneyApi.substring(1), disposalAccountAmsId),
+                            HttpMethod.GET,
+                            new HttpEntity<>(httpHeaders),
+                            LinkedHashMap.class)
+                    .getBody();
+            LinkedHashMap<String, Object> summary = (LinkedHashMap<String, Object>) accountDetails.get("summary");
+            BigDecimal availableBalance = new BigDecimal(summary.get("availableBalance").toString());
+            if (availableBalance.signum() < 0) {
+                restTemplate.exchange(
+                        String.format("%s/%ssavingsaccounts/%d/transactions/%d?command=releaseAmount", fineractApiUrl, incomingMoneyApi.substring(1), disposalAccountAmsId, lastHoldTransactionId),
+                        HttpMethod.POST,
+                        new HttpEntity<>(httpHeaders),
+                        Object.class
+                );
+                throw new ZeebeBpmnError("Error_InsufficientFunds", "Insufficient funds");
+            }
+
+            items.clear();
+
+            String releaseTransactionUrl = String.format("%s%d/transactions/%d?command=releaseAmount", incomingMoneyApi.substring(1), disposalAccountAmsId, lastHoldTransactionId);
+            batchItemBuilder.add(tenantIdentifier, items, releaseTransactionUrl, null, false);
+            String releaseAmountOperation = "transferToConversionAccountInAms.DisposalAccount.ReleaseTransactionAmount";
+            addDetails(tenantIdentifier, pain001.getDocument(), transactionGroupId, transactionCategoryPurposeCode, internalCorrelationId,
+                    painMapper, batchItemBuilder, items, convertedCamt053Entry, camt053RelativeUrl, iban,
+                    paymentTypeConfig, paymentScheme, releaseAmountOperation, partnerName, partnerAccountIban,
+                    partnerAccountSecondaryIdentifier, unstructured, null, null, false, pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getPaymentIdentification().getEndToEndIdentification());
+
+            convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.DBIT);
+            convertedCamt053Entry.setCreditDebitIndicator(CreditDebitCode.DBIT);
+            convertedCamt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "PENDING"));
+
+            String disposalAccountWithdrawRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), disposalAccountAmsId, "withdrawal");
+
+
+            String withdrawAmountOperation = "transferToConversionAccountInAms.DisposalAccount.WithdrawTransactionAmount";
+            addExchange(tenantIdentifier, amount, paymentScheme, transactionDate, painMapper, paymentTypeConfig, batchItemBuilder, items, disposalAccountWithdrawRelativeUrl, withdrawAmountOperation);
+
+            iban = pain001.getDocument().getPaymentInformation().get(0).getDebtorAccount().getIdentification().getIban();
+
+            convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getAmountDetails().getTransactionAmount().getAmount().setAmount(amount);
+            convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.DBIT);
+            convertedCamt053Entry.setCreditDebitIndicator(CreditDebitCode.DBIT);
+            convertedCamt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "PENDING"));
+            addDetails(tenantIdentifier, pain001.getDocument(), transactionGroupId, transactionCategoryPurposeCode, internalCorrelationId,
+                    painMapper, batchItemBuilder, items, convertedCamt053Entry, camt053RelativeUrl, iban,
+                    paymentTypeConfig, paymentScheme, withdrawAmountOperation, partnerName, partnerAccountIban,
+                    partnerAccountSecondaryIdentifier, unstructured, disposalAccountAmsId, conversionAccountAmsId, true, pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getPaymentIdentification().getEndToEndIdentification());
+
+            if (hasFee) {
+                log.debug("Withdrawing fee {} from disposal account {}", transactionFeeAmount, disposalAccountAmsId);
+                String withdrawFeeOperation = "transferToConversionAccountInAms.DisposalAccount.WithdrawTransactionFee";
+                addExchange(tenantIdentifier, transactionFeeAmount, paymentScheme, transactionDate, painMapper, paymentTypeConfig, batchItemBuilder, items, disposalAccountWithdrawRelativeUrl, withdrawFeeOperation);
+
+                convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getSupplementaryData().get(0).getEnvelope().setAdditionalProperty("InternalCorrelationId", transactionFeeInternalCorrelationId);
+
+                convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getAmountDetails().getTransactionAmount().getAmount().setAmount(transactionFeeAmount);
+
+                addDetails(tenantIdentifier, pain001.getDocument(), transactionGroupId, transactionFeeCategoryPurposeCode, transactionFeeInternalCorrelationId, painMapper,
+                        batchItemBuilder, items, convertedCamt053Entry, camt053RelativeUrl, iban, paymentTypeConfig, paymentScheme,
+                        withdrawFeeOperation, partnerName, partnerAccountIban, partnerAccountSecondaryIdentifier, unstructured,
+                        disposalAccountAmsId, conversionAccountAmsId, true, pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getPaymentIdentification().getEndToEndIdentification());
+            }
+
+            log.info("Depositing amount {} to conversion account {}", amount, conversionAccountAmsId);
+
+            String conversionAccountDepositRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "deposit");
+
+            String depositAmountOperation = "transferToConversionAccountInAms.ConversionAccount.DepositTransactionAmount";
+            addExchange(tenantIdentifier, amount, paymentScheme, transactionDate, painMapper, paymentTypeConfig, batchItemBuilder, items, conversionAccountDepositRelativeUrl, depositAmountOperation);
+
+            convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getSupplementaryData().get(0).getEnvelope().setAdditionalProperty("InternalCorrelationId", internalCorrelationId);
+
+            convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getAmountDetails().getTransactionAmount().getAmount().setAmount(amount);
+            convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.CRDT);
+            convertedCamt053Entry.setCreditDebitIndicator(CreditDebitCode.CRDT);
+            convertedCamt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "PENDING"));
+            addDetails(tenantIdentifier, pain001.getDocument(), transactionGroupId, transactionCategoryPurposeCode, internalCorrelationId, painMapper, batchItemBuilder, items,
+                    convertedCamt053Entry, camt053RelativeUrl, iban, paymentTypeConfig, paymentScheme, depositAmountOperation, partnerName,
+                    partnerAccountIban, partnerAccountSecondaryIdentifier, unstructured, disposalAccountAmsId, conversionAccountAmsId, true, pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getPaymentIdentification().getEndToEndIdentification());
+
+
+            if (hasFee) {
+                log.debug("Depositing fee {} to conversion account {}", transactionFeeAmount, conversionAccountAmsId);
+                String depositFeeOperation = "transferToConversionAccountInAms.ConversionAccount.DepositTransactionFee";
+                addExchange(tenantIdentifier, transactionFeeAmount, paymentScheme, transactionDate, painMapper, paymentTypeConfig, batchItemBuilder, items, conversionAccountDepositRelativeUrl, depositFeeOperation);
+
+                convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getSupplementaryData().get(0).getEnvelope().setAdditionalProperty("InternalCorrelationId", transactionFeeInternalCorrelationId);
+
+                convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getAmountDetails().getTransactionAmount().getAmount().setAmount(transactionFeeAmount);
+
+                addDetails(tenantIdentifier, pain001.getDocument(), transactionGroupId, transactionFeeCategoryPurposeCode, transactionFeeInternalCorrelationId, painMapper, batchItemBuilder,
+                        items, convertedCamt053Entry, camt053RelativeUrl, iban, paymentTypeConfig, paymentScheme, depositFeeOperation, partnerName,
+                        partnerAccountIban, partnerAccountSecondaryIdentifier, unstructured, disposalAccountAmsId, conversionAccountAmsId, true, pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getPaymentIdentification().getEndToEndIdentification());
+            }
+
+            doBatch(items,
                     tenantIdentifier,
                     disposalAccountAmsId,
                     conversionAccountAmsId,
@@ -320,94 +318,98 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
                     "transferToConversionAccountInAms");
 
         } catch (ZeebeBpmnError z) {
-        	throw z;
+            throw z;
         } catch (Exception e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         } finally {
-        	MDC.remove("internalCorrelationId");
+            MDC.remove("internalCorrelationId");
         }
         return null;
     }
 
-    private void addExchange(BigDecimal amount,
-                             String paymentScheme,
-                             String transactionDate,
-                             ObjectMapper om,
-                             Config paymentTypeConfig,
-                             BatchItemBuilder batchItemBuilder,
-                             List<TransactionItem> items,
-                             String relativeUrl,
-                             String paymentTypeOperation) throws JsonProcessingException {
-    	Integer paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(String.format("%s.%s", paymentScheme, paymentTypeOperation));
-		
-		TransactionBody transactionBody = new TransactionBody(
-				transactionDate,
-				amount,
-				paymentTypeId,
-				"",
-				FORMAT,
-				locale);
-		
-		String bodyItem = om.writeValueAsString(transactionBody);
-		batchItemBuilder.add(items, relativeUrl, bodyItem, false);
+    private void addExchange(
+            String tenantIdentifier,
+            BigDecimal amount,
+            String paymentScheme,
+            String transactionDate,
+            ObjectMapper om,
+            Config paymentTypeConfig,
+            BatchItemBuilder batchItemBuilder,
+            List<TransactionItem> items,
+            String relativeUrl,
+            String paymentTypeOperation) throws JsonProcessingException {
+        Integer paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(String.format("%s.%s", paymentScheme, paymentTypeOperation));
+
+        TransactionBody transactionBody = new TransactionBody(
+                transactionDate,
+                amount,
+                paymentTypeId,
+                "",
+                FORMAT,
+                locale);
+
+        String bodyItem = om.writeValueAsString(transactionBody);
+        batchItemBuilder.add(tenantIdentifier, items, relativeUrl, bodyItem, false);
     }
 
-    private void addDetails(CustomerCreditTransferInitiationV10 pain001,
-    		String transactionGroupId, 
-			String transactionFeeCategoryPurposeCode,
-			String internalCorrelationId, 
-			ObjectMapper om, 
-			BatchItemBuilder batchItemBuilder, 
-			List<TransactionItem> items,
-			ReportEntry10 convertedCamt053Entry, 
-			String camt053RelativeUrl,
-			String accountIban,
-			Config paymentTypeConfig,
-			String paymentScheme,
-			String paymentTypeOperation,
-			String partnerName,
-			String partnerAccountIban,
-			String partnerAccountSecondaryIdentifier,
-			String unstructured,
-			Integer sourceAmsAccountId,
-			Integer targetAmsAccountId,
-			boolean includeSupplementary,
-			String endToEndId) throws JsonProcessingException {
-    	String paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(String.format("%s.%s", paymentScheme, paymentTypeOperation));
-    	if (paymentTypeCode == null) {
-    		paymentTypeCode = "";
-    	}
-    	convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
-    	if (pain001 != null) {
-    		convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getSupplementaryData().clear();
-    		if (includeSupplementary) {
-    			camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001, convertedCamt053Entry, transactionFeeCategoryPurposeCode);
-    			camt053Mapper.refillOtherIdentification(pain001, convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0));
-    		} else {
-    			camt053Mapper.fillOtherIdentification(pain001, convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0));
-    		}
-    	}
-    	String camt053 = painMapper.writeValueAsString(convertedCamt053Entry);
-		DtSavingsTransactionDetails td = new DtSavingsTransactionDetails(
-				internalCorrelationId,
-				camt053,
-				accountIban,
-				paymentTypeCode,
-				transactionGroupId,
-				partnerName,
-				partnerAccountIban,
-				null,
-				partnerAccountSecondaryIdentifier,
-				unstructured,
-				transactionFeeCategoryPurposeCode,
-				paymentScheme,
-				sourceAmsAccountId,
-				targetAmsAccountId,
-				endToEndId);
-		
-		String camt053Body = om.writeValueAsString(td);
-		batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
+    private void addDetails(
+            String tenantIdentifier,
+            CustomerCreditTransferInitiationV10 pain001,
+            String transactionGroupId,
+            String transactionFeeCategoryPurposeCode,
+            String internalCorrelationId,
+            ObjectMapper om,
+            BatchItemBuilder batchItemBuilder,
+            List<TransactionItem> items,
+            ReportEntry10 convertedCamt053Entry,
+            String camt053RelativeUrl,
+            String accountIban,
+            Config paymentTypeConfig,
+            String paymentScheme,
+            String paymentTypeOperation,
+            String partnerName,
+            String partnerAccountIban,
+            String partnerAccountSecondaryIdentifier,
+            String unstructured,
+            Integer sourceAmsAccountId,
+            Integer targetAmsAccountId,
+            boolean includeSupplementary,
+            String endToEndId) throws JsonProcessingException {
+        String paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(String.format("%s.%s", paymentScheme, paymentTypeOperation));
+        if (paymentTypeCode == null) {
+            paymentTypeCode = "";
+        }
+        convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
+        if (pain001 != null) {
+            convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getSupplementaryData().clear();
+            if (includeSupplementary) {
+                camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001, convertedCamt053Entry, transactionFeeCategoryPurposeCode);
+                camt053Mapper.refillOtherIdentification(pain001, convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0));
+            } else {
+                camt053Mapper.fillOtherIdentification(pain001, convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0));
+            }
+        }
+        String camt053 = painMapper.writeValueAsString(convertedCamt053Entry);
+        DtSavingsTransactionDetails td = new DtSavingsTransactionDetails(
+                internalCorrelationId,
+                camt053,
+                accountIban,
+                paymentTypeCode,
+                transactionGroupId,
+                partnerName,
+                partnerAccountIban,
+                null,
+                partnerAccountSecondaryIdentifier,
+                unstructured,
+                transactionFeeCategoryPurposeCode,
+                paymentScheme,
+                sourceAmsAccountId,
+                targetAmsAccountId,
+                endToEndId);
+
+        String camt053Body = om.writeValueAsString(td);
+        batchItemBuilder.add(tenantIdentifier, items, camt053RelativeUrl, camt053Body, true);
     }
 
     @JobWorker
@@ -443,7 +445,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
     }
 
     @SuppressWarnings("unchecked")
-	private Void withdrawTheAmountFromDisposalAccountInAMS(BigDecimal amount,
+    private Void withdrawTheAmountFromDisposalAccountInAMS(BigDecimal amount,
                                                            Integer conversionAccountAmsId,
                                                            Integer disposalAccountAmsId,
                                                            String tenantIdentifier,
@@ -453,187 +455,185 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
                                                            String iban,
                                                            String internalCorrelationId,
                                                            Event.Builder eventBuilder) {
-    	try {
-			String transactionDate = LocalDate.now().format(PATTERN);
-			
-			log.debug("Withdrawing amount {} from disposal account {}", amount, disposalAccountAmsId);
-			
-			iso.std.iso._20022.tech.xsd.camt_056_001.Document document = jaxbUtils.unmarshalCamt056(camt056);
-    		Camt056ToCamt053Converter converter = new Camt056ToCamt053Converter();
-    		BankToCustomerStatementV08 statement = converter.convert(document, new BankToCustomerStatementV08());
-    		
-			batchItemBuilder.tenantId(tenantIdentifier);
-			List<TransactionItem> items = new ArrayList<>();
-			Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
-			
-			String holdTransactionUrl = String.format("%s%d/transactions?command=holdAmount", incomingMoneyApi.substring(1), disposalAccountAmsId);
+        try {
+            String transactionDate = LocalDate.now().format(PATTERN);
 
-			Integer outHoldReasonId = paymentTypeConfig.findPaymentTypeIdByOperation(String.format("%s.%s", paymentScheme, "outHoldReasonId"));
-			HoldAmountBody holdAmountBody = new HoldAmountBody(
-	                transactionDate,
-	                amount,
-	                outHoldReasonId,
-	                locale,
-	                FORMAT
-	        );
-			
-			painMapper.setSerializationInclusion(Include.NON_NULL);
-    		String bodyItem = painMapper.writeValueAsString(holdAmountBody);
-    		
-    		batchItemBuilder.add(items, holdTransactionUrl, bodyItem, false);
-    		
-    		ReportEntry10 convertedCamt053Entry = statement.getStatement().get(0).getEntry().get(0);
-			convertedCamt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "PENDING"));
-			String hyphenatedDate = transactionDate.substring(0, 4) + "-" + transactionDate.substring(4, 6) + "-" + transactionDate.substring(6);
-			convertedCamt053Entry.setValueDate(new DateAndDateTime2Choice().withAdditionalProperty("Date", hyphenatedDate));
-			String camt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
+            log.debug("Withdrawing amount {} from disposal account {}", amount, disposalAccountAmsId);
 
-			
-			String partnerName = document.getFIToFIPmtCxlReq().getUndrlyg().get(0).getTxInf().get(0).getOrgnlTxRef().getDbtr().getNm();
-			String partnerAccountIban = document.getFIToFIPmtCxlReq().getUndrlyg().get(0).getTxInf().get(0).getOrgnlTxRef().getDbtrAcct().getId().getIBAN();
-			String partnerAccountSecondaryIdentifier = contactDetailsUtil.getId(document.getFIToFIPmtCxlReq().getUndrlyg().get(0).getTxInf().get(0).getOrgnlTxRef().getCdtr().getCtctDtls());
-			String unstructured = Optional.ofNullable(document.getFIToFIPmtCxlReq().getUndrlyg().get(0).getTxInf().get(0).getOrgnlTxRef().getRmtInf())
-					.map(iso.std.iso._20022.tech.xsd.camt_056_001.RemittanceInformation5::getUstrd).map(List::toString).orElse("");
-    		
-			String holdAmountOperation = "withdrawTheAmountFromDisposalAccountInAMS.DisposalAccount.HoldTransactionAmount";
-			
-    		addDetails(null, internalCorrelationId, transactionCategoryPurposeCode, internalCorrelationId, 
-					painMapper, batchItemBuilder, items, convertedCamt053Entry, camt053RelativeUrl, iban, 
-					paymentTypeConfig, paymentScheme, holdAmountOperation, partnerName, partnerAccountIban, 
-					partnerAccountSecondaryIdentifier, unstructured, disposalAccountAmsId, conversionAccountAmsId, false,
-					document.getFIToFIPmtCxlReq().getUndrlyg().get(0).getTxInf().get(0).getOrgnlEndToEndId());
-    		
-			Long lastHoldTransactionId = holdBatch(items, tenantIdentifier, disposalAccountAmsId, conversionAccountAmsId, internalCorrelationId, "transferToConversionAccountInAms");
-			
-			HttpHeaders httpHeaders = new HttpHeaders();
-			httpHeaders.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
-			httpHeaders.set("Authorization", authTokenHelper.generateAuthToken());
-			httpHeaders.set("Fineract-Platform-TenantId", tenantIdentifier);
-			LinkedHashMap<String, Object> accountDetails = restTemplate.exchange(
-					String.format("%s/%s%d", fineractApiUrl, incomingMoneyApi.substring(1), disposalAccountAmsId), 
-					HttpMethod.GET, 
-					new HttpEntity<>(httpHeaders), 
-					LinkedHashMap.class)
-				.getBody();
-			LinkedHashMap<String, Object> summary = (LinkedHashMap<String, Object>) accountDetails.get("summary");
-			BigDecimal availableBalance = new BigDecimal(summary.get("availableBalance").toString());
-			if (availableBalance.signum() < 0) {
-				restTemplate.exchange(
-					String.format("%s/%ssavingsaccounts/%d/transactions/%d?command=releaseAmount", fineractApiUrl, incomingMoneyApi.substring(1), disposalAccountAmsId, lastHoldTransactionId),
-					HttpMethod.POST,
-					new HttpEntity<>(httpHeaders),
-					Object.class
-				);
-				throw new ZeebeBpmnError("Error_InsufficientFunds", "Insufficient funds");
-			}
-			
-			items.clear();
-			
-			String releaseTransactionUrl = String.format("%s%d/transactions/%d?command=releaseAmount", incomingMoneyApi.substring(1), disposalAccountAmsId, lastHoldTransactionId);
-			batchItemBuilder.add(items, releaseTransactionUrl, null, false);
-			String releaseAmountOperation = "withdrawTheAmountFromDisposalAccountInAMS.DisposalAccount.ReleaseTransactionAmount";
-			addDetails(null, internalCorrelationId, transactionCategoryPurposeCode, internalCorrelationId, 
-					painMapper, batchItemBuilder, items, convertedCamt053Entry, camt053RelativeUrl, iban, 
-					paymentTypeConfig, paymentScheme, releaseAmountOperation, partnerName, partnerAccountIban, 
-					partnerAccountSecondaryIdentifier, unstructured, disposalAccountAmsId, conversionAccountAmsId, false,
-					document.getFIToFIPmtCxlReq().getUndrlyg().get(0).getTxInf().get(0).getOrgnlEndToEndId());
-			
-			String disposalAccountWithdrawRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), disposalAccountAmsId, "withdrawal");
-			
-			String withdrawAmountOperation = "withdrawTheAmountFromDisposalAccountInAMS.DisposalAccount.WithdrawTransactionAmount";
-			String configOperationKey = String.format("%s.%s", paymentScheme, withdrawAmountOperation);
-			Integer paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(configOperationKey);
-			String paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(configOperationKey);
-			
-			TransactionBody transactionBody = new TransactionBody(
-					transactionDate,
-					amount,
-					paymentTypeId,
-					"",
-					FORMAT,
-					locale);
-			
-			painMapper.setSerializationInclusion(Include.NON_NULL);
-			
-			bodyItem = painMapper.writeValueAsString(transactionBody);
-			
-			batchItemBuilder.add(items, disposalAccountWithdrawRelativeUrl, bodyItem, false);
-			
-			convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
-			convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.DBIT);
-			convertedCamt053Entry.setCreditDebitIndicator(CreditDebitCode.DBIT);
-			convertedCamt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "PENDING"));
-		
-			String camt053 = painMapper.writeValueAsString(convertedCamt053Entry);
-			
-			camt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
-			
-			DtSavingsTransactionDetails td = new DtSavingsTransactionDetails(
-					internalCorrelationId,
-					camt053,
-					document.getFIToFIPmtCxlReq().getUndrlyg().get(0).getTxInf().get(0).getOrgnlTxRef().getCdtrAcct().getId().getIBAN(),
-					paymentTypeCode,
-					internalCorrelationId,
-					document.getFIToFIPmtCxlReq().getUndrlyg().get(0).getTxInf().get(0).getOrgnlTxRef().getDbtr().getNm(),
-					document.getFIToFIPmtCxlReq().getUndrlyg().get(0).getTxInf().get(0).getOrgnlTxRef().getDbtrAcct().getId().getIBAN(),
-					null,
-					contactDetailsUtil.getId(document.getFIToFIPmtCxlReq().getUndrlyg().get(0).getTxInf().get(0).getOrgnlTxRef().getDbtr().getCtctDtls()),
-					Optional.ofNullable(document.getFIToFIPmtCxlReq().getUndrlyg().get(0).getTxInf().get(0).getOrgnlTxRef().getRmtInf())
-							.map(iso.std.iso._20022.tech.xsd.camt_056_001.RemittanceInformation5::getUstrd).map(List::toString).orElse(""),
-					transactionCategoryPurposeCode,
-					paymentScheme,
-					disposalAccountAmsId,
-					conversionAccountAmsId,
-    				document.getFIToFIPmtCxlReq().getUndrlyg().get(0).getTxInf().get(0).getOrgnlEndToEndId());
-			
-			String camt053Body = painMapper.writeValueAsString(td);
-	
-			batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
-			
-			String conversionAccountDepositRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "deposit");
+            iso.std.iso._20022.tech.xsd.camt_056_001.Document document = jaxbUtils.unmarshalCamt056(camt056);
+            Camt056ToCamt053Converter converter = new Camt056ToCamt053Converter();
+            BankToCustomerStatementV08 statement = converter.convert(document, new BankToCustomerStatementV08());
 
-			String depositAmountOperation = "withdrawTheAmountFromDisposalAccountInAMS.ConversionAccount.DepositTransactionAmount";
-			addExchange(amount, paymentScheme, transactionDate, painMapper, paymentTypeConfig, batchItemBuilder, items, conversionAccountDepositRelativeUrl, depositAmountOperation);
-			String.format("%s.%s", paymentScheme, depositAmountOperation);
-			configOperationKey = String.format("%s.%s", paymentScheme, depositAmountOperation);
-			paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(configOperationKey);
-			convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
-			convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.CRDT);
-			convertedCamt053Entry.setCreditDebitIndicator(CreditDebitCode.CRDT);
-			convertedCamt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "PENDING"));
-			camt053 = painMapper.writeValueAsString(convertedCamt053Entry);
-			
-			td = new DtSavingsTransactionDetails(
-					internalCorrelationId,
-					camt053,
-					document.getFIToFIPmtCxlReq().getUndrlyg().get(0).getTxInf().get(0).getOrgnlTxRef().getCdtrAcct().getId().getIBAN(),
-					paymentTypeCode,
-					internalCorrelationId,
-					document.getFIToFIPmtCxlReq().getUndrlyg().get(0).getTxInf().get(0).getOrgnlTxRef().getDbtr().getNm(),
-					document.getFIToFIPmtCxlReq().getUndrlyg().get(0).getTxInf().get(0).getOrgnlTxRef().getDbtrAcct().getId().getIBAN(),
-					null,
-					contactDetailsUtil.getId(document.getFIToFIPmtCxlReq().getUndrlyg().get(0).getTxInf().get(0).getOrgnlTxRef().getDbtr().getCtctDtls()),
-					Optional.ofNullable(document.getFIToFIPmtCxlReq().getUndrlyg().get(0).getTxInf().get(0).getOrgnlTxRef().getRmtInf())
-							.map(iso.std.iso._20022.tech.xsd.camt_056_001.RemittanceInformation5::getUstrd).map(List::toString).orElse(""),
-					transactionCategoryPurposeCode,
-					paymentScheme,
-					disposalAccountAmsId,
-					conversionAccountAmsId,
-    				document.getFIToFIPmtCxlReq().getUndrlyg().get(0).getTxInf().get(0).getOrgnlEndToEndId());
-			
-			camt053Body = painMapper.writeValueAsString(td);
-			batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
-			
-			doBatch(items,
+            List<TransactionItem> items = new ArrayList<>();
+            Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
+
+            String holdTransactionUrl = String.format("%s%d/transactions?command=holdAmount", incomingMoneyApi.substring(1), disposalAccountAmsId);
+
+            Integer outHoldReasonId = paymentTypeConfig.findPaymentTypeIdByOperation(String.format("%s.%s", paymentScheme, "outHoldReasonId"));
+            HoldAmountBody holdAmountBody = new HoldAmountBody(
+                    transactionDate,
+                    amount,
+                    outHoldReasonId,
+                    locale,
+                    FORMAT
+            );
+
+            String bodyItem = painMapper.writeValueAsString(holdAmountBody);
+
+            batchItemBuilder.add(tenantIdentifier, items, holdTransactionUrl, bodyItem, false);
+
+            ReportEntry10 convertedCamt053Entry = statement.getStatement().get(0).getEntry().get(0);
+            convertedCamt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "PENDING"));
+            String hyphenatedDate = transactionDate.substring(0, 4) + "-" + transactionDate.substring(4, 6) + "-" + transactionDate.substring(6);
+            convertedCamt053Entry.setValueDate(new DateAndDateTime2Choice().withAdditionalProperty("Date", hyphenatedDate));
+            String camt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
+
+
+            String partnerName = document.getFIToFIPmtCxlReq().getUndrlyg().get(0).getTxInf().get(0).getOrgnlTxRef().getDbtr().getNm();
+            String partnerAccountIban = document.getFIToFIPmtCxlReq().getUndrlyg().get(0).getTxInf().get(0).getOrgnlTxRef().getDbtrAcct().getId().getIBAN();
+            String partnerAccountSecondaryIdentifier = contactDetailsUtil.getId(document.getFIToFIPmtCxlReq().getUndrlyg().get(0).getTxInf().get(0).getOrgnlTxRef().getCdtr().getCtctDtls());
+            String unstructured = Optional.ofNullable(document.getFIToFIPmtCxlReq().getUndrlyg().get(0).getTxInf().get(0).getOrgnlTxRef().getRmtInf())
+                    .map(iso.std.iso._20022.tech.xsd.camt_056_001.RemittanceInformation5::getUstrd).map(List::toString).orElse("");
+
+            String holdAmountOperation = "withdrawTheAmountFromDisposalAccountInAMS.DisposalAccount.HoldTransactionAmount";
+
+            addDetails(tenantIdentifier, null, internalCorrelationId, transactionCategoryPurposeCode, internalCorrelationId,
+                    painMapper, batchItemBuilder, items, convertedCamt053Entry, camt053RelativeUrl, iban,
+                    paymentTypeConfig, paymentScheme, holdAmountOperation, partnerName, partnerAccountIban,
+                    partnerAccountSecondaryIdentifier, unstructured, disposalAccountAmsId, conversionAccountAmsId, false,
+                    document.getFIToFIPmtCxlReq().getUndrlyg().get(0).getTxInf().get(0).getOrgnlEndToEndId());
+
+            Long lastHoldTransactionId = holdBatch(items, tenantIdentifier, disposalAccountAmsId, conversionAccountAmsId, internalCorrelationId, "transferToConversionAccountInAms");
+
+            HttpHeaders httpHeaders = new HttpHeaders();
+            httpHeaders.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
+            httpHeaders.set("Authorization", authTokenHelper.generateAuthToken());
+            httpHeaders.set("Fineract-Platform-TenantId", tenantIdentifier);
+            LinkedHashMap<String, Object> accountDetails = restTemplate.exchange(
+                            String.format("%s/%s%d", fineractApiUrl, incomingMoneyApi.substring(1), disposalAccountAmsId),
+                            HttpMethod.GET,
+                            new HttpEntity<>(httpHeaders),
+                            LinkedHashMap.class)
+                    .getBody();
+            LinkedHashMap<String, Object> summary = (LinkedHashMap<String, Object>) accountDetails.get("summary");
+            BigDecimal availableBalance = new BigDecimal(summary.get("availableBalance").toString());
+            if (availableBalance.signum() < 0) {
+                restTemplate.exchange(
+                        String.format("%s/%ssavingsaccounts/%d/transactions/%d?command=releaseAmount", fineractApiUrl, incomingMoneyApi.substring(1), disposalAccountAmsId, lastHoldTransactionId),
+                        HttpMethod.POST,
+                        new HttpEntity<>(httpHeaders),
+                        Object.class
+                );
+                throw new ZeebeBpmnError("Error_InsufficientFunds", "Insufficient funds");
+            }
+
+            items.clear();
+
+            String releaseTransactionUrl = String.format("%s%d/transactions/%d?command=releaseAmount", incomingMoneyApi.substring(1), disposalAccountAmsId, lastHoldTransactionId);
+            batchItemBuilder.add(tenantIdentifier, items, releaseTransactionUrl, null, false);
+            String releaseAmountOperation = "withdrawTheAmountFromDisposalAccountInAMS.DisposalAccount.ReleaseTransactionAmount";
+            addDetails(tenantIdentifier, null, internalCorrelationId, transactionCategoryPurposeCode, internalCorrelationId,
+                    painMapper, batchItemBuilder, items, convertedCamt053Entry, camt053RelativeUrl, iban,
+                    paymentTypeConfig, paymentScheme, releaseAmountOperation, partnerName, partnerAccountIban,
+                    partnerAccountSecondaryIdentifier, unstructured, disposalAccountAmsId, conversionAccountAmsId, false,
+                    document.getFIToFIPmtCxlReq().getUndrlyg().get(0).getTxInf().get(0).getOrgnlEndToEndId());
+
+            String disposalAccountWithdrawRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), disposalAccountAmsId, "withdrawal");
+
+            String withdrawAmountOperation = "withdrawTheAmountFromDisposalAccountInAMS.DisposalAccount.WithdrawTransactionAmount";
+            String configOperationKey = String.format("%s.%s", paymentScheme, withdrawAmountOperation);
+            Integer paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(configOperationKey);
+            String paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(configOperationKey);
+
+            TransactionBody transactionBody = new TransactionBody(
+                    transactionDate,
+                    amount,
+                    paymentTypeId,
+                    "",
+                    FORMAT,
+                    locale);
+
+            painMapper.setSerializationInclusion(Include.NON_NULL);
+
+            bodyItem = painMapper.writeValueAsString(transactionBody);
+
+            batchItemBuilder.add(tenantIdentifier, items, disposalAccountWithdrawRelativeUrl, bodyItem, false);
+
+            convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
+            convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.DBIT);
+            convertedCamt053Entry.setCreditDebitIndicator(CreditDebitCode.DBIT);
+            convertedCamt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "PENDING"));
+
+            String camt053 = painMapper.writeValueAsString(convertedCamt053Entry);
+
+            camt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
+
+            DtSavingsTransactionDetails td = new DtSavingsTransactionDetails(
+                    internalCorrelationId,
+                    camt053,
+                    document.getFIToFIPmtCxlReq().getUndrlyg().get(0).getTxInf().get(0).getOrgnlTxRef().getCdtrAcct().getId().getIBAN(),
+                    paymentTypeCode,
+                    internalCorrelationId,
+                    document.getFIToFIPmtCxlReq().getUndrlyg().get(0).getTxInf().get(0).getOrgnlTxRef().getDbtr().getNm(),
+                    document.getFIToFIPmtCxlReq().getUndrlyg().get(0).getTxInf().get(0).getOrgnlTxRef().getDbtrAcct().getId().getIBAN(),
+                    null,
+                    contactDetailsUtil.getId(document.getFIToFIPmtCxlReq().getUndrlyg().get(0).getTxInf().get(0).getOrgnlTxRef().getDbtr().getCtctDtls()),
+                    Optional.ofNullable(document.getFIToFIPmtCxlReq().getUndrlyg().get(0).getTxInf().get(0).getOrgnlTxRef().getRmtInf())
+                            .map(iso.std.iso._20022.tech.xsd.camt_056_001.RemittanceInformation5::getUstrd).map(List::toString).orElse(""),
+                    transactionCategoryPurposeCode,
+                    paymentScheme,
+                    disposalAccountAmsId,
+                    conversionAccountAmsId,
+                    document.getFIToFIPmtCxlReq().getUndrlyg().get(0).getTxInf().get(0).getOrgnlEndToEndId());
+
+            String camt053Body = painMapper.writeValueAsString(td);
+
+            batchItemBuilder.add(tenantIdentifier, items, camt053RelativeUrl, camt053Body, true);
+
+            String conversionAccountDepositRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "deposit");
+
+            String depositAmountOperation = "withdrawTheAmountFromDisposalAccountInAMS.ConversionAccount.DepositTransactionAmount";
+            addExchange(tenantIdentifier, amount, paymentScheme, transactionDate, painMapper, paymentTypeConfig, batchItemBuilder, items, conversionAccountDepositRelativeUrl, depositAmountOperation);
+            String.format("%s.%s", paymentScheme, depositAmountOperation);
+            configOperationKey = String.format("%s.%s", paymentScheme, depositAmountOperation);
+            paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(configOperationKey);
+            convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
+            convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.CRDT);
+            convertedCamt053Entry.setCreditDebitIndicator(CreditDebitCode.CRDT);
+            convertedCamt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "PENDING"));
+            camt053 = painMapper.writeValueAsString(convertedCamt053Entry);
+
+            td = new DtSavingsTransactionDetails(
+                    internalCorrelationId,
+                    camt053,
+                    document.getFIToFIPmtCxlReq().getUndrlyg().get(0).getTxInf().get(0).getOrgnlTxRef().getCdtrAcct().getId().getIBAN(),
+                    paymentTypeCode,
+                    internalCorrelationId,
+                    document.getFIToFIPmtCxlReq().getUndrlyg().get(0).getTxInf().get(0).getOrgnlTxRef().getDbtr().getNm(),
+                    document.getFIToFIPmtCxlReq().getUndrlyg().get(0).getTxInf().get(0).getOrgnlTxRef().getDbtrAcct().getId().getIBAN(),
+                    null,
+                    contactDetailsUtil.getId(document.getFIToFIPmtCxlReq().getUndrlyg().get(0).getTxInf().get(0).getOrgnlTxRef().getDbtr().getCtctDtls()),
+                    Optional.ofNullable(document.getFIToFIPmtCxlReq().getUndrlyg().get(0).getTxInf().get(0).getOrgnlTxRef().getRmtInf())
+                            .map(iso.std.iso._20022.tech.xsd.camt_056_001.RemittanceInformation5::getUstrd).map(List::toString).orElse(""),
+                    transactionCategoryPurposeCode,
+                    paymentScheme,
+                    disposalAccountAmsId,
+                    conversionAccountAmsId,
+                    document.getFIToFIPmtCxlReq().getUndrlyg().get(0).getTxInf().get(0).getOrgnlEndToEndId());
+
+            camt053Body = painMapper.writeValueAsString(td);
+            batchItemBuilder.add(tenantIdentifier, items, camt053RelativeUrl, camt053Body, true);
+
+            doBatch(items,
                     tenantIdentifier,
                     disposalAccountAmsId,
                     conversionAccountAmsId,
                     internalCorrelationId,
                     "withdrawTheAmountFromDisposalAccountInAMS");
-		} catch (JAXBException | JsonProcessingException e) {
-			log.error(e.getMessage(), e);
-			throw new RuntimeException(e);
-		}
+        } catch (JAXBException | JsonProcessingException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
 
         return null;
     }

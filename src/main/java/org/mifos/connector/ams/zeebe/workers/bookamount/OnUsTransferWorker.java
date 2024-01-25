@@ -158,7 +158,6 @@ try {
 			log.debug("Incoming pain.001: {}", originalPain001);
 			
 			Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
-			painMapper.setSerializationInclusion(Include.NON_NULL);
 			Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001 = painMapper.readValue(originalPain001, Pain00100110CustomerCreditTransferInitiationV10MessageSchema.class);
 			
 			BankToCustomerStatementV08 convertedStatement = camt053Mapper.toCamt053Entry(pain001.getDocument());
@@ -179,7 +178,6 @@ try {
 			
 			boolean hasFee = !BigDecimal.ZERO.equals(transactionFeeAmount);
 			
-            batchItemBuilder.tenantId(tenantIdentifier);
             List<TransactionItem> items = new ArrayList<>();
             
             String holdTransactionUrl = String.format("%s%d/transactions?command=holdAmount", incomingMoneyApi.substring(1), debtorDisposalAccountAmsId);
@@ -196,7 +194,7 @@ try {
 			painMapper.setSerializationInclusion(Include.NON_NULL);
     		String bodyItem = painMapper.writeValueAsString(body);
     		
-    		batchItemBuilder.add(items, holdTransactionUrl, bodyItem, false);
+    		batchItemBuilder.add(tenantIdentifier, items, holdTransactionUrl, bodyItem, false);
     		
 			String camt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
 			
@@ -206,7 +204,7 @@ try {
 			String unstructured = Optional.ofNullable(pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getRemittanceInformation())
 					.map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(List::toString).orElse("");
     		
-    		addDetails(internalCorrelationId, transactionCategoryPurposeCode, internalCorrelationId, 
+    		addDetails(tenantIdentifier, internalCorrelationId, transactionCategoryPurposeCode, internalCorrelationId, 
 					painMapper, batchItemBuilder, items, pain001.getDocument(), convertedcamt053Entry, camt053RelativeUrl, debtorIban, 
 					paymentTypeConfig, paymentScheme, null, partnerName, partnerAccountIban, 
 					partnerAccountSecondaryIdentifier, unstructured, null, null);
@@ -238,9 +236,9 @@ try {
 			items.clear();
 			
 			String releaseTransactionUrl = String.format("%s%d/transactions/%d?command=releaseAmount", incomingMoneyApi.substring(1), debtorDisposalAccountAmsId, lastHoldTransactionId);
-			batchItemBuilder.add(items, releaseTransactionUrl, null, false);
+			batchItemBuilder.add(tenantIdentifier, items, releaseTransactionUrl, null, false);
 			String releaseAmountOperation = "transferTheAmountBetweenDisposalAccounts.Debtor.DisposalAccount.ReleaseTransactionAmount";
-			addDetails(internalCorrelationId, transactionCategoryPurposeCode, internalCorrelationId, 
+			addDetails(tenantIdentifier, internalCorrelationId, transactionCategoryPurposeCode, internalCorrelationId, 
 					painMapper, batchItemBuilder, items, pain001.getDocument(), convertedcamt053Entry, camt053RelativeUrl, debtorIban, 
 					paymentTypeConfig, paymentScheme, releaseAmountOperation, partnerName, partnerAccountIban, 
 					partnerAccountSecondaryIdentifier, unstructured, null, null);
@@ -263,7 +261,7 @@ try {
     		bodyItem = painMapper.writeValueAsString(transactionBody);
     		
     		
-    		batchItemBuilder.add(items, debtorDisposalWithdrawalRelativeUrl, bodyItem, false);
+    		batchItemBuilder.add(tenantIdentifier, items, debtorDisposalWithdrawalRelativeUrl, bodyItem, false);
     		
     		transactionDetails.getAmountDetails().getTransactionAmount().getAmount().setAmount(amount);
     		transactionDetails.setAdditionalTransactionInformation(paymentTypeCode);
@@ -297,7 +295,7 @@ try {
     		
     		String camt053Body = painMapper.writeValueAsString(td);
 
-    		batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
+    		batchItemBuilder.add(tenantIdentifier, items, camt053RelativeUrl, camt053Body, true);
     		
 			if (hasFee) {
 				String withdrawFeeDisposalOperation = "transferTheAmountBetweenDisposalAccounts.Debtor.DisposalAccount.WithdrawTransactionFee";
@@ -315,7 +313,7 @@ try {
 	    		
 	    		bodyItem = painMapper.writeValueAsString(transactionBody);
 	    		
-	    		batchItemBuilder.add(items, debtorDisposalWithdrawalRelativeUrl, bodyItem, false);
+	    		batchItemBuilder.add(tenantIdentifier, items, debtorDisposalWithdrawalRelativeUrl, bodyItem, false);
 	    	
 	    		transactionDetails.getSupplementaryData().get(0).getEnvelope().setAdditionalProperty("InternalCorrelationId", transactionFeeInternalCorrelationId);
 	    		transactionDetails.getAmountDetails().getTransactionAmount().getAmount().setAmount(transactionFeeAmount);
@@ -344,7 +342,7 @@ try {
 	    				pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getPaymentIdentification().getEndToEndIdentification());
 	    		
 	    		camt053Body = painMapper.writeValueAsString(td);
-	    		batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
+	    		batchItemBuilder.add(tenantIdentifier, items, camt053RelativeUrl, camt053Body, true);
 
 	    		
 	    		
@@ -373,7 +371,7 @@ try {
 	    		
 	    		String debtorConversionDepositRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), debtorConversionAccountAmsId, "deposit");
 		    		
-	    		batchItemBuilder.add(items, debtorConversionDepositRelativeUrl, bodyItem, false);
+	    		batchItemBuilder.add(tenantIdentifier, items, debtorConversionDepositRelativeUrl, bodyItem, false);
 		    	
 	    		td = new DtSavingsTransactionDetails(
 	    				transactionFeeInternalCorrelationId,
@@ -394,7 +392,7 @@ try {
 	    				pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getPaymentIdentification().getEndToEndIdentification());
 	    		
 	    		camt053Body = painMapper.writeValueAsString(td);
-	    		batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
+	    		batchItemBuilder.add(tenantIdentifier, items, camt053RelativeUrl, camt053Body, true);
 			}
 			
 			String depositAmountOperation = "transferTheAmountBetweenDisposalAccounts.Creditor.DisposalAccount.DepositTransactionAmount";
@@ -417,7 +415,7 @@ try {
     		
     		String creditorDisposalDepositRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), creditorDisposalAccountAmsId, "deposit");
 	    		
-    		batchItemBuilder.add(items, creditorDisposalDepositRelativeUrl, bodyItem, false);
+    		batchItemBuilder.add(tenantIdentifier, items, creditorDisposalDepositRelativeUrl, bodyItem, false);
 	    	
     		transactionDetails.getSupplementaryData().get(0).getEnvelope().setAdditionalProperty("InternalCorrelationId", internalCorrelationId);
     		transactionDetails.getAmountDetails().getTransactionAmount().getAmount().setAmount(amount);
@@ -445,7 +443,7 @@ try {
     				pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getPaymentIdentification().getEndToEndIdentification());
     		
     		camt053Body = painMapper.writeValueAsString(td);
-    		batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
+    		batchItemBuilder.add(tenantIdentifier, items, camt053RelativeUrl, camt053Body, true);
 			
 	    		
 			if (hasFee) {
@@ -471,7 +469,7 @@ try {
 	    		
 	    		String debtorConversionWithdrawRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), debtorConversionAccountAmsId, "withdrawal");
 		    		
-	    		batchItemBuilder.add(items, debtorConversionWithdrawRelativeUrl, bodyItem, false);
+	    		batchItemBuilder.add(tenantIdentifier, items, debtorConversionWithdrawRelativeUrl, bodyItem, false);
 		    	
 	    		transactionDetails.getAmountDetails().getTransactionAmount().getAmount().setAmount(transactionFeeAmount);
 	    		transactionDetails.getSupplementaryData().clear();
@@ -500,7 +498,7 @@ try {
 	    		
 	    		camt053Body = painMapper.writeValueAsString(td);
 			    		
-	    		batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
+	    		batchItemBuilder.add(tenantIdentifier,items, camt053RelativeUrl, camt053Body, true);
 			}
 			
 			doBatchOnUs(items,
@@ -577,7 +575,9 @@ try {
 		caioAccountIdentification.put("Other", creditorAccountIdOther);
 	}
     
-    private void addDetails(String transactionGroupId, 
+    private void addDetails(
+			String tenantIdentifier,
+			String transactionGroupId,
 			String transactionFeeCategoryPurposeCode,
 			String internalCorrelationId, 
 			ObjectMapper om, 
@@ -620,6 +620,6 @@ try {
 				pain001.getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getPaymentIdentification().getEndToEndIdentification());
 		
 		String camt053Body = om.writeValueAsString(td);
-		batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
+		batchItemBuilder.add(tenantIdentifier, items, camt053RelativeUrl, camt053Body, true);
     }
 }

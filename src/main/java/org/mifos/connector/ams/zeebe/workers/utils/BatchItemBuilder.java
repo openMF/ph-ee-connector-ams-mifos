@@ -12,17 +12,10 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 @Component
 public class BatchItemBuilder {
 
-	private String tenantId;
-	
 	@Autowired
 	private AuthTokenHelper authTokenHelper;
-	
-	public BatchItemBuilder tenantId(String tenantId) {
-		this.tenantId = tenantId;
-		return this;
-	}
-	
-	public void add(List<TransactionItem> items, String url, String body, boolean isDetails) throws JsonProcessingException {
+
+	public void add(String tenantId, List<TransactionItem> items, String url, String body, boolean isDetails) throws JsonProcessingException {
 		items.add(createTransactionItem(items.size() + 1, url, tenantId, body, isDetails ? items.size() : null));
 	}
 	

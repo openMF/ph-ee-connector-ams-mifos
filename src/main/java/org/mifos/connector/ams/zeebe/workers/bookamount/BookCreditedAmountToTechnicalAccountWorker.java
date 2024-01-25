@@ -24,7 +24,6 @@ import org.springframework.stereotype.Component;
 
 import com.baasflow.commons.events.Event;
 import com.baasflow.commons.events.EventService;
-import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import hu.dpc.rt.utils.converter.Pacs004ToCamt053Converter;
@@ -132,8 +131,6 @@ public class BookCreditedAmountToTechnicalAccountWorker extends AbstractMoneyInO
             
             MDC.put("internalCorrelationId", internalCorrelationId);
 
-            batchItemBuilder.tenantId(tenantIdentifier);
-            
             Config technicalAccountConfig = technicalAccountConfigFactory.getConfig(tenantIdentifier);
             
             String taLookup = String.format("%s.%s", paymentScheme, caseIdentifier);
@@ -155,13 +152,11 @@ public class BookCreditedAmountToTechnicalAccountWorker extends AbstractMoneyInO
     				FORMAT,
     				locale);
     		
-    		painMapper.setSerializationInclusion(Include.NON_NULL);
-    		
     		String bodyItem = painMapper.writeValueAsString(body);
     		
     		List<TransactionItem> items = new ArrayList<>();
     		
-    		batchItemBuilder.add(items, conversionAccountWithdrawalRelativeUrl, bodyItem, false);
+    		batchItemBuilder.add(tenantIdentifier, items, conversionAccountWithdrawalRelativeUrl, bodyItem, false);
     	
     		BankToCustomerStatementV08 intermediateCamt053 = pacs008Camt053Mapper.toCamt053Entry(pacs008);
     		intermediateCamt053.getStatement().get(0).getEntry().get(0).getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
@@ -194,7 +189,7 @@ public class BookCreditedAmountToTechnicalAccountWorker extends AbstractMoneyInO
     		
     		String camt053Body = painMapper.writeValueAsString(td);
 
-    		batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
+    		batchItemBuilder.add(tenantIdentifier, items, camt053RelativeUrl, camt053Body, true);
 
     		doBatch(items,
                     tenantIdentifier,

@@ -27,7 +27,6 @@ import org.springframework.stereotype.Component;
 
 import com.baasflow.commons.events.Event;
 import com.baasflow.commons.events.EventService;
-import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.camunda.zeebe.client.api.response.ActivatedJob;
@@ -115,8 +114,6 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 		Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
 		log.debug("Got payment scheme {}", paymentScheme);
 		String transactionDate = LocalDate.now().format(PATTERN);
-		painMapper.setSerializationInclusion(Include.NON_NULL);
-		batchItemBuilder.tenantId(tenantIdentifier);
 		log.debug("Got category purpose code {}", categoryPurpose);
 		
 		try {
@@ -140,7 +137,7 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 			
 			List<TransactionItem> items = new ArrayList<>();
 			
-			batchItemBuilder.add(items, disposalAccountWithdrawRelativeUrl, bodyItem, false);
+			batchItemBuilder.add(tenantIdentifier, items, disposalAccountWithdrawRelativeUrl, bodyItem, false);
 			
 			BankToCustomerStatementV08 convertedStatement = camt053Mapper.toCamt053Entry(pain001.getDocument());
 			ReportEntry10 convertedcamt053 = convertedStatement.getStatement().get(0).getEntry().get(0);
@@ -172,7 +169,7 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 			
 			String camt053Body = painMapper.writeValueAsString(td);
 
-			batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
+			batchItemBuilder.add(tenantIdentifier, items, camt053RelativeUrl, camt053Body, true);
 			
 			
 			
@@ -198,7 +195,7 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 			
 			String conversionAccountDepositRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "deposit");
 			
-			batchItemBuilder.add(items, conversionAccountDepositRelativeUrl, bodyItem, false);
+			batchItemBuilder.add(tenantIdentifier, items, conversionAccountDepositRelativeUrl, bodyItem, false);
 			
 			td = new DtSavingsTransactionDetails(
 					internalCorrelationId,
@@ -220,7 +217,7 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 			
 			camt053Body = painMapper.writeValueAsString(td);
 
-			batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
+			batchItemBuilder.add(tenantIdentifier, items, camt053RelativeUrl, camt053Body, true);
 			
 			
 			
@@ -246,7 +243,7 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 			
 			String conversionAccountWithdrawRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "withdrawal");
 			
-			batchItemBuilder.add(items, conversionAccountWithdrawRelativeUrl, bodyItem, false);
+			batchItemBuilder.add(tenantIdentifier, items, conversionAccountWithdrawRelativeUrl, bodyItem, false);
 			
 			td = new DtSavingsTransactionDetails(
 					internalCorrelationId,
@@ -268,7 +265,7 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 			
 			camt053Body = painMapper.writeValueAsString(td);
 
-			batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
+			batchItemBuilder.add(tenantIdentifier, items, camt053RelativeUrl, camt053Body, true);
 			
 			log.debug("Attempting to send {}", painMapper.writeValueAsString(items));
 			
