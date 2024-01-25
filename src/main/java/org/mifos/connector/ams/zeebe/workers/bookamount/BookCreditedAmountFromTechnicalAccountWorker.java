@@ -25,19 +25,15 @@ import org.mifos.connector.ams.zeebe.workers.utils.JAXBUtils;
 import org.mifos.connector.ams.zeebe.workers.utils.TransactionBody;
 import org.mifos.connector.ams.zeebe.workers.utils.TransactionItem;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import com.baasflow.commons.events.Event;
 import com.baasflow.commons.events.EventService;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonInclude.Include;	
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.fasterxml.jackson.module.afterburner.AfterburnerModule;
 
 import hu.dpc.rt.utils.converter.Pacs004ToCamt053Converter;
 import io.camunda.zeebe.client.api.response.ActivatedJob;
@@ -86,18 +82,9 @@ public class BookCreditedAmountFromTechnicalAccountWorker extends AbstractMoneyI
     @Autowired
     private EventService eventService;
     
-    private ObjectMapper objectMapper = new ObjectMapper() {
-		private static final long serialVersionUID = 1L;
-
-		{
-    		registerModule(new AfterburnerModule());
-    		registerModule(new JavaTimeModule());
-    		configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
-    		setSerializationInclusion(JsonInclude.Include.NON_EMPTY)
-            .configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true)
-            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-    	}
-    };
+    @Autowired
+    @Qualifier("painMapper")
+    private ObjectMapper painMapper;
 
     private static final String FORMAT = "yyyyMMdd";
 
@@ -150,7 +137,7 @@ public class BookCreditedAmountFromTechnicalAccountWorker extends AbstractMoneyI
                                                         String caseIdentifier,
                                                         Event.Builder eventBuilder) {
         try {
-            objectMapper.setSerializationInclusion(Include.NON_NULL);
+            painMapper.setSerializationInclusion(Include.NON_NULL);
 
             List<TransactionItem> items = new ArrayList<>();
 
@@ -183,7 +170,7 @@ public class BookCreditedAmountFromTechnicalAccountWorker extends AbstractMoneyI
                     FORMAT,
                     locale);
 
-            String bodyItem = objectMapper.writeValueAsString(body);
+            String bodyItem = painMapper.writeValueAsString(body);
 
             batchItemBuilder.add(items, technicalAccountWithdrawalRelativeUrl, bodyItem, false);
 
@@ -204,7 +191,7 @@ public class BookCreditedAmountFromTechnicalAccountWorker extends AbstractMoneyI
 		        convertedCamt053Entry.getValueDate().setAdditionalProperty("Date", copy.toGregorianCalendar().toZonedDateTime().format(DateTimeFormatter.ISO_LOCAL_DATE));
             }
             
-            String camt053Entry = objectMapper.writeValueAsString(convertedCamt053Entry);
+            String camt053Entry = painMapper.writeValueAsString(convertedCamt053Entry);
 
             String camt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
 
@@ -225,7 +212,7 @@ public class BookCreditedAmountFromTechnicalAccountWorker extends AbstractMoneyI
     				null,
     				pacs004.getPmtRtr().getTxInf().get(0).getOrgnlEndToEndId());
 
-            String camt053Body = objectMapper.writeValueAsString(td);
+            String camt053Body = painMapper.writeValueAsString(td);
 
             batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 

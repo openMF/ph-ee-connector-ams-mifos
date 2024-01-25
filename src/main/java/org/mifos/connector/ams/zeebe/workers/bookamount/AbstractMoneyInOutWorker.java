@@ -1,8 +1,8 @@
 package org.mifos.connector.ams.zeebe.workers.bookamount;
 
 import static org.apache.hc.core5.http.HttpStatus.SC_CONFLICT;
-import static org.apache.hc.core5.http.HttpStatus.SC_TOO_EARLY;
 import static org.apache.hc.core5.http.HttpStatus.SC_OK;
+import static org.apache.hc.core5.http.HttpStatus.SC_TOO_EARLY;
 
 import java.net.ConnectException;
 import java.net.SocketTimeoutException;
@@ -17,6 +17,7 @@ import org.mifos.connector.ams.zeebe.workers.utils.AuthTokenHelper;
 import org.mifos.connector.ams.zeebe.workers.utils.HoldAmountBody;
 import org.mifos.connector.ams.zeebe.workers.utils.TransactionItem;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -72,7 +73,8 @@ public abstract class AbstractMoneyInOutWorker {
     private AuthTokenHelper authTokenHelper;
     
     @Autowired
-    private ObjectMapper objectMapper;
+    @Qualifier("painMapper")
+    private ObjectMapper painMapper;
 
     @Autowired
     private EventService eventService;
@@ -259,12 +261,12 @@ public abstract class AbstractMoneyInOutWorker {
 
 			List<BatchResponse> batchResponseList;
 			try {
-				JsonNode rootNode = objectMapper.readTree(responseBody);
+				JsonNode rootNode = painMapper.readTree(responseBody);
 	            if (rootNode.isTextual()) {
 	            	throw new RuntimeException(responseBody);
 	            }
 	            
-	            batchResponseList = objectMapper.readValue(responseBody, new TypeReference<List<BatchResponse>>() {});
+	            batchResponseList = painMapper.readValue(responseBody, new TypeReference<List<BatchResponse>>() {});
 	            if (batchResponseList == null) {
 	                return null;
 	            }
@@ -286,12 +288,12 @@ public abstract class AbstractMoneyInOutWorker {
                 String responseItemBody = responseItem.getBody();
                 JsonNode rootNode = null;
                 try {
-                	rootNode = objectMapper.readTree(responseItemBody);
+                	rootNode = painMapper.readTree(responseItemBody);
     	            if (rootNode.isTextual()) {
     	            	throw new RuntimeException(responseItemBody);
     	            }
     	            
-    	            CommandProcessingResult commandProcessingResult = objectMapper.readValue(responseItemBody, CommandProcessingResult.class);
+    	            CommandProcessingResult commandProcessingResult = painMapper.readValue(responseItemBody, CommandProcessingResult.class);
     	            return commandProcessingResult.getResourceId();
                 } catch (JsonProcessingException j) {
                 	throw new RuntimeException("An unexpected error occurred for hold request " + idempotencyKey + ": " + rootNode);
@@ -385,12 +387,12 @@ public abstract class AbstractMoneyInOutWorker {
 
 			List<BatchResponse> batchResponseList;
 			try {
-				JsonNode rootNode = objectMapper.readTree(responseBody);
+				JsonNode rootNode = painMapper.readTree(responseBody);
 	            if (rootNode.isTextual()) {
 	            	throw new RuntimeException(responseBody);
 	            }
 	            
-	            batchResponseList = objectMapper.readValue(responseBody, new TypeReference<List<BatchResponse>>() {});
+	            batchResponseList = painMapper.readValue(responseBody, new TypeReference<List<BatchResponse>>() {});
 	            if (batchResponseList == null) {
 	                return null;
 	            }
@@ -425,7 +427,7 @@ public abstract class AbstractMoneyInOutWorker {
             
             String lastResponseBody = lastResponseItem.getBody();
             try {
-				CommandProcessingResult cpResult = objectMapper.readValue(lastResponseBody, CommandProcessingResult.class);
+				CommandProcessingResult cpResult = painMapper.readValue(lastResponseBody, CommandProcessingResult.class);
 	            return cpResult.getTransactionId();
 			} catch (JsonProcessingException j) {
 				log.error(j.getMessage(), j);

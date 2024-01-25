@@ -37,6 +37,7 @@ import org.mifos.connector.ams.zeebe.workers.utils.TransactionBody;
 import org.mifos.connector.ams.zeebe.workers.utils.TransactionItem;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -48,14 +49,9 @@ import com.baasflow.commons.events.Event;
 import com.baasflow.commons.events.EventLogLevel;
 import com.baasflow.commons.events.EventService;
 import com.baasflow.commons.events.EventType;
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.fasterxml.jackson.module.afterburner.AfterburnerModule;
 
 import hu.dpc.rt.utils.converter.Pacs004ToCamt053Converter;
 import io.camunda.zeebe.client.api.response.ActivatedJob;
@@ -104,18 +100,9 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
     @Autowired
     private EventService eventService;
 
-    private ObjectMapper objectMapper = new ObjectMapper() {
-		private static final long serialVersionUID = 1L;
-
-		{
-    		registerModule(new AfterburnerModule());
-    		registerModule(new JavaTimeModule());
-    		configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
-    		setSerializationInclusion(JsonInclude.Include.NON_EMPTY)
-            .configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true)
-            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-    	}
-    };
+    @Autowired
+    @Qualifier("painMapper")
+    private ObjectMapper painMapper;
 
     @JobWorker
     @LogInternalCorrelationId
@@ -177,7 +164,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 	    	
 	    	String transactionDate = hyphenatedTransactionDate.replaceAll("-", "");
 			
-			Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001 = objectMapper.readValue(originalPain001, Pain00100110CustomerCreditTransferInitiationV10MessageSchema.class);
+			Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001 = painMapper.readValue(originalPain001, Pain00100110CustomerCreditTransferInitiationV10MessageSchema.class);
 			
 			log.debug("Withdrawing amount {} from conversion account {}", amount, conversionAccountAmsId);
 			
@@ -203,7 +190,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 					FORMAT,
 					locale);
 			
-			var bodyItem = objectMapper.writeValueAsString(body);
+			var bodyItem = painMapper.writeValueAsString(body);
 			
 			batchItemBuilder.add(items, disposalAccountDepositRelativeUrl, bodyItem, false);
 			
@@ -213,7 +200,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			convertedcamt053Entry.setCreditDebitIndicator(CreditDebitCode.CRDT);
 			convertedcamt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "BOOKED"));
 			convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
-			String camt053Entry = objectMapper.writeValueAsString(convertedcamt053Entry);
+			String camt053Entry = painMapper.writeValueAsString(convertedcamt053Entry);
 			
 			var td = new DtSavingsTransactionDetails(
 					internalCorrelationId,
@@ -233,7 +220,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 					disposalAccountAmsId,
     				pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getPaymentIdentification().getEndToEndIdentification());
 			
-			var camt053Body = objectMapper.writeValueAsString(td);
+			var camt053Body = painMapper.writeValueAsString(td);
 			
 			String camt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
 			
@@ -250,7 +237,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 				convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getSupplementaryData().clear();
 				pain001Camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001.getDocument(), convertedcamt053Entry, transactionFeeCategoryPurposeCode);
 				pain001Camt053Mapper.refillOtherIdentification(pain001.getDocument(), convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0));
-				camt053Entry = objectMapper.writeValueAsString(convertedcamt053Entry);
+				camt053Entry = painMapper.writeValueAsString(convertedcamt053Entry);
 				
 				body = new TransactionBody(
 						transactionDate,
@@ -260,7 +247,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 						FORMAT,
 						locale);
 				
-				bodyItem = objectMapper.writeValueAsString(body);
+				bodyItem = painMapper.writeValueAsString(body);
 				
 				batchItemBuilder.add(items, disposalAccountDepositRelativeUrl, bodyItem, false);
 				
@@ -281,7 +268,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 						conversionAccountAmsId,
 						disposalAccountAmsId,
 	    				pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getPaymentIdentification().getEndToEndIdentification());
-				camt053Body = objectMapper.writeValueAsString(td);
+				camt053Body = painMapper.writeValueAsString(td);
 				batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 			}
 			
@@ -298,7 +285,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getSupplementaryData().clear();
 			pain001Camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001.getDocument(), convertedcamt053Entry, transactionCategoryPurposeCode);
 			pain001Camt053Mapper.refillOtherIdentification(pain001.getDocument(), convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0));
-			camt053Entry = objectMapper.writeValueAsString(convertedcamt053Entry);
+			camt053Entry = painMapper.writeValueAsString(convertedcamt053Entry);
 			
 			body = new TransactionBody(
 					transactionDate,
@@ -308,9 +295,9 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 					FORMAT,
 					locale);
 			
-			objectMapper.setSerializationInclusion(Include.NON_NULL);
+			painMapper.setSerializationInclusion(Include.NON_NULL);
 			
-			bodyItem = objectMapper.writeValueAsString(body);
+			bodyItem = painMapper.writeValueAsString(body);
 			
 			
 			batchItemBuilder.add(items, conversionAccountWithdrawRelativeUrl, bodyItem, false);
@@ -333,7 +320,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 					disposalAccountAmsId,
     				pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getPaymentIdentification().getEndToEndIdentification());
 			
-			camt053Body = objectMapper.writeValueAsString(td);
+			camt053Body = painMapper.writeValueAsString(td);
 	
 			batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 			
@@ -348,7 +335,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 				convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getSupplementaryData().clear();
 				pain001Camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001.getDocument(), convertedcamt053Entry, transactionFeeCategoryPurposeCode);
 				pain001Camt053Mapper.refillOtherIdentification(pain001.getDocument(), convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0));
-				camt053Entry = objectMapper.writeValueAsString(convertedcamt053Entry);
+				camt053Entry = painMapper.writeValueAsString(convertedcamt053Entry);
 				
 				body = new TransactionBody(
 						transactionDate,
@@ -358,7 +345,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 						FORMAT,
 						locale);
 				
-				bodyItem = objectMapper.writeValueAsString(body);
+				bodyItem = painMapper.writeValueAsString(body);
 				
 				batchItemBuilder.add(items, conversionAccountWithdrawRelativeUrl, bodyItem, false);
 				
@@ -379,7 +366,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 						conversionAccountAmsId,
 						disposalAccountAmsId,
 	    				pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getPaymentIdentification().getEndToEndIdentification());
-				camt053Body = objectMapper.writeValueAsString(td);
+				camt053Body = painMapper.writeValueAsString(td);
 				batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 			}
 
@@ -505,9 +492,9 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			
 			String transactionDate = LocalDate.now().format(DateTimeFormatter.ofPattern(FORMAT));
 			
-			objectMapper.setSerializationInclusion(Include.NON_NULL);
+			painMapper.setSerializationInclusion(Include.NON_NULL);
 			
-			Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001 = objectMapper.readValue(originalPain001, Pain00100110CustomerCreditTransferInitiationV10MessageSchema.class);
+			Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001 = painMapper.readValue(originalPain001, Pain00100110CustomerCreditTransferInitiationV10MessageSchema.class);
 			
 			log.debug("Withdrawing amount {} from conversion account {}", amount, conversionAccountAmsId);
 			
@@ -532,7 +519,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 					FORMAT,
 					locale);
 			
-			var bodyItem = objectMapper.writeValueAsString(body);
+			var bodyItem = painMapper.writeValueAsString(body);
 			
 			batchItemBuilder.add(items, disposalAccountDepositRelativeUrl, bodyItem, false);
 			
@@ -542,7 +529,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			convertedcamt053Entry.setCreditDebitIndicator(CreditDebitCode.CRDT);
 			convertedcamt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "BOOKED"));
 			convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
-			String camt053Entry = objectMapper.writeValueAsString(convertedcamt053Entry);
+			String camt053Entry = painMapper.writeValueAsString(convertedcamt053Entry);
 			
 			var td = new DtSavingsTransactionDetails(
 					internalCorrelationId,
@@ -562,7 +549,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 					disposalAccountAmsId,
     				pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getPaymentIdentification().getEndToEndIdentification());
 			
-			var camt053Body = objectMapper.writeValueAsString(td);
+			var camt053Body = painMapper.writeValueAsString(td);
 			
 			String camt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
 			
@@ -579,7 +566,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			convertedcamt053Entry.setCreditDebitIndicator(CreditDebitCode.DBIT);
 			convertedcamt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "BOOKED"));
 			convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
-			camt053Entry = objectMapper.writeValueAsString(convertedcamt053Entry);
+			camt053Entry = painMapper.writeValueAsString(convertedcamt053Entry);
 			
 			body = new TransactionBody(
 					transactionDate,
@@ -589,7 +576,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 					FORMAT,
 					locale);
 			
-			bodyItem = objectMapper.writeValueAsString(body);
+			bodyItem = painMapper.writeValueAsString(body);
 			
 			batchItemBuilder.add(items, conversionAccountWithdrawRelativeUrl, bodyItem, false);
 			
@@ -611,7 +598,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 					disposalAccountAmsId,
     				pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getPaymentIdentification().getEndToEndIdentification());
 			
-			camt053Body = objectMapper.writeValueAsString(td);
+			camt053Body = painMapper.writeValueAsString(td);
 	
 			batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 			
@@ -626,7 +613,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 				convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getSupplementaryData().clear();
 				pain001Camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001.getDocument(), convertedcamt053Entry, transactionFeeCategoryPurposeCode);
 				pain001Camt053Mapper.refillOtherIdentification(pain001.getDocument(), convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0));
-				camt053Entry = objectMapper.writeValueAsString(convertedcamt053Entry);
+				camt053Entry = painMapper.writeValueAsString(convertedcamt053Entry);
 				
 				body = new TransactionBody(
 						transactionDate,
@@ -636,7 +623,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 						FORMAT,
 						locale);
 				
-				bodyItem = objectMapper.writeValueAsString(body);
+				bodyItem = painMapper.writeValueAsString(body);
 				
 				batchItemBuilder.add(items, conversionAccountWithdrawRelativeUrl, bodyItem, false);
 				
@@ -657,7 +644,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 						conversionAccountAmsId,
 						disposalAccountAmsId,
 	    				pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getPaymentIdentification().getEndToEndIdentification());
-				camt053Body = objectMapper.writeValueAsString(td);
+				camt053Body = painMapper.writeValueAsString(td);
 				batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 			}
 	
@@ -747,7 +734,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 					FORMAT,
 					locale);
 			
-			var bodyItem = objectMapper.writeValueAsString(body);
+			var bodyItem = painMapper.writeValueAsString(body);
 			
 			batchItemBuilder.add(items, disposalAccountDepositRelativeUrl, bodyItem, false);
 			
@@ -776,7 +763,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			camt053Entry.setCreditDebitIndicator(CreditDebitCode.CRDT);
 			camt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "BOOKED"));
 			
-			String camt053 = objectMapper.writeValueAsString(camt053Entry);
+			String camt053 = painMapper.writeValueAsString(camt053Entry);
 			
 			var td = new DtSavingsTransactionDetails(
 					internalCorrelationId,
@@ -795,7 +782,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 					disposalAccountAmsId,
     				paymentTransactionInformation.getOrgnlEndToEndId());
 			
-			var camt053Body = objectMapper.writeValueAsString(td);
+			var camt053Body = painMapper.writeValueAsString(td);
 			
 			batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 			
@@ -809,7 +796,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 			camt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.DBIT);
 			camt053Entry.setCreditDebitIndicator(CreditDebitCode.DBIT);
 			camt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "BOOKED"));
-			camt053 = objectMapper.writeValueAsString(camt053Entry);
+			camt053 = painMapper.writeValueAsString(camt053Entry);
 			
 			body = new TransactionBody(
 					transactionDate,
@@ -819,9 +806,9 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 					FORMAT,
 					locale);
 			
-			objectMapper.setSerializationInclusion(Include.NON_NULL);
+			painMapper.setSerializationInclusion(Include.NON_NULL);
 			
-			bodyItem = objectMapper.writeValueAsString(body);
+			bodyItem = painMapper.writeValueAsString(body);
 			
 			
 			batchItemBuilder.add(items, conversionAccountWithdrawRelativeUrl, bodyItem, false);
@@ -844,7 +831,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 					disposalAccountAmsId,
     				paymentTransactionInformation.getOrgnlEndToEndId());
 			
-			camt053Body = objectMapper.writeValueAsString(td);
+			camt053Body = painMapper.writeValueAsString(td);
 
 			batchItemBuilder.add(items, camt053RelativeUrl, camt053Body, true);
 			
