@@ -343,14 +343,20 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
             convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
             String camt053Entry = objectMapper.writeValueAsString(convertedCamt053Entry);
 
+            CashAccount16 debtorAccount = pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getDbtrAcct();
+            String debtorName = debtorAccount.getNm();
+
+            CashAccount16 creditorAccount = pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getCdtrAcct();
+            String creditorCurrency = creditorAccount.getCcy();
+
             var td = new DtSavingsTransactionDetails(
                     internalCorrelationId,
                     camt053Entry,
-                    pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getDbtrAcct().getId().getIBAN(),
+                    debtorAccount.getId().getIBAN(),
                     paymentTypeCode,
                     transactionGroupId,
                     pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getCdtr().getNm(),
-                    pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getCdtrAcct().getId().getIBAN(),
+                    creditorAccount.getId().getIBAN(),
                     null,
                     contactDetailsUtil.getId(pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getDbtr().getCtctDtls()),
                     Optional.ofNullable(pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getRmtInf()).map(RemittanceInformation5::getUstrd).map(List::toString).orElse(""),
@@ -392,11 +398,11 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
             td = new DtSavingsTransactionDetails(
                     internalCorrelationId,
                     camt053Entry,
-                    pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getDbtrAcct().getId().getIBAN(),
+                    debtorAccount.getId().getIBAN(),
                     paymentTypeCode,
                     transactionGroupId,
                     pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getCdtr().getNm(),
-                    pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getCdtrAcct().getId().getIBAN(),
+                    creditorAccount.getId().getIBAN(),
                     null,
                     contactDetailsUtil.getId(pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getDbtr().getCtctDtls()),
                     Optional.ofNullable(pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getRmtInf()).map(RemittanceInformation5::getUstrd).map(List::toString).orElse(""),
@@ -417,6 +423,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
                     internalCorrelationId,
                     "transferToDisposalAccountInRecall");
 
+            notificationHelper.send("transferToDisposalAccountInRecall", amount, creditorCurrency, debtorName, paymentScheme, creditorIban);
             log.info("Exchange to disposal worker has finished successfully");
         } catch (Exception e) {
             log.error("Exchange to disposal worker has failed, dispatching user task to handle exchange", e);
