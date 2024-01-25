@@ -39,6 +39,8 @@ baasflow:
         channels:
             audit:
                 topic: "auditlog"
+            business:
+                topic: "events"
 
 dfspids: "DFSPID"
 
