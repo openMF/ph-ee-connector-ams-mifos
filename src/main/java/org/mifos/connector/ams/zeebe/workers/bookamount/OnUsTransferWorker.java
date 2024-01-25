@@ -94,6 +94,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
                                                                         @Variable String paymentScheme,
                                                                         @Variable String originalPain001,
                                                                         @Variable BigDecimal amount,
+                                                                        @Variable String currency,
                                                                         @Variable Integer creditorDisposalAccountAmsId,
                                                                         @Variable Integer debtorDisposalAccountAmsId,
                                                                         @Variable Integer debtorConversionAccountAmsId,
@@ -114,6 +115,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
                         paymentScheme,
                         originalPain001,
                         amount,
+                        currency,
                         creditorDisposalAccountAmsId,
                         debtorDisposalAccountAmsId,
                         debtorConversionAccountAmsId,
@@ -135,6 +137,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
                                                                          String paymentScheme,
                                                                          String originalPain001,
                                                                          BigDecimal amount,
+                                                                         String currency,
                                                                          Integer creditorDisposalAccountAmsId,
                                                                          Integer debtorDisposalAccountAmsId,
                                                                          Integer debtorConversionAccountAmsId,
@@ -150,7 +153,6 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
                                                                          String creditorInternalAccountId,
                                                                          Event.Builder eventBuilder) {
         try {
-
             log.debug("Incoming pain.001: {}", originalPain001);
 
             Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
@@ -159,7 +161,6 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 
             BankToCustomerStatementV08 convertedStatement = camt053Mapper.toCamt053Entry(pain001.getDocument());
             ReportEntry10 convertedcamt053Entry = convertedStatement.getStatement().get(0).getEntry().get(0);
-            String currency = pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getAmount().getInstructedAmount().getCurrency();
             AmountAndCurrencyExchangeDetails3 withAmountAndCurrency = new AmountAndCurrencyExchangeDetails3()
                     .withAmount(new ActiveOrHistoricCurrencyAndAmount()
                             .withAmount(amount.add(transactionFeeAmount))
@@ -273,10 +274,13 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 
             camt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
 
+            iso.std.iso._20022.tech.json.pain_001_001.CashAccount38 debtorAccount = pain001.getDocument().getPaymentInformation().get(0).getDebtorAccount();
+            String debtorName = pain001.getDocument().getPaymentInformation().get(0).getDebtor().getName();
+
             DtSavingsTransactionDetails td = new DtSavingsTransactionDetails(
                     internalCorrelationId,
                     camt053Entry,
-                    pain001.getDocument().getPaymentInformation().get(0).getDebtorAccount().getIdentification().getIban(),
+                    debtorAccount.getIdentification().getIban(),
                     paymentTypeCode,
                     transactionGroupId,
                     pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditor().getName(),
@@ -324,7 +328,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
                 td = new DtSavingsTransactionDetails(
                         transactionFeeInternalCorrelationId,
                         camt053Entry,
-                        pain001.getDocument().getPaymentInformation().get(0).getDebtorAccount().getIdentification().getIban(),
+                        debtorAccount.getIdentification().getIban(),
                         paymentTypeCode,
                         transactionGroupId,
                         pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditor().getName(),
@@ -373,7 +377,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
                 td = new DtSavingsTransactionDetails(
                         transactionFeeInternalCorrelationId,
                         camt053Entry,
-                        pain001.getDocument().getPaymentInformation().get(0).getDebtorAccount().getIdentification().getIban(),
+                        debtorAccount.getIdentification().getIban(),
                         paymentTypeCode,
                         transactionGroupId,
                         pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditor().getName(),
@@ -421,7 +425,6 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
             convertedcamt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "BOOKED"));
             camt053Entry = objectMapper.writeValueAsString(convertedcamt053Entry);
 
-            String debtorName = pain001.getDocument().getPaymentInformation().get(0).getDebtor().getName();
             td = new DtSavingsTransactionDetails(
                     internalCorrelationId,
                     camt053Entry,
@@ -429,7 +432,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
                     paymentTypeCode,
                     transactionGroupId,
                     debtorName,
-                    pain001.getDocument().getPaymentInformation().get(0).getDebtorAccount().getIdentification().getIban(),
+                    debtorAccount.getIdentification().getIban(),
                     debtorIban.substring(debtorIban.length() - 8),
                     contactDetailsUtil.getId(pain001.getDocument().getPaymentInformation().get(0).getDebtor().getContactDetails()),
                     Optional.ofNullable(pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getRemittanceInformation())
@@ -479,7 +482,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
                 td = new DtSavingsTransactionDetails(
                         transactionFeeInternalCorrelationId,
                         camt053Entry,
-                        pain001.getDocument().getPaymentInformation().get(0).getDebtorAccount().getIdentification().getIban(),
+                        debtorAccount.getIdentification().getIban(),
                         paymentTypeCode,
                         transactionGroupId,
                         pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditor().getName(),

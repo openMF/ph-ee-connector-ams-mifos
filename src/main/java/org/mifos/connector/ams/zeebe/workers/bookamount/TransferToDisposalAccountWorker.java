@@ -93,6 +93,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
                                           @Variable String transactionGroupId,
                                           @Variable String transactionCategoryPurposeCode,
                                           @Variable BigDecimal amount,
+                                          @Variable String currency,
                                           @Variable Integer conversionAccountAmsId,
                                           @Variable Integer disposalAccountAmsId,
                                           @Variable String tenantIdentifier,
@@ -107,6 +108,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
                         transactionGroupId,
                         transactionCategoryPurposeCode,
                         amount,
+                        currency,
                         conversionAccountAmsId,
                         disposalAccountAmsId,
                         tenantIdentifier,
@@ -121,6 +123,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
                                            String transactionGroupId,
                                            String transactionCategoryPurposeCode,
                                            BigDecimal amount,
+                                           String currency,
                                            Integer conversionAccountAmsId,
                                            Integer disposalAccountAmsId,
                                            String tenantIdentifier,
@@ -164,9 +167,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
             convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
             String camt053Entry = objectMapper.writeValueAsString(convertedCamt053Entry);
 
-            CashAccount16 creditorAccount = pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getCdtrAcct();
             String debtorName = pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getDbtr().getNm();
-            String creditorCurrency = creditorAccount.getCcy();
 
             var td = new DtSavingsTransactionDetails(
                     internalCorrelationId,
@@ -242,7 +243,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
                     internalCorrelationId,
                     "transferToDisposalAccount");
 
-            notificationHelper.send("transferToDisposalAccount", amount, creditorCurrency, debtorName, paymentScheme, creditorIban);
+            notificationHelper.send("transferToDisposalAccount", amount, currency, debtorName, paymentScheme, creditorIban);
             log.info("Exchange to disposal worker has finished successfully");
 
         } catch (Exception e) {
@@ -267,6 +268,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
                                                   @Variable String transactionGroupId,
                                                   @Variable String transactionCategoryPurposeCode,
                                                   @Variable BigDecimal amount,
+                                                  @Variable String currency,
                                                   @Variable Integer conversionAccountAmsId,
                                                   @Variable Integer disposalAccountAmsId,
                                                   @Variable String tenantIdentifier,
@@ -282,6 +284,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
                         transactionGroupId,
                         transactionCategoryPurposeCode,
                         amount,
+                        currency,
                         conversionAccountAmsId,
                         disposalAccountAmsId,
                         tenantIdentifier,
@@ -297,6 +300,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
                                                    String transactionGroupId,
                                                    String transactionCategoryPurposeCode,
                                                    BigDecimal amount,
+                                                   String currency,
                                                    Integer conversionAccountAmsId,
                                                    Integer disposalAccountAmsId,
                                                    String tenantIdentifier,
@@ -344,10 +348,9 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
             String camt053Entry = objectMapper.writeValueAsString(convertedCamt053Entry);
 
             CashAccount16 debtorAccount = pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getDbtrAcct();
-            String debtorName = debtorAccount.getNm();
+            String debtorName = pacs004.getPmtRtr().getTxInf().get(0).getOrgnlTxRef().getCdtr().getNm();
 
             CashAccount16 creditorAccount = pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getCdtrAcct();
-            String creditorCurrency = creditorAccount.getCcy();
 
             var td = new DtSavingsTransactionDetails(
                     internalCorrelationId,
@@ -423,7 +426,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
                     internalCorrelationId,
                     "transferToDisposalAccountInRecall");
 
-            notificationHelper.send("transferToDisposalAccountInRecall", amount, creditorCurrency, debtorName, paymentScheme, creditorIban);
+            notificationHelper.send("transferToDisposalAccountInRecall", amount, currency, debtorName, paymentScheme, creditorIban);
             log.info("Exchange to disposal worker has finished successfully");
         } catch (Exception e) {
             log.error("Exchange to disposal worker has failed, dispatching user task to handle exchange", e);
@@ -447,6 +450,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
                                                   @Variable String transactionGroupId,
                                                   @Variable String transactionCategoryPurposeCode,
                                                   @Variable BigDecimal amount,
+                                                  @Variable String currency,
                                                   @Variable Integer conversionAccountAmsId,
                                                   @Variable Integer disposalAccountAmsId,
                                                   @Variable String tenantIdentifier,
@@ -461,6 +465,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
                         transactionGroupId,
                         transactionCategoryPurposeCode,
                         amount,
+                        currency,
                         conversionAccountAmsId,
                         disposalAccountAmsId,
                         tenantIdentifier,
@@ -475,6 +480,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
                                                    String transactionGroupId,
                                                    String transactionCategoryPurposeCode,
                                                    BigDecimal amount,
+                                                   String currency,
                                                    Integer conversionAccountAmsId,
                                                    Integer disposalAccountAmsId,
                                                    String tenantIdentifier,
@@ -523,13 +529,14 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
             String camt053Entry = objectMapper.writeValueAsString(convertedCamt053Entry);
 
 
+            String creditorName = pacs_004.getPmtRtr().getTxInf().get(0).getOrgnlTxRef().getCdtr().getNm();
             var td = new DtSavingsTransactionDetails(
                     internalCorrelationId,
                     camt053Entry,
                     pacs_004.getPmtRtr().getTxInf().get(0).getOrgnlTxRef().getDbtrAcct().getId().getIBAN(),
                     paymentTypeCode,
                     transactionGroupId,
-                    pacs_004.getPmtRtr().getTxInf().get(0).getOrgnlTxRef().getCdtr().getNm(),
+                    creditorName,
                     pacs_004.getPmtRtr().getTxInf().get(0).getOrgnlTxRef().getCdtrAcct().getId().getIBAN(),
                     null,
                     contactDetailsUtil.getId(pacs_004.getPmtRtr().getTxInf().get(0).getOrgnlTxRef().getCdtr().getCtctDtls()),
@@ -577,7 +584,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
                     pacs_004.getPmtRtr().getTxInf().get(0).getOrgnlTxRef().getDbtrAcct().getId().getIBAN(),
                     paymentTypeCode,
                     transactionGroupId,
-                    pacs_004.getPmtRtr().getTxInf().get(0).getOrgnlTxRef().getCdtr().getNm(),
+                    creditorName,
                     pacs_004.getPmtRtr().getTxInf().get(0).getOrgnlTxRef().getCdtrAcct().getId().getIBAN(),
                     null,
                     contactDetailsUtil.getId(pacs_004.getPmtRtr().getTxInf().get(0).getOrgnlTxRef().getCdtr().getCtctDtls()),
@@ -600,6 +607,8 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
                     conversionAccountAmsId,
                     internalCorrelationId,
                     "transferToDisposalAccountInReturn");
+
+            notificationHelper.send("transferToDisposalAccountInReturn", amount, currency, creditorName, paymentScheme, creditorIban);
 
             log.info("Exchange to disposal worker has finished successfully");
         } catch (Exception e) {
