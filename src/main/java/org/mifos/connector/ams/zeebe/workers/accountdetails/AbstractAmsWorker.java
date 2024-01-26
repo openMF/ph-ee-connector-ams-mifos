@@ -1,26 +1,20 @@
 package org.mifos.connector.ams.zeebe.workers.accountdetails;
 
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.stream.Collectors;
-
+import com.baasflow.commons.events.EventLogLevel;
+import com.baasflow.commons.events.EventService;
+import com.baasflow.commons.events.EventType;
+import lombok.extern.slf4j.Slf4j;
 import org.mifos.connector.ams.log.EventLogUtil;
 import org.mifos.connector.ams.zeebe.workers.utils.AuthTokenHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import com.baasflow.commons.events.EventLogLevel;
-import com.baasflow.commons.events.EventService;
-import com.baasflow.commons.events.EventType;
-
-import lombok.extern.slf4j.Slf4j;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 public abstract class AbstractAmsWorker {
@@ -101,25 +95,25 @@ public abstract class AbstractAmsWorker {
         return eventService.auditedEvent(
                 eventBuilder -> EventLogUtil.initFineractCall(calledFrom, -1, -1, null, eventBuilder),
                 eventBuilder -> {
-                	var entity = new HttpEntity<>(httpHeaders);
-                	eventService.sendEvent(builder -> builder
-                			.setSourceModule(calledFrom)
-                			.setEventLogLevel(EventLogLevel.INFO)
-                			.setEvent(eventName)
-                			.setEventType(EventType.audit)
-                			.setPayload(urlTemplate));
-                	ResponseEntity<T> response = restTemplate.exchange(
-                                        urlTemplate,
-                                        HttpMethod.GET,
-                                        entity,
-                                        responseType);
-                	eventService.sendEvent(builder -> builder
-                			.setSourceModule(calledFrom)
-                			.setEventLogLevel(EventLogLevel.INFO)
-                			.setEvent(eventName)
-                			.setEventType(EventType.audit)
-                			.setPayload(response.toString()));
-                	return response.getBody();
-                	});
+                    var entity = new HttpEntity<>(httpHeaders);
+                    eventService.sendEvent(builder -> builder
+                            .setSourceModule(calledFrom)
+                            .setEventLogLevel(EventLogLevel.INFO)
+                            .setEvent(eventName)
+                            .setEventType(EventType.audit)
+                            .setPayload(urlTemplate));
+                    ResponseEntity<T> response = restTemplate.exchange(
+                            urlTemplate,
+                            HttpMethod.GET,
+                            entity,
+                            responseType);
+                    eventService.sendEvent(builder -> builder
+                            .setSourceModule(calledFrom)
+                            .setEventLogLevel(EventLogLevel.INFO)
+                            .setEvent(eventName)
+                            .setEventType(EventType.audit)
+                            .setPayload(response.toString()));
+                    return response.getBody();
+                });
     }
 }

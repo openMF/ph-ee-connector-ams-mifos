@@ -1,29 +1,23 @@
 package org.mifos.connector.ams.zeebe.workers.accountdetails;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-
-import org.apache.fineract.client.models.GetSavingsAccountsAccountIdResponse;
-import org.mifos.connector.ams.log.EventLogUtil;
-import org.mifos.connector.ams.log.LogInternalCorrelationId;
-import org.mifos.connector.ams.log.TraceZeebeArguments;
-import org.mifos.connector.ams.common.SavingsAccountStatusType;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
-import org.springframework.web.util.UriComponentsBuilder;
-
 import com.baasflow.commons.events.Event;
 import com.baasflow.commons.events.EventService;
-
 import io.camunda.zeebe.client.api.response.ActivatedJob;
 import io.camunda.zeebe.client.api.worker.JobClient;
 import io.camunda.zeebe.spring.client.annotation.JobWorker;
 import io.camunda.zeebe.spring.client.annotation.Variable;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.fineract.client.models.GetSavingsAccountsAccountIdResponse;
+import org.mifos.connector.ams.common.SavingsAccountStatusType;
+import org.mifos.connector.ams.log.EventLogUtil;
+import org.mifos.connector.ams.log.LogInternalCorrelationId;
+import org.mifos.connector.ams.log.TraceZeebeArguments;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+import org.springframework.web.util.UriComponentsBuilder;
+
+import java.util.*;
 
 @Component
 @Slf4j
@@ -113,12 +107,12 @@ public class GetAccountDetailsFromAmsWorker extends AbstractAmsWorker {
         Integer conversionAccountAmsId = conversion.getId();
 
         if (currency.equalsIgnoreCase(conversion.getCurrency().getCode())
-        		&& currency.equalsIgnoreCase(disposal.getCurrency().getCode())
+                && currency.equalsIgnoreCase(disposal.getCurrency().getCode())
                 && conversion.getStatus().getId() == 300
                 && disposal.getStatus().getId() == 300) {
             status = AccountAmsStatus.READY_TO_RECEIVE_MONEY.name();
         } else {
-        	log.info("Conversion account currency: {}, disposal account: {}. Account is not ready to receive money.", conversion, disposal);
+            log.info("Conversion account currency: {}, disposal account: {}. Account is not ready to receive money.", conversion, disposal);
         }
 
         List<Object> flags = lookupFlags(accountDisposalId, tenantIdentifier);
@@ -139,10 +133,10 @@ public class GetAccountDetailsFromAmsWorker extends AbstractAmsWorker {
             reasonCode = accountClosedReasons.getOrDefault(paymentSchemePrefix + "-" + direction, "NOT_PROVIDED");
             log.info("CLOSED account, returning reasonCode based on scheme and direction: {}-{}: {}", paymentSchemePrefix, direction, reasonCode);
         }
-        
+
         if (AccountAmsStatus.NOT_READY_TO_RECEIVE_MONEY.name().equalsIgnoreCase(status) && SavingsAccountStatusType.ACTIVE.equals(statusType)) {
-        	statusType = SavingsAccountStatusType.INVALID;
-        	reasonCode = "AM03";
+            statusType = SavingsAccountStatusType.INVALID;
+            reasonCode = "AM03";
         }
 
         HashMap<String, Object> outputVariables = new HashMap<>();

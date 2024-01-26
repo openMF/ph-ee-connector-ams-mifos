@@ -39,5 +39,6 @@ public class ZeebeVariables {
         ACTION_FAILURE_MAP.put(TransferActionType.RELEASE.name(), TRANSFER_RELEASE_FAILED);
     }
 
-    private ZeebeVariables() {}
+    private ZeebeVariables() {
+    }
 }

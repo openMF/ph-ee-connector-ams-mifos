@@ -1,11 +1,6 @@
 package org.mifos.connector.ams.camel.cxfrs;
 
-import org.apache.camel.support.jsse.ClientAuthentication;
-import org.apache.camel.support.jsse.KeyManagersParameters;
-import org.apache.camel.support.jsse.KeyStoreParameters;
-import org.apache.camel.support.jsse.SSLContextParameters;
-import org.apache.camel.support.jsse.SSLContextServerParameters;
-import org.apache.camel.support.jsse.TrustManagersParameters;
+import org.apache.camel.support.jsse.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -70,9 +65,9 @@ public class SSLConfig {
 
     private CompositeX509TrustManager createCompositeTrustManager() {
         List<X509TrustManager> trustManagers = Stream.concat(
-                Stream.of(tryToGetApplicationTrustManagerTrustManager()),
-                Stream.of(tryToGetJavaTrustManager())
-        )
+                        Stream.of(tryToGetApplicationTrustManagerTrustManager()),
+                        Stream.of(tryToGetJavaTrustManager())
+                )
                 .filter(X509TrustManager.class::isInstance)
                 .map(X509TrustManager.class::cast)
                 .collect(Collectors.toList());

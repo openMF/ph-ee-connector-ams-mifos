@@ -19,7 +19,7 @@ public class CxfrsUtil {
      */
     public void sendInOut(String endpoint, Exchange ex, Map<String, Object> headers, Object body) {
         ExchangePattern oldPattern = ex.getPattern();
-        if(body != null) {
+        if (body != null) {
             ex.getIn().setBody(body);
         }
         ex.getIn().removeHeaders("*");

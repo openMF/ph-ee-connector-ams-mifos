@@ -12,8 +12,8 @@ public class IOTxLogger {
     public void receiving(String message) {
         logger.debug(">> {}", message);
     }
-    
+
     public void sending(String message) {
-    	logger.debug("<< {}", message);
+        logger.debug("<< {}", message);
     }
 }

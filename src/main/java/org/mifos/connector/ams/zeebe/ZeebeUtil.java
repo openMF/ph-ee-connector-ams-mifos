@@ -1,12 +1,11 @@
 package org.mifos.connector.ams.zeebe;
 
-import java.util.Map;
-
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.camel.Exchange;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.Map;
 
 
 public class ZeebeUtil {
@@ -28,14 +27,14 @@ public class ZeebeUtil {
     }
 
     @SuppressWarnings("unchecked")
-	public static Map<String, Object> zeebeVariablesFrom(Exchange exchange) {
+    public static Map<String, Object> zeebeVariablesFrom(Exchange exchange) {
         return exchange.getProperty("zeebeVariables", Map.class);
     }
 
     @SuppressWarnings("unchecked")
-	public static <T> T zeebeVariable(Exchange exchange, String name, Class<T> clazz) throws Exception {
+    public static <T> T zeebeVariable(Exchange exchange, String name, Class<T> clazz) throws Exception {
         Object content = zeebeVariablesFrom(exchange).get(name);
-        if (content instanceof Map){
+        if (content instanceof Map) {
             return objectMapper.readValue(objectMapper.writeValueAsString(content), clazz);
         }
         return (T) content;
