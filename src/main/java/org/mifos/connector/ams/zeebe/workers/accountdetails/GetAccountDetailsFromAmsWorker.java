@@ -65,7 +65,11 @@ public class GetAccountDetailsFromAmsWorker extends AbstractAmsWorker {
         return eventService.auditedEvent(
                 eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "getAccountDetailsFromAms", internalCorrelationId, null, eventBuilder),
                 eventBuilder -> getAccountDetailsFromAms(internalCorrelationId, iban, tenantIdentifier, currency, paymentScheme, direction, eventBuilder));
+
     }
+
+    // TODO add getSavingsAccountDetailsFromAms
+
 
     private Map<String, Object> getAccountDetailsFromAms(String internalCorrelationId,
                                                          String iban,
@@ -75,10 +79,12 @@ public class GetAccountDetailsFromAmsWorker extends AbstractAmsWorker {
                                                          String direction,
                                                          Event.Builder eventBuilder) {
         String paymentSchemePrefix = paymentScheme.split(":")[0];
-        AmsDataTableQueryResponse[] response = lookupAccount(iban, tenantIdentifier);
+        AmsDataTableQueryResponse[] response = lookupAccount(iban, tenantIdentifier);   // TODO try to lookup CurrentAccount first
         log.info("1/4: Account details retrieval finished");
 
-        if (response.length == 0) {
+        if (response.length == 0) { // TODO handle also 4xx errors
+            // TODO give another try at getSavingsAccountDetailsFromAms
+
             String reasonCode = accountNotExistsReasons.getOrDefault(paymentSchemePrefix + "-" + direction, "NOT_PROVIDED");
             log.debug("Account not found in AMS, returning reasonCode based on scheme and direction: {}-{}: {}", paymentSchemePrefix, direction, reasonCode);
 
@@ -153,7 +159,7 @@ public class GetAccountDetailsFromAmsWorker extends AbstractAmsWorker {
         outputVariables.put("disposalAccountAmsStatusType", statusType);
         outputVariables.put("internalAccountId", internalAccountId);
         outputVariables.put("reasonCode", reasonCode);
-        return Map.copyOf(outputVariables);
+        return outputVariables;
     }
 
     private GetSavingsAccountsAccountIdResponse retrieveCurrencyIdAndStatus(Long accountCurrencyId, String tenantId) {
