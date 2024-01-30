@@ -267,7 +267,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
             transactionDetails.setCreditDebitIndicator(CreditDebitCode.DBIT);
             convertedcamt053Entry.setCreditDebitIndicator(CreditDebitCode.DBIT);
             convertedcamt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "BOOKED"));
-            camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001.getDocument(), convertedcamt053Entry, transactionCategoryPurposeCode);
+            camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001.getDocument(), transactionDetails, transactionCategoryPurposeCode);
             transactionDetails.getSupplementaryData().clear();
             refillOtherId(debtorInternalAccountId, creditorInternalAccountId, transactionDetails);
             String camt053Entry = objectMapper.writeValueAsString(convertedcamt053Entry);
@@ -321,7 +321,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
                 transactionDetails.getAmountDetails().getTransactionAmount().getAmount().setAmount(transactionFeeAmount);
                 transactionDetails.setAdditionalTransactionInformation(paymentTypeCode);
                 transactionDetails.getSupplementaryData().clear();
-                camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001.getDocument(), convertedcamt053Entry, transactionFeeCategoryPurposeCode);
+                camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001.getDocument(), transactionDetails, transactionFeeCategoryPurposeCode);
                 refillOtherId(debtorInternalAccountId, creditorInternalAccountId, transactionDetails);
                 camt053Entry = objectMapper.writeValueAsString(convertedcamt053Entry);
 
@@ -356,7 +356,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
                 transactionDetails.setCreditDebitIndicator(CreditDebitCode.CRDT);
                 convertedcamt053Entry.setCreditDebitIndicator(CreditDebitCode.CRDT);
                 convertedcamt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "BOOKED"));
-                camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001.getDocument(), convertedcamt053Entry, transactionFeeCategoryPurposeCode);
+                camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001.getDocument(), transactionDetails, transactionFeeCategoryPurposeCode);
                 refillOtherId(debtorInternalAccountId, creditorInternalAccountId, transactionDetails);
                 camt053Entry = objectMapper.writeValueAsString(convertedcamt053Entry);
 
@@ -402,7 +402,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
             paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(depositAmountConfigOperationKey);
             transactionDetails.setAdditionalTransactionInformation(paymentTypeCode);
             transactionDetails.getSupplementaryData().clear();
-            camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001.getDocument(), convertedcamt053Entry, transactionCategoryPurposeCode);
+            camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001.getDocument(), transactionDetails, transactionCategoryPurposeCode);
             refillOtherId(debtorInternalAccountId, creditorInternalAccountId, transactionDetails);
             transactionBody = new TransactionBody(
                     interbankSettlementDate,
@@ -474,7 +474,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 
                 transactionDetails.getAmountDetails().getTransactionAmount().getAmount().setAmount(transactionFeeAmount);
                 transactionDetails.getSupplementaryData().clear();
-                camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001.getDocument(), convertedcamt053Entry, transactionFeeCategoryPurposeCode);
+                camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001.getDocument(), transactionDetails, transactionFeeCategoryPurposeCode);
                 refillOtherId(debtorInternalAccountId, creditorInternalAccountId, transactionDetails);
                 transactionDetails.getSupplementaryData().get(0).getEnvelope().setAdditionalProperty("InternalCorrelationId", transactionFeeInternalCorrelationId);
                 camt053Entry = objectMapper.writeValueAsString(convertedcamt053Entry);

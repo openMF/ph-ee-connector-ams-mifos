@@ -16,11 +16,8 @@ import io.camunda.zeebe.client.api.worker.JobClient;
 import io.camunda.zeebe.spring.client.annotation.JobWorker;
 import io.camunda.zeebe.spring.client.annotation.Variable;
 import io.camunda.zeebe.spring.client.exception.ZeebeBpmnError;
+import iso.std.iso._20022.tech.json.camt_053_001.*;
 import iso.std.iso._20022.tech.json.camt_053_001.ActiveOrHistoricCurrencyAndAmountRange2.CreditDebitCode;
-import iso.std.iso._20022.tech.json.camt_053_001.BankToCustomerStatementV08;
-import iso.std.iso._20022.tech.json.camt_053_001.DateAndDateTime2Choice;
-import iso.std.iso._20022.tech.json.camt_053_001.EntryStatus1Choice;
-import iso.std.iso._20022.tech.json.camt_053_001.ReportEntry10;
 import iso.std.iso._20022.tech.json.pain_001_001.CustomerCreditTransferInitiationV10;
 import iso.std.iso._20022.tech.json.pain_001_001.Pain00100110CustomerCreditTransferInitiationV10MessageSchema;
 import jakarta.xml.bind.JAXBException;
@@ -385,14 +382,15 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
         if (paymentTypeCode == null) {
             paymentTypeCode = "";
         }
-        convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
+        EntryTransaction10 transactionDetails = convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0);
+        transactionDetails.setAdditionalTransactionInformation(paymentTypeCode);
         if (pain001 != null) {
-            convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getSupplementaryData().clear();
+            transactionDetails.getSupplementaryData().clear();
             if (includeSupplementary) {
-                camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001, convertedCamt053Entry, transactionFeeCategoryPurposeCode);
-                camt053Mapper.refillOtherIdentification(pain001, convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0));
+                camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001, transactionDetails, transactionFeeCategoryPurposeCode);
+                camt053Mapper.refillOtherIdentification(pain001, transactionDetails);
             } else {
-                camt053Mapper.fillOtherIdentification(pain001, convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0));
+                camt053Mapper.fillOtherIdentification(pain001, transactionDetails);
             }
         }
         String camt053 = objectMapper.writeValueAsString(convertedCamt053Entry);

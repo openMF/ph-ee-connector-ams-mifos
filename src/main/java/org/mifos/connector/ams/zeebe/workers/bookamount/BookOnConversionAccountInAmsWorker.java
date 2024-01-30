@@ -169,10 +169,11 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 
             BankToCustomerStatementV08 convertedStatement = camt053Mapper.toCamt053Entry(pain001.getDocument());
             ReportEntry10 convertedcamt053Entry = convertedStatement.getStatement().get(0).getEntry().get(0);
-            convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.DBIT);
+            EntryTransaction10 transactionDetails = convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0);
+            transactionDetails.setCreditDebitIndicator(CreditDebitCode.DBIT);
             convertedcamt053Entry.setCreditDebitIndicator(CreditDebitCode.DBIT);
             convertedcamt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "BOOKED"));
-            convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
+            transactionDetails.setAdditionalTransactionInformation(paymentTypeCode);
             String camt053Entry = objectMapper.writeValueAsString(convertedcamt053Entry);
 
             String camt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
@@ -207,10 +208,10 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
                 String withdrawFeeConfigOperationKey = String.format("%s.%s", paymentScheme, withdrawFeeOperation);
                 paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(withdrawFeeConfigOperationKey);
                 paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(withdrawFeeConfigOperationKey);
-                convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
-                convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getSupplementaryData().clear();
-                camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001.getDocument(), convertedcamt053Entry, transactionFeeCategoryPurposeCode);
-                camt053Mapper.refillOtherIdentification(pain001.getDocument(), convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0));
+                transactionDetails.setAdditionalTransactionInformation(paymentTypeCode);
+                transactionDetails.getSupplementaryData().clear();
+                camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001.getDocument(), transactionDetails, transactionFeeCategoryPurposeCode);
+                camt053Mapper.refillOtherIdentification(pain001.getDocument(), transactionDetails);
 
                 camt053Entry = objectMapper.writeValueAsString(convertedcamt053Entry);
 
