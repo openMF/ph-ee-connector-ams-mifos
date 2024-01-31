@@ -58,7 +58,8 @@ class TestRevertInAmsWorker {
         RevertInAmsWorker worker = new RevertInAmsWorker() {
             @Override
             protected String doBatch(List<TransactionItem> items, String tenantId, Integer disposalAccountId, Integer conversionAccountId, String internalCorrelationId, String calledFrom) {
-                logger.info("executing batch: {}", items);
+                logger.debug("executing batch of {} items:", items.size());
+                items.forEach(item -> logger.info("- {}", item));
                 return null;
             }
         };
