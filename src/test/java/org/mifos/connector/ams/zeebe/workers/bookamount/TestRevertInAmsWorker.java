@@ -20,7 +20,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -30,7 +32,14 @@ class TestRevertInAmsWorker {
 
     @Test
     public void test() throws Exception {
-        RevertInAmsWorker worker = setupWorker();
+        Consumer<TransactionItem> itemValidator = item -> {
+            assertFalse(item.toString().contains("AmountDetails"));
+            assertFalse(item.toString().contains("AdditionalTransactionInformation"));
+            assertFalse(item.toString().contains("Batch"));
+            assertFalse(item.toString().contains("TransactionCreationChannel"));
+        };
+
+        RevertInAmsWorker worker = setupWorker(itemValidator);
         String pain001 = Files.readString(Path.of(getClass().getResource("/pain001.json").toURI()));
 
         Map<String, Object> output = worker.revertInAms(
@@ -54,12 +63,16 @@ class TestRevertInAmsWorker {
     }
 
     @NotNull
-    private RevertInAmsWorker setupWorker() {
+    private RevertInAmsWorker setupWorker(Consumer<TransactionItem> validator) {
         RevertInAmsWorker worker = new RevertInAmsWorker() {
             @Override
             protected String doBatch(List<TransactionItem> items, String tenantId, Integer disposalAccountId, Integer conversionAccountId, String internalCorrelationId, String calledFrom) {
                 logger.debug("executing batch of {} items:", items.size());
-                items.forEach(item -> logger.info("- {}", item));
+                items.forEach(item -> {
+                    logger.info("- {}", item);
+                    validator.accept(item);
+                });
+
                 return null;
             }
         };
