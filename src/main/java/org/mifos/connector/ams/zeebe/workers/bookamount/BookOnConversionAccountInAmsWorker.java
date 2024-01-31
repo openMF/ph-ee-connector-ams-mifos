@@ -17,8 +17,10 @@ import io.camunda.zeebe.spring.client.annotation.JobWorker;
 import io.camunda.zeebe.spring.client.annotation.Variable;
 import iso.std.iso._20022.tech.json.camt_053_001.*;
 import iso.std.iso._20022.tech.json.camt_053_001.ActiveOrHistoricCurrencyAndAmountRange2.CreditDebitCode;
+import iso.std.iso._20022.tech.json.pain_001_001.CreditTransferTransaction40;
 import iso.std.iso._20022.tech.json.pain_001_001.Pain00100110CustomerCreditTransferInitiationV10MessageSchema;
 import iso.std.iso._20022.tech.xsd.pacs_004_001.PaymentTransactionInformation27;
+import iso.std.iso._20022.tech.xsd.pacs_004_001.RemittanceInformation5;
 import jakarta.xml.bind.JAXBException;
 import lombok.extern.slf4j.Slf4j;
 import org.mifos.connector.ams.fineract.Config;
@@ -178,23 +180,24 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 
             String camt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
 
+            CreditTransferTransaction40 creditTransferTransaction = pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0);
             DtSavingsTransactionDetails td = new DtSavingsTransactionDetails(
                     internalCorrelationId,
                     camt053Entry,
                     pain001.getDocument().getPaymentInformation().get(0).getDebtorAccount().getIdentification().getIban(),
                     paymentTypeCode,
                     transactionGroupId,
-                    pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditor().getName(),
-                    pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditorAccount().getIdentification().getIban(),
+                    creditTransferTransaction.getCreditor().getName(),
+                    creditTransferTransaction.getCreditorAccount().getIdentification().getIban(),
                     null,
-                    contactDetailsUtil.getId(pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditor().getContactDetails()),
-                    Optional.ofNullable(pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getRemittanceInformation())
+                    contactDetailsUtil.getId(creditTransferTransaction.getCreditor().getContactDetails()),
+                    Optional.ofNullable(creditTransferTransaction.getRemittanceInformation())
                             .map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(List::toString).orElse(""),
                     transactionCategoryPurposeCode,
                     paymentScheme,
                     conversionAccountAmsId,
                     null,
-                    pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getPaymentIdentification().getEndToEndIdentification());
+                    creditTransferTransaction.getPaymentIdentification().getEndToEndIdentification());
 
             String camt053Body = objectMapper.writeValueAsString(td);
 
@@ -233,17 +236,17 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
                         pain001.getDocument().getPaymentInformation().get(0).getDebtorAccount().getIdentification().getIban(),
                         paymentTypeCode,
                         transactionGroupId,
-                        pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditor().getName(),
-                        pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditorAccount().getIdentification().getIban(),
+                        creditTransferTransaction.getCreditor().getName(),
+                        creditTransferTransaction.getCreditorAccount().getIdentification().getIban(),
                         null,
-                        contactDetailsUtil.getId(pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditor().getContactDetails()),
-                        Optional.ofNullable(pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getRemittanceInformation())
+                        contactDetailsUtil.getId(creditTransferTransaction.getCreditor().getContactDetails()),
+                        Optional.ofNullable(creditTransferTransaction.getRemittanceInformation())
                                 .map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(List::toString).orElse(""),
                         transactionFeeCategoryPurposeCode,
                         paymentScheme,
                         conversionAccountAmsId,
                         null,
-                        pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getPaymentIdentification().getEndToEndIdentification());
+                        creditTransferTransaction.getPaymentIdentification().getEndToEndIdentification());
                 camt053Body = objectMapper.writeValueAsString(td);
                 batchItemBuilder.add(tenantIdentifier, items, camt053RelativeUrl, camt053Body, true);
             }
@@ -360,9 +363,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
             camt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "BOOKED"));
             camt053Entry.setCreditDebitIndicator(CreditDebitCode.DBIT);
 
-            PaymentTransactionInformation27 paymentTransactionInformation = pacs004
-                    .getPmtRtr()
-                    .getTxInf().get(0);
+            PaymentTransactionInformation27 paymentTransactionInformation = pacs004.getPmtRtr().getTxInf().get(0);
 
             XMLGregorianCalendar orgnlCreDtTm = pacs002.getFIToFIPmtStsRpt().getOrgnlGrpInfAndSts().getOrgnlCreDtTm();
             if (orgnlCreDtTm == null) {
@@ -376,11 +377,16 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
                 camt053Entry.getValueDate().setAdditionalProperty("Date", date);
             }
 
-            camt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
+            EntryTransaction10 transactionDetails = camt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0);
+            transactionDetails.setAdditionalTransactionInformation(paymentTypeCode);
 
             String camt053 = objectMapper.writeValueAsString(camt053Entry);
 
             String camt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
+
+            String remittanceInformationUnstructured = Optional.ofNullable(paymentTransactionInformation.getOrgnlTxRef().getRmtInf())
+                    .map(RemittanceInformation5::getUstrd).map(List::toString)
+                    .orElse("");
 
             DtSavingsTransactionDetails td = new DtSavingsTransactionDetails(
                     internalCorrelationId,
@@ -392,8 +398,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
                     paymentTransactionInformation.getOrgnlTxRef().getDbtrAcct().getId().getIBAN(),
                     null,
                     contactDetailsUtil.getId(paymentTransactionInformation.getOrgnlTxRef().getDbtr().getCtctDtls()),
-                    Optional.ofNullable(paymentTransactionInformation.getOrgnlTxRef().getRmtInf())
-                            .map(iso.std.iso._20022.tech.xsd.pacs_004_001.RemittanceInformation5::getUstrd).map(List::toString).orElse(""),
+                    remittanceInformationUnstructured,
                     transactionCategoryPurposeCode,
                     paymentScheme,
                     conversionAccountAmsId,
