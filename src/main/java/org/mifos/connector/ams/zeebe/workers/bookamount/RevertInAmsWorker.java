@@ -1,6 +1,5 @@
 package org.mifos.connector.ams.zeebe.workers.bookamount;
 
-import com.baasflow.commons.events.Event;
 import com.baasflow.commons.events.EventLogLevel;
 import com.baasflow.commons.events.EventService;
 import com.baasflow.commons.events.EventType;
@@ -647,8 +646,10 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 
     private String serializeCamt053orFragment(String accountProductType, EntryTransaction10 camt053Fragment, ReportEntry10 savingsAccountsCamt053Entry) throws JsonProcessingException {
         if ("Current".equalsIgnoreCase(accountProductType)) {
+            log.debug("serializeCamt053orFragment: Current account");
             return objectMapper.writeValueAsString(camt053Fragment);
         } else {
+            log.debug("serializeCamt053orFragment: Savings account");
             return objectMapper.writeValueAsString(savingsAccountsCamt053Entry);
         }
     }
@@ -664,11 +665,10 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                                                 @Variable String tenantIdentifier,
                                                 @Variable String paymentScheme,
                                                 @Variable String transactionCategoryPurposeCode,
-                                                @Variable String camt056,
                                                 @Variable String generatedPacs004,
                                                 @Variable String pacs002,
-                                                @Variable String debtorIban,
-                                                @Variable String internalCorrelationId) {
+                                                @Variable String internalCorrelationId,
+                                                @Variable String accountProductType) {
         log.info("depositTheAmountOnDisposalInAms");
         eventService.auditedEvent(
                 eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "depositTheAmountOnDisposalInAms",
@@ -681,12 +681,11 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                         tenantIdentifier,
                         paymentScheme,
                         transactionCategoryPurposeCode,
-                        camt056,
                         generatedPacs004,
                         pacs002,
-                        debtorIban,
                         internalCorrelationId,
-                        eventBuilder));
+                        accountProductType
+                ));
     }
 
     private Void depositTheAmountOnDisposalInAms(BigDecimal amount,
@@ -695,12 +694,10 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                                                  String tenantIdentifier,
                                                  String paymentScheme,
                                                  String transactionCategoryPurposeCode,
-                                                 String camt056,
                                                  String originalPacs004,
                                                  String originalPacs002,
-                                                 String debtorIban,
                                                  String internalCorrelationId,
-                                                 Event.Builder eventBuilder) {
+                                                 String accountProductType) {
         try {
             String transactionDate = LocalDate.now().format(DateTimeFormatter.ofPattern(FORMAT));
             List<TransactionItem> items = new ArrayList<>();
@@ -735,22 +732,23 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                     .getPmtRtr()
                     .getTxInf().get(0);
 
-            ReportEntry10 camt053Entry = pacs004Camt053Mapper.convert(pacs004,
-                    new BankToCustomerStatementV08()
-                            .withStatement(List.of(new AccountStatement9()
-                                    .withEntry(List.of(new ReportEntry10()
-                                            .withEntryDetails(List.of(new EntryDetails9()
-                                                    .withTransactionDetails(List.of(new EntryTransaction10()))))))))).getStatement().get(0).getEntry().get(0);
+            BankToCustomerStatementV08 camt053Object = pacs004Camt053Mapper.convert(pacs004, new BankToCustomerStatementV08()
+                    .withStatement(List.of(new AccountStatement9()
+                            .withEntry(List.of(new ReportEntry10()
+                                    .withEntryDetails(List.of(new EntryDetails9()
+                                            .withTransactionDetails(List.of(new EntryTransaction10())))))))));
+            ReportEntry10 camt053Entry = camt053Object.getStatement().get(0).getEntry().get(0);
             ZoneId zi = TimeZone.getTimeZone("Europe/Budapest").toZoneId();
             ZonedDateTime zdt = pacs002.getFIToFIPmtStsRpt().getTxInfAndSts().get(0).getAccptncDtTm().toGregorianCalendar().toZonedDateTime().withZoneSameInstant(zi);
             var copy = DatatypeFactory.newDefaultInstance().newXMLGregorianCalendar(GregorianCalendar.from(zdt));
             camt053Entry.getValueDate().setAdditionalProperty("Date", copy);
-            camt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
-            camt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.CRDT);
+            EntryTransaction10 transactionDetails = camt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0);
+            transactionDetails.setAdditionalTransactionInformation(paymentTypeCode);
+            transactionDetails.setCreditDebitIndicator(CreditDebitCode.CRDT);
             camt053Entry.setCreditDebitIndicator(CreditDebitCode.CRDT);
             camt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "BOOKED"));
 
-            String camt053 = objectMapper.writeValueAsString(camt053Entry);
+            String camt053 = serializeCamt053orFragment(accountProductType, transactionDetails, camt053Entry);
 
             var td = new DtSavingsTransactionDetails(
                     internalCorrelationId,
@@ -779,11 +777,11 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
             String withdrawAmountConfigOperationKey = String.format("%s.%s", paymentScheme, withdrawAmountOperation);
             paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(withdrawAmountConfigOperationKey);
             paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(withdrawAmountConfigOperationKey);
-            camt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
-            camt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.DBIT);
+            transactionDetails.setAdditionalTransactionInformation(paymentTypeCode);
+            transactionDetails.setCreditDebitIndicator(CreditDebitCode.DBIT);
             camt053Entry.setCreditDebitIndicator(CreditDebitCode.DBIT);
             camt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "BOOKED"));
-            camt053 = objectMapper.writeValueAsString(camt053Entry);
+            camt053 = serializeCamt053orFragment(accountProductType, transactionDetails, camt053Entry);
 
             body = new TransactionBody(
                     transactionDate,
