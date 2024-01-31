@@ -12,7 +12,7 @@ import java.util.UUID;
 public class BatchItemBuilder {
 
     @Autowired
-    private AuthTokenHelper authTokenHelper;
+    public AuthTokenHelper authTokenHelper;
 
     public void add(String tenantId, List<TransactionItem> items, String url, String body, boolean isDetails) throws JsonProcessingException {
         items.add(createTransactionItem(items.size() + 1, url, tenantId, body, isDetails ? items.size() : null));

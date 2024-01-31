@@ -55,7 +55,7 @@ import java.util.*;
 public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 
     @Autowired
-    private Pain001Camt053Mapper pain001Camt053Mapper;
+    Pain001Camt053Mapper pain001Camt053Mapper;
 
     private Pacs004ToCamt053Converter pacs004Camt053Mapper = new Pacs004ToCamt053Converter();
 
@@ -63,22 +63,22 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
     protected String incomingMoneyApi;
 
     @Autowired
-    private ConfigFactory paymentTypeConfigFactory;
+    ConfigFactory paymentTypeConfigFactory;
 
     @Autowired
     private JAXBUtils jaxbUtils;
 
     @Autowired
-    private BatchItemBuilder batchItemBuilder;
+    BatchItemBuilder batchItemBuilder;
 
     @Autowired
-    private ContactDetailsUtil contactDetailsUtil;
+    ContactDetailsUtil contactDetailsUtil;
 
     @Autowired
-    private AuthTokenHelper authTokenHelper;
+    AuthTokenHelper authTokenHelper;
 
     @Autowired
-    private EventService eventService;
+    EventService eventService;
 
     private ObjectMapper objectMapper = new ObjectMapper() {
         private static final long serialVersionUID = 1L;
@@ -133,7 +133,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                 ));
     }
 
-    private Map<String, Object> revertInAms(String internalCorrelationId,
+    Map<String, Object> revertInAms(String internalCorrelationId,
                                             String transactionFeeInternalCorrelationId,
                                             String originalPain001,
                                             Integer conversionAccountAmsId,
