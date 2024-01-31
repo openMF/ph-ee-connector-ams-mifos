@@ -177,7 +177,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
             ReportEntry10 savingsAccountsCamt053Entry = null;
             EntryTransaction10 camt053Fragment;
             String camt053Entry;
-            if ("Current".equalsIgnoreCase(accountProductType)) {
+            if ("CURRENT".equalsIgnoreCase(accountProductType)) {
                 log.debug("Current account - mapping to Camt053 fragment");
                 camt053Fragment = pain001Camt053Mapper.toCamt053Fragment(pain001.getDocument());
                 camt053Fragment.setCreditDebitIndicator(CreditDebitCode.CRDT);
@@ -494,7 +494,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
             EntryTransaction10 camt053Fragment;
             String camt053Entry;
             ReportEntry10 savingsAccountsCamt053Entry = null;
-            if ("Current".equalsIgnoreCase(accountProductType)) {
+            if ("CURRENT".equalsIgnoreCase(accountProductType)) {
                 log.debug("Current account - mapping to Camt053 fragment");
                 camt053Fragment = pain001Camt053Mapper.toCamt053Fragment(pain001.getDocument());
                 camt053Fragment.setCreditDebitIndicator(CreditDebitCode.CRDT);
@@ -645,7 +645,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
     }
 
     private String serializeCamt053orFragment(String accountProductType, EntryTransaction10 camt053Fragment, ReportEntry10 savingsAccountsCamt053Entry) throws JsonProcessingException {
-        if ("Current".equalsIgnoreCase(accountProductType)) {
+        if ("CURRENT".equalsIgnoreCase(accountProductType)) {
             log.debug("serializeCamt053orFragment: Current account");
             return objectMapper.writeValueAsString(camt053Fragment);
         } else {

@@ -47,7 +47,7 @@ class TestRevertInAmsWorker {
                 "transactionFeeCategoryPurposeCode",
                 BigDecimal.ONE,
                 "binx",
-                "Current"
+                "CURRENT"
         );
 
         logger.info("output: {}", output);
