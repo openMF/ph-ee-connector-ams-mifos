@@ -164,7 +164,6 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
             log.debug("Incoming pain.001: {}", originalPain001);
 
             Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
-            painMapper.setSerializationInclusion(Include.NON_NULL);
             Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001 = painMapper.readValue(originalPain001, Pain00100110CustomerCreditTransferInitiationV10MessageSchema.class);
 
             BankToCustomerStatementV08 convertedStatement = camt053Mapper.toCamt053Entry(pain001.getDocument());
@@ -198,7 +197,6 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
                     FORMAT
             );
 
-            painMapper.setSerializationInclusion(Include.NON_NULL);
             String bodyItem = painMapper.writeValueAsString(body);
 
             batchItemBuilder.add(tenantIdentifier, items, holdTransactionUrl, bodyItem, false);

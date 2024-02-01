@@ -134,8 +134,6 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 
             iso.std.iso._20022.tech.xsd.pacs_008_001.Document pacs008 = jaxbUtils.unmarshalPacs008(originalPacs008);
 
-            painMapper.setSerializationInclusion(Include.NON_NULL);
-
             Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
 
             List<TransactionItem> items = new ArrayList<>();
@@ -313,8 +311,6 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
             iso.std.iso._20022.tech.xsd.pacs_008_001.Document pacs008 = jaxbUtils.unmarshalPacs008(originalPacs008);
 
             iso.std.iso._20022.tech.xsd.pacs_004_001.Document pacs004 = jaxbUtils.unmarshalPacs004(originalPacs004);
-
-            painMapper.setSerializationInclusion(Include.NON_NULL);
 
             Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
 

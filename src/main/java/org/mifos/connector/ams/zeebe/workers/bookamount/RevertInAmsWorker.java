@@ -294,8 +294,6 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                     FORMAT,
                     locale);
 
-            painMapper.setSerializationInclusion(Include.NON_NULL);
-
             bodyItem = painMapper.writeValueAsString(body);
 
 
@@ -490,8 +488,6 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
             MDC.put("internalCorrelationId", internalCorrelationId);
 
             String transactionDate = LocalDate.now().format(DateTimeFormatter.ofPattern(FORMAT));
-
-            painMapper.setSerializationInclusion(Include.NON_NULL);
 
             Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001 = painMapper.readValue(originalPain001, Pain00100110CustomerCreditTransferInitiationV10MessageSchema.class);
 
@@ -800,8 +796,6 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                     "",
                     FORMAT,
                     locale);
-
-            painMapper.setSerializationInclusion(Include.NON_NULL);
 
             bodyItem = painMapper.writeValueAsString(body);
 

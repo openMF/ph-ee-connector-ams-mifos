@@ -138,8 +138,6 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
         try {
             transactionDate = transactionDate.replaceAll("-", "");
 
-            painMapper.setSerializationInclusion(Include.NON_NULL);
-
             Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001;
             pain001 = painMapper.readValue(originalPain001, Pain00100110CustomerCreditTransferInitiationV10MessageSchema.class);
 
@@ -344,8 +342,6 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
                     "",
                     FORMAT,
                     locale);
-
-            painMapper.setSerializationInclusion(Include.NON_NULL);
 
             String bodyItem = painMapper.writeValueAsString(body);
 
