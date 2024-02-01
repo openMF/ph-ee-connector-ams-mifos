@@ -134,19 +134,19 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
     }
 
     Map<String, Object> revertInAms(String internalCorrelationId,
-                                            String transactionFeeInternalCorrelationId,
-                                            String originalPain001,
-                                            Integer conversionAccountAmsId,
-                                            Integer disposalAccountAmsId,
-                                            String hyphenatedTransactionDate,
-                                            String paymentScheme,
-                                            String transactionGroupId,
-                                            String transactionCategoryPurposeCode,
-                                            BigDecimal amount,
-                                            String transactionFeeCategoryPurposeCode,
-                                            BigDecimal transactionFeeAmount,
-                                            String tenantIdentifier,
-                                            String accountProductType
+                                    String transactionFeeInternalCorrelationId,
+                                    String originalPain001,
+                                    Integer conversionAccountAmsId,
+                                    Integer disposalAccountAmsId,
+                                    String hyphenatedTransactionDate,
+                                    String paymentScheme,
+                                    String transactionGroupId,
+                                    String transactionCategoryPurposeCode,
+                                    BigDecimal amount,
+                                    String transactionFeeCategoryPurposeCode,
+                                    BigDecimal transactionFeeAmount,
+                                    String tenantIdentifier,
+                                    String accountProductType
     ) {
         try {
             MDC.put("internalCorrelationId", internalCorrelationId);
@@ -181,7 +181,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                 log.debug("Current account - mapping to Camt053 fragment");
                 camt053Fragment = pain001Camt053Mapper.toCamt053Fragment(pain001.getDocument());
                 camt053Fragment.setCreditDebitIndicator(CreditDebitCode.CRDT);
-                camt053Fragment.setAdditionalTransactionInformation(paymentTypeCode);
+                // do not set AdditionalTransactionInformation for current account
             } else {
                 log.debug("Savings account - mapping to Camt053 entry");
                 BankToCustomerStatementV08 convertedStatement = pain001Camt053Mapper.toCamt053Entry(pain001.getDocument());
@@ -225,7 +225,11 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                 String depositFeeConfigOperationKey = String.format("%s.%s", paymentScheme, depositFeeOperation);
                 paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(depositFeeConfigOperationKey);
                 paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(depositFeeConfigOperationKey);
-                camt053Fragment.setAdditionalTransactionInformation(paymentTypeCode);
+                if ("CURRENT".equalsIgnoreCase(accountProductType)) {
+                    // do not set AdditionalTransactionInformation for current account
+                } else {
+                    camt053Fragment.setAdditionalTransactionInformation(paymentTypeCode);
+                }
                 camt053Fragment.getSupplementaryData().clear();
                 pain001Camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001.getDocument(), camt053Fragment, transactionFeeCategoryPurposeCode);
                 pain001Camt053Mapper.refillOtherIdentification(pain001.getDocument(), camt053Fragment);
@@ -264,7 +268,11 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
             paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(withdrawAmountConfigOperationKey);
             paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(withdrawAmountConfigOperationKey);
             camt053Fragment.setCreditDebitIndicator(CreditDebitCode.DBIT);
-            camt053Fragment.setAdditionalTransactionInformation(paymentTypeCode);
+            if ("CURRENT".equalsIgnoreCase(accountProductType)) {
+                // do not set AdditionalTransactionInformation for current account
+            } else {
+                camt053Fragment.setAdditionalTransactionInformation(paymentTypeCode);
+            }
             camt053Fragment.getSupplementaryData().clear();
             pain001Camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001.getDocument(), camt053Fragment, transactionCategoryPurposeCode);
             pain001Camt053Mapper.refillOtherIdentification(pain001.getDocument(), camt053Fragment);
@@ -310,7 +318,11 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                 String withdrawFeeConfigOperationKey = String.format("%s.%s", paymentScheme, withdrawFeeOperation);
                 paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(withdrawFeeConfigOperationKey);
                 paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(withdrawFeeConfigOperationKey);
-                camt053Fragment.setAdditionalTransactionInformation(paymentTypeCode);
+                if ("CURRENT".equalsIgnoreCase(accountProductType)) {
+                    // do not set AdditionalTransactionInformation for current account
+                } else {
+                    camt053Fragment.setAdditionalTransactionInformation(paymentTypeCode);
+                }
                 camt053Fragment.getSupplementaryData().clear();
                 pain001Camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001.getDocument(), camt053Fragment, transactionFeeCategoryPurposeCode);
                 pain001Camt053Mapper.refillOtherIdentification(pain001.getDocument(), camt053Fragment);
@@ -498,7 +510,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                 log.debug("Current account - mapping to Camt053 fragment");
                 camt053Fragment = pain001Camt053Mapper.toCamt053Fragment(pain001.getDocument());
                 camt053Fragment.setCreditDebitIndicator(CreditDebitCode.CRDT);
-                camt053Fragment.setAdditionalTransactionInformation(paymentTypeCode);
+                // do not set AdditionalTransactionInformation for current account
             } else {
                 log.debug("Savings account - mapping to Camt053 entry");
                 BankToCustomerStatementV08 convertedStatement = pain001Camt053Mapper.toCamt053Entry(pain001.getDocument());
@@ -542,7 +554,11 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
             paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(withdrawAmountConfigOperationKey);
             paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(withdrawAmountConfigOperationKey);
             camt053Fragment.setCreditDebitIndicator(CreditDebitCode.DBIT);
-            camt053Fragment.setAdditionalTransactionInformation(paymentTypeCode);
+            if ("CURRENT".equalsIgnoreCase(accountProductType)) {
+                // do not set AdditionalTransactionInformation for current account
+            } else {
+                camt053Fragment.setAdditionalTransactionInformation(paymentTypeCode);
+            }
 
             camt053Entry = serializeCamt053orFragment(accountProductType, camt053Fragment, savingsAccountsCamt053Entry);
 
@@ -588,7 +604,11 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                 paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(withdrawFeeConfigOperationKey);
                 paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(withdrawFeeConfigOperationKey);
 
-                camt053Fragment.setAdditionalTransactionInformation(paymentTypeCode);
+                if ("CURRENT".equalsIgnoreCase(accountProductType)) {
+                    // do not set AdditionalTransactionInformation for current account
+                } else {
+                    camt053Fragment.setAdditionalTransactionInformation(paymentTypeCode);
+                }
                 camt053Fragment.getSupplementaryData().clear();
                 pain001Camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001.getDocument(), camt053Fragment, transactionFeeCategoryPurposeCode);
                 pain001Camt053Mapper.refillOtherIdentification(pain001.getDocument(), camt053Fragment);
@@ -743,7 +763,11 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
             var copy = DatatypeFactory.newDefaultInstance().newXMLGregorianCalendar(GregorianCalendar.from(zdt));
             camt053Entry.getValueDate().setAdditionalProperty("Date", copy);
             EntryTransaction10 transactionDetails = camt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0);
-            transactionDetails.setAdditionalTransactionInformation(paymentTypeCode);
+            if ("CURRENT".equalsIgnoreCase(accountProductType)) {
+                // do not set AdditionalTransactionInformation for current account
+            } else {
+                transactionDetails.setAdditionalTransactionInformation(paymentTypeCode);
+            }
             transactionDetails.setCreditDebitIndicator(CreditDebitCode.CRDT);
             camt053Entry.setCreditDebitIndicator(CreditDebitCode.CRDT);
             camt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "BOOKED"));
@@ -777,7 +801,11 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
             String withdrawAmountConfigOperationKey = String.format("%s.%s", paymentScheme, withdrawAmountOperation);
             paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(withdrawAmountConfigOperationKey);
             paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(withdrawAmountConfigOperationKey);
-            transactionDetails.setAdditionalTransactionInformation(paymentTypeCode);
+            if ("CURRENT".equalsIgnoreCase(accountProductType)) {
+                // do not set AdditionalTransactionInformation for current account
+            } else {
+                transactionDetails.setAdditionalTransactionInformation(paymentTypeCode);
+            }
             transactionDetails.setCreditDebitIndicator(CreditDebitCode.DBIT);
             camt053Entry.setCreditDebitIndicator(CreditDebitCode.DBIT);
             camt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "BOOKED"));

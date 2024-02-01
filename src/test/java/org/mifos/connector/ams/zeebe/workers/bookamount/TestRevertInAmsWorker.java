@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.function.Consumer;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -31,12 +32,13 @@ class TestRevertInAmsWorker {
     private Logger logger = LoggerFactory.getLogger(this.getClass());
 
     @Test
-    public void test() throws Exception {
+    public void testCurrentAccount() throws Exception {
         Consumer<TransactionItem> itemValidator = item -> {
-            assertFalse(item.toString().contains("AmountDetails"));
-            assertFalse(item.toString().contains("AdditionalTransactionInformation"));
-            assertFalse(item.toString().contains("Batch"));
-            assertFalse(item.toString().contains("TransactionCreationChannel"));
+            String json = item.toString();
+            assertFalse(json.contains("AmountDetails"));
+            assertFalse(json.contains("AdditionalTransactionInformation"));
+            assertFalse(json.contains("Batch"));
+            assertFalse(json.contains("TransactionCreationChannel"));
         };
 
         RevertInAmsWorker worker = setupWorker(itemValidator);
@@ -62,6 +64,41 @@ class TestRevertInAmsWorker {
         logger.info("output: {}", output);
     }
 
+    @Test
+    public void testSavingsAccount() throws Exception {
+        Consumer<TransactionItem> itemValidator = item -> {
+            String str = item.toString();
+            if (str.contains("Identification")) {
+                assertTrue(str.contains("AmountDetails"));
+//                assertTrue(str.contains("AdditionalTransactionInformation"));
+//                assertTrue(str.contains("Batch"));
+//                assertTrue(str.contains("TransactionCreationChannel"));
+            }
+        };
+
+        RevertInAmsWorker worker = setupWorker(itemValidator);
+        String pain001 = Files.readString(Path.of(getClass().getResource("/pain001.json").toURI()));
+
+        Map<String, Object> output = worker.revertInAms(
+                "internalCorrelationId",
+                "transactionFeeCorrelationId",
+                pain001,
+                1,
+                2,
+                "2024-01-31,",
+                "HCT_INST",
+                "transactionGroupId",
+                "transactionCategoryPurposeCode",
+                BigDecimal.TEN,
+                "transactionFeeCategoryPurposeCode",
+                BigDecimal.ONE,
+                "binx",
+                "SAVING"
+        );
+
+        logger.info("output: {}", output);
+    }
+
     @NotNull
     private RevertInAmsWorker setupWorker(Consumer<TransactionItem> validator) {
         RevertInAmsWorker worker = new RevertInAmsWorker() {
@@ -79,7 +116,10 @@ class TestRevertInAmsWorker {
         worker.eventService = mock(EventService.class);
         worker.incomingMoneyApi = "/savingsaccounts/";
         worker.paymentTypeConfigFactory = mock(ConfigFactory.class);
-        when(worker.paymentTypeConfigFactory.getConfig(any())).thenReturn(mock(Config.class));
+        Config configMock = mock(Config.class);
+        when(worker.paymentTypeConfigFactory.getConfig(any())).thenReturn(configMock);
+        when(configMock.findPaymentTypeCodeByOperation(any())).thenReturn("some code");
+        when(configMock.findPaymentTypeCodeByOperation(any())).thenReturn("some other code");
 
         worker.batchItemBuilder = new BatchItemBuilder();
 
