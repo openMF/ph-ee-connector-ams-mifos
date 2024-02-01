@@ -461,8 +461,6 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 
             String transactionDate = LocalDate.now().format(DateTimeFormatter.ofPattern(FORMAT));
 
-            painMapper.setSerializationInclusion(Include.NON_NULL);
-
             Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001 = painMapper.readValue(originalPain001, Pain00100110CustomerCreditTransferInitiationV10MessageSchema.class);
 
             log.debug("Withdrawing amount {} from conversion account {}", amount, conversionAccountAmsId);
@@ -792,8 +790,6 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                     "",
                     FORMAT,
                     locale);
-
-            painMapper.setSerializationInclusion(Include.NON_NULL);
 
             bodyItem = painMapper.writeValueAsString(body);
 

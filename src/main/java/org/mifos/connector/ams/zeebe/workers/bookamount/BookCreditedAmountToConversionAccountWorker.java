@@ -139,8 +139,6 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
                     FORMAT,
                     locale);
 
-            painMapper.setSerializationInclusion(Include.NON_NULL);
-
             String bodyItem = painMapper.writeValueAsString(body);
 
             List<TransactionItem> items = new ArrayList<>();
@@ -261,8 +259,6 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
                     "",
                     FORMAT,
                     locale);
-
-            painMapper.setSerializationInclusion(Include.NON_NULL);
 
             String bodyItem = painMapper.writeValueAsString(body);
 

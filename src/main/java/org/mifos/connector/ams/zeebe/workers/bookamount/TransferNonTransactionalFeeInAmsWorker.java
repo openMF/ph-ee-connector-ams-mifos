@@ -115,7 +115,6 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
         Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
         log.debug("Got payment scheme {}", paymentScheme);
         String transactionDate = LocalDate.now().format(PATTERN);
-        painMapper.setSerializationInclusion(Include.NON_NULL);
         log.debug("Got category purpose code {}", categoryPurpose);
 
         try {
