@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import org.mifos.connector.ams.common.SerializationHelper;
 import org.mifos.connector.ams.fineract.Config;
 import org.mifos.connector.ams.fineract.ConfigFactory;
 import org.mifos.connector.ams.log.EventLogUtil;
@@ -32,9 +33,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 
-import com.baasflow.commons.events.Event;
 import com.baasflow.commons.events.EventService;
-import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -79,6 +78,9 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
     private ContactDetailsUtil contactDetailsUtil;
 
     @Autowired
+    private SerializationHelper serializationHelper;
+
+    @Autowired
     private AuthTokenHelper authTokenHelper;
 
     @Autowired
@@ -115,7 +117,8 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
                                                                         @Variable String creditorIban,
                                                                         @Variable String debtorIban,
                                                                         @Variable String debtorInternalAccountId,
-                                                                        @Variable String creditorInternalAccountId) {
+                                                                        @Variable String creditorInternalAccountId,
+                                                                        @Variable String accountProductType) {
         log.info("transferTheAmountBetweenDisposalAccounts");
         return eventService.auditedEvent(
                 eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "transferTheAmountBetweenDisposalAccounts", internalCorrelationId, transactionGroupId, eventBuilder),
@@ -137,7 +140,8 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
                         debtorIban,
                         debtorInternalAccountId,
                         creditorInternalAccountId,
-                        eventBuilder));
+                        accountProductType
+                ));
     }
 
     @SuppressWarnings("unchecked")
@@ -159,7 +163,8 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
                                                                          String debtorIban,
                                                                          String debtorInternalAccountId,
                                                                          String creditorInternalAccountId,
-                                                                         Event.Builder eventBuilder) {
+                                                                         String accountProductType
+    ) {
         try {
             log.debug("Incoming pain.001: {}", originalPain001);
 
@@ -210,7 +215,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
                     .map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(List::toString).orElse("");
 
             addDetails(tenantIdentifier, internalCorrelationId, transactionCategoryPurposeCode, internalCorrelationId,
-                    painMapper, batchItemBuilder, items, pain001.getDocument(), convertedcamt053Entry, camt053RelativeUrl, debtorIban,
+                    accountProductType, batchItemBuilder, items, pain001.getDocument(), convertedcamt053Entry, camt053RelativeUrl, debtorIban,
                     paymentTypeConfig, paymentScheme, null, partnerName, partnerAccountIban,
                     partnerAccountSecondaryIdentifier, unstructured, null, null);
 
@@ -244,7 +249,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
             batchItemBuilder.add(tenantIdentifier, items, releaseTransactionUrl, null, false);
             String releaseAmountOperation = "transferTheAmountBetweenDisposalAccounts.Debtor.DisposalAccount.ReleaseTransactionAmount";
             addDetails(tenantIdentifier, internalCorrelationId, transactionCategoryPurposeCode, internalCorrelationId,
-                    painMapper, batchItemBuilder, items, pain001.getDocument(), convertedcamt053Entry, camt053RelativeUrl, debtorIban,
+                    accountProductType, batchItemBuilder, items, pain001.getDocument(), convertedcamt053Entry, camt053RelativeUrl, debtorIban,
                     paymentTypeConfig, paymentScheme, releaseAmountOperation, partnerName, partnerAccountIban,
                     partnerAccountSecondaryIdentifier, unstructured, null, null);
 
@@ -276,7 +281,8 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
             camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001.getDocument(), transactionDetails, transactionCategoryPurposeCode);
             transactionDetails.getSupplementaryData().clear();
             refillOtherId(debtorInternalAccountId, creditorInternalAccountId, transactionDetails);
-            String camt053Entry = painMapper.writeValueAsString(convertedcamt053Entry);
+
+            String camt053Entry = serializationHelper.writeCamt053AsString(accountProductType, convertedcamt053Entry);
 
             camt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
 
@@ -329,7 +335,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
                 transactionDetails.getSupplementaryData().clear();
                 camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001.getDocument(), transactionDetails, transactionFeeCategoryPurposeCode);
                 refillOtherId(debtorInternalAccountId, creditorInternalAccountId, transactionDetails);
-                camt053Entry = painMapper.writeValueAsString(convertedcamt053Entry);
+                camt053Entry = serializationHelper.writeCamt053AsString(accountProductType, convertedcamt053Entry);
 
                 td = new DtSavingsTransactionDetails(
                         transactionFeeInternalCorrelationId,
@@ -364,7 +370,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
                 convertedcamt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "BOOKED"));
                 camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001.getDocument(), transactionDetails, transactionFeeCategoryPurposeCode);
                 refillOtherId(debtorInternalAccountId, creditorInternalAccountId, transactionDetails);
-                camt053Entry = painMapper.writeValueAsString(convertedcamt053Entry);
+                camt053Entry = serializationHelper.writeCamt053AsString(accountProductType, convertedcamt053Entry);
 
                 transactionBody = new TransactionBody(
                         interbankSettlementDate,
@@ -429,7 +435,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
             transactionDetails.setCreditDebitIndicator(CreditDebitCode.CRDT);
             convertedcamt053Entry.setCreditDebitIndicator(CreditDebitCode.CRDT);
             convertedcamt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "BOOKED"));
-            camt053Entry = painMapper.writeValueAsString(convertedcamt053Entry);
+            camt053Entry = serializationHelper.writeCamt053AsString(accountProductType, convertedcamt053Entry);;
 
             td = new DtSavingsTransactionDetails(
                     internalCorrelationId,
@@ -483,7 +489,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
                 camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001.getDocument(), transactionDetails, transactionFeeCategoryPurposeCode);
                 refillOtherId(debtorInternalAccountId, creditorInternalAccountId, transactionDetails);
                 transactionDetails.getSupplementaryData().get(0).getEnvelope().setAdditionalProperty("InternalCorrelationId", transactionFeeInternalCorrelationId);
-                camt053Entry = painMapper.writeValueAsString(convertedcamt053Entry);
+                camt053Entry = serializationHelper.writeCamt053AsString(accountProductType, convertedcamt053Entry);
 
                 td = new DtSavingsTransactionDetails(
                         transactionFeeInternalCorrelationId,
@@ -521,12 +527,6 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
         } catch (JsonProcessingException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException("failed to create camt.053", e);
-        } catch (ZeebeBpmnError e) {
-            throw e;
-        } catch (RuntimeException re) {
-            throw re;
-        } catch (Throwable t) {
-            throw new RuntimeException(t);
         }
     }
 
@@ -589,7 +589,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
             String transactionGroupId,
             String transactionFeeCategoryPurposeCode,
             String internalCorrelationId,
-            ObjectMapper om,
+            String accountProductType,
             BatchItemBuilder batchItemBuilder,
             List<TransactionItem> items,
             CustomerCreditTransferInitiationV10 pain001,
@@ -610,7 +610,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
             paymentTypeCode = "";
         }
         convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
-        String camt053 = painMapper.writeValueAsString(convertedcamt053Entry);
+        String camt053 = serializationHelper.writeCamt053AsString(accountProductType, convertedcamt053Entry);;
         DtSavingsTransactionDetails td = new DtSavingsTransactionDetails(
                 internalCorrelationId,
                 camt053,
@@ -628,7 +628,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
                 targetAmsAccountId,
                 pain001.getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getPaymentIdentification().getEndToEndIdentification());
 
-        String camt053Body = om.writeValueAsString(td);
+        String camt053Body = painMapper.writeValueAsString(td);
         batchItemBuilder.add(tenantIdentifier, items, camt053RelativeUrl, camt053Body, true);
     }
 }

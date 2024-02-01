@@ -3,7 +3,6 @@ package org.mifos.connector.ams.zeebe.workers.bookamount;
 import com.baasflow.commons.events.EventLogLevel;
 import com.baasflow.commons.events.EventService;
 import com.baasflow.commons.events.EventType;
-import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import hu.dpc.rt.utils.converter.Pacs004ToCamt053Converter;
