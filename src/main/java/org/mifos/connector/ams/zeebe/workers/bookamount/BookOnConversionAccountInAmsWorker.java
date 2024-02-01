@@ -18,6 +18,7 @@ import iso.std.iso._20022.tech.xsd.pacs_004_001.PaymentTransactionInformation27;
 import iso.std.iso._20022.tech.xsd.pacs_004_001.RemittanceInformation5;
 import jakarta.xml.bind.JAXBException;
 import lombok.extern.slf4j.Slf4j;
+import org.mifos.connector.ams.common.SerializationHelper;
 import org.mifos.connector.ams.fineract.Config;
 import org.mifos.connector.ams.fineract.ConfigFactory;
 import org.mifos.connector.ams.log.EventLogUtil;
@@ -64,6 +65,9 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 
     @Autowired
     private EventService eventService;
+
+    @Autowired
+    private SerializationHelper serializationHelper;
 
     @Autowired
     @Qualifier("painMapper")
@@ -269,7 +273,8 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
                                                             @Variable String generatedPacs004,
                                                             @Variable String pacs002,
                                                             @Variable String transactionDate,
-                                                            @Variable String internalCorrelationId) {
+                                                            @Variable String internalCorrelationId,
+                                                            @Variable String accountProductType) {
         log.info("withdrawTheAmountFromConversionAccountInAms");
         eventService.auditedEvent(
                 eventBuilder -> EventLogUtil.initZeebeJob(activatedJob,
@@ -288,7 +293,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
                         pacs002,
                         transactionDate,
                         internalCorrelationId,
-                        eventBuilder));
+                        accountProductType));
     }
 
     private Void withdrawTheAmountFromConversionAccountInAms(BigDecimal amount,
@@ -302,7 +307,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
                                                              String originalPacs002,
                                                              String transactionDate,
                                                              String internalCorrelationId,
-                                                             Event.Builder eventBuilder) {
+                                                             String accountProductType) {
         try {
             log.info("Withdrawing amount {} from conversion account {} of tenant {}", amount, conversionAccountAmsId, tenantIdentifier);
 
@@ -363,7 +368,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
             EntryTransaction10 transactionDetails = camt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0);
             transactionDetails.setAdditionalTransactionInformation(paymentTypeCode);
 
-            String camt053 = painMapper.writeValueAsString(camt053Entry);
+            String camt053 = serializationHelper.writeCamt053AsString(accountProductType, camt053Entry);
 
             String camt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
 
