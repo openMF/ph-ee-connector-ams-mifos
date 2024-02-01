@@ -1,40 +1,48 @@
 package org.mifos.connector.ams.zeebe.workers.bookamount;
 
-import com.baasflow.commons.events.Event;
-import com.baasflow.commons.events.EventService;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.fasterxml.jackson.module.afterburner.AfterburnerModule;
-import hu.dpc.rt.utils.converter.Pacs004ToCamt053Converter;
-import io.camunda.zeebe.client.api.response.ActivatedJob;
-import io.camunda.zeebe.client.api.worker.JobClient;
-import io.camunda.zeebe.spring.client.annotation.JobWorker;
-import io.camunda.zeebe.spring.client.annotation.Variable;
-import io.camunda.zeebe.spring.client.exception.ZeebeBpmnError;
-import iso.std.iso._20022.tech.json.camt_053_001.*;
-import iso.std.iso._20022.tech.json.camt_053_001.ActiveOrHistoricCurrencyAndAmountRange2.CreditDebitCode;
-import iso.std.iso._20022.tech.xsd.pacs_008_001.RemittanceInformation5;
-import lombok.extern.slf4j.Slf4j;
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
 import org.mifos.connector.ams.fineract.Config;
 import org.mifos.connector.ams.fineract.ConfigFactory;
 import org.mifos.connector.ams.log.EventLogUtil;
 import org.mifos.connector.ams.log.LogInternalCorrelationId;
 import org.mifos.connector.ams.log.TraceZeebeArguments;
 import org.mifos.connector.ams.mapstruct.Pacs008Camt053Mapper;
-import org.mifos.connector.ams.zeebe.workers.utils.*;
+import org.mifos.connector.ams.zeebe.workers.utils.BatchItemBuilder;
+import org.mifos.connector.ams.zeebe.workers.utils.ContactDetailsUtil;
+import org.mifos.connector.ams.zeebe.workers.utils.DtSavingsTransactionDetails;
+import org.mifos.connector.ams.zeebe.workers.utils.JAXBUtils;
+import org.mifos.connector.ams.zeebe.workers.utils.TransactionBody;
+import org.mifos.connector.ams.zeebe.workers.utils.TransactionItem;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import com.baasflow.commons.events.Event;
+import com.baasflow.commons.events.EventService;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import hu.dpc.rt.utils.converter.Pacs004ToCamt053Converter;
+import io.camunda.zeebe.client.api.response.ActivatedJob;
+import io.camunda.zeebe.client.api.worker.JobClient;
+import io.camunda.zeebe.spring.client.annotation.JobWorker;
+import io.camunda.zeebe.spring.client.annotation.Variable;
+import io.camunda.zeebe.spring.client.exception.ZeebeBpmnError;
+import iso.std.iso._20022.tech.json.camt_053_001.AccountStatement9;
+import iso.std.iso._20022.tech.json.camt_053_001.ActiveOrHistoricCurrencyAndAmountRange2.CreditDebitCode;
+import iso.std.iso._20022.tech.json.camt_053_001.BankToCustomerStatementV08;
+import iso.std.iso._20022.tech.json.camt_053_001.EntryDetails9;
+import iso.std.iso._20022.tech.json.camt_053_001.EntryStatus1Choice;
+import iso.std.iso._20022.tech.json.camt_053_001.EntryTransaction10;
+import iso.std.iso._20022.tech.json.camt_053_001.ReportEntry10;
+import iso.std.iso._20022.tech.xsd.pacs_008_001.RemittanceInformation5;
+import lombok.extern.slf4j.Slf4j;
 
 @Component
 @Slf4j
@@ -63,18 +71,9 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
     @Autowired
     private EventService eventService;
 
-    private ObjectMapper objectMapper = new ObjectMapper() {
-        private static final long serialVersionUID = 1L;
-
-        {
-            registerModule(new AfterburnerModule());
-            registerModule(new JavaTimeModule());
-            configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
-            setSerializationInclusion(JsonInclude.Include.NON_EMPTY)
-                    .configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true)
-                    .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        }
-    };
+    @Autowired
+    @Qualifier("painMapper")
+    private ObjectMapper painMapper;
 
     @JobWorker
     @LogInternalCorrelationId
@@ -140,9 +139,9 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
                     FORMAT,
                     locale);
 
-            objectMapper.setSerializationInclusion(Include.NON_NULL);
+            painMapper.setSerializationInclusion(Include.NON_NULL);
 
-            String bodyItem = objectMapper.writeValueAsString(body);
+            String bodyItem = painMapper.writeValueAsString(body);
 
             List<TransactionItem> items = new ArrayList<>();
 
@@ -153,7 +152,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
             convertedCamt053Entry.setCreditDebitIndicator(CreditDebitCode.CRDT);
             convertedCamt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "BOOKED"));
             convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
-            String camt053Entry = objectMapper.writeValueAsString(convertedCamt053Entry);
+            String camt053Entry = painMapper.writeValueAsString(convertedCamt053Entry);
 
             String camt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
 
@@ -174,7 +173,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
                     conversionAccountAmsId,
                     pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getPmtId().getEndToEndId());
 
-            String camt053Body = objectMapper.writeValueAsString(td);
+            String camt053Body = painMapper.writeValueAsString(td);
 
             batchItemBuilder.add(tenantIdentifier, items, camt053RelativeUrl, camt053Body, true);
 
@@ -263,9 +262,9 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
                     FORMAT,
                     locale);
 
-            objectMapper.setSerializationInclusion(Include.NON_NULL);
+            painMapper.setSerializationInclusion(Include.NON_NULL);
 
-            String bodyItem = objectMapper.writeValueAsString(body);
+            String bodyItem = painMapper.writeValueAsString(body);
 
             List<TransactionItem> items = new ArrayList<>();
 
@@ -280,7 +279,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
             convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.CRDT);
             convertedCamt053Entry.setCreditDebitIndicator(CreditDebitCode.CRDT);
             convertedCamt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "BOOKED"));
-            String camt053Entry = objectMapper.writeValueAsString(convertedCamt053Entry);
+            String camt053Entry = painMapper.writeValueAsString(convertedCamt053Entry);
 
             String camt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
 
@@ -301,7 +300,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
                     conversionAccountAmsId,
                     pacs004.getPmtRtr().getTxInf().get(0).getOrgnlEndToEndId());
 
-            String camt053Body = objectMapper.writeValueAsString(td);
+            String camt053Body = painMapper.writeValueAsString(td);
 
             batchItemBuilder.add(tenantIdentifier, items, camt053RelativeUrl, camt053Body, true);
 
@@ -385,7 +384,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
                     FORMAT,
                     locale);
 
-            String bodyItem = objectMapper.writeValueAsString(body);
+            String bodyItem = painMapper.writeValueAsString(body);
 
             List<TransactionItem> items = new ArrayList<>();
 
@@ -402,7 +401,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
             convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.CRDT);
             convertedCamt053Entry.setCreditDebitIndicator(CreditDebitCode.CRDT);
             convertedCamt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "BOOKED"));
-            String camt053Entry = objectMapper.writeValueAsString(convertedCamt053Entry);
+            String camt053Entry = painMapper.writeValueAsString(convertedCamt053Entry);
 
             String camt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
 
@@ -424,7 +423,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
                     conversionAccountAmsId,
                     pacs_004.getPmtRtr().getTxInf().get(0).getOrgnlEndToEndId());
 
-            String camt053Body = objectMapper.writeValueAsString(td);
+            String camt053Body = painMapper.writeValueAsString(td);
 
             batchItemBuilder.add(tenantIdentifier, items, camt053RelativeUrl, camt053Body, true);
 
