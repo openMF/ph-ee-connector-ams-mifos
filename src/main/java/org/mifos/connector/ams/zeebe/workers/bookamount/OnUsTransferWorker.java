@@ -1,35 +1,30 @@
 package org.mifos.connector.ams.zeebe.workers.bookamount;
 
-import com.baasflow.commons.events.Event;
-import com.baasflow.commons.events.EventService;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.fasterxml.jackson.module.afterburner.AfterburnerModule;
-import hu.dpc.rt.utils.converter.AccountSchemeName1Choice;
-import hu.dpc.rt.utils.converter.GenericAccountIdentification1;
-import io.camunda.zeebe.client.api.response.ActivatedJob;
-import io.camunda.zeebe.client.api.worker.JobClient;
-import io.camunda.zeebe.spring.client.annotation.JobWorker;
-import io.camunda.zeebe.spring.client.annotation.Variable;
-import io.camunda.zeebe.spring.client.exception.ZeebeBpmnError;
-import iso.std.iso._20022.tech.json.camt_053_001.*;
-import iso.std.iso._20022.tech.json.camt_053_001.ActiveOrHistoricCurrencyAndAmountRange2.CreditDebitCode;
-import iso.std.iso._20022.tech.json.pain_001_001.CustomerCreditTransferInitiationV10;
-import iso.std.iso._20022.tech.json.pain_001_001.Pain00100110CustomerCreditTransferInitiationV10MessageSchema;
-import lombok.extern.slf4j.Slf4j;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
 import org.mifos.connector.ams.fineract.Config;
 import org.mifos.connector.ams.fineract.ConfigFactory;
 import org.mifos.connector.ams.log.EventLogUtil;
 import org.mifos.connector.ams.log.LogInternalCorrelationId;
 import org.mifos.connector.ams.log.TraceZeebeArguments;
 import org.mifos.connector.ams.mapstruct.Pain001Camt053Mapper;
-import org.mifos.connector.ams.zeebe.workers.utils.*;
+import org.mifos.connector.ams.zeebe.workers.utils.AuthTokenHelper;
+import org.mifos.connector.ams.zeebe.workers.utils.BatchItemBuilder;
+import org.mifos.connector.ams.zeebe.workers.utils.ContactDetailsUtil;
+import org.mifos.connector.ams.zeebe.workers.utils.DtSavingsTransactionDetails;
+import org.mifos.connector.ams.zeebe.workers.utils.HoldAmountBody;
+import org.mifos.connector.ams.zeebe.workers.utils.NotificationHelper;
+import org.mifos.connector.ams.zeebe.workers.utils.TransactionBody;
+import org.mifos.connector.ams.zeebe.workers.utils.TransactionItem;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -37,10 +32,32 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.util.*;
+import com.baasflow.commons.events.Event;
+import com.baasflow.commons.events.EventService;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import hu.dpc.rt.utils.converter.AccountSchemeName1Choice;
+import hu.dpc.rt.utils.converter.GenericAccountIdentification1;
+import io.camunda.zeebe.client.api.response.ActivatedJob;
+import io.camunda.zeebe.client.api.worker.JobClient;
+import io.camunda.zeebe.spring.client.annotation.JobWorker;
+import io.camunda.zeebe.spring.client.annotation.Variable;
+import io.camunda.zeebe.spring.client.exception.ZeebeBpmnError;
+import iso.std.iso._20022.tech.json.camt_053_001.ActiveOrHistoricCurrencyAndAmount;
+import iso.std.iso._20022.tech.json.camt_053_001.ActiveOrHistoricCurrencyAndAmountRange2.CreditDebitCode;
+import iso.std.iso._20022.tech.json.camt_053_001.AmountAndCurrencyExchange3;
+import iso.std.iso._20022.tech.json.camt_053_001.AmountAndCurrencyExchangeDetails3;
+import iso.std.iso._20022.tech.json.camt_053_001.BankToCustomerStatementV08;
+import iso.std.iso._20022.tech.json.camt_053_001.EntryStatus1Choice;
+import iso.std.iso._20022.tech.json.camt_053_001.EntryTransaction10;
+import iso.std.iso._20022.tech.json.camt_053_001.ReportEntry10;
+import iso.std.iso._20022.tech.json.camt_053_001.SupplementaryData1;
+import iso.std.iso._20022.tech.json.camt_053_001.SupplementaryDataEnvelope1;
+import iso.std.iso._20022.tech.json.pain_001_001.CustomerCreditTransferInitiationV10;
+import iso.std.iso._20022.tech.json.pain_001_001.Pain00100110CustomerCreditTransferInitiationV10MessageSchema;
+import lombok.extern.slf4j.Slf4j;
 
 @Component
 @Slf4j
@@ -70,18 +87,9 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
     @Autowired
     private EventService eventService;
 
-    private ObjectMapper objectMapper = new ObjectMapper() {
-        private static final long serialVersionUID = 1L;
-
-        {
-            registerModule(new AfterburnerModule());
-            registerModule(new JavaTimeModule());
-            configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
-            setSerializationInclusion(JsonInclude.Include.NON_EMPTY)
-                    .configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true)
-                    .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        }
-    };
+    @Autowired
+    @Qualifier("painMapper")
+    private ObjectMapper painMapper;
 
     private static final DateTimeFormatter PATTERN = DateTimeFormatter.ofPattern(FORMAT);
 
@@ -156,8 +164,8 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
             log.debug("Incoming pain.001: {}", originalPain001);
 
             Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
-            objectMapper.setSerializationInclusion(Include.NON_NULL);
-            Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001 = objectMapper.readValue(originalPain001, Pain00100110CustomerCreditTransferInitiationV10MessageSchema.class);
+            painMapper.setSerializationInclusion(Include.NON_NULL);
+            Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001 = painMapper.readValue(originalPain001, Pain00100110CustomerCreditTransferInitiationV10MessageSchema.class);
 
             BankToCustomerStatementV08 convertedStatement = camt053Mapper.toCamt053Entry(pain001.getDocument());
             ReportEntry10 convertedcamt053Entry = convertedStatement.getStatement().get(0).getEntry().get(0);
@@ -190,8 +198,8 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
                     FORMAT
             );
 
-            objectMapper.setSerializationInclusion(Include.NON_NULL);
-            String bodyItem = objectMapper.writeValueAsString(body);
+            painMapper.setSerializationInclusion(Include.NON_NULL);
+            String bodyItem = painMapper.writeValueAsString(body);
 
             batchItemBuilder.add(tenantIdentifier, items, holdTransactionUrl, bodyItem, false);
 
@@ -204,7 +212,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
                     .map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(List::toString).orElse("");
 
             addDetails(tenantIdentifier, internalCorrelationId, transactionCategoryPurposeCode, internalCorrelationId,
-                    objectMapper, batchItemBuilder, items, pain001.getDocument(), convertedcamt053Entry, camt053RelativeUrl, debtorIban,
+                    painMapper, batchItemBuilder, items, pain001.getDocument(), convertedcamt053Entry, camt053RelativeUrl, debtorIban,
                     paymentTypeConfig, paymentScheme, null, partnerName, partnerAccountIban,
                     partnerAccountSecondaryIdentifier, unstructured, null, null);
 
@@ -238,7 +246,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
             batchItemBuilder.add(tenantIdentifier, items, releaseTransactionUrl, null, false);
             String releaseAmountOperation = "transferTheAmountBetweenDisposalAccounts.Debtor.DisposalAccount.ReleaseTransactionAmount";
             addDetails(tenantIdentifier, internalCorrelationId, transactionCategoryPurposeCode, internalCorrelationId,
-                    objectMapper, batchItemBuilder, items, pain001.getDocument(), convertedcamt053Entry, camt053RelativeUrl, debtorIban,
+                    painMapper, batchItemBuilder, items, pain001.getDocument(), convertedcamt053Entry, camt053RelativeUrl, debtorIban,
                     paymentTypeConfig, paymentScheme, releaseAmountOperation, partnerName, partnerAccountIban,
                     partnerAccountSecondaryIdentifier, unstructured, null, null);
 
@@ -257,7 +265,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
                     FORMAT,
                     locale);
 
-            bodyItem = objectMapper.writeValueAsString(transactionBody);
+            bodyItem = painMapper.writeValueAsString(transactionBody);
 
 
             batchItemBuilder.add(tenantIdentifier, items, debtorDisposalWithdrawalRelativeUrl, bodyItem, false);
@@ -270,7 +278,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
             camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001.getDocument(), convertedcamt053Entry, transactionCategoryPurposeCode);
             transactionDetails.getSupplementaryData().clear();
             refillOtherId(debtorInternalAccountId, creditorInternalAccountId, transactionDetails);
-            String camt053Entry = objectMapper.writeValueAsString(convertedcamt053Entry);
+            String camt053Entry = painMapper.writeValueAsString(convertedcamt053Entry);
 
             camt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
 
@@ -295,7 +303,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
                     creditorDisposalAccountAmsId,
                     pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getPaymentIdentification().getEndToEndIdentification());
 
-            String camt053Body = objectMapper.writeValueAsString(td);
+            String camt053Body = painMapper.writeValueAsString(td);
 
             batchItemBuilder.add(tenantIdentifier, items, camt053RelativeUrl, camt053Body, true);
 
@@ -313,7 +321,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
                         FORMAT,
                         locale);
 
-                bodyItem = objectMapper.writeValueAsString(transactionBody);
+                bodyItem = painMapper.writeValueAsString(transactionBody);
 
                 batchItemBuilder.add(tenantIdentifier, items, debtorDisposalWithdrawalRelativeUrl, bodyItem, false);
 
@@ -323,7 +331,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
                 transactionDetails.getSupplementaryData().clear();
                 camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001.getDocument(), convertedcamt053Entry, transactionFeeCategoryPurposeCode);
                 refillOtherId(debtorInternalAccountId, creditorInternalAccountId, transactionDetails);
-                camt053Entry = objectMapper.writeValueAsString(convertedcamt053Entry);
+                camt053Entry = painMapper.writeValueAsString(convertedcamt053Entry);
 
                 td = new DtSavingsTransactionDetails(
                         transactionFeeInternalCorrelationId,
@@ -343,7 +351,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
                         debtorConversionAccountAmsId,
                         pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getPaymentIdentification().getEndToEndIdentification());
 
-                camt053Body = objectMapper.writeValueAsString(td);
+                camt053Body = painMapper.writeValueAsString(td);
                 batchItemBuilder.add(tenantIdentifier, items, camt053RelativeUrl, camt053Body, true);
 
 
@@ -358,7 +366,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
                 convertedcamt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "BOOKED"));
                 camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001.getDocument(), convertedcamt053Entry, transactionFeeCategoryPurposeCode);
                 refillOtherId(debtorInternalAccountId, creditorInternalAccountId, transactionDetails);
-                camt053Entry = objectMapper.writeValueAsString(convertedcamt053Entry);
+                camt053Entry = painMapper.writeValueAsString(convertedcamt053Entry);
 
                 transactionBody = new TransactionBody(
                         interbankSettlementDate,
@@ -368,7 +376,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
                         FORMAT,
                         locale);
 
-                bodyItem = objectMapper.writeValueAsString(transactionBody);
+                bodyItem = painMapper.writeValueAsString(transactionBody);
 
                 String debtorConversionDepositRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), debtorConversionAccountAmsId, "deposit");
 
@@ -392,7 +400,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
                         debtorConversionAccountAmsId,
                         pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getPaymentIdentification().getEndToEndIdentification());
 
-                camt053Body = objectMapper.writeValueAsString(td);
+                camt053Body = painMapper.writeValueAsString(td);
                 batchItemBuilder.add(tenantIdentifier, items, camt053RelativeUrl, camt053Body, true);
             }
 
@@ -412,7 +420,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
                     FORMAT,
                     locale);
 
-            bodyItem = objectMapper.writeValueAsString(transactionBody);
+            bodyItem = painMapper.writeValueAsString(transactionBody);
 
             String creditorDisposalDepositRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), creditorDisposalAccountAmsId, "deposit");
 
@@ -423,7 +431,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
             transactionDetails.setCreditDebitIndicator(CreditDebitCode.CRDT);
             convertedcamt053Entry.setCreditDebitIndicator(CreditDebitCode.CRDT);
             convertedcamt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "BOOKED"));
-            camt053Entry = objectMapper.writeValueAsString(convertedcamt053Entry);
+            camt053Entry = painMapper.writeValueAsString(convertedcamt053Entry);
 
             td = new DtSavingsTransactionDetails(
                     internalCorrelationId,
@@ -443,7 +451,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
                     creditorDisposalAccountAmsId,
                     pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getPaymentIdentification().getEndToEndIdentification());
 
-            camt053Body = objectMapper.writeValueAsString(td);
+            camt053Body = painMapper.writeValueAsString(td);
             batchItemBuilder.add(tenantIdentifier, items, camt053RelativeUrl, camt053Body, true);
 
 
@@ -466,7 +474,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
                         FORMAT,
                         locale);
 
-                bodyItem = objectMapper.writeValueAsString(transactionBody);
+                bodyItem = painMapper.writeValueAsString(transactionBody);
 
                 String debtorConversionWithdrawRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), debtorConversionAccountAmsId, "withdrawal");
 
@@ -477,7 +485,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
                 camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001.getDocument(), convertedcamt053Entry, transactionFeeCategoryPurposeCode);
                 refillOtherId(debtorInternalAccountId, creditorInternalAccountId, transactionDetails);
                 transactionDetails.getSupplementaryData().get(0).getEnvelope().setAdditionalProperty("InternalCorrelationId", transactionFeeInternalCorrelationId);
-                camt053Entry = objectMapper.writeValueAsString(convertedcamt053Entry);
+                camt053Entry = painMapper.writeValueAsString(convertedcamt053Entry);
 
                 td = new DtSavingsTransactionDetails(
                         transactionFeeInternalCorrelationId,
@@ -497,7 +505,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
                         null,
                         pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getPaymentIdentification().getEndToEndIdentification());
 
-                camt053Body = objectMapper.writeValueAsString(td);
+                camt053Body = painMapper.writeValueAsString(td);
 
                 batchItemBuilder.add(tenantIdentifier, items, camt053RelativeUrl, camt053Body, true);
             }
@@ -604,7 +612,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
             paymentTypeCode = "";
         }
         convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
-        String camt053 = objectMapper.writeValueAsString(convertedcamt053Entry);
+        String camt053 = painMapper.writeValueAsString(convertedcamt053Entry);
         DtSavingsTransactionDetails td = new DtSavingsTransactionDetails(
                 internalCorrelationId,
                 camt053,
