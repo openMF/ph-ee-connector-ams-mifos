@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import org.mifos.connector.ams.common.SerializationHelper;
 import org.mifos.connector.ams.fineract.Config;
 import org.mifos.connector.ams.fineract.ConfigFactory;
 import org.mifos.connector.ams.log.EventLogUtil;
@@ -23,9 +24,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import com.baasflow.commons.events.Event;
 import com.baasflow.commons.events.EventService;
-import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import hu.dpc.rt.utils.converter.Pacs004ToCamt053Converter;
@@ -72,6 +71,9 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
     private EventService eventService;
 
     @Autowired
+    private SerializationHelper serializationHelper;
+
+    @Autowired
     @Qualifier("painMapper")
     private ObjectMapper painMapper;
 
@@ -89,7 +91,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
                                                       @Variable String paymentScheme,
                                                       @Variable BigDecimal amount,
                                                       @Variable Integer conversionAccountAmsId,
-                                                      @Variable String creditorIban) {
+                                                      @Variable String accountProductType) {
         log.info("bookCreditedAmountToConversionAccount");
         eventService.auditedEvent(
                 eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "bookCreditedAmountToConversionAccount", internalCorrelationId, transactionGroupId, eventBuilder),
@@ -102,8 +104,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
                         paymentScheme,
                         amount,
                         conversionAccountAmsId,
-                        creditorIban,
-                        eventBuilder));
+                        accountProductType));
     }
 
     private Void bookCreditedAmountToConversionAccount(String originalPacs008,
@@ -115,8 +116,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
                                                        String paymentScheme,
                                                        BigDecimal amount,
                                                        Integer conversionAccountAmsId,
-                                                       String creditorIban,
-                                                       Event.Builder eventBuilder) {
+                                                       String accountProductType) {
         try {
             MDC.put("internalCorrelationId", internalCorrelationId);
             log.info("book to conversion account in payment (pacs.008) {} started for {} on {} ", internalCorrelationId, paymentScheme, tenantIdentifier);
@@ -150,7 +150,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
             convertedCamt053Entry.setCreditDebitIndicator(CreditDebitCode.CRDT);
             convertedCamt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "BOOKED"));
             convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
-            String camt053Entry = painMapper.writeValueAsString(convertedCamt053Entry);
+            String camt053Entry = serializationHelper.writeCamt053AsString(accountProductType, convertedCamt053Entry);
 
             String camt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
 
@@ -205,8 +205,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
                                                               @Variable BigDecimal amount,
                                                               @Variable Integer conversionAccountAmsId,
                                                               @Variable String pacs004,
-                                                              @Variable String pacs002,
-                                                              @Variable String creditorIban) {
+                                                              @Variable String accountProductType) {
         log.info("bookCreditedAmountToConversionAccountInRecall");
         eventService.auditedEvent(
                 eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "bookCreditedAmountToConversionAccountInRecall", internalCorrelationId, transactionGroupId, eventBuilder),
@@ -220,9 +219,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
                         amount,
                         conversionAccountAmsId,
                         pacs004,
-                        pacs002,
-                        creditorIban,
-                        eventBuilder));
+                        accountProductType));
     }
 
     private Void bookCreditedAmountToConversionAccountInRecall(String originalPacs008,
@@ -235,9 +232,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
                                                                BigDecimal amount,
                                                                Integer conversionAccountAmsId,
                                                                String originalPacs004,
-                                                               String originalPacs002,
-                                                               String creditorIban,
-                                                               Event.Builder eventBuilder) {
+                                                               String accountProductType) {
         try {
             iso.std.iso._20022.tech.xsd.pacs_008_001.Document pacs008 = jaxbUtils.unmarshalPacs008(originalPacs008);
 
@@ -275,7 +270,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
             convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.CRDT);
             convertedCamt053Entry.setCreditDebitIndicator(CreditDebitCode.CRDT);
             convertedCamt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "BOOKED"));
-            String camt053Entry = painMapper.writeValueAsString(convertedCamt053Entry);
+            String camt053Entry = serializationHelper.writeCamt053AsString(accountProductType, convertedCamt053Entry);
 
             String camt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
 
@@ -330,7 +325,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
                                                               @Variable String paymentScheme,
                                                               @Variable BigDecimal amount,
                                                               @Variable Integer conversionAccountAmsId,
-                                                              @Variable String creditorIban) {
+                                                              @Variable String accountProductType) {
         log.info("bookCreditedAmountToConversionAccountInReturn");
         eventService.auditedEvent(
                 eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "bookCreditedAmountToConversionAccountInReturn", internalCorrelationId, transactionGroupId, eventBuilder),
@@ -343,8 +338,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
                         paymentScheme,
                         amount,
                         conversionAccountAmsId,
-                        creditorIban,
-                        eventBuilder));
+                        accountProductType));
     }
 
     private Void bookCreditedAmountToConversionAccountInReturn(String pacs004,
@@ -356,8 +350,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
                                                                String paymentScheme,
                                                                BigDecimal amount,
                                                                Integer conversionAccountAmsId,
-                                                               String creditorIban,
-                                                               Event.Builder eventBuilder) {
+                                                               String accountProductType) {
         try {
             MDC.put("internalCorrelationId", internalCorrelationId);
             log.info("book to conversion account in return (pacs.004) {} started for {} on {} ", internalCorrelationId, paymentScheme, tenantIdentifier);
@@ -397,7 +390,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
             convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.CRDT);
             convertedCamt053Entry.setCreditDebitIndicator(CreditDebitCode.CRDT);
             convertedCamt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "BOOKED"));
-            String camt053Entry = painMapper.writeValueAsString(convertedCamt053Entry);
+            String camt053Entry = serializationHelper.writeCamt053AsString(accountProductType, convertedCamt053Entry);
 
             String camt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
 

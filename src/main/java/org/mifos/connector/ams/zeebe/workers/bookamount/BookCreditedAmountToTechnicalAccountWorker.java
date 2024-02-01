@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import org.mifos.connector.ams.common.SerializationHelper;
 import org.mifos.connector.ams.fineract.Config;
 import org.mifos.connector.ams.fineract.ConfigFactory;
 import org.mifos.connector.ams.log.EventLogUtil;
@@ -75,6 +76,9 @@ public class BookCreditedAmountToTechnicalAccountWorker extends AbstractMoneyInO
     private EventService eventService;
 
     @Autowired
+    private SerializationHelper serializationHelper;
+
+    @Autowired
     @Qualifier("painMapper")
     private ObjectMapper painMapper;
 
@@ -95,7 +99,8 @@ public class BookCreditedAmountToTechnicalAccountWorker extends AbstractMoneyInO
                                                      @Variable String transactionGroupId,
                                                      @Variable String transactionCategoryPurposeCode,
                                                      @Variable String caseIdentifier,
-                                                     @Variable String pacs004) {
+                                                     @Variable String pacs004,
+                                                     @Variable String accountProductType) {
         log.info("bookCreditedAmountToTechnicalAccount");
         eventService.auditedEvent(
                 eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "bookCreditedAmountToTechnicalAccount", internalCorrelationId, transactionGroupId, eventBuilder),
@@ -110,7 +115,7 @@ public class BookCreditedAmountToTechnicalAccountWorker extends AbstractMoneyInO
                         transactionCategoryPurposeCode,
                         caseIdentifier,
                         pacs004,
-                        eventBuilder));
+                        accountProductType));
     }
 
     private Void bookCreditedAmountToTechnicalAccount(String originalPacs008,
@@ -124,7 +129,7 @@ public class BookCreditedAmountToTechnicalAccountWorker extends AbstractMoneyInO
                                                       String transactionCategoryPurposeCode,
                                                       String caseIdentifier,
                                                       String originalPacs004,
-                                                      Event.Builder eventBuilder) {
+                                                      String accountProductType) {
         try {
             log.info("Incoming money worker started with variables");
 
@@ -164,10 +169,10 @@ public class BookCreditedAmountToTechnicalAccountWorker extends AbstractMoneyInO
             intermediateCamt053.getStatement().get(0).getEntry().get(0).getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.CRDT);
             intermediateCamt053.getStatement().get(0).getEntry().get(0).setCreditDebitIndicator(CreditDebitCode.CRDT);
             intermediateCamt053.getStatement().get(0).getEntry().get(0).setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "BOOKED"));
-            String camt053Entry = painMapper.writeValueAsString(
-                    originalPacs004 == null
-                            ? intermediateCamt053.getStatement().get(0).getEntry().get(0)
-                            : enhanceFromPacs004(originalPacs004, paymentTypeCode, intermediateCamt053));
+            ReportEntry10 camt053 = originalPacs004 == null
+                    ? intermediateCamt053.getStatement().get(0).getEntry().get(0)
+                    : enhanceFromPacs004(originalPacs004, paymentTypeCode, intermediateCamt053);
+            String camt053Entry = serializationHelper.writeCamt053AsString(accountProductType, camt053);
 
             String camt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
 

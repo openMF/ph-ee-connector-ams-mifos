@@ -12,6 +12,7 @@ import java.util.TimeZone;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
 
+import org.mifos.connector.ams.common.SerializationHelper;
 import org.mifos.connector.ams.fineract.Config;
 import org.mifos.connector.ams.fineract.ConfigFactory;
 import org.mifos.connector.ams.log.EventLogUtil;
@@ -82,6 +83,9 @@ public class BookCreditedAmountFromTechnicalAccountWorker extends AbstractMoneyI
     private EventService eventService;
 
     @Autowired
+    private SerializationHelper serializationHelper;
+
+    @Autowired
     @Qualifier("painMapper")
     private ObjectMapper painMapper;
 
@@ -103,7 +107,8 @@ public class BookCreditedAmountFromTechnicalAccountWorker extends AbstractMoneyI
                                                        @Variable String transactionCategoryPurposeCode,
                                                        @Variable String generatedPacs004Fragment,
                                                        @Variable String pacs002,
-                                                       @Variable String caseIdentifier) {
+                                                       @Variable String caseIdentifier,
+                                                       @Variable String accountProductType) {
         log.info("bookCreditedAmountFromTechnicalAccount");
         eventService.auditedEvent(
                 eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "bookCreditedAmountFromTechnicalAccount", internalCorrelationId, transactionGroupId, eventBuilder),
@@ -119,7 +124,7 @@ public class BookCreditedAmountFromTechnicalAccountWorker extends AbstractMoneyI
                         generatedPacs004Fragment,
                         pacs002,
                         caseIdentifier,
-                        eventBuilder));
+                        accountProductType));
     }
 
     private Void bookCreditedAmountFromTechnicalAccount(String originalPacs008,
@@ -134,7 +139,7 @@ public class BookCreditedAmountFromTechnicalAccountWorker extends AbstractMoneyI
                                                         String originalPacs004,
                                                         String originalPacs002,
                                                         String caseIdentifier,
-                                                        Event.Builder eventBuilder) {
+                                                        String accountProductType) {
         try {
             List<TransactionItem> items = new ArrayList<>();
 
@@ -186,7 +191,7 @@ public class BookCreditedAmountFromTechnicalAccountWorker extends AbstractMoneyI
                 convertedCamt053Entry.getValueDate().setAdditionalProperty("Date", copy.toGregorianCalendar().toZonedDateTime().format(DateTimeFormatter.ISO_LOCAL_DATE));
             }
 
-            String camt053Entry = painMapper.writeValueAsString(convertedCamt053Entry);
+            String camt053Entry = serializationHelper.writeCamt053AsString(accountProductType, convertedCamt053Entry);
 
             String camt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
 

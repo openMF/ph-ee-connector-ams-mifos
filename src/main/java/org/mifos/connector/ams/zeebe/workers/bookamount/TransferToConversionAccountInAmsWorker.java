@@ -554,7 +554,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
             convertedCamt053Entry.setCreditDebitIndicator(CreditDebitCode.DBIT);
             convertedCamt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "PENDING"));
 
-            String camt053 = painMapper.writeValueAsString(convertedCamt053Entry);
+            String camt053 = serializationHelper.writeCamt053AsString(accountProductType, convertedCamt053Entry);
 
             camt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
 
@@ -591,7 +591,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
             convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.CRDT);
             convertedCamt053Entry.setCreditDebitIndicator(CreditDebitCode.CRDT);
             convertedCamt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "PENDING"));
-            camt053 = painMapper.writeValueAsString(convertedCamt053Entry);
+            camt053 = serializationHelper.writeCamt053AsString(accountProductType, convertedCamt053Entry);
 
             td = new DtSavingsTransactionDetails(
                     internalCorrelationId,
