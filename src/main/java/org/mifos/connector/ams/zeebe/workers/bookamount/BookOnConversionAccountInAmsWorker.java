@@ -90,7 +90,8 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
                                              @Variable BigDecimal amount,
                                              @Variable BigDecimal transactionFeeAmount,
                                              @Variable String tenantIdentifier,
-                                             @Variable String debtorIban) {
+                                             @Variable String debtorIban,
+                                             @Variable String accountProductType) {
         log.info("bookOnConversionAccountInAms");
         eventService.auditedEvent(
                 eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "bookOnConversionAccountInAms", internalCorrelationId, transactionGroupId, eventBuilder),
@@ -107,7 +108,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
                         transactionFeeAmount,
                         tenantIdentifier,
                         debtorIban,
-                        eventBuilder));
+                        accountProductType));
     }
 
     private Void bookOnConversionAccountInAms(String originalPain001,
@@ -123,7 +124,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
                                               BigDecimal transactionFeeAmount,
                                               String tenantIdentifier,
                                               String debtorIban,
-                                              Event.Builder eventBuilder) {
+                                              String accountProductType) {
         try {
             transactionDate = transactionDate.replaceAll("-", "");
 
@@ -165,7 +166,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
             convertedcamt053Entry.setCreditDebitIndicator(CreditDebitCode.DBIT);
             convertedcamt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "BOOKED"));
             transactionDetails.setAdditionalTransactionInformation(paymentTypeCode);
-            String camt053Entry = painMapper.writeValueAsString(convertedcamt053Entry);
+            String camt053Entry = serializationHelper.writeCamt053AsString(accountProductType, convertedcamt053Entry);
 
             String camt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
 
@@ -205,7 +206,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
                 camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001.getDocument(), transactionDetails, transactionFeeCategoryPurposeCode);
                 camt053Mapper.refillOtherIdentification(pain001.getDocument(), transactionDetails);
 
-                camt053Entry = painMapper.writeValueAsString(convertedcamt053Entry);
+                camt053Entry = serializationHelper.writeCamt053AsString(accountProductType, convertedcamt053Entry);
 
                 body = new TransactionBody(
                         transactionDate,
