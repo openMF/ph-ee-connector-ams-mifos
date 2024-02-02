@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import iso.std.iso._20022.tech.json.camt_053_001.EntryTransaction10;
+import iso.std.iso._20022.tech.xsd.pacs_008_001.CreditTransferTransactionInformation11;
 import org.mifos.connector.ams.common.SerializationHelper;
 import org.mifos.connector.ams.fineract.Config;
 import org.mifos.connector.ams.fineract.ConfigFactory;
@@ -131,10 +133,8 @@ public class BookCreditedAmountToTechnicalAccountWorker extends AbstractMoneyInO
                                                       String originalPacs004,
                                                       String accountProductType) {
         try {
-            log.info("Incoming money worker started with variables");
-
+            log.info("Incoming money, bookCreditedAmountToTechnicalAccount worker started with variables");
             iso.std.iso._20022.tech.xsd.pacs_008_001.Document pacs008 = jaxbUtils.unmarshalPacs008(originalPacs008);
-
             MDC.put("internalCorrelationId", internalCorrelationId);
 
             Config technicalAccountConfig = technicalAccountConfigFactory.getConfig(tenantIdentifier);
@@ -150,48 +150,43 @@ public class BookCreditedAmountToTechnicalAccountWorker extends AbstractMoneyInO
             Integer paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(configOperationKey);
             String paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(configOperationKey);
 
-            TransactionBody body = new TransactionBody(
-                    transactionDate,
-                    amount,
-                    paymentTypeId,
-                    "",
-                    FORMAT,
-                    locale);
-
+            TransactionBody body = new TransactionBody(transactionDate, amount, paymentTypeId, "", FORMAT, locale);
             String bodyItem = painMapper.writeValueAsString(body);
 
             List<TransactionItem> items = new ArrayList<>();
-
             batchItemBuilder.add(tenantIdentifier, items, conversionAccountWithdrawalRelativeUrl, bodyItem, false);
 
             BankToCustomerStatementV08 intermediateCamt053 = pacs008Camt053Mapper.toCamt053Entry(pacs008);
-            intermediateCamt053.getStatement().get(0).getEntry().get(0).getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
-            intermediateCamt053.getStatement().get(0).getEntry().get(0).getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.CRDT);
-            intermediateCamt053.getStatement().get(0).getEntry().get(0).setCreditDebitIndicator(CreditDebitCode.CRDT);
-            intermediateCamt053.getStatement().get(0).getEntry().get(0).setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "BOOKED"));
+            ReportEntry10 reportEntry10 = intermediateCamt053.getStatement().get(0).getEntry().get(0);
+            EntryTransaction10 entryTransaction10 = reportEntry10.getEntryDetails().get(0).getTransactionDetails().get(0);
+            entryTransaction10.setAdditionalTransactionInformation(paymentTypeCode);
+            entryTransaction10.setCreditDebitIndicator(CreditDebitCode.CRDT);
+            reportEntry10.setCreditDebitIndicator(CreditDebitCode.CRDT);
+            reportEntry10.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "BOOKED"));
             ReportEntry10 camt053 = originalPacs004 == null
-                    ? intermediateCamt053.getStatement().get(0).getEntry().get(0)
+                    ? reportEntry10
                     : enhanceFromPacs004(originalPacs004, paymentTypeCode, intermediateCamt053);
             String camt053Entry = serializationHelper.writeCamt053AsString(accountProductType, camt053);
 
             String camt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
 
+            CreditTransferTransactionInformation11 creditTransferTransactionInformation11 = pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0);
             DtSavingsTransactionDetails td = new DtSavingsTransactionDetails(
                     internalCorrelationId,
                     camt053Entry,
-                    pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getCdtrAcct().getId().getIBAN(),
+                    creditTransferTransactionInformation11.getCdtrAcct().getId().getIBAN(),
                     paymentTypeCode,
                     transactionGroupId,
-                    pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getDbtr().getNm(),
-                    pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getDbtrAcct().getId().getIBAN(),
+                    creditTransferTransactionInformation11.getDbtr().getNm(),
+                    creditTransferTransactionInformation11.getDbtrAcct().getId().getIBAN(),
                     null,
-                    contactDetailsUtil.getId(pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getDbtr().getCtctDtls()),
-                    Optional.ofNullable(pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getRmtInf()).map(RemittanceInformation5::getUstrd).map(List::toString).orElse(""),
+                    contactDetailsUtil.getId(creditTransferTransactionInformation11.getDbtr().getCtctDtls()),
+                    Optional.ofNullable(creditTransferTransactionInformation11.getRmtInf()).map(RemittanceInformation5::getUstrd).map(List::toString).orElse(""),
                     transactionCategoryPurposeCode,
                     paymentScheme,
                     null,
                     null,
-                    pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getPmtId().getEndToEndId());
+                    creditTransferTransactionInformation11.getPmtId().getEndToEndId());
 
             String camt053Body = painMapper.writeValueAsString(td);
 
