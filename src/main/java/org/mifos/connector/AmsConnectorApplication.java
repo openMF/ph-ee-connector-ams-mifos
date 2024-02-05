@@ -2,16 +2,17 @@ package org.mifos.connector;
 
 import java.util.concurrent.TimeUnit;
 
-import com.fasterxml.jackson.module.afterburner.AfterburnerModule;
 import org.apache.camel.Processor;
 import org.apache.hc.client5.http.classic.HttpClient;
 import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
 import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Primary;
 import org.springframework.http.client.ClientHttpRequestFactory;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.web.client.RestTemplate;
@@ -21,6 +22,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.fasterxml.jackson.module.afterburner.AfterburnerModule;
 
 import io.camunda.zeebe.spring.client.EnableZeebeClient;
 
@@ -33,6 +35,7 @@ public class AmsConnectorApplication {
     }
 
     @Bean
+    @Primary
     public ObjectMapper objectMapper() {
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.registerModule(new AfterburnerModule());
@@ -40,6 +43,19 @@ public class AmsConnectorApplication {
         objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
         return objectMapper
                 .setSerializationInclusion(JsonInclude.Include.NON_NULL)
+                .configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true)
+                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+    }
+    
+    @Bean()
+    @Qualifier("painMapper")
+    public ObjectMapper painMapper() {
+    	ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new AfterburnerModule());
+        objectMapper.registerModule(new JavaTimeModule());
+        objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+        return objectMapper
+                .setSerializationInclusion(JsonInclude.Include.NON_EMPTY)
                 .configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true)
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     }
@@ -51,25 +67,25 @@ public class AmsConnectorApplication {
     
     @Bean
     public RestTemplate restTemplate(RestTemplateBuilder builder) {
-    	PoolingHttpClientConnectionManager connectionManager = new PoolingHttpClientConnectionManager();
-    	connectionManager.setMaxTotal(500);
-    	connectionManager.setDefaultMaxPerRoute(500);
-    	
-    	RequestConfig requestConfig = RequestConfig
-    			.custom()
-    			.setConnectionRequestTimeout(1000, TimeUnit.MILLISECONDS)
-    			.setConnectTimeout(1000, TimeUnit.MILLISECONDS)
-    			.build();
-    	
-    	HttpClient httpClient = HttpClientBuilder.create()
-    			.setConnectionManager(connectionManager)
-    			.setDefaultRequestConfig(requestConfig)
-    			.build();
-    	
-    	ClientHttpRequestFactory requestFactory = new HttpComponentsClientHttpRequestFactory(httpClient);
-    	
-    	RestTemplate restTemplate = new RestTemplate(requestFactory);
-    	
-		return restTemplate;
+        PoolingHttpClientConnectionManager connectionManager = new PoolingHttpClientConnectionManager();
+        connectionManager.setMaxTotal(500);
+        connectionManager.setDefaultMaxPerRoute(500);
+
+        RequestConfig requestConfig = RequestConfig
+                .custom()
+                .setConnectionRequestTimeout(1000, TimeUnit.MILLISECONDS)
+                .setConnectTimeout(1000, TimeUnit.MILLISECONDS)
+                .build();
+
+        HttpClient httpClient = HttpClientBuilder.create()
+                .setConnectionManager(connectionManager)
+                .setDefaultRequestConfig(requestConfig)
+                .build();
+
+        ClientHttpRequestFactory requestFactory = new HttpComponentsClientHttpRequestFactory(httpClient);
+
+        RestTemplate restTemplate = new RestTemplate(requestFactory);
+
+        return restTemplate;
     }
 }

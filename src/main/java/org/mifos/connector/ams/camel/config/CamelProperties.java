@@ -2,7 +2,8 @@ package org.mifos.connector.ams.camel.config;
 
 public class CamelProperties {
 
-    private CamelProperties() {}
+    private CamelProperties() {
+    }
 
     public static final String CLIENT_ID = "clientId";
     public static final String IDENTIFIER_ID = "identifierId";

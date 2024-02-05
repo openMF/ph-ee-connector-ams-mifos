@@ -17,6 +17,7 @@ import org.mifos.connector.ams.zeebe.workers.utils.AuthTokenHelper;
 import org.mifos.connector.ams.zeebe.workers.utils.HoldAmountBody;
 import org.mifos.connector.ams.zeebe.workers.utils.TransactionItem;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -70,9 +71,10 @@ public abstract class AbstractMoneyInOutWorker {
 
     @Autowired
     private AuthTokenHelper authTokenHelper;
-    
+
     @Autowired
-    private ObjectMapper objectMapper;
+    @Qualifier("painMapper")
+    private ObjectMapper painMapper;
 
     @Autowired
     private EventService eventService;
@@ -142,29 +144,29 @@ public abstract class AbstractMoneyInOutWorker {
                         entity,
                         Object.class));
     }
-    
+
     protected Long holdBatch(List<TransactionItem> items,
-            String tenantId,
-            Integer disposalAccountId,
-            Integer conversionAccountId,
-            String internalCorrelationId,
-            String calledFrom) {
-    	return eventService.auditedEvent(
-    			eventBuilder -> EventLogUtil.initFineractBatchCall(calledFrom,
-    					items,
-    					disposalAccountId,
-    					conversionAccountId,
-    					internalCorrelationId,
-    					eventBuilder),
-    			eventBuilder -> holdBatchInternal(items, tenantId, internalCorrelationId, calledFrom));
+                             String tenantId,
+                             Integer disposalAccountId,
+                             Integer conversionAccountId,
+                             String internalCorrelationId,
+                             String calledFrom) {
+        return eventService.auditedEvent(
+                eventBuilder -> EventLogUtil.initFineractBatchCall(calledFrom,
+                        items,
+                        disposalAccountId,
+                        conversionAccountId,
+                        internalCorrelationId,
+                        eventBuilder),
+                eventBuilder -> holdBatchInternal(items, tenantId, internalCorrelationId, calledFrom));
     }
 
     protected String doBatch(List<TransactionItem> items,
-                           String tenantId,
-                           Integer disposalAccountId,
-                           Integer conversionAccountId,
-                           String internalCorrelationId,
-                           String calledFrom) {
+                             String tenantId,
+                             Integer disposalAccountId,
+                             Integer conversionAccountId,
+                             String internalCorrelationId,
+                             String calledFrom) {
         return eventService.auditedEvent(
                 eventBuilder -> EventLogUtil.initFineractBatchCall(calledFrom,
                         items,
@@ -191,7 +193,7 @@ public abstract class AbstractMoneyInOutWorker {
                         eventBuilder),
                 eventBuilder -> doBatchInternal(items, tenantId, internalCorrelationId, "transferTheAmountBetweenDisposalAccounts"));
     }
-    
+
     private Long holdBatchInternal(List<TransactionItem> items, String tenantId, String internalCorrelationId, String from) {
         HttpHeaders httpHeaders = new HttpHeaders();
         httpHeaders.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
@@ -217,22 +219,22 @@ public abstract class AbstractMoneyInOutWorker {
             httpHeaders.set(idempotencyKeyHeaderName, idempotencyKey);
             wireLogger.sending(items.toString());
             eventService.sendEvent(builder -> builder
-            		.setSourceModule("ams_connector")
-            		.setEventLogLevel(EventLogLevel.INFO)
-            		.setEvent(from + " - holdBatchInternal")
-            		.setEventType(EventType.audit)
-            		.setCorrelationIds(Map.of("idempotencyKey", idempotencyKey))
-            		.setPayload(entity.toString()));
+                    .setSourceModule("ams_connector")
+                    .setEventLogLevel(EventLogLevel.INFO)
+                    .setEvent(from + " - holdBatchInternal")
+                    .setEventType(EventType.audit)
+                    .setCorrelationIds(Map.of("idempotencyKey", idempotencyKey))
+                    .setPayload(entity.toString()));
             ResponseEntity<String> response;
-			try {
+            try {
                 response = restTemplate.exchange(urlTemplate, HttpMethod.POST, entity, String.class);
                 eventService.sendEvent(builder -> builder
-                		.setSourceModule("ams_connector")
-                		.setEventLogLevel(EventLogLevel.INFO)
-                		.setEvent(from + " - holdBatchInternal")
-                		.setEventType(EventType.audit)
-                		.setCorrelationIds(Map.of("idempotencyKey", idempotencyKey))
-                		.setPayload(response.toString()));
+                        .setSourceModule("ams_connector")
+                        .setEventLogLevel(EventLogLevel.INFO)
+                        .setEvent(from + " - holdBatchInternal")
+                        .setEventType(EventType.audit)
+                        .setCorrelationIds(Map.of("idempotencyKey", idempotencyKey))
+                        .setPayload(response.toString()));
                 wireLogger.receiving(response.getBody());
             } catch (ResourceAccessException e) {
                 if (e.getCause() instanceof SocketTimeoutException || e.getCause() instanceof ConnectException) {
@@ -254,30 +256,31 @@ public abstract class AbstractMoneyInOutWorker {
                 log.error(t.getMessage(), t);
                 throw new RuntimeException(t);
             }
-            
-			String responseBody = response.getBody();
 
-			List<BatchResponse> batchResponseList;
-			try {
-				JsonNode rootNode = objectMapper.readTree(responseBody);
-	            if (rootNode.isTextual()) {
-	            	throw new RuntimeException(responseBody);
-	            }
-	            
-	            batchResponseList = objectMapper.readValue(responseBody, new TypeReference<List<BatchResponse>>() {});
-	            if (batchResponseList == null) {
-	                return null;
-	            }
-			} catch (JsonProcessingException j) {
-				log.error(j.getMessage(), j);
-				throw new RuntimeException(j);
-			}
-			if (batchResponseList.size() != 2) {
-				if (batchResponseList.get(0).getBody().contains("validation.msg.savingsaccount.insufficient.balance")) {
-	            	throw new ZeebeBpmnError("Error_InsufficientFunds", "Insufficient balance error");
-	            }
-				throw new RuntimeException("An unexpected error occurred for hold request " + idempotencyKey);
-			}
+            String responseBody = response.getBody();
+
+            List<BatchResponse> batchResponseList;
+            try {
+                JsonNode rootNode = painMapper.readTree(responseBody);
+                if (rootNode.isTextual()) {
+                    throw new RuntimeException(responseBody);
+                }
+
+                batchResponseList = painMapper.readValue(responseBody, new TypeReference<List<BatchResponse>>() {
+                });
+                if (batchResponseList == null) {
+                    return null;
+                }
+            } catch (JsonProcessingException j) {
+                log.error(j.getMessage(), j);
+                throw new RuntimeException(j);
+            }
+            if (batchResponseList.size() != 2) {
+                if (batchResponseList.get(0).getBody().contains("validation.msg.savingsaccount.insufficient.balance")) {
+                    throw new ZeebeBpmnError("Error_InsufficientFunds", "Insufficient balance error");
+                }
+                throw new RuntimeException("An unexpected error occurred for hold request " + idempotencyKey);
+            }
             BatchResponse responseItem = batchResponseList.get(0);
             log.debug("Investigating response item {} for request [{}]", responseItem, idempotencyKey);
             int statusCode = responseItem.getStatusCode();
@@ -286,15 +289,15 @@ public abstract class AbstractMoneyInOutWorker {
                 String responseItemBody = responseItem.getBody();
                 JsonNode rootNode = null;
                 try {
-                	rootNode = objectMapper.readTree(responseItemBody);
-    	            if (rootNode.isTextual()) {
-    	            	throw new RuntimeException(responseItemBody);
-    	            }
-    	            
-    	            CommandProcessingResult commandProcessingResult = objectMapper.readValue(responseItemBody, CommandProcessingResult.class);
-    	            return commandProcessingResult.getResourceId();
+                    rootNode = painMapper.readTree(responseItemBody);
+                    if (rootNode.isTextual()) {
+                        throw new RuntimeException(responseItemBody);
+                    }
+
+                    CommandProcessingResult commandProcessingResult = painMapper.readValue(responseItemBody, CommandProcessingResult.class);
+                    return commandProcessingResult.getResourceId();
                 } catch (JsonProcessingException j) {
-                	throw new RuntimeException("An unexpected error occurred for hold request " + idempotencyKey + ": " + rootNode);
+                    throw new RuntimeException("An unexpected error occurred for hold request " + idempotencyKey + ": " + rootNode);
                 }
             }
             log.debug("Got error {}, response item '{}' for request [{}]", statusCode, responseItem, idempotencyKey);
@@ -342,22 +345,22 @@ public abstract class AbstractMoneyInOutWorker {
             httpHeaders.set(idempotencyKeyHeaderName, idempotencyKey);
             wireLogger.sending(items.toString());
             eventService.sendEvent(builder -> builder
-            		.setSourceModule("ams_connector")
-            		.setEventLogLevel(EventLogLevel.INFO)
-            		.setEvent(from + " - doBatchInternal")
-            		.setEventType(EventType.audit)
-            		.setCorrelationIds(Map.of("idempotencyKey", idempotencyKey))
-            		.setPayload(entity.toString()));
+                    .setSourceModule("ams_connector")
+                    .setEventLogLevel(EventLogLevel.INFO)
+                    .setEvent(from + " - doBatchInternal")
+                    .setEventType(EventType.audit)
+                    .setCorrelationIds(Map.of("idempotencyKey", idempotencyKey))
+                    .setPayload(entity.toString()));
             ResponseEntity<String> response;
             try {
                 response = restTemplate.exchange(urlTemplate, HttpMethod.POST, entity, String.class);
                 eventService.sendEvent(builder -> builder
-                		.setSourceModule("ams_connector")
-                		.setEventLogLevel(EventLogLevel.INFO)
-                		.setEvent(from + " - doBatchInternal")
-                		.setEventType(EventType.audit)
-                		.setCorrelationIds(Map.of("idempotencyKey", idempotencyKey))
-                		.setPayload(response.toString()));
+                        .setSourceModule("ams_connector")
+                        .setEventLogLevel(EventLogLevel.INFO)
+                        .setEvent(from + " - doBatchInternal")
+                        .setEventType(EventType.audit)
+                        .setCorrelationIds(Map.of("idempotencyKey", idempotencyKey))
+                        .setPayload(response.toString()));
                 wireLogger.receiving(response.toString());
             } catch (ResourceAccessException e) {
                 if (e.getCause() instanceof SocketTimeoutException || e.getCause() instanceof ConnectException) {
@@ -379,24 +382,25 @@ public abstract class AbstractMoneyInOutWorker {
                 log.error(t.getMessage(), t);
                 throw new RuntimeException(t);
             }
-            
-			String responseBody = response.getBody();
 
-			List<BatchResponse> batchResponseList;
-			try {
-				JsonNode rootNode = objectMapper.readTree(responseBody);
-	            if (rootNode.isTextual()) {
-	            	throw new RuntimeException(responseBody);
-	            }
-	            
-	            batchResponseList = objectMapper.readValue(responseBody, new TypeReference<List<BatchResponse>>() {});
-	            if (batchResponseList == null) {
-	                return null;
-	            }
-			} catch (JsonProcessingException j) {
-				log.error(j.getMessage(), j);
-				throw new RuntimeException(j);
-			}
+            String responseBody = response.getBody();
+
+            List<BatchResponse> batchResponseList;
+            try {
+                JsonNode rootNode = painMapper.readTree(responseBody);
+                if (rootNode.isTextual()) {
+                    throw new RuntimeException(responseBody);
+                }
+
+                batchResponseList = painMapper.readValue(responseBody, new TypeReference<List<BatchResponse>>() {
+                });
+                if (batchResponseList == null) {
+                    return null;
+                }
+            } catch (JsonProcessingException j) {
+                log.error(j.getMessage(), j);
+                throw new RuntimeException(j);
+            }
             for (BatchResponse responseItem : batchResponseList) {
                 log.debug("Investigating response item {} for request [{}]", responseItem, idempotencyKey);
                 int statusCode = responseItem.getStatusCode();
@@ -420,17 +424,17 @@ public abstract class AbstractMoneyInOutWorker {
                 }
             }
             BatchResponse lastResponseItem = batchResponseList.get(Math.min(4, batchResponseList.size()) - 1);
-            
+
             String lastResponseBody = lastResponseItem.getBody();
             try {
-				CommandProcessingResult cpResult = objectMapper.readValue(lastResponseBody, CommandProcessingResult.class);
-	            return cpResult.getTransactionId();
-			} catch (JsonProcessingException j) {
-				log.error(j.getMessage(), j);
-				throw new RuntimeException(j);
-			} finally {
-				log.info("Request [{}] successful", idempotencyKey);
-			}
+                CommandProcessingResult cpResult = painMapper.readValue(lastResponseBody, CommandProcessingResult.class);
+                return cpResult.getTransactionId();
+            } catch (JsonProcessingException j) {
+                log.error(j.getMessage(), j);
+                throw new RuntimeException(j);
+            } finally {
+                log.info("Request [{}] successful", idempotencyKey);
+            }
         }
 
         log.error("Failed to execute transaction request [{}] in {} tries.", internalCorrelationId, idempotencyRetryCount - retryCount + 1);
