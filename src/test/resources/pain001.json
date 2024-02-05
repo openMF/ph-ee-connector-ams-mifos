@@ -1,0 +1,228 @@
+{
+  "Document": {
+    "GroupHeader": {
+      "MessageIdentification": "2e69fe500f6141789cca0da1c6b0ac62",
+      "CreationDateTime": "2023-11-21T14:42:31.031+0100",
+      "Authorisation": [],
+      "NumberOfTransactions": "1",
+      "InitiatingParty": {}
+    },
+    "PaymentInformation": [
+      {
+        "PaymentInformationIdentification": "F625AB3D57B845A59E94F641B2067CA0AAA",
+        "PaymentMethod": "TRF",
+        "PaymentTypeInformation": {
+          "InstructionPriority": "NORM",
+          "ServiceLevel": [],
+          "LocalInstrument": {
+            "Code": "INST"
+          }
+        },
+        "RequestedExecutionDate": {
+          "Date": "2023-11-21"
+        },
+        "Debtor": {
+          "Name": "Uloalkalmatossag & Ontozoberendezes\"' . & Zuzomu & DPC Kft.",
+          "PostalAddress": {
+            "Country": "HU",
+            "AddressLine": [
+              "Debtor address1"
+            ]
+          },
+          "Identification": {
+            "OrganisationIdentification": {
+              "Other": [
+                {
+                  "Identification": "AAAAAA20",
+                  "SchemeName": {
+                    "Code": "BANK"
+                  },
+                  "Issuer": "Debtor Issuer"
+                }
+              ]
+            }
+          },
+          "CountryOfResidence": "HU"
+        },
+        "DebtorAccount": {
+          "Identification": {
+            "IBAN": "HU83304000010000000015372387"
+          },
+          "Currency": "HUF"
+        },
+        "DebtorAgent": {
+          "FinancialInstitutionIdentification": {
+            "BICFI": "BBIXHUH0"
+          }
+        },
+        "UltimateDebtor": {
+          "Name": "Uloalkalmatossag & Ontozoberendezes\"'.&Zuzomu&DPCKft."
+        },
+        "ChargeBearer": "SLEV",
+        "CreditTransferTransactionInformation": [
+          {
+            "PaymentIdentification": {
+              "InstructionIdentification": "ACC0C2FE77B943B9AC47B9FDF60282AAAAA",
+              "EndToEndIdentification": "BB32DAB616824A438FB7FE523FC0C40FAAA",
+              "UETR": "2e69fe50-0f61-4178-9cca-0da1c6b0ac62"
+            },
+            "PaymentTypeInformation": {
+              "ServiceLevel": [
+                {
+                  "Code": "SEPA"
+                }
+              ],
+              "LocalInstrument": {
+                "Code": "INST"
+              },
+              "CategoryPurpose": {
+                "Code": "111"
+              }
+            },
+            "Amount": {
+              "InstructedAmount": {
+                "amount": 900.00,
+                "currency": "HUF"
+              }
+            },
+            "ChargeBearer": "SLEV",
+            "UltimateDebtor": {
+              "Name": "Uloalkalmatossag&Ontozoberendezes. & Zuzomu & DPC Kft.",
+              "Identification": {
+                "OrganisationIdentification": {
+                  "Other": [
+                    {
+                      "Identification": "AAAAAA21",
+                      "SchemeName": {
+                        "Code": "BANK"
+                      },
+                      "Issuer": "UltimateDebtor Issuer"
+                    }
+                  ]
+                }
+              }
+            },
+            "CreditorAgent": {
+              "FinancialInstitutionIdentification": {
+                "BICFI": "BBIXHUH0"
+              }
+            },
+            "Creditor": {
+              "Name": "Dr. Feher-DPC Imre .\"IstvanneE.V.",
+              "PostalAddress": {
+                "Country": "HU",
+                "AddressLine": [
+                  "AddresssofDr.Fehér-DPCImre.\" Istvánné E.V."
+                ]
+              },
+              "Identification": {
+                "OrganisationIdentification": {
+                  "Other": [
+                    {
+                      "Identification": "AAAAAA22",
+                      "SchemeName": {
+                        "Code": "BANK"
+                      },
+                      "Issuer": "Creditor Issuer"
+                    }
+                  ]
+                }
+              }
+            },
+            "CreditorAccount": {
+              "Identification": {
+                "IBAN": "HU83304000010000000075430131"
+              },
+              "Currency": "HUF"
+            },
+            "UltimateCreditor": {
+              "Identification": {
+                "OrganisationIdentification": {
+                  "Other": [
+                    {
+                      "Identification": "AAAAAA23",
+                      "SchemeName": {
+                        "Code": "BANK"
+                      },
+                      "Issuer": "UltimateCreditor Issuer"
+                    }
+                  ]
+                }
+              }
+            },
+            "InstructionForCreditorAgent": [],
+            "Purpose": {
+              "Code": "OTHR"
+            },
+            "RegulatoryReporting": [],
+            "RelatedRemittanceInformation": [],
+            "RemittanceInformation": {
+              "Unstructured": [
+                "OnUs"
+              ],
+              "Structured": []
+            },
+            "SupplementaryData": [
+              {
+                "Envelope": {
+                  "any": {
+                    "TransferFlag": "O",
+                    "DebtorPartyIdentification": "HU83304000010000000015372387",
+                    "DebtorPartyIdentificationType": "01",
+                    "DebtorBranchCode": "30400001",
+                    "CreditorPartyIdentification": "HU83304000010000000075430131",
+                    "CreditorPartyIdentificationType": "01",
+                    "CreditorBranchCode": "30400001"
+                  }
+                }
+              },
+              {
+                "PlaceAndName": "OrderManagerSupplementaryData",
+                "Envelope": {
+                  "OrderManagerSupplementaryData": {
+                    "internalCorrelationId": "BBIXHUH0_2e69fe500f6141789cca0da1c6b0ac62",
+                    "transactionGroupId": "BBIXHUH0_2e69fe500f6141789cca0da1c6b0ac62",
+                    "acceptanceDatetime": "2023-11-21T13:42:31.747259295Z",
+                    "categoryPurpose": {
+                      "Code": "MAIN"
+                    },
+                    "transactionCreationChannel": "simulator"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "PaymentIdentification": {
+              "UETR": "dffbf382-8ff0-49e0-9fe9-90d5863c66a0"
+            },
+            "Amount": {
+              "InstructedAmount": {
+                "amount": 0,
+                "currency": "HUF"
+              }
+            },
+            "ChargeBearer": "SLEV",
+            "InstructionForCreditorAgent": [],
+            "RegulatoryReporting": [],
+            "RelatedRemittanceInformation": [],
+            "SupplementaryData": [
+              {
+                "Envelope": {
+                  "OrderManagerSupplementaryData": {
+                    "internalCorrelationId": "BBIXHUH0_dffbf3828ff049e09fe990d5863c66a0",
+                    "transactionGroupId": "BBIXHUH0_2e69fe500f6141789cca0da1c6b0ac62",
+                    "categoryPurpose": {
+                      "Code": "FCIN"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "SupplementaryData": []
+  }
+}

@@ -1,15 +1,8 @@
 package org.mifos.connector.ams.zeebe.workers.bookamount;
 
-import com.baasflow.commons.events.Event;
 import com.baasflow.commons.events.EventService;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.fasterxml.jackson.module.afterburner.AfterburnerModule;
 import hu.dpc.rt.utils.converter.Camt056ToCamt053Converter;
 import io.camunda.zeebe.client.api.response.ActivatedJob;
 import io.camunda.zeebe.client.api.worker.JobClient;
@@ -17,14 +10,12 @@ import io.camunda.zeebe.spring.client.annotation.JobWorker;
 import io.camunda.zeebe.spring.client.annotation.Variable;
 import io.camunda.zeebe.spring.client.exception.ZeebeBpmnError;
 import iso.std.iso._20022.tech.json.camt_053_001.ActiveOrHistoricCurrencyAndAmountRange2.CreditDebitCode;
-import iso.std.iso._20022.tech.json.camt_053_001.BankToCustomerStatementV08;
-import iso.std.iso._20022.tech.json.camt_053_001.DateAndDateTime2Choice;
-import iso.std.iso._20022.tech.json.camt_053_001.EntryStatus1Choice;
-import iso.std.iso._20022.tech.json.camt_053_001.ReportEntry10;
+import iso.std.iso._20022.tech.json.camt_053_001.*;
 import iso.std.iso._20022.tech.json.pain_001_001.CustomerCreditTransferInitiationV10;
 import iso.std.iso._20022.tech.json.pain_001_001.Pain00100110CustomerCreditTransferInitiationV10MessageSchema;
 import jakarta.xml.bind.JAXBException;
 import lombok.extern.slf4j.Slf4j;
+import org.mifos.connector.ams.common.SerializationHelper;
 import org.mifos.connector.ams.fineract.Config;
 import org.mifos.connector.ams.fineract.ConfigFactory;
 import org.mifos.connector.ams.log.EventLogUtil;
@@ -34,6 +25,7 @@ import org.mifos.connector.ams.mapstruct.Pain001Camt053Mapper;
 import org.mifos.connector.ams.zeebe.workers.utils.*;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -80,18 +72,12 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
     @Autowired
     private EventService eventService;
 
-    private ObjectMapper objectMapper = new ObjectMapper() {
-        private static final long serialVersionUID = 1L;
+    @Autowired
+    @Qualifier("painMapper")
+    private ObjectMapper painMapper;
 
-        {
-            registerModule(new AfterburnerModule());
-            registerModule(new JavaTimeModule());
-            configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
-            setSerializationInclusion(JsonInclude.Include.NON_EMPTY)
-                    .configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true)
-                    .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        }
-    };
+    @Autowired
+    private SerializationHelper serializationHelper;
 
     private static final DateTimeFormatter PATTERN = DateTimeFormatter.ofPattern(FORMAT);
 
@@ -112,7 +98,8 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
                                                  @Variable Integer conversionAccountAmsId,
                                                  @Variable String tenantIdentifier,
                                                  @Variable String iban,
-                                                 @Variable String transactionFeeInternalCorrelationId) {
+                                                 @Variable String transactionFeeInternalCorrelationId,
+                                                 @Variable String accountProductType) {
         log.info("transferToConversionAccountInAms");
         eventService.auditedEvent(
                 eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "transferToConversionAccountInAms", internalCorrelationId, transactionGroupId, eventBuilder),
@@ -129,7 +116,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
                         tenantIdentifier,
                         iban,
                         transactionFeeInternalCorrelationId,
-                        eventBuilder));
+                        accountProductType));
     }
 
     @SuppressWarnings("unchecked")
@@ -146,13 +133,12 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
                                                   String tenantIdentifier,
                                                   String iban,
                                                   String transactionFeeInternalCorrelationId,
-                                                  Event.Builder eventBuilder) {
+                                                  String accountProductType) {
         try {
             String transactionDate = LocalDate.now().format(PATTERN);
             log.debug("Debtor exchange worker starting");
             MDC.put("internalCorrelationId", internalCorrelationId);
-            objectMapper.setSerializationInclusion(Include.NON_NULL);
-            Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001 = objectMapper.readValue(originalPain001, Pain00100110CustomerCreditTransferInitiationV10MessageSchema.class);
+            Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001 = painMapper.readValue(originalPain001, Pain00100110CustomerCreditTransferInitiationV10MessageSchema.class);
 
 //			try {
 //				log.info(">>>>>>>>>>>>>>>>>> Validating incoming pain.001 <<<<<<<<<<<<<<<<");
@@ -190,8 +176,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
                     FORMAT
             );
 
-            objectMapper.setSerializationInclusion(Include.NON_NULL);
-            String bodyItem = objectMapper.writeValueAsString(body);
+            String bodyItem = painMapper.writeValueAsString(body);
 
             batchItemBuilder.add(tenantIdentifier, items, holdTransactionUrl, bodyItem, false);
 
@@ -208,7 +193,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 
             String holdAmountOperation = "transferToConversionAccountInAms.DisposalAccount.HoldTransactionAmount";
             addDetails(tenantIdentifier, pain001.getDocument(), transactionGroupId, transactionCategoryPurposeCode, internalCorrelationId,
-                    objectMapper, batchItemBuilder, items, convertedCamt053Entry, camt053RelativeUrl, iban,
+                    accountProductType, batchItemBuilder, items, convertedCamt053Entry, camt053RelativeUrl, iban,
                     paymentTypeConfig, paymentScheme, holdAmountOperation, partnerName, partnerAccountIban,
                     partnerAccountSecondaryIdentifier, unstructured, null, null, false, pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getPaymentIdentification().getEndToEndIdentification());
 
@@ -243,7 +228,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
             batchItemBuilder.add(tenantIdentifier, items, releaseTransactionUrl, null, false);
             String releaseAmountOperation = "transferToConversionAccountInAms.DisposalAccount.ReleaseTransactionAmount";
             addDetails(tenantIdentifier, pain001.getDocument(), transactionGroupId, transactionCategoryPurposeCode, internalCorrelationId,
-                    objectMapper, batchItemBuilder, items, convertedCamt053Entry, camt053RelativeUrl, iban,
+                    accountProductType, batchItemBuilder, items, convertedCamt053Entry, camt053RelativeUrl, iban,
                     paymentTypeConfig, paymentScheme, releaseAmountOperation, partnerName, partnerAccountIban,
                     partnerAccountSecondaryIdentifier, unstructured, null, null, false, pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getPaymentIdentification().getEndToEndIdentification());
 
@@ -255,7 +240,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 
 
             String withdrawAmountOperation = "transferToConversionAccountInAms.DisposalAccount.WithdrawTransactionAmount";
-            addExchange(tenantIdentifier, amount, paymentScheme, transactionDate, objectMapper, paymentTypeConfig, batchItemBuilder, items, disposalAccountWithdrawRelativeUrl, withdrawAmountOperation);
+            addExchange(tenantIdentifier, amount, paymentScheme, transactionDate, painMapper, paymentTypeConfig, batchItemBuilder, items, disposalAccountWithdrawRelativeUrl, withdrawAmountOperation);
 
             iban = pain001.getDocument().getPaymentInformation().get(0).getDebtorAccount().getIdentification().getIban();
 
@@ -264,20 +249,20 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
             convertedCamt053Entry.setCreditDebitIndicator(CreditDebitCode.DBIT);
             convertedCamt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "PENDING"));
             addDetails(tenantIdentifier, pain001.getDocument(), transactionGroupId, transactionCategoryPurposeCode, internalCorrelationId,
-                    objectMapper, batchItemBuilder, items, convertedCamt053Entry, camt053RelativeUrl, iban,
+                    accountProductType, batchItemBuilder, items, convertedCamt053Entry, camt053RelativeUrl, iban,
                     paymentTypeConfig, paymentScheme, withdrawAmountOperation, partnerName, partnerAccountIban,
                     partnerAccountSecondaryIdentifier, unstructured, disposalAccountAmsId, conversionAccountAmsId, true, pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getPaymentIdentification().getEndToEndIdentification());
 
             if (hasFee) {
                 log.debug("Withdrawing fee {} from disposal account {}", transactionFeeAmount, disposalAccountAmsId);
                 String withdrawFeeOperation = "transferToConversionAccountInAms.DisposalAccount.WithdrawTransactionFee";
-                addExchange(tenantIdentifier, transactionFeeAmount, paymentScheme, transactionDate, objectMapper, paymentTypeConfig, batchItemBuilder, items, disposalAccountWithdrawRelativeUrl, withdrawFeeOperation);
+                addExchange(tenantIdentifier, transactionFeeAmount, paymentScheme, transactionDate, painMapper, paymentTypeConfig, batchItemBuilder, items, disposalAccountWithdrawRelativeUrl, withdrawFeeOperation);
 
                 convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getSupplementaryData().get(0).getEnvelope().setAdditionalProperty("InternalCorrelationId", transactionFeeInternalCorrelationId);
 
                 convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getAmountDetails().getTransactionAmount().getAmount().setAmount(transactionFeeAmount);
 
-                addDetails(tenantIdentifier, pain001.getDocument(), transactionGroupId, transactionFeeCategoryPurposeCode, transactionFeeInternalCorrelationId, objectMapper,
+                addDetails(tenantIdentifier, pain001.getDocument(), transactionGroupId, transactionFeeCategoryPurposeCode, transactionFeeInternalCorrelationId, accountProductType,
                         batchItemBuilder, items, convertedCamt053Entry, camt053RelativeUrl, iban, paymentTypeConfig, paymentScheme,
                         withdrawFeeOperation, partnerName, partnerAccountIban, partnerAccountSecondaryIdentifier, unstructured,
                         disposalAccountAmsId, conversionAccountAmsId, true, pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getPaymentIdentification().getEndToEndIdentification());
@@ -288,7 +273,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
             String conversionAccountDepositRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "deposit");
 
             String depositAmountOperation = "transferToConversionAccountInAms.ConversionAccount.DepositTransactionAmount";
-            addExchange(tenantIdentifier, amount, paymentScheme, transactionDate, objectMapper, paymentTypeConfig, batchItemBuilder, items, conversionAccountDepositRelativeUrl, depositAmountOperation);
+            addExchange(tenantIdentifier, amount, paymentScheme, transactionDate, painMapper, paymentTypeConfig, batchItemBuilder, items, conversionAccountDepositRelativeUrl, depositAmountOperation);
 
             convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getSupplementaryData().get(0).getEnvelope().setAdditionalProperty("InternalCorrelationId", internalCorrelationId);
 
@@ -296,7 +281,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
             convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.CRDT);
             convertedCamt053Entry.setCreditDebitIndicator(CreditDebitCode.CRDT);
             convertedCamt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "PENDING"));
-            addDetails(tenantIdentifier, pain001.getDocument(), transactionGroupId, transactionCategoryPurposeCode, internalCorrelationId, objectMapper, batchItemBuilder, items,
+            addDetails(tenantIdentifier, pain001.getDocument(), transactionGroupId, transactionCategoryPurposeCode, internalCorrelationId, accountProductType, batchItemBuilder, items,
                     convertedCamt053Entry, camt053RelativeUrl, iban, paymentTypeConfig, paymentScheme, depositAmountOperation, partnerName,
                     partnerAccountIban, partnerAccountSecondaryIdentifier, unstructured, disposalAccountAmsId, conversionAccountAmsId, true, pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getPaymentIdentification().getEndToEndIdentification());
 
@@ -304,13 +289,13 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
             if (hasFee) {
                 log.debug("Depositing fee {} to conversion account {}", transactionFeeAmount, conversionAccountAmsId);
                 String depositFeeOperation = "transferToConversionAccountInAms.ConversionAccount.DepositTransactionFee";
-                addExchange(tenantIdentifier, transactionFeeAmount, paymentScheme, transactionDate, objectMapper, paymentTypeConfig, batchItemBuilder, items, conversionAccountDepositRelativeUrl, depositFeeOperation);
+                addExchange(tenantIdentifier, transactionFeeAmount, paymentScheme, transactionDate, painMapper, paymentTypeConfig, batchItemBuilder, items, conversionAccountDepositRelativeUrl, depositFeeOperation);
 
                 convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getSupplementaryData().get(0).getEnvelope().setAdditionalProperty("InternalCorrelationId", transactionFeeInternalCorrelationId);
 
                 convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getAmountDetails().getTransactionAmount().getAmount().setAmount(transactionFeeAmount);
 
-                addDetails(tenantIdentifier, pain001.getDocument(), transactionGroupId, transactionFeeCategoryPurposeCode, transactionFeeInternalCorrelationId, objectMapper, batchItemBuilder,
+                addDetails(tenantIdentifier, pain001.getDocument(), transactionGroupId, transactionFeeCategoryPurposeCode, transactionFeeInternalCorrelationId, accountProductType, batchItemBuilder,
                         items, convertedCamt053Entry, camt053RelativeUrl, iban, paymentTypeConfig, paymentScheme, depositFeeOperation, partnerName,
                         partnerAccountIban, partnerAccountSecondaryIdentifier, unstructured, disposalAccountAmsId, conversionAccountAmsId, true, pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getPaymentIdentification().getEndToEndIdentification());
             }
@@ -364,7 +349,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
             String transactionGroupId,
             String transactionFeeCategoryPurposeCode,
             String internalCorrelationId,
-            ObjectMapper om,
+            String accountProductType,
             BatchItemBuilder batchItemBuilder,
             List<TransactionItem> items,
             ReportEntry10 convertedCamt053Entry,
@@ -385,17 +370,18 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
         if (paymentTypeCode == null) {
             paymentTypeCode = "";
         }
-        convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
+        EntryTransaction10 transactionDetails = convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0);
+        transactionDetails.setAdditionalTransactionInformation(paymentTypeCode);
         if (pain001 != null) {
-            convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).getSupplementaryData().clear();
+            transactionDetails.getSupplementaryData().clear();
             if (includeSupplementary) {
-                camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001, convertedCamt053Entry, transactionFeeCategoryPurposeCode);
-                camt053Mapper.refillOtherIdentification(pain001, convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0));
+                camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001, transactionDetails, transactionFeeCategoryPurposeCode);
+                camt053Mapper.refillOtherIdentification(pain001, transactionDetails);
             } else {
-                camt053Mapper.fillOtherIdentification(pain001, convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0));
+                camt053Mapper.fillOtherIdentification(pain001, transactionDetails);
             }
         }
-        String camt053 = objectMapper.writeValueAsString(convertedCamt053Entry);
+        String camt053 = serializationHelper.writeCamt053AsString(accountProductType, convertedCamt053Entry);
         DtSavingsTransactionDetails td = new DtSavingsTransactionDetails(
                 internalCorrelationId,
                 camt053,
@@ -413,7 +399,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
                 targetAmsAccountId,
                 endToEndId);
 
-        String camt053Body = om.writeValueAsString(td);
+        String camt053Body = painMapper.writeValueAsString(td);
         batchItemBuilder.add(tenantIdentifier, items, camt053RelativeUrl, camt053Body, true);
     }
 
@@ -430,7 +416,8 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
                                                           @Variable String transactionCategoryPurposeCode,
                                                           @Variable String camt056,
                                                           @Variable String iban,
-                                                          @Variable String internalCorrelationId) {
+                                                          @Variable String internalCorrelationId,
+                                                          @Variable String accountProductType) {
         log.info("withdrawTheAmountFromDisposalAccountInAMS");
         eventService.auditedEvent(
                 eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "withdrawTheAmountFromDisposalAccountInAMS",
@@ -446,7 +433,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
                         camt056,
                         iban,
                         internalCorrelationId,
-                        eventBuilder));
+                        accountProductType));
     }
 
     @SuppressWarnings("unchecked")
@@ -459,7 +446,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
                                                            String camt056,
                                                            String iban,
                                                            String internalCorrelationId,
-                                                           Event.Builder eventBuilder) {
+                                                           String accountProductType) {
         try {
             String transactionDate = LocalDate.now().format(PATTERN);
 
@@ -483,8 +470,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
                     FORMAT
             );
 
-            objectMapper.setSerializationInclusion(Include.NON_NULL);
-            String bodyItem = objectMapper.writeValueAsString(holdAmountBody);
+            String bodyItem = painMapper.writeValueAsString(holdAmountBody);
 
             batchItemBuilder.add(tenantIdentifier, items, holdTransactionUrl, bodyItem, false);
 
@@ -504,7 +490,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
             String holdAmountOperation = "withdrawTheAmountFromDisposalAccountInAMS.DisposalAccount.HoldTransactionAmount";
 
             addDetails(tenantIdentifier, null, internalCorrelationId, transactionCategoryPurposeCode, internalCorrelationId,
-                    objectMapper, batchItemBuilder, items, convertedCamt053Entry, camt053RelativeUrl, iban,
+                    accountProductType, batchItemBuilder, items, convertedCamt053Entry, camt053RelativeUrl, iban,
                     paymentTypeConfig, paymentScheme, holdAmountOperation, partnerName, partnerAccountIban,
                     partnerAccountSecondaryIdentifier, unstructured, disposalAccountAmsId, conversionAccountAmsId, false,
                     document.getFIToFIPmtCxlReq().getUndrlyg().get(0).getTxInf().get(0).getOrgnlEndToEndId());
@@ -539,7 +525,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
             batchItemBuilder.add(tenantIdentifier, items, releaseTransactionUrl, null, false);
             String releaseAmountOperation = "withdrawTheAmountFromDisposalAccountInAMS.DisposalAccount.ReleaseTransactionAmount";
             addDetails(tenantIdentifier, null, internalCorrelationId, transactionCategoryPurposeCode, internalCorrelationId,
-                    objectMapper, batchItemBuilder, items, convertedCamt053Entry, camt053RelativeUrl, iban,
+                    accountProductType, batchItemBuilder, items, convertedCamt053Entry, camt053RelativeUrl, iban,
                     paymentTypeConfig, paymentScheme, releaseAmountOperation, partnerName, partnerAccountIban,
                     partnerAccountSecondaryIdentifier, unstructured, disposalAccountAmsId, conversionAccountAmsId, false,
                     document.getFIToFIPmtCxlReq().getUndrlyg().get(0).getTxInf().get(0).getOrgnlEndToEndId());
@@ -559,9 +545,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
                     FORMAT,
                     locale);
 
-            objectMapper.setSerializationInclusion(Include.NON_NULL);
-
-            bodyItem = objectMapper.writeValueAsString(transactionBody);
+            bodyItem = painMapper.writeValueAsString(transactionBody);
 
             batchItemBuilder.add(tenantIdentifier, items, disposalAccountWithdrawRelativeUrl, bodyItem, false);
 
@@ -570,7 +554,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
             convertedCamt053Entry.setCreditDebitIndicator(CreditDebitCode.DBIT);
             convertedCamt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "PENDING"));
 
-            String camt053 = objectMapper.writeValueAsString(convertedCamt053Entry);
+            String camt053 = serializationHelper.writeCamt053AsString(accountProductType, convertedCamt053Entry);
 
             camt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
 
@@ -592,14 +576,14 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
                     conversionAccountAmsId,
                     document.getFIToFIPmtCxlReq().getUndrlyg().get(0).getTxInf().get(0).getOrgnlEndToEndId());
 
-            String camt053Body = objectMapper.writeValueAsString(td);
+            String camt053Body = painMapper.writeValueAsString(td);
 
             batchItemBuilder.add(tenantIdentifier, items, camt053RelativeUrl, camt053Body, true);
 
             String conversionAccountDepositRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "deposit");
 
             String depositAmountOperation = "withdrawTheAmountFromDisposalAccountInAMS.ConversionAccount.DepositTransactionAmount";
-            addExchange(tenantIdentifier, amount, paymentScheme, transactionDate, objectMapper, paymentTypeConfig, batchItemBuilder, items, conversionAccountDepositRelativeUrl, depositAmountOperation);
+            addExchange(tenantIdentifier, amount, paymentScheme, transactionDate, painMapper, paymentTypeConfig, batchItemBuilder, items, conversionAccountDepositRelativeUrl, depositAmountOperation);
             String.format("%s.%s", paymentScheme, depositAmountOperation);
             configOperationKey = String.format("%s.%s", paymentScheme, depositAmountOperation);
             paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(configOperationKey);
@@ -607,7 +591,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
             convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.CRDT);
             convertedCamt053Entry.setCreditDebitIndicator(CreditDebitCode.CRDT);
             convertedCamt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "PENDING"));
-            camt053 = objectMapper.writeValueAsString(convertedCamt053Entry);
+            camt053 = serializationHelper.writeCamt053AsString(accountProductType, convertedCamt053Entry);
 
             td = new DtSavingsTransactionDetails(
                     internalCorrelationId,
@@ -627,7 +611,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
                     conversionAccountAmsId,
                     document.getFIToFIPmtCxlReq().getUndrlyg().get(0).getTxInf().get(0).getOrgnlEndToEndId());
 
-            camt053Body = objectMapper.writeValueAsString(td);
+            camt053Body = painMapper.writeValueAsString(td);
             batchItemBuilder.add(tenantIdentifier, items, camt053RelativeUrl, camt053Body, true);
 
             doBatch(items,

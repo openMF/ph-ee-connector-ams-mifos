@@ -1,50 +1,36 @@
 package org.mifos.connector.ams.zeebe.workers.bookamount;
 
-import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-
-import org.mifos.connector.ams.fineract.Config;
-import org.mifos.connector.ams.fineract.ConfigFactory;
-import org.mifos.connector.ams.log.EventLogUtil;
-import org.mifos.connector.ams.log.LogInternalCorrelationId;
-import org.mifos.connector.ams.log.TraceZeebeArguments;
-import org.mifos.connector.ams.mapstruct.Pacs008Camt053Mapper;
-import org.mifos.connector.ams.zeebe.workers.utils.BatchItemBuilder;
-import org.mifos.connector.ams.zeebe.workers.utils.ContactDetailsUtil;
-import org.mifos.connector.ams.zeebe.workers.utils.DtSavingsTransactionDetails;
-import org.mifos.connector.ams.zeebe.workers.utils.JAXBUtils;
-import org.mifos.connector.ams.zeebe.workers.utils.NotificationHelper;
-import org.mifos.connector.ams.zeebe.workers.utils.TransactionBody;
-import org.mifos.connector.ams.zeebe.workers.utils.TransactionItem;
-import org.slf4j.MDC;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
-
-import com.baasflow.commons.events.Event;
 import com.baasflow.commons.events.EventService;
-import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import hu.dpc.rt.utils.converter.Pacs004ToCamt053Converter;
 import io.camunda.zeebe.client.api.response.ActivatedJob;
 import io.camunda.zeebe.client.api.worker.JobClient;
 import io.camunda.zeebe.spring.client.annotation.JobWorker;
 import io.camunda.zeebe.spring.client.annotation.Variable;
 import io.camunda.zeebe.spring.client.exception.ZeebeBpmnError;
-import iso.std.iso._20022.tech.json.camt_053_001.AccountStatement9;
+import iso.std.iso._20022.tech.json.camt_053_001.*;
 import iso.std.iso._20022.tech.json.camt_053_001.ActiveOrHistoricCurrencyAndAmountRange2.CreditDebitCode;
-import iso.std.iso._20022.tech.json.camt_053_001.BankToCustomerStatementV08;
-import iso.std.iso._20022.tech.json.camt_053_001.EntryDetails9;
-import iso.std.iso._20022.tech.json.camt_053_001.EntryStatus1Choice;
-import iso.std.iso._20022.tech.json.camt_053_001.EntryTransaction10;
-import iso.std.iso._20022.tech.json.camt_053_001.ReportEntry10;
 import iso.std.iso._20022.tech.xsd.pacs_008_001.CashAccount16;
 import iso.std.iso._20022.tech.xsd.pacs_008_001.RemittanceInformation5;
 import lombok.extern.slf4j.Slf4j;
+import org.mifos.connector.ams.common.SerializationHelper;
+import org.mifos.connector.ams.fineract.Config;
+import org.mifos.connector.ams.fineract.ConfigFactory;
+import org.mifos.connector.ams.log.EventLogUtil;
+import org.mifos.connector.ams.log.LogInternalCorrelationId;
+import org.mifos.connector.ams.log.TraceZeebeArguments;
+import org.mifos.connector.ams.mapstruct.Pacs008Camt053Mapper;
+import org.mifos.connector.ams.zeebe.workers.utils.*;
+import org.slf4j.MDC;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 
 @Component
 @Slf4j
@@ -77,6 +63,9 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
     private NotificationHelper notificationHelper;
 
     @Autowired
+    private SerializationHelper serializationHelper;
+
+    @Autowired
     @Qualifier("painMapper")
     private ObjectMapper painMapper;
 
@@ -96,7 +85,8 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
                                           @Variable Integer conversionAccountAmsId,
                                           @Variable Integer disposalAccountAmsId,
                                           @Variable String tenantIdentifier,
-                                          @Variable String creditorIban) {
+                                          @Variable String creditorIban,
+                                          @Variable String accountProductType) {
         log.info("transferToDisposalAccount");
         eventService.auditedEvent(
                 eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "transferToDisposalAccount", internalCorrelationId, transactionGroupId, eventBuilder),
@@ -112,7 +102,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
                         disposalAccountAmsId,
                         tenantIdentifier,
                         creditorIban,
-                        eventBuilder));
+                        accountProductType));
     }
 
     private Void transferToDisposalAccount(String originalPacs008,
@@ -127,7 +117,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
                                            Integer disposalAccountAmsId,
                                            String tenantIdentifier,
                                            String creditorIban,
-                                           Event.Builder eventBuilder) {
+                                           String accountProductType) {
         try {
             MDC.put("internalCorrelationId", internalCorrelationId);
             log.info("transfer to disposal account in payment (pacs.008) {} started for {} on {} ", internalCorrelationId, paymentScheme, tenantIdentifier);
@@ -162,7 +152,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
             convertedCamt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "BOOKED"));
             convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
             convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
-            String camt053Entry = painMapper.writeValueAsString(convertedCamt053Entry);
+            String camt053Entry = serializationHelper.writeCamt053AsString(accountProductType, convertedCamt053Entry);
 
             String debtorName = pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getDbtr().getNm();
 
@@ -198,7 +188,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
             convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
             convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.DBIT);
             convertedCamt053Entry.setCreditDebitIndicator(CreditDebitCode.DBIT);
-            camt053Entry = painMapper.writeValueAsString(convertedCamt053Entry);
+            camt053Entry = serializationHelper.writeCamt053AsString(accountProductType, convertedCamt053Entry);
 
             body = new TransactionBody(
                     transactionDate,
@@ -270,7 +260,8 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
                                                   @Variable Integer disposalAccountAmsId,
                                                   @Variable String tenantIdentifier,
                                                   @Variable String pacs004,
-                                                  @Variable String creditorIban) {
+                                                  @Variable String creditorIban,
+                                                  @Variable String accountProductType) {
         log.info("transferToDisposalAccountInRecall");
         eventService.auditedEvent(
                 eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "transferToDisposalAccountInRecall", internalCorrelationId, transactionGroupId, eventBuilder),
@@ -287,7 +278,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
                         tenantIdentifier,
                         pacs004,
                         creditorIban,
-                        eventBuilder));
+                        accountProductType));
     }
 
     private Void transferToDisposalAccountInRecall(String originalPacs008,
@@ -303,7 +294,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
                                                    String tenantIdentifier,
                                                    String originalPacs004,
                                                    String creditorIban,
-                                                   Event.Builder eventBuilder) {
+                                                   String accountProductType) {
         try {
             MDC.put("internalCorrelationId", internalCorrelationId);
             log.info("transfer to disposal account in recall (pacs.004) {} started for {} on {} ", internalCorrelationId, paymentScheme, tenantIdentifier);
@@ -340,7 +331,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
             convertedCamt053Entry.setCreditDebitIndicator(CreditDebitCode.CRDT);
             convertedCamt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "BOOKED"));
             convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
-            String camt053Entry = painMapper.writeValueAsString(convertedCamt053Entry);
+            String camt053Entry = serializationHelper.writeCamt053AsString(accountProductType, convertedCamt053Entry);
 
             CashAccount16 debtorAccount = pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getDbtrAcct();
             String debtorName = pacs004.getPmtRtr().getTxInf().get(0).getOrgnlTxRef().getCdtr().getNm();
@@ -379,7 +370,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
             convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
             convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.DBIT);
             convertedCamt053Entry.setCreditDebitIndicator(CreditDebitCode.DBIT);
-            camt053Entry = painMapper.writeValueAsString(convertedCamt053Entry);
+            camt053Entry = serializationHelper.writeCamt053AsString(accountProductType, convertedCamt053Entry);
 
             body = new TransactionBody(
                     transactionDate,
@@ -449,7 +440,8 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
                                                   @Variable Integer conversionAccountAmsId,
                                                   @Variable Integer disposalAccountAmsId,
                                                   @Variable String tenantIdentifier,
-                                                  @Variable String creditorIban) {
+                                                  @Variable String creditorIban,
+                                                  @Variable String accountProductType) {
         log.info("transferToDisposalAccountInReturn");
         eventService.auditedEvent(
                 eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "transferToDisposalAccountInReturn", internalCorrelationId, transactionGroupId, eventBuilder),
@@ -465,7 +457,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
                         disposalAccountAmsId,
                         tenantIdentifier,
                         creditorIban,
-                        eventBuilder));
+                        accountProductType));
     }
 
     private Void transferToDisposalAccountInReturn(String pacs004,
@@ -480,7 +472,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
                                                    Integer disposalAccountAmsId,
                                                    String tenantIdentifier,
                                                    String creditorIban,
-                                                   Event.Builder eventBuilder) {
+                                                   String accountProductType) {
         try {
             MDC.put("internalCorrelationId", internalCorrelationId);
             log.info("transfer to disposal account in return (pacs.004) {} started for {} on {} ", internalCorrelationId, paymentScheme, tenantIdentifier);
@@ -521,7 +513,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
             convertedCamt053Entry.setCreditDebitIndicator(CreditDebitCode.CRDT);
             convertedCamt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "BOOKED"));
 
-            String camt053Entry = painMapper.writeValueAsString(convertedCamt053Entry);
+            String camt053Entry = serializationHelper.writeCamt053AsString(accountProductType, convertedCamt053Entry);
 
 
             String creditorName = pacs_004.getPmtRtr().getTxInf().get(0).getOrgnlTxRef().getCdtr().getNm();
@@ -557,7 +549,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
             convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
             convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.DBIT);
             convertedCamt053Entry.setCreditDebitIndicator(CreditDebitCode.DBIT);
-            camt053Entry = painMapper.writeValueAsString(convertedCamt053Entry);
+            camt053Entry = serializationHelper.writeCamt053AsString(accountProductType, convertedCamt053Entry);
 
             body = new TransactionBody(
                     transactionDate,
