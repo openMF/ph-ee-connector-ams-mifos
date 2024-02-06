@@ -7,17 +7,32 @@ import io.camunda.zeebe.client.api.worker.JobClient;
 import io.camunda.zeebe.spring.client.annotation.JobWorker;
 import io.camunda.zeebe.spring.client.annotation.Variable;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.fineract.client.models.CurrencyData;
+import org.apache.fineract.client.models.CurrentAccountResponseData;
 import org.apache.fineract.client.models.GetSavingsAccountsAccountIdResponse;
+import org.apache.fineract.client.models.StringEnumOptionData;
 import org.mifos.connector.ams.common.SavingsAccountStatusType;
+import org.mifos.connector.ams.common.util.BeanWalker;
+import org.mifos.connector.ams.fineract.currentaccount.response.FineractResponse;
+import org.mifos.connector.ams.fineract.currentaccount.response.PageFineractResponse;
 import org.mifos.connector.ams.log.EventLogUtil;
 import org.mifos.connector.ams.log.LogInternalCorrelationId;
 import org.mifos.connector.ams.log.TraceZeebeArguments;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+
+import static org.mifos.connector.ams.common.util.BeanWalker.element;
+import static org.mifos.connector.ams.fineract.AccountType.CURRENT;
+import static org.mifos.connector.ams.fineract.AccountType.SAVINGS;
 
 @Component
 @Slf4j
@@ -26,6 +41,11 @@ public class GetAccountDetailsFromAmsWorker extends AbstractAmsWorker {
     @Value("${fineract.incoming-money-api}")
     private String incomingMoneyApi;
 
+    @Value("${ams.account-type-key.conversion}")
+    public String conversionSub;
+
+    @Value("${ams.account-type-key.disposal}")
+    public String disposalSub;
     @Autowired
     private EventService eventService;
 
@@ -68,86 +88,141 @@ public class GetAccountDetailsFromAmsWorker extends AbstractAmsWorker {
                                                          String paymentScheme,
                                                          String direction,
                                                          Event.Builder eventBuilder) {
+
+
         String paymentSchemePrefix = paymentScheme.split(":")[0];
-        AmsDataTableQueryResponse[] response = lookupAccount(iban, tenantIdentifier);
-        log.info("1/4: Account details retrieval finished");
 
-        if (response.length == 0) {
-            String reasonCode = accountNotExistsReasons.getOrDefault(paymentSchemePrefix + "-" + direction, "NOT_PROVIDED");
-            log.debug("Account not found in AMS, returning reasonCode based on scheme and direction: {}-{}: {}", paymentSchemePrefix, direction, reasonCode);
+        try {
 
-            return Map.of(
-                    "accountAmsStatus", AccountAmsStatus.NOT_READY_TO_RECEIVE_MONEY.name(),
-                    "reasonCode", reasonCode,
-                    "conversionAccountAmsId", "NOT_PROVIDED",
-                    "internalAccountId", "NOT_PROVIDED",
-                    "disposalAccountAmsId", "NOT_PROVIDED",
-                    "disposalAccountFlags", Collections.emptyList(),
-                    "disposalAccountAmsStatusType", "NOT_PROVIDED"
-            );
-        }
 
-        String status = AccountAmsStatus.NOT_READY_TO_RECEIVE_MONEY.name();
+            FineractResponse disposalAccountData = BeanWalker.of(lookupCurrentAccountPostFlagsAndStatus(iban, disposalSub, tenantIdentifier).getBody()).get(PageFineractResponse::getContent).get(element(0)).get();
 
-        var responseItem = response[0];
-        Long accountConversionId = responseItem.conversion_account_id();
-        Long accountDisposalId = responseItem.disposal_account_id();
-        String internalAccountId = responseItem.internal_account_id();
+            CurrentAccountResponseData disposalAccount = lookupCurrentAccountGet(iban, disposalSub, tenantIdentifier).getBody();
+            CurrentAccountResponseData conversionAccount = lookupCurrentAccountGet(iban, conversionSub, tenantIdentifier).getBody();
 
-        log.info("Retrieving conversion account data");
-        GetSavingsAccountsAccountIdResponse conversion = retrieveCurrencyIdAndStatus(accountConversionId, tenantIdentifier);
-        log.trace("conversion account details: {}", conversion);
-        log.info("2/4: Conversion account data retrieval finished");
+            String disposalAccountStatus = BeanWalker.of(disposalAccount).get(CurrentAccountResponseData::getStatus).get(StringEnumOptionData::getId).get();
+            String conversionAccountStatus = BeanWalker.of(conversionAccount).get(CurrentAccountResponseData::getStatus).get(StringEnumOptionData::getId).get();
 
-        GetSavingsAccountsAccountIdResponse disposal = retrieveCurrencyIdAndStatus(accountDisposalId, tenantIdentifier);
-        log.trace("disposal account details: {}", disposal);
-        log.info("3/4: Disposal account data retrieval finished");
+            Boolean AccountStatusCheckResult = (Objects.equals(disposalAccountStatus, "ACTIVE") ||
+                    Objects.equals(conversionAccountStatus, "ACTIVE"));
+            Boolean CurrencyCheckResult = (Objects.equals(BeanWalker.of(disposalAccount).get(CurrentAccountResponseData::getCurrency).get(CurrencyData::getCode).get(), "HUF") ||
+                    Objects.equals(BeanWalker.of(conversionAccount).get(CurrentAccountResponseData::getCurrency).get(CurrencyData::getCode).get(), "HUF"));
+            //TODO map fineract response
+            String status = AccountAmsStatus.NOT_READY_TO_RECEIVE_MONEY.name();
 
-        Integer disposalAccountAmsId = disposal.getId();
-        Integer conversionAccountAmsId = conversion.getId();
-
-        if (currency.equalsIgnoreCase(conversion.getCurrency().getCode())
-                && currency.equalsIgnoreCase(disposal.getCurrency().getCode())
-                && conversion.getStatus().getId() == 300
-                && disposal.getStatus().getId() == 300) {
-            status = AccountAmsStatus.READY_TO_RECEIVE_MONEY.name();
-        } else {
-            log.info("Conversion account currency: {}, disposal account: {}. Account is not ready to receive money.", conversion, disposal);
-        }
-
-        List<Object> flags = lookupFlags(accountDisposalId, tenantIdentifier);
-        log.info("4/4: Disposal account flags retrieval finished");
-
-        SavingsAccountStatusType statusType = null;
-        for (SavingsAccountStatusType statType : SavingsAccountStatusType.values()) {
-            if (Objects.equals(statType.getValue(), disposal.getStatus().getId())) {
-                statusType = statType;
-                break;
+            if (AccountStatusCheckResult && CurrencyCheckResult) {
+                status = AccountAmsStatus.READY_TO_RECEIVE_MONEY.name();
+            } else {
+                log.info("Conversion account currency: {}, disposal account: {}. Account is not ready to receive money.", conversionAccount, disposalAccount);
             }
+
+            HashMap<String, Object> outputVariables = new HashMap<>();
+
+
+            String reasonCode = "NOT_PROVIDED";
+            if (Objects.equals(disposalAccountStatus, "CLOSED") || Objects.equals(conversionAccountStatus, "CLOSED")) {
+                reasonCode = accountClosedReasons.getOrDefault(paymentSchemePrefix + "-" + direction, "NOT_PROVIDED");
+                log.info("CLOSED account, returning reasonCode based on scheme and direction: {}-{}: {}", paymentSchemePrefix, direction, reasonCode);
+            }
+
+            if (!CurrencyCheckResult) {
+                if (AccountStatusCheckResult)
+                    reasonCode = "AM03";
+            }
+
+            outputVariables.put("accountAmsStatus", status);
+            outputVariables.put("conversionAccountAmsId", BeanWalker.of(conversionAccount).get(CurrentAccountResponseData::getId));
+            outputVariables.put("disposalAccountAmsId", BeanWalker.of(disposalAccount).get(CurrentAccountResponseData::getId));
+            outputVariables.put("disposalAccountFlags", disposalAccountData.getFlagCode());
+            outputVariables.put("disposalAccountAmsStatusType", disposalAccountData.getStatusType());
+            outputVariables.put("internalAccountId", disposalAccountData.getAccountNo());
+            outputVariables.put("accountType", CURRENT);
+            outputVariables.put("reasonCode", reasonCode);
+            return Map.copyOf(outputVariables);
+
+        } catch (HttpClientErrorException.NotFound e) {
+            log.info("");
+            AmsDataTableQueryResponse[] response = lookupSavingsAccount(iban, "default");
+            log.info("1/4: Account details retrieval finished");
+
+            if (response.length == 0) {
+                String reasonCode = accountNotExistsReasons.getOrDefault(paymentSchemePrefix + "-" + direction, "NOT_PROVIDED");
+                log.debug("Account not found in AMS, returning reasonCode based on scheme and direction: {}-{}: {}", paymentSchemePrefix, direction, reasonCode);
+
+                return Map.of(
+                        "accountAmsStatus", AccountAmsStatus.NOT_READY_TO_RECEIVE_MONEY.name(),
+                        "reasonCode", reasonCode,
+                        "conversionAccountAmsId", "NOT_PROVIDED",
+                        "internalAccountId", "NOT_PROVIDED",
+                        "disposalAccountAmsId", "NOT_PROVIDED",
+                        "disposalAccountFlags", Collections.emptyList(),
+                        "disposalAccountAmsStatusType", "NOT_PROVIDED"
+                );
+            }
+
+            String status = AccountAmsStatus.NOT_READY_TO_RECEIVE_MONEY.name();
+
+            var responseItem = response[0];
+            Long accountConversionId = responseItem.conversion_account_id();
+            Long accountDisposalId = responseItem.disposal_account_id();
+            String internalAccountId = responseItem.internal_account_id();
+
+            log.info("Retrieving conversion account data");
+            GetSavingsAccountsAccountIdResponse conversion = retrieveCurrencyIdAndStatus(accountConversionId, tenantIdentifier);
+            log.trace("conversion account details: {}", conversion);
+            log.info("2/4: Conversion account data retrieval finished");
+
+            GetSavingsAccountsAccountIdResponse disposal = retrieveCurrencyIdAndStatus(accountDisposalId, tenantIdentifier);
+            log.trace("disposal account details: {}", disposal);
+            log.info("3/4: Disposal account data retrieval finished");
+
+            Integer disposalAccountAmsId = disposal.getId();
+            Integer conversionAccountAmsId = conversion.getId();
+
+            if (currency.equalsIgnoreCase(conversion.getCurrency().getCode())
+                    && currency.equalsIgnoreCase(disposal.getCurrency().getCode())
+                    && conversion.getStatus().getId() == 300
+                    && disposal.getStatus().getId() == 300) {
+                status = AccountAmsStatus.READY_TO_RECEIVE_MONEY.name();
+            } else {
+                log.info("Conversion account currency: {}, disposal account: {}. Account is not ready to receive money.", conversion, disposal);
+            }
+
+            List<Object> flags = lookupFlags(accountDisposalId, tenantIdentifier);
+            log.info("4/4: Disposal account flags retrieval finished");
+
+            SavingsAccountStatusType statusType = null;
+            for (SavingsAccountStatusType statType : SavingsAccountStatusType.values()) {
+                if (Objects.equals(statType.getValue(), disposal.getStatus().getId())) {
+                    statusType = statType;
+                    break;
+                }
+            }
+
+            log.trace("IBAN {} status is {}", iban, status);
+
+            String reasonCode = "NOT_PROVIDED";
+            if (SavingsAccountStatusType.CLOSED.equals(statusType)) {
+                reasonCode = accountClosedReasons.getOrDefault(paymentSchemePrefix + "-" + direction, "NOT_PROVIDED");
+                log.info("CLOSED account, returning reasonCode based on scheme and direction: {}-{}: {}", paymentSchemePrefix, direction, reasonCode);
+            }
+
+            if (AccountAmsStatus.NOT_READY_TO_RECEIVE_MONEY.name().equalsIgnoreCase(status) && SavingsAccountStatusType.ACTIVE.equals(statusType)) {
+                statusType = SavingsAccountStatusType.INVALID;
+                reasonCode = "AM03";
+            }
+
+            HashMap<String, Object> outputVariables = new HashMap<>();
+            outputVariables.put("accountAmsStatus", status);
+            outputVariables.put("conversionAccountAmsId", conversionAccountAmsId);
+            outputVariables.put("disposalAccountAmsId", disposalAccountAmsId);
+            outputVariables.put("disposalAccountFlags", flags);
+            outputVariables.put("disposalAccountAmsStatusType", statusType);
+            outputVariables.put("internalAccountId", internalAccountId);
+            outputVariables.put("accountType", SAVINGS);
+            outputVariables.put("reasonCode", reasonCode);
+            return Map.copyOf(outputVariables);
         }
-
-        log.trace("IBAN {} status is {}", iban, status);
-
-        String reasonCode = "NOT_PROVIDED";
-        if (SavingsAccountStatusType.CLOSED.equals(statusType)) {
-            reasonCode = accountClosedReasons.getOrDefault(paymentSchemePrefix + "-" + direction, "NOT_PROVIDED");
-            log.info("CLOSED account, returning reasonCode based on scheme and direction: {}-{}: {}", paymentSchemePrefix, direction, reasonCode);
-        }
-
-        if (AccountAmsStatus.NOT_READY_TO_RECEIVE_MONEY.name().equalsIgnoreCase(status) && SavingsAccountStatusType.ACTIVE.equals(statusType)) {
-            statusType = SavingsAccountStatusType.INVALID;
-            reasonCode = "AM03";
-        }
-
-        HashMap<String, Object> outputVariables = new HashMap<>();
-        outputVariables.put("accountAmsStatus", status);
-        outputVariables.put("conversionAccountAmsId", conversionAccountAmsId);
-        outputVariables.put("disposalAccountAmsId", disposalAccountAmsId);
-        outputVariables.put("disposalAccountFlags", flags);
-        outputVariables.put("disposalAccountAmsStatusType", statusType);
-        outputVariables.put("internalAccountId", internalAccountId);
-        outputVariables.put("reasonCode", reasonCode);
-        return Map.copyOf(outputVariables);
     }
 
     private GetSavingsAccountsAccountIdResponse retrieveCurrencyIdAndStatus(Long accountCurrencyId, String tenantId) {
