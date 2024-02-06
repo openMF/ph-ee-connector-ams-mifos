@@ -53,6 +53,9 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
     @Value("${fineract.incoming-money-api}")
     protected String incomingMoneyApi;
 
+    @Value("${fineract.current-account-api}")
+    protected String currentAccountApi;
+
     @Autowired
     private ConfigFactory paymentTypeConfigFactory;
 
@@ -133,8 +136,10 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
         try {
             // STEP 0 - extract information
             String transactionDate = LocalDate.now().format(PATTERN);
-            log.debug("Debtor exchange worker starting");
+            String apiPath = accountProductType.equalsIgnoreCase("SAVINGS") ? incomingMoneyApi.substring(1) : currentAccountApi.substring(1);
+            log.debug("Debtor exchange worker starting, using api path {}", apiPath);
             MDC.put("internalCorrelationId", internalCorrelationId);
+
             Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001 = painMapper.readValue(originalPain001, Pain00100110CustomerCreditTransferInitiationV10MessageSchema.class);
 
             log.debug("Withdrawing amount {} from disposal account {} with fee: {}", amount, disposalAccountAmsId, transactionFeeAmount);
@@ -166,7 +171,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
                 log.info("No hold and release because disposal account {} is not a savings account", disposalAccountAmsId);
             }
 
-            // STEP 2a - batch: add withdrawal item
+            // STEP 2a - batch: add withdraw amount
             transactionDetails.setCreditDebitIndicator(CreditDebitCode.DBIT);
             convertedCamt053Entry.setCreditDebitIndicator(CreditDebitCode.DBIT);
             convertedCamt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "PENDING"));
@@ -174,7 +179,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
             String withdrawAmountOperation = "transferToConversionAccountInAms.DisposalAccount.WithdrawTransactionAmount";
             Integer withdrawAmountPaymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(String.format("%s.%s", paymentScheme, withdrawAmountOperation));
             String withdrawAmountTransactionBody = painMapper.writeValueAsString(new TransactionBody(transactionDate, amount, withdrawAmountPaymentTypeId, "", FORMAT, locale));
-            String disposalAccountWithdrawRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), disposalAccountAmsId, "withdrawal");
+            String disposalAccountWithdrawRelativeUrl = String.format("%s%d/transactions?command=%s", apiPath, disposalAccountAmsId, "withdrawal");
             batchItemBuilder.add(tenantIdentifier, items, disposalAccountWithdrawRelativeUrl, withdrawAmountTransactionBody, false);
 
             // STEP 2b - batch: add withdrawal details
@@ -215,7 +220,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 
             // STEP 3a - batch: deposit amount
             log.info("Depositing amount {} to conversion account {}", amount, conversionAccountAmsId);
-            String conversionAccountDepositRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "deposit");
+            String conversionAccountDepositRelativeUrl = String.format("%s%d/transactions?command=%s", apiPath, conversionAccountAmsId, "deposit");
             String depositAmountOperation = "transferToConversionAccountInAms.ConversionAccount.DepositTransactionAmount";
             Integer depositAmountPaymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(String.format("%s.%s", paymentScheme, depositAmountOperation));
             String depositAmountTransactionBody = painMapper.writeValueAsString(new TransactionBody(transactionDate, amount, depositAmountPaymentTypeId, "", FORMAT, locale));
