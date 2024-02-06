@@ -19,9 +19,7 @@ public class AuthTokenHelper {
     private static final Encoder ENCODER = Base64.getEncoder();
 
     public String generateAuthToken() {
-        String userPass = new StringBuilder(authUser).append(":").append(authPassword).toString();
-        StringBuilder sb = new StringBuilder("Basic ");
-        sb.append(new String(ENCODER.encode(userPass.getBytes()), StandardCharsets.ISO_8859_1));
-        return sb.toString();
+        byte[] base64 = ENCODER.encode((authUser + ":" + authPassword).getBytes());
+        return "Basic " + new String(base64, StandardCharsets.ISO_8859_1);
     }
 }
