@@ -46,6 +46,7 @@ dfspids: "DFSPID"
 
 fineract:
     api-url: ${FINERACT_URL}
+    current-account-api: "/current-accounts/"
     datatable-query-api: "/datatables/dt_client_account_mapping/query"
     column-filter: "iban"
     result-columns: "conversion_account_id,disposal_account_id,internal_account_id"
@@ -61,6 +62,9 @@ zeebe:
             threads: 100
 
 ams:
+    account-type-key:
+        conversion: ${AMS_CONVERSION_ACCOUNT_TYPE_KEY:C}
+        disposal: ${AMS_DISPOSAL_ACCOUNT_TYPE_KEY:D}
     local:
         server-cert-check: false
         enabled: false
