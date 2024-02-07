@@ -152,7 +152,7 @@ public class GetAccountDetailsFromAmsWorker extends AbstractAmsWorker {
             outputVariables.put("accountType", CURRENT);
             outputVariables.put("reasonCode", reasonCode);
             
-            return Map.copyOf(outputVariables);
+            return outputVariables;
 
         } catch (HttpClientErrorException.NotFound e) {
         AmsDataTableQueryResponse[] response = lookupAccount(iban, tenantIdentifier);   // TODO try to lookup CurrentAccount first
