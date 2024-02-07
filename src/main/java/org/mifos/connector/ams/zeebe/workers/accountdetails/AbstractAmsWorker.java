@@ -108,7 +108,7 @@ public abstract class AbstractAmsWorker {
         return exchange(UriComponentsBuilder
                         .fromHttpUrl(fineractApiUrl)
                         .path(accountUrl)
-                        .pathSegment("iban", iban, accountSubValue, "query")
+                        .pathSegment("iban", iban, accountSubValue)
                         .encode().toUriString(),
                 CAGetResponse.class,
                 tenantId,
