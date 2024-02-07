@@ -105,9 +105,9 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
                                                                         @Variable String originalPain001,
                                                                         @Variable BigDecimal amount,
                                                                         @Variable String currency,
-                                                                        @Variable Integer creditorDisposalAccountAmsId,
-                                                                        @Variable Integer debtorDisposalAccountAmsId,
-                                                                        @Variable Integer debtorConversionAccountAmsId,
+                                                                        @Variable String creditorDisposalAccountAmsId,
+                                                                        @Variable String debtorDisposalAccountAmsId,
+                                                                        @Variable String debtorConversionAccountAmsId,
                                                                         @Variable BigDecimal transactionFeeAmount,
                                                                         @Variable String tenantIdentifier,
                                                                         @Variable String transactionGroupId,
@@ -150,9 +150,9 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
                                                                          String originalPain001,
                                                                          BigDecimal amount,
                                                                          String currency,
-                                                                         Integer creditorDisposalAccountAmsId,
-                                                                         Integer debtorDisposalAccountAmsId,
-                                                                         Integer debtorConversionAccountAmsId,
+                                                                         String creditorDisposalAccountAmsId,
+                                                                         String debtorDisposalAccountAmsId,
+                                                                         String debtorConversionAccountAmsId,
                                                                          BigDecimal transactionFeeAmount,
                                                                          String tenantIdentifier,
                                                                          String transactionGroupId,
@@ -603,8 +603,8 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
             String partnerAccountIban,
             String partnerAccountSecondaryIdentifier,
             String unstructured,
-            Integer sourceAmsAccountId,
-            Integer targetAmsAccountId) throws JsonProcessingException {
+            String sourceAmsAccountId,
+            String targetAmsAccountId) throws JsonProcessingException {
         String paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(String.format("%s.%s", paymentScheme, paymentTypeOperation));
         if (paymentTypeCode == null) {
             paymentTypeCode = "";

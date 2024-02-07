@@ -154,7 +154,7 @@ public abstract class AbstractAmsWorker {
         httpHeaders.set("Fineract-Platform-TenantId", tenantId);
         log.trace("calling {} with HttpHeaders {}", urlTemplate, httpHeaders);
         return eventService.auditedEvent(
-                eventBuilder -> EventLogUtil.initFineractCall(calledFrom, -1, -1, null, eventBuilder),
+                eventBuilder -> EventLogUtil.initFineractCall(calledFrom, "-1", "-1", null, eventBuilder),
                 eventBuilder -> {
                     var entity = new HttpEntity<>(httpHeaders);
                     eventService.sendEvent(builder -> builder
@@ -186,7 +186,7 @@ public abstract class AbstractAmsWorker {
         log.trace("calling {} with HttpHeaders {}", urlTemplate, httpHeaders);
 
         return eventService.auditedEvent(
-                eventBuilder -> EventLogUtil.initFineractCall(calledFrom, -1, -1, null, eventBuilder),
+                eventBuilder -> EventLogUtil.initFineractCall(calledFrom, "-1", "-1", null, eventBuilder),
                 eventBuilder -> {
                     var entity = new HttpEntity<>(requestBody, httpHeaders);
                     eventService.sendEvent(builder -> builder

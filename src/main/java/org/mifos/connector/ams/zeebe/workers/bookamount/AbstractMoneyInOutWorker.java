@@ -81,7 +81,7 @@ public abstract class AbstractMoneyInOutWorker {
 
     protected static final String FORMAT = "yyyyMMdd";
 
-    protected ResponseEntity<Object> release(Integer currencyAccountAmsId, Integer holdAmountId, String tenantId) {
+    protected ResponseEntity<Object> release(String currencyAccountAmsId, Integer holdAmountId, String tenantId) {
         HttpHeaders httpHeaders = new HttpHeaders();
         httpHeaders.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
         httpHeaders.set("Authorization", authTokenHelper.generateAuthToken());
@@ -101,14 +101,14 @@ public abstract class AbstractMoneyInOutWorker {
 
         return eventService.auditedEvent(
                 // TODO internalCorrelationId?
-                eventBuilder -> EventLogUtil.initFineractCall(urlTemplate, currencyAccountAmsId, -1, null, eventBuilder),
+                eventBuilder -> EventLogUtil.initFineractCall(urlTemplate, currencyAccountAmsId, "-1", null, eventBuilder),
                 eventBuilder -> restTemplate.exchange(urlTemplate,
                         HttpMethod.POST,
                         entity,
                         Object.class));
     }
 
-    protected ResponseEntity<Object> hold(Integer holdReasonId, String transactionDate, Object amount, Integer currencyAccountAmsId, String tenantId) {
+    protected ResponseEntity<Object> hold(Integer holdReasonId, String transactionDate, Object amount, String currencyAccountAmsId, String tenantId) {
         var body = new HoldAmountBody(
                 transactionDate,
                 amount,
@@ -119,7 +119,7 @@ public abstract class AbstractMoneyInOutWorker {
         return doExchange(body, currencyAccountAmsId, "holdAmount", tenantId);
     }
 
-    protected <T> ResponseEntity<Object> doExchange(T body, Integer currencyAccountAmsId, String command, String tenantId) {
+    protected <T> ResponseEntity<Object> doExchange(T body, String currencyAccountAmsId, String command, String tenantId) {
         HttpHeaders httpHeaders = new HttpHeaders();
         httpHeaders.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
         httpHeaders.set("Authorization", authTokenHelper.generateAuthToken());
@@ -138,7 +138,7 @@ public abstract class AbstractMoneyInOutWorker {
 
         return eventService.auditedEvent(
                 // TODO internalCorrelationId?
-                eventBuilder -> EventLogUtil.initFineractCall(urlTemplate, currencyAccountAmsId, -1, null, eventBuilder),
+                eventBuilder -> EventLogUtil.initFineractCall(urlTemplate, currencyAccountAmsId, "-1", null, eventBuilder),
                 eventBuilder -> restTemplate.exchange(urlTemplate,
                         HttpMethod.POST,
                         entity,
@@ -147,8 +147,8 @@ public abstract class AbstractMoneyInOutWorker {
 
     protected Long holdBatch(List<TransactionItem> items,
                              String tenantId,
-                             Integer disposalAccountId,
-                             Integer conversionAccountId,
+                             String disposalAccountId,
+                             String conversionAccountId,
                              String internalCorrelationId,
                              String calledFrom) {
         return eventService.auditedEvent(
@@ -163,8 +163,8 @@ public abstract class AbstractMoneyInOutWorker {
 
     protected String doBatch(List<TransactionItem> items,
                              String tenantId,
-                             Integer disposalAccountId,
-                             Integer conversionAccountId,
+                             String disposalAccountId,
+                             String conversionAccountId,
                              String internalCorrelationId,
                              String calledFrom) {
         return eventService.auditedEvent(
@@ -179,9 +179,9 @@ public abstract class AbstractMoneyInOutWorker {
 
     protected void doBatchOnUs(List<TransactionItem> items,
                                String tenantId,
-                               Integer debtorDisposalAccountAmsId,
-                               Integer debtorConversionAccountAmsId,
-                               Integer creditorDisposalAccountAmsId,
+                               String debtorDisposalAccountAmsId,
+                               String debtorConversionAccountAmsId,
+                               String creditorDisposalAccountAmsId,
                                String internalCorrelationId) {
         eventService.auditedEvent(
                 eventBuilder -> EventLogUtil.initFineractBatchCallOnUs("transferTheAmountBetweenDisposalAccounts",

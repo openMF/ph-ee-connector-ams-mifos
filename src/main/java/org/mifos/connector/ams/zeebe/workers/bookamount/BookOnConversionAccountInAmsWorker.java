@@ -86,7 +86,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
                                              @Variable String transactionFeeInternalCorrelationId,
                                              @Variable String paymentScheme,
                                              @Variable String transactionDate,
-                                             @Variable Integer conversionAccountAmsId,
+                                             @Variable String conversionAccountAmsId,
                                              @Variable String transactionGroupId,
                                              @Variable String transactionCategoryPurposeCode,
                                              @Variable String transactionFeeCategoryPurposeCode,
@@ -121,7 +121,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
                                               String transactionFeeInternalCorrelationId,
                                               String paymentScheme,
                                               String transactionDate,
-                                              Integer conversionAccountAmsId,
+                                              String conversionAccountAmsId,
                                               String transactionGroupId,
                                               String transactionCategoryPurposeCode,
                                               String transactionFeeCategoryPurposeCode,
@@ -213,7 +213,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
                 }
             }
 
-            doBatch(items, tenantIdentifier, -1, conversionAccountAmsId, internalCorrelationId, "bookOnConversionAccountInAms");
+            doBatch(items, tenantIdentifier, "-1", conversionAccountAmsId, internalCorrelationId, "bookOnConversionAccountInAms");
 
             log.info("Book debit on conversion account has finished  successfully");
 
@@ -232,7 +232,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
     public void withdrawTheAmountFromConversionAccountInAms(JobClient client,
                                                             ActivatedJob activatedJob,
                                                             @Variable BigDecimal amount,
-                                                            @Variable Integer conversionAccountAmsId,
+                                                            @Variable String conversionAccountAmsId,
                                                             @Variable String tenantIdentifier,
                                                             @Variable String paymentScheme,
                                                             @Variable String transactionCategoryPurposeCode,
@@ -265,7 +265,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
     }
 
     private Void withdrawTheAmountFromConversionAccountInAms(BigDecimal amount,
-                                                             Integer conversionAccountAmsId,
+                                                             String conversionAccountAmsId,
                                                              String tenantIdentifier,
                                                              String paymentScheme,
                                                              String transactionCategoryPurposeCode,
@@ -367,7 +367,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 
             doBatch(items,
                     tenantIdentifier,
-                    -1,
+                    "-1",
                     conversionAccountAmsId,
                     internalCorrelationId,
                     "withdrawTheAmountFromConversionAccountInAms");

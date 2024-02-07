@@ -90,7 +90,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
                                                       @Variable String tenantIdentifier,
                                                       @Variable String paymentScheme,
                                                       @Variable BigDecimal amount,
-                                                      @Variable Integer conversionAccountAmsId,
+                                                      @Variable String conversionAccountAmsId,
                                                       @Variable String accountProductType) {
         log.info("bookCreditedAmountToConversionAccount");
         eventService.auditedEvent(
@@ -115,7 +115,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
                                                        String tenantIdentifier,
                                                        String paymentScheme,
                                                        BigDecimal amount,
-                                                       Integer conversionAccountAmsId,
+                                                       String conversionAccountAmsId,
                                                        String accountProductType) {
         try {
             MDC.put("internalCorrelationId", internalCorrelationId);
@@ -177,7 +177,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
 
             doBatch(items,
                     tenantIdentifier,
-                    -1,
+                    "-1",
                     conversionAccountAmsId,
                     internalCorrelationId,
                     "bookCreditedAmountToConversionAccount");
@@ -203,7 +203,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
                                                               @Variable String tenantIdentifier,
                                                               @Variable String paymentScheme,
                                                               @Variable BigDecimal amount,
-                                                              @Variable Integer conversionAccountAmsId,
+                                                              @Variable String conversionAccountAmsId,
                                                               @Variable String pacs004,
                                                               @Variable String accountProductType) {
         log.info("bookCreditedAmountToConversionAccountInRecall");
@@ -230,7 +230,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
                                                                String tenantIdentifier,
                                                                String paymentScheme,
                                                                BigDecimal amount,
-                                                               Integer conversionAccountAmsId,
+                                                               String conversionAccountAmsId,
                                                                String originalPacs004,
                                                                String accountProductType) {
         try {
@@ -297,7 +297,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
 
             doBatch(items,
                     tenantIdentifier,
-                    -1,
+                    "-1",
                     conversionAccountAmsId,
                     internalCorrelationId,
                     "bookCreditedAmountToConversionAccountInRecall");
@@ -324,7 +324,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
                                                               @Variable String tenantIdentifier,
                                                               @Variable String paymentScheme,
                                                               @Variable BigDecimal amount,
-                                                              @Variable Integer conversionAccountAmsId,
+                                                              @Variable String conversionAccountAmsId,
                                                               @Variable String accountProductType) {
         log.info("bookCreditedAmountToConversionAccountInReturn");
         eventService.auditedEvent(
@@ -349,7 +349,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
                                                                String tenantIdentifier,
                                                                String paymentScheme,
                                                                BigDecimal amount,
-                                                               Integer conversionAccountAmsId,
+                                                               String conversionAccountAmsId,
                                                                String accountProductType) {
         try {
             MDC.put("internalCorrelationId", internalCorrelationId);
@@ -418,7 +418,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
 
             doBatch(items,
                     tenantIdentifier,
-                    -1,
+                    "-1",
                     conversionAccountAmsId,
                     internalCorrelationId,
                     "bookCreditedAmountToConversionAccountInReturn");

@@ -74,8 +74,8 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
     @TraceZeebeArguments
     public Map<String, Object> transferNonTransactionalFeeInAms(JobClient jobClient,
                                                                 ActivatedJob activatedJob,
-                                                                @Variable Integer conversionAccountAmsId,
-                                                                @Variable Integer disposalAccountAmsId,
+                                                                @Variable String conversionAccountAmsId,
+                                                                @Variable String disposalAccountAmsId,
                                                                 @Variable String tenantIdentifier,
                                                                 @Variable String paymentScheme,
                                                                 @Variable BigDecimal amount,
@@ -87,7 +87,8 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
         log.info("transferNonTransactionalFeeInAms");
         return eventService.auditedEvent(
                 eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "bookCreditedAmountToTechnicalAccount", internalCorrelationId, transactionGroupId, eventBuilder),
-                eventBuilder -> transferNonTransactionalFeeInAms(conversionAccountAmsId,
+                eventBuilder -> transferNonTransactionalFeeInAms(
+                        conversionAccountAmsId,
                         disposalAccountAmsId,
                         tenantIdentifier,
                         paymentScheme,
@@ -100,8 +101,8 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
                         eventBuilder));
     }
 
-    private Map<String, Object> transferNonTransactionalFeeInAms(Integer conversionAccountAmsId,
-                                                                 Integer disposalAccountAmsId,
+    private Map<String, Object> transferNonTransactionalFeeInAms(String conversionAccountAmsId,
+                                                                 String disposalAccountAmsId,
                                                                  String tenantIdentifier,
                                                                  String paymentScheme,
                                                                  BigDecimal amount,

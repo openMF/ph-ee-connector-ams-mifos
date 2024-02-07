@@ -17,8 +17,8 @@ public class EventLogUtil {
     private static final String AMS_CONNECTOR = "ams_connector";
 
     public Event.Builder initFineractCall(String event,
-                                          Integer disposalAccountId,
-                                          Integer conversionAccountId,
+                                          String disposalAccountId,
+                                          String conversionAccountId,
                                           String internalCorrelationId,
                                           Event.Builder eventBuilder) {
         setHead(event, eventBuilder);
@@ -32,8 +32,8 @@ public class EventLogUtil {
 
     public Event.Builder initFineractBatchCall(String event,
                                                List<TransactionItem> batchItems,
-                                               Integer disposalAccountId,
-                                               Integer conversionAccountId,
+                                               String disposalAccountId,
+                                               String conversionAccountId,
                                                String internalCorrelationId,
                                                Event.Builder eventBuilder) {
         setHead(event + ".AmsBatch", eventBuilder);
@@ -42,7 +42,7 @@ public class EventLogUtil {
                 .conversionAccountId(conversionAccountId)
                 .internalCorrelationId(internalCorrelationId)
                 // TODO should use operation text instead of the requestId
-                .add("bacthItems", batchItems.stream()
+                .add("batchItems", batchItems.stream()
                         .map(item -> item.requestId().toString())
                         .collect(Collectors.joining(",")))
                 .build());
@@ -51,9 +51,9 @@ public class EventLogUtil {
 
     public Event.Builder initFineractBatchCallOnUs(String event,
                                                    List<TransactionItem> batchItems,
-                                                   Integer debtorDisposalAccountAmsId,
-                                                   Integer debtorConversionAccountAmsId,
-                                                   Integer creditorDisposalAccountAmsId,
+                                                   String debtorDisposalAccountAmsId,
+                                                   String debtorConversionAccountAmsId,
+                                                   String creditorDisposalAccountAmsId,
                                                    String internalCorrelationId,
                                                    Event.Builder eventBuilder) {
         setHead(event + ".AmsBatch", eventBuilder);
@@ -63,7 +63,7 @@ public class EventLogUtil {
                 .add("creditorDisposalAccountAmsId", creditorDisposalAccountAmsId)
                 .internalCorrelationId(internalCorrelationId)
                 // TODO should use operation text instead of the requestId
-                .add("bacthItems", batchItems.stream()
+                .add("batchItems", batchItems.stream()
                         .map(item -> item.requestId().toString())
                         .collect(Collectors.joining(",")))
                 .build());
@@ -109,13 +109,13 @@ public class EventLogUtil {
             return this;
         }
 
-        public CorrelationIdBuilder disposalAccountId(Integer disposalAccountId) {
-            correlationIds.put("disposalAccountId", disposalAccountId != null ? Integer.toString(disposalAccountId) : EMPTY);
+        public CorrelationIdBuilder disposalAccountId(String disposalAccountId) {
+            correlationIds.put("disposalAccountId", disposalAccountId != null ? disposalAccountId : EMPTY);
             return this;
         }
 
-        public CorrelationIdBuilder conversionAccountId(Integer conversionAccountId) {
-            correlationIds.put("conversionAccountId", conversionAccountId != null ? Integer.toString(conversionAccountId) : EMPTY);
+        public CorrelationIdBuilder conversionAccountId(String conversionAccountId) {
+            correlationIds.put("conversionAccountId", conversionAccountId != null ? conversionAccountId : EMPTY);
             return this;
         }
 

@@ -97,8 +97,8 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
                                                  @Variable String currency,
                                                  @Variable BigDecimal transactionFeeAmount,
                                                  @Variable String paymentScheme,
-                                                 @Variable Integer disposalAccountAmsId,
-                                                 @Variable Integer conversionAccountAmsId,
+                                                 @Variable String disposalAccountAmsId,
+                                                 @Variable String conversionAccountAmsId,
                                                  @Variable String tenantIdentifier,
                                                  @Variable String transactionFeeInternalCorrelationId,
                                                  @Variable String accountProductType) {
@@ -131,8 +131,8 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
                                                   String currency,
                                                   BigDecimal transactionFeeAmount,
                                                   String paymentScheme,
-                                                  Integer disposalAccountAmsId,
-                                                  Integer conversionAccountAmsId,
+                                                  String disposalAccountAmsId,
+                                                  String conversionAccountAmsId,
                                                   String tenantIdentifier,
                                                   String transactionFeeInternalCorrelationId,
                                                   String accountProductType) {
@@ -324,7 +324,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
         return null;
     }
 
-    private void holdAndReleaseForSavingsAccount(String transactionGroupId, String transactionCategoryPurposeCode, String internalCorrelationId, String paymentScheme, Integer disposalAccountAmsId, Integer conversionAccountAmsId, String tenantIdentifier, String iban, String accountProductType, Config paymentTypeConfig, String transactionDate, BigDecimal totalAmountWithFee, List<TransactionItem> items, EntryTransaction10 transactionDetails, CustomerCreditTransferInitiationV10 pain0011, ReportEntry10 convertedCamt053Entry, String partnerName, String partnerAccountIban, String partnerAccountSecondaryIdentifier, String unstructured, String endToEndId, Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001, CreditTransferTransaction40 pain001Transaction) throws JsonProcessingException {
+    private void holdAndReleaseForSavingsAccount(String transactionGroupId, String transactionCategoryPurposeCode, String internalCorrelationId, String paymentScheme, String disposalAccountAmsId, String conversionAccountAmsId, String tenantIdentifier, String iban, String accountProductType, Config paymentTypeConfig, String transactionDate, BigDecimal totalAmountWithFee, List<TransactionItem> items, EntryTransaction10 transactionDetails, CustomerCreditTransferInitiationV10 pain0011, ReportEntry10 convertedCamt053Entry, String partnerName, String partnerAccountIban, String partnerAccountSecondaryIdentifier, String unstructured, String endToEndId, Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001, CreditTransferTransaction40 pain001Transaction) throws JsonProcessingException {
         log.info("Adding hold item to disposal account {}", disposalAccountAmsId);
         Integer outHoldReasonId = paymentTypeConfig.findPaymentTypeIdByOperation(String.format("%s.%s", paymentScheme, "outHoldReasonId"));
         String bodyItem = painMapper.writeValueAsString(new HoldAmountBody(transactionDate, totalAmountWithFee, outHoldReasonId, locale, FORMAT));
@@ -418,8 +418,8 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
             String partnerAccountIban,
             String partnerAccountSecondaryIdentifier,
             String unstructured,
-            Integer sourceAmsAccountId,
-            Integer targetAmsAccountId,
+            String sourceAmsAccountId,
+            String targetAmsAccountId,
             boolean includeSupplementary,
             String endToEndId) throws JsonProcessingException {
         String paymentTypeCode = Optional.ofNullable(paymentTypeConfig.findPaymentTypeCodeByOperation(String.format("%s.%s", paymentScheme, paymentTypeOperation))).orElse("");
@@ -462,8 +462,8 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
     public void withdrawTheAmountFromDisposalAccountInAMS(JobClient client,
                                                           ActivatedJob activatedJob,
                                                           @Variable BigDecimal amount,
-                                                          @Variable Integer conversionAccountAmsId,
-                                                          @Variable Integer disposalAccountAmsId,
+                                                          @Variable String conversionAccountAmsId,
+                                                          @Variable String disposalAccountAmsId,
                                                           @Variable String tenantIdentifier,
                                                           @Variable String paymentScheme,
                                                           @Variable String transactionCategoryPurposeCode,
@@ -491,8 +491,8 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 
     @SuppressWarnings("unchecked")
     private Void withdrawTheAmountFromDisposalAccountInAMS(BigDecimal amount,
-                                                           Integer conversionAccountAmsId,
-                                                           Integer disposalAccountAmsId,
+                                                           String conversionAccountAmsId,
+                                                           String disposalAccountAmsId,
                                                            String tenantIdentifier,
                                                            String paymentScheme,
                                                            String transactionCategoryPurposeCode,

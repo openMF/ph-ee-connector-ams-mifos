@@ -1,35 +1,7 @@
 package org.mifos.connector.ams.zeebe.workers.bookamount;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-
-import iso.std.iso._20022.tech.json.camt_053_001.EntryTransaction10;
-import iso.std.iso._20022.tech.xsd.pacs_008_001.CreditTransferTransactionInformation11;
-import org.mifos.connector.ams.common.SerializationHelper;
-import org.mifos.connector.ams.fineract.Config;
-import org.mifos.connector.ams.fineract.ConfigFactory;
-import org.mifos.connector.ams.log.EventLogUtil;
-import org.mifos.connector.ams.log.LogInternalCorrelationId;
-import org.mifos.connector.ams.log.TraceZeebeArguments;
-import org.mifos.connector.ams.mapstruct.Pacs008Camt053Mapper;
-import org.mifos.connector.ams.zeebe.workers.utils.BatchItemBuilder;
-import org.mifos.connector.ams.zeebe.workers.utils.ContactDetailsUtil;
-import org.mifos.connector.ams.zeebe.workers.utils.DtSavingsTransactionDetails;
-import org.mifos.connector.ams.zeebe.workers.utils.JAXBUtils;
-import org.mifos.connector.ams.zeebe.workers.utils.TransactionBody;
-import org.mifos.connector.ams.zeebe.workers.utils.TransactionItem;
-import org.slf4j.MDC;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
-
-import com.baasflow.commons.events.Event;
 import com.baasflow.commons.events.EventService;
-import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import hu.dpc.rt.utils.converter.Pacs004ToCamt053Converter;
 import io.camunda.zeebe.client.api.response.ActivatedJob;
 import io.camunda.zeebe.client.api.worker.JobClient;
@@ -39,10 +11,29 @@ import io.camunda.zeebe.spring.client.exception.ZeebeBpmnError;
 import iso.std.iso._20022.tech.json.camt_053_001.ActiveOrHistoricCurrencyAndAmountRange2.CreditDebitCode;
 import iso.std.iso._20022.tech.json.camt_053_001.BankToCustomerStatementV08;
 import iso.std.iso._20022.tech.json.camt_053_001.EntryStatus1Choice;
+import iso.std.iso._20022.tech.json.camt_053_001.EntryTransaction10;
 import iso.std.iso._20022.tech.json.camt_053_001.ReportEntry10;
+import iso.std.iso._20022.tech.xsd.pacs_008_001.CreditTransferTransactionInformation11;
 import iso.std.iso._20022.tech.xsd.pacs_008_001.RemittanceInformation5;
 import jakarta.xml.bind.JAXBException;
 import lombok.extern.slf4j.Slf4j;
+import org.mifos.connector.ams.common.SerializationHelper;
+import org.mifos.connector.ams.fineract.Config;
+import org.mifos.connector.ams.fineract.ConfigFactory;
+import org.mifos.connector.ams.log.EventLogUtil;
+import org.mifos.connector.ams.log.LogInternalCorrelationId;
+import org.mifos.connector.ams.log.TraceZeebeArguments;
+import org.mifos.connector.ams.mapstruct.Pacs008Camt053Mapper;
+import org.mifos.connector.ams.zeebe.workers.utils.*;
+import org.slf4j.MDC;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 
 @Component
 @Slf4j
@@ -194,8 +185,8 @@ public class BookCreditedAmountToTechnicalAccountWorker extends AbstractMoneyInO
 
             doBatch(items,
                     tenantIdentifier,
-                    -1,
-                    -1,
+                    "-1",
+                    "-1",
                     internalCorrelationId,
                     "bookCreditedAmountToTechnicalAccount");
         } catch (Exception e) {
