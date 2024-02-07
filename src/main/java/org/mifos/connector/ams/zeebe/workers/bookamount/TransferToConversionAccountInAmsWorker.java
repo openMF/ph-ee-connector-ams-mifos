@@ -224,7 +224,11 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
                     batchItemBuilder.add(tenantIdentifier, items, disposalAccountWithdrawRelativeUrl, withdrawFeeTransactionBody, false);
                 } // CURRENT account sends a single call only at the details step
 
-                transactionDetails.getSupplementaryData().get(0).getEnvelope().setAdditionalProperty("InternalCorrelationId", transactionFeeInternalCorrelationId);
+                if (transactionDetails.getSupplementaryData() != null) {
+                    transactionDetails.getSupplementaryData().get(0).getEnvelope().setAdditionalProperty("InternalCorrelationId", transactionFeeInternalCorrelationId);
+                } else {
+                    transactionDetails.getSupplementaryData().add(new SupplementaryData1().withEnvelope(new SupplementaryDataEnvelope1().withAdditionalProperty("InternalCorrelationId", transactionFeeInternalCorrelationId)));
+                }
                 transactionDetails.getAmountDetails().getTransactionAmount().getAmount().setAmount(transactionFeeAmount);
 
                 String withdrawFeePaymentTypeCode = Optional.ofNullable(paymentTypeConfig.findPaymentTypeCodeByOperation(String.format("%s.%s", paymentScheme, withdrawFeeOperation))).orElse("");
@@ -637,7 +641,6 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 
             String depositAmountOperation = "withdrawTheAmountFromDisposalAccountInAMS.ConversionAccount.DepositTransactionAmount";
             addExchange(tenantIdentifier, amount, paymentScheme, transactionDate, painMapper, paymentTypeConfig, batchItemBuilder, items, conversionAccountDepositRelativeUrl, depositAmountOperation);
-            String.format("%s.%s", paymentScheme, depositAmountOperation);
             configOperationKey = String.format("%s.%s", paymentScheme, depositAmountOperation);
             paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(configOperationKey);
             convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
