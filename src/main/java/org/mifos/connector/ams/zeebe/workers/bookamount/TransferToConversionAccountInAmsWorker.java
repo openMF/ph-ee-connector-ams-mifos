@@ -175,7 +175,6 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
             List<TransactionItem> items = new ArrayList<>();
             if (accountProductType.equalsIgnoreCase("SAVINGS")) {
                 holdAndReleaseForSavingsAccount(transactionGroupId, transactionCategoryPurposeCode, internalCorrelationId, paymentScheme, disposalAccountAmsId, conversionAccountAmsId, tenantIdentifier, debtorIban, accountProductType, paymentTypeConfig, transactionDate, totalAmountWithFee, items, transactionDetails, pain001Document, convertedCamt053Entry, partnerName, partnerAccountIban, partnerAccountSecondaryIdentifier, unstructured, endToEndId, pain001, pain001Transaction);
-
             } else {
                 log.info("No hold and release because disposal account {} is not a savings account", disposalAccountAmsId);
             }
@@ -191,7 +190,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
             if (accountProductType.equalsIgnoreCase("SAVINGS")) {
                 String withdrawAmountTransactionBody = painMapper.writeValueAsString(new TransactionBody(transactionDate, amount, withdrawAmountPaymentTypeId, "", FORMAT, locale));
                 batchItemBuilder.add(tenantIdentifier, items, disposalAccountWithdrawRelativeUrl, withdrawAmountTransactionBody, false);
-            }
+            } // CURRENT account sends a single call only at the details step
 
             // STEP 2b - batch: add withdrawal details
             transactionDetails.getAmountDetails().getTransactionAmount().getAmount().setAmount(amount);
@@ -223,7 +222,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
                 if (accountProductType.equalsIgnoreCase("SAVINGS")) {
                     String withdrawFeeTransactionBody = painMapper.writeValueAsString(new TransactionBody(transactionDate, transactionFeeAmount, withdrawFeePaymentTypeId, "", FORMAT, locale));
                     batchItemBuilder.add(tenantIdentifier, items, disposalAccountWithdrawRelativeUrl, withdrawFeeTransactionBody, false);
-                }
+                } // CURRENT account sends a single call only at the details step
 
                 transactionDetails.getSupplementaryData().get(0).getEnvelope().setAdditionalProperty("InternalCorrelationId", transactionFeeInternalCorrelationId);
                 transactionDetails.getAmountDetails().getTransactionAmount().getAmount().setAmount(transactionFeeAmount);
