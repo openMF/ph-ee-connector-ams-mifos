@@ -112,7 +112,7 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
                                                                  String originalPain001,
                                                                  String debtorIban,
                                                                  Event.Builder eventBuilder) {
-        String disposalAccountWithdrawRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), disposalAccountAmsId, "withdrawal");
+        String disposalAccountWithdrawRelativeUrl = String.format("%s%s/transactions?command=%s", incomingMoneyApi.substring(1), disposalAccountAmsId, "withdrawal");
         Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
         log.debug("Got payment scheme {}", paymentScheme);
         String transactionDate = LocalDate.now().format(PATTERN);
@@ -194,7 +194,7 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 
             bodyItem = painMapper.writeValueAsString(body);
 
-            String conversionAccountDepositRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "deposit");
+            String conversionAccountDepositRelativeUrl = String.format("%s%s/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "deposit");
 
             batchItemBuilder.add(tenantIdentifier, items, conversionAccountDepositRelativeUrl, bodyItem, false);
 

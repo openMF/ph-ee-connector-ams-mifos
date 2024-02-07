@@ -227,7 +227,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
                 if (transactionDetails.getSupplementaryData() != null) {
                     transactionDetails.getSupplementaryData().get(0).getEnvelope().setAdditionalProperty("InternalCorrelationId", transactionFeeInternalCorrelationId);
                 } else {
-                    transactionDetails.getSupplementaryData().add(new SupplementaryData1().withEnvelope(new SupplementaryDataEnvelope1().withAdditionalProperty("InternalCorrelationId", transactionFeeInternalCorrelationId)));
+                    transactionDetails.setSupplementaryData(List.of(new SupplementaryData1().withEnvelope(new SupplementaryDataEnvelope1().withAdditionalProperty("InternalCorrelationId", transactionFeeInternalCorrelationId))));
                 }
                 transactionDetails.getAmountDetails().getTransactionAmount().getAmount().setAmount(transactionFeeAmount);
 
