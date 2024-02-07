@@ -266,8 +266,16 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
             }
 
             // STEP 3b - batch: add deposit details
-            transactionDetails.getSupplementaryData().get(0).getEnvelope().setAdditionalProperty("InternalCorrelationId", internalCorrelationId);
-            transactionDetails.getAmountDetails().getTransactionAmount().getAmount().setAmount(amount);
+            if (transactionDetails.getSupplementaryData() != null) {
+                transactionDetails.getSupplementaryData().get(0).getEnvelope().setAdditionalProperty("InternalCorrelationId", internalCorrelationId);
+            } else {
+                transactionDetails.setSupplementaryData(new ArrayList<>(List.of(new SupplementaryData1().withEnvelope(new SupplementaryDataEnvelope1().withAdditionalProperty("InternalCorrelationId", internalCorrelationId)))));
+            }
+            if (transactionDetails.getAmountDetails() != null) {
+                transactionDetails.getAmountDetails().getTransactionAmount().getAmount().setAmount(amount);
+            } else {
+                transactionDetails.setAmountDetails(new AmountAndCurrencyExchange3().withTransactionAmount(new AmountAndCurrencyExchangeDetails3().withAmount(new ActiveOrHistoricCurrencyAndAmount().withAmount(amount))));
+            }
             transactionDetails.setCreditDebitIndicator(CreditDebitCode.CRDT);
             convertedCamt053Entry.setCreditDebitIndicator(CreditDebitCode.CRDT);
             String depositAmountPaymentTypeCode = Optional.ofNullable(paymentTypeConfig.findPaymentTypeCodeByOperation(String.format("%s.%s", paymentScheme, depositAmountOperation))).orElse("");
