@@ -191,7 +191,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
                 Integer withdrawFeePaymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(withdrawFeeConfigOperationKey);
                 String withdrawFeePaymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(withdrawFeeConfigOperationKey);
                 transactionDetails.setAdditionalTransactionInformation(withdrawFeePaymentTypeCode);
-                transactionDetails.getSupplementaryData().clear();
+                transactionDetails.setSupplementaryData(new ArrayList<>());
                 camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001.getDocument(), transactionDetails, transactionFeeCategoryPurposeCode);
                 camt053Mapper.refillOtherIdentification(pain001.getDocument(), transactionDetails);
 

@@ -32,10 +32,10 @@ management:
 baasflow:
     events:
         kafka:
-            msk: ${BAASFLOW_EVENTS_KAFKA_MSK}
-            brokers: ${BAASFLOW_EVENTS_KAFKA_BROKERS}
-            glue-registry-name: ${BAASFLOW_GLUE_REGISTRY_NAME}
-            glue-schema-name: ${BAASFLOW_GLUE_SCHEMA_NAME}
+            msk: ${BAASFLOW_EVENTS_KAFKA_MSK:off}
+            brokers: ${BAASFLOW_EVENTS_KAFKA_BROKERS:off}
+            glue-registry-name: ${BAASFLOW_GLUE_REGISTRY_NAME:off}
+            glue-schema-name: ${BAASFLOW_GLUE_SCHEMA_NAME:off}
         channels:
             audit:
                 topic: "auditlog"
