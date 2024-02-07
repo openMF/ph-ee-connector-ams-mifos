@@ -7,6 +7,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 @JsonPropertyOrder({
@@ -30,7 +31,7 @@ public class FineractResponse {
     @JsonProperty("id")
     private String id;
     @JsonProperty("flag_code")
-    private String flagCode;
+    private List<String> flagCode;
     @JsonProperty("product_id")
     private String productId;
 
@@ -85,12 +86,12 @@ public class FineractResponse {
     }
 
     @JsonProperty("flag_code")
-    public String getFlagCode() {
+    public List<String> getFlagCode() {
         return flagCode;
     }
 
     @JsonProperty("flag_code")
-    public void setFlagCode(String flagCode) {
+    public void setFlagCode(List<String> flagCode) {
         this.flagCode = flagCode;
     }
 

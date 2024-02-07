@@ -139,7 +139,7 @@ public class GetAccountDetailsFromAmsWorker extends AbstractAmsWorker {
             String disposalAccountId = BeanWalker.of(disposalAccount).get(CAGetResponse::getId).get();
             if (Objects.nonNull(disposalAccountId)) outputVariables.put("disposalAccountAmsId", disposalAccountId);
 
-            String flagCode = BeanWalker.of(disposalAccountData).get(FineractResponse::getFlagCode).get();
+            List<String> flagCode = BeanWalker.of(disposalAccountData).get(FineractResponse::getFlagCode).get();
             if (Objects.nonNull(flagCode)) outputVariables.put("disposalAccountFlags", flagCode);
 
             String disposalAccountStatusType = BeanWalker.of(disposalAccountData).get(FineractResponse::getStatusType).get();
@@ -166,6 +166,7 @@ public class GetAccountDetailsFromAmsWorker extends AbstractAmsWorker {
                 return Map.of(
                         "accountAmsStatus", AccountAmsStatus.NOT_READY_TO_RECEIVE_MONEY.name(),
                         "reasonCode", reasonCode,
+                        "accountProductType", "NOT_PROVIDED",
                         "conversionAccountAmsId", "NOT_PROVIDED",
                         "internalAccountId", "NOT_PROVIDED",
                         "disposalAccountAmsId", "NOT_PROVIDED",
@@ -228,6 +229,7 @@ public class GetAccountDetailsFromAmsWorker extends AbstractAmsWorker {
             log.trace("IBAN {} status is {}", iban, status);
             HashMap<String, Object> outputVariables = new HashMap<>();
             outputVariables.put("accountAmsStatus", status);
+            outputVariables.put("accountProductType", "SAVING");
             outputVariables.put("conversionAccountAmsId", conversionAccountAmsId);
             outputVariables.put("disposalAccountAmsId", disposalAccountAmsId);
             outputVariables.put("disposalAccountFlags", flags);
