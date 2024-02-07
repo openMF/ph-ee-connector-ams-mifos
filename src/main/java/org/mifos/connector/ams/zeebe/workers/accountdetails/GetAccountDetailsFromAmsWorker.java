@@ -22,11 +22,13 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import static org.mifos.connector.ams.common.util.BeanWalker.element;
 import static org.mifos.connector.ams.fineract.AccountType.CURRENT;
@@ -96,7 +98,7 @@ public class GetAccountDetailsFromAmsWorker extends AbstractAmsWorker {
         try {
 
 
-            FineractResponse disposalAccountData = BeanWalker.of(lookupCurrentAccountPostFlagsAndStatus(iban, disposalSub, tenantIdentifier)).get(PageFineractResponse::getContent).get(element(0)).get();
+            BeanWalker<List<FineractResponse>> disposalAccountData = BeanWalker.of(lookupCurrentAccountPostFlagsAndStatus(iban, disposalSub, tenantIdentifier)).get(PageFineractResponse::getContent);
 
             CAGetResponse disposalAccount = lookupCurrentAccountGet(iban, disposalSub, tenantIdentifier);
             CAGetResponse conversionAccount = lookupCurrentAccountGet(iban, conversionSub, tenantIdentifier);
@@ -139,10 +141,11 @@ public class GetAccountDetailsFromAmsWorker extends AbstractAmsWorker {
             String disposalAccountId = BeanWalker.of(disposalAccount).get(CAGetResponse::getId).get();
             if (Objects.nonNull(disposalAccountId)) outputVariables.put("disposalAccountAmsId", disposalAccountId);
 
-            List<String> flagCode = BeanWalker.of(disposalAccountData).get(FineractResponse::getFlagCode).get();
-            if (Objects.nonNull(flagCode)) outputVariables.put("disposalAccountFlags", flagCode);
+            List<String> flagCodes = disposalAccountData.get()
+                    .stream().map(FineractResponse::getFlagCode).toList();
+            if (Objects.nonNull(flagCodes)) outputVariables.put("disposalAccountFlags", flagCodes);
 
-            String disposalAccountStatusType = BeanWalker.of(disposalAccountData).get(FineractResponse::getStatusType).get();
+            String disposalAccountStatusType = disposalAccountData.get(element(0)).get(FineractResponse::getStatusType).get();
             if (Objects.nonNull(conversionAccountId)) outputVariables.put("disposalAccountAmsStatusType", disposalAccountStatusType);
 
             String accountNo = "NOT_PROVIDED";

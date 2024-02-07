@@ -31,7 +31,7 @@ public class FineractResponse {
     @JsonProperty("id")
     private String id;
     @JsonProperty("flag_code")
-    private List<String> flagCode;
+    private String flagCode;
     @JsonProperty("product_id")
     private String productId;
 
@@ -86,12 +86,12 @@ public class FineractResponse {
     }
 
     @JsonProperty("flag_code")
-    public List<String> getFlagCode() {
+    public String getFlagCode() {
         return flagCode;
     }
 
     @JsonProperty("flag_code")
-    public void setFlagCode(List<String> flagCode) {
+    public void setFlagCode(String flagCode) {
         this.flagCode = flagCode;
     }
 
