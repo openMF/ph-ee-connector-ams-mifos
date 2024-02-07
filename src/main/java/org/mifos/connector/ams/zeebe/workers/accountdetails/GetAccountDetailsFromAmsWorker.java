@@ -30,7 +30,6 @@ import java.util.Objects;
 
 import static org.mifos.connector.ams.common.util.BeanWalker.element;
 import static org.mifos.connector.ams.fineract.AccountType.CURRENT;
-import static org.mifos.connector.ams.fineract.AccountType.SAVINGS;
 
 @Component
 @Slf4j
@@ -151,12 +150,12 @@ public class GetAccountDetailsFromAmsWorker extends AbstractAmsWorker {
 
             outputVariables.put("accountType", CURRENT);
             outputVariables.put("reasonCode", reasonCode);
-            
+
             return outputVariables;
 
         } catch (HttpClientErrorException.NotFound e) {
-        AmsDataTableQueryResponse[] response = lookupAccount(iban, tenantIdentifier);   // TODO try to lookup CurrentAccount first
-        log.info("1/4: Account details retrieval finished");
+            AmsDataTableQueryResponse[] response = lookupSavingsAccount(iban, tenantIdentifier);   // TODO try to lookup CurrentAccount first
+            log.info("1/4: Account details retrieval finished");
 
             if (response.length == 0) {
                 // TODO handle also 4xx errors
@@ -226,7 +225,7 @@ public class GetAccountDetailsFromAmsWorker extends AbstractAmsWorker {
                 statusType = SavingsAccountStatusType.INVALID;
                 reasonCode = "AM03";
             }
-
+            log.trace("IBAN {} status is {}", iban, status);
             HashMap<String, Object> outputVariables = new HashMap<>();
             outputVariables.put("accountAmsStatus", status);
             outputVariables.put("conversionAccountAmsId", conversionAccountAmsId);
@@ -234,33 +233,11 @@ public class GetAccountDetailsFromAmsWorker extends AbstractAmsWorker {
             outputVariables.put("disposalAccountFlags", flags);
             outputVariables.put("disposalAccountAmsStatusType", statusType);
             outputVariables.put("internalAccountId", internalAccountId);
-            outputVariables.put("accountType", SAVINGS);
             outputVariables.put("reasonCode", reasonCode);
-            return Map.copyOf(outputVariables);
+            return outputVariables;
+
         }
 
-        log.trace("IBAN {} status is {}", iban, status);
-
-        String reasonCode = "NOT_PROVIDED";
-        if (SavingsAccountStatusType.CLOSED.equals(statusType)) {
-            reasonCode = accountClosedReasons.getOrDefault(paymentSchemePrefix + "-" + direction, "NOT_PROVIDED");
-            log.info("CLOSED account, returning reasonCode based on scheme and direction: {}-{}: {}", paymentSchemePrefix, direction, reasonCode);
-        }
-
-        if (AccountAmsStatus.NOT_READY_TO_RECEIVE_MONEY.name().equalsIgnoreCase(status) && SavingsAccountStatusType.ACTIVE.equals(statusType)) {
-            statusType = SavingsAccountStatusType.INVALID;
-            reasonCode = "AM03";
-        }
-
-        HashMap<String, Object> outputVariables = new HashMap<>();
-        outputVariables.put("accountAmsStatus", status);
-        outputVariables.put("conversionAccountAmsId", conversionAccountAmsId);
-        outputVariables.put("disposalAccountAmsId", disposalAccountAmsId);
-        outputVariables.put("disposalAccountFlags", flags);
-        outputVariables.put("disposalAccountAmsStatusType", statusType);
-        outputVariables.put("internalAccountId", internalAccountId);
-        outputVariables.put("reasonCode", reasonCode);
-        return outputVariables;
     }
 
     private GetSavingsAccountsAccountIdResponse retrieveCurrencyIdAndStatus(Long accountCurrencyId, String tenantId) {
