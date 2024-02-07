@@ -52,7 +52,6 @@ fineract:
     result-columns: "conversion_account_id,disposal_account_id,internal_account_id"
     internal-id-column: "internal_account_id"
     incoming-money-api: "/savingsaccounts/"
-    current-account-api: "/current-accounts/"
     locale: "en"
 
 zeebe:
