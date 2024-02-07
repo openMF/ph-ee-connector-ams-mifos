@@ -148,7 +148,7 @@ public class GetAccountDetailsFromAmsWorker extends AbstractAmsWorker {
             String accountNo = "NOT_PROVIDED";
             if (Objects.nonNull(conversionAccountId)) outputVariables.put("internalAccountId", accountNo);
 
-            outputVariables.put("accountProductType", CURRENT);
+            outputVariables.put("accountProductType", "CURRENT");
             outputVariables.put("reasonCode", reasonCode);
 
             return outputVariables;
