@@ -7,6 +7,7 @@ import io.camunda.zeebe.client.api.worker.JobClient;
 import io.camunda.zeebe.spring.client.annotation.JobWorker;
 import io.camunda.zeebe.spring.client.annotation.Variable;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.fineract.client.models.GetSavingsAccountsAccountIdResponse;
 import org.mifos.connector.ams.common.SavingsAccountStatusType;
 import org.mifos.connector.ams.common.util.BeanWalker;
 import org.mifos.connector.ams.fineract.currentaccount.response.CAGetResponse;
