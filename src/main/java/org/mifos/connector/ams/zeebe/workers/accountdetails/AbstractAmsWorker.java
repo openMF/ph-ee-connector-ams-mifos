@@ -182,7 +182,7 @@ public abstract class AbstractAmsWorker {
         HttpHeaders httpHeaders = new HttpHeaders();
         httpHeaders.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
         httpHeaders.set("Authorization", authTokenHelper.generateAuthToken());
-        httpHeaders.set("Fineract-Platform-TenantId", "default");
+        httpHeaders.set("Fineract-Platform-TenantId", tenantId);
         log.trace("calling {} with HttpHeaders {}", urlTemplate, httpHeaders);
 
         return eventService.auditedEvent(
