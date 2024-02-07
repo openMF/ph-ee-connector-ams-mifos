@@ -146,7 +146,7 @@ public class GetAccountDetailsFromAmsWorker extends AbstractAmsWorker {
             String disposalAccountStatusType = BeanWalker.of(disposalAccountData).get(FineractResponse::getStatusType).get();
             if (Objects.nonNull(conversionAccountId)) outputVariables.put("disposalAccountAmsStatusType", disposalAccountStatusType);
 
-            String accountNo = BeanWalker.of(disposalAccountData).get(FineractResponse::getAccountNo).get();
+            String accountNo = "NOT_PROVIDED";
             if (Objects.nonNull(conversionAccountId)) outputVariables.put("internalAccountId", accountNo);
 
             outputVariables.put("accountType", CURRENT);
