@@ -99,10 +99,10 @@ public class GetAccountDetailsFromAmsWorker extends AbstractAmsWorker {
         try {
 
 
-            FineractResponse disposalAccountData = BeanWalker.of(lookupCurrentAccountPostFlagsAndStatus(iban, disposalSub, tenantIdentifier).getBody()).get(PageFineractResponse::getContent).get(element(0)).get();
+            FineractResponse disposalAccountData = BeanWalker.of(lookupCurrentAccountPostFlagsAndStatus(iban, disposalSub, tenantIdentifier)).get(PageFineractResponse::getContent).get(element(0)).get();
 
-            CurrentAccountResponseData disposalAccount = lookupCurrentAccountGet(iban, disposalSub, tenantIdentifier).getBody();
-            CurrentAccountResponseData conversionAccount = lookupCurrentAccountGet(iban, conversionSub, tenantIdentifier).getBody();
+            CurrentAccountResponseData disposalAccount = lookupCurrentAccountGet(iban, disposalSub, tenantIdentifier);
+            CurrentAccountResponseData conversionAccount = lookupCurrentAccountGet(iban, conversionSub, tenantIdentifier);
 
             String disposalAccountStatus = BeanWalker.of(disposalAccount).get(CurrentAccountResponseData::getStatus).get(StringEnumOptionData::getId).get();
             String conversionAccountStatus = BeanWalker.of(conversionAccount).get(CurrentAccountResponseData::getStatus).get(StringEnumOptionData::getId).get();
@@ -120,9 +120,6 @@ public class GetAccountDetailsFromAmsWorker extends AbstractAmsWorker {
                 log.info("Conversion account currency: {}, disposal account: {}. Account is not ready to receive money.", conversionAccount, disposalAccount);
             }
 
-            HashMap<String, Object> outputVariables = new HashMap<>();
-
-
             String reasonCode = "NOT_PROVIDED";
             if (Objects.equals(disposalAccountStatus, "CLOSED") || Objects.equals(conversionAccountStatus, "CLOSED")) {
                 reasonCode = accountClosedReasons.getOrDefault(paymentSchemePrefix + "-" + direction, "NOT_PROVIDED");
@@ -134,14 +131,29 @@ public class GetAccountDetailsFromAmsWorker extends AbstractAmsWorker {
                     reasonCode = "AM03";
             }
 
+            HashMap<String, Object> outputVariables = new HashMap<>();
+
+
             outputVariables.put("accountAmsStatus", status);
-            outputVariables.put("conversionAccountAmsId", BeanWalker.of(conversionAccount).get(CurrentAccountResponseData::getId));
-            outputVariables.put("disposalAccountAmsId", BeanWalker.of(disposalAccount).get(CurrentAccountResponseData::getId));
-            outputVariables.put("disposalAccountFlags", disposalAccountData.getFlagCode());
-            outputVariables.put("disposalAccountAmsStatusType", disposalAccountData.getStatusType());
-            outputVariables.put("internalAccountId", disposalAccountData.getAccountNo());
+
+            String conversionAccountId = BeanWalker.of(conversionAccount).get(CurrentAccountResponseData::getId).get();
+            if (Objects.nonNull(conversionAccountId)) outputVariables.put("conversionAccountAmsId", conversionAccountId);
+
+            String disposalAccountId = BeanWalker.of(disposalAccount).get(CurrentAccountResponseData::getId).get();
+            if (Objects.nonNull(disposalAccountId)) outputVariables.put("disposalAccountAmsId", disposalAccountId);
+
+            String flagCode = BeanWalker.of(disposalAccountData).get(FineractResponse::getFlagCode).get();
+            if (Objects.nonNull(flagCode)) outputVariables.put("disposalAccountFlags", flagCode);
+
+            String disposalAccountStatusType = BeanWalker.of(disposalAccountData).get(FineractResponse::getStatusType).get();
+            if (Objects.nonNull(conversionAccountId)) outputVariables.put("disposalAccountAmsStatusType", disposalAccountStatusType);
+
+            String accountNo = BeanWalker.of(disposalAccountData).get(FineractResponse::getAccountNo).get();
+            if (Objects.nonNull(conversionAccountId)) outputVariables.put("internalAccountId", accountNo);
+
             outputVariables.put("accountType", CURRENT);
             outputVariables.put("reasonCode", reasonCode);
+            
             return Map.copyOf(outputVariables);
 
         } catch (HttpClientErrorException.NotFound e) {

@@ -77,7 +77,7 @@ public abstract class AbstractAmsWorker {
     }
 
 
-    protected ResponseEntity<PageFineractResponse> lookupCurrentAccountPostFlagsAndStatus(String iban, String accountSubValue, String tenantId) {
+    protected PageFineractResponse lookupCurrentAccountPostFlagsAndStatus(String iban, String accountSubValue, String tenantId) {
         FineractCurrentAccountRequest fineractCurrentAccountRequest = new FineractCurrentAccountRequest()
                 .request(
                         new Request()
@@ -104,8 +104,8 @@ public abstract class AbstractAmsWorker {
                 "lookupAccount");
     }
 
-    protected ResponseEntity<CurrentAccountResponseData> lookupCurrentAccountGet(String iban, String accountSubValue, String tenantId) {
-        return exchangeCurrentAccount(UriComponentsBuilder
+    protected CurrentAccountResponseData lookupCurrentAccountGet(String iban, String accountSubValue, String tenantId) {
+        return exchange(UriComponentsBuilder
                         .fromHttpUrl(fineractApiUrl)
                         .path(accountUrl)
                         .pathSegment("iban", iban, accountSubValue, "query")
@@ -147,37 +147,6 @@ public abstract class AbstractAmsWorker {
         return flags.stream().map(flagResult -> flagResult.get(flagsResultColumns)).collect(Collectors.toList());
     }
 
-    protected <T> ResponseEntity<T> exchangeCurrentAccount(String urlTemplate, Class<T> responseType, String tenantId, String calledFrom, String eventName) {
-        HttpHeaders httpHeaders = new HttpHeaders();
-        httpHeaders.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
-        httpHeaders.set("Authorization", authTokenHelper.generateAuthToken());
-        httpHeaders.set("Fineract-Platform-TenantId", tenantId);
-        log.trace("calling {} with HttpHeaders {}", urlTemplate, httpHeaders);
-        return eventService.auditedEvent(
-                eventBuilder -> EventLogUtil.initFineractCall(calledFrom, -1, -1, null, eventBuilder),
-                eventBuilder -> {
-                    var entity = new HttpEntity<>(httpHeaders);
-                    eventService.sendEvent(builder -> builder
-                            .setSourceModule(calledFrom)
-                            .setEventLogLevel(EventLogLevel.INFO)
-                            .setEvent(eventName)
-                            .setEventType(EventType.audit)
-                            .setPayload(urlTemplate));
-                    ResponseEntity<T> response = restTemplate.exchange(
-                            urlTemplate,
-                            HttpMethod.GET,
-                            entity,
-                            responseType);
-                    eventService.sendEvent(builder -> builder
-                            .setSourceModule(calledFrom)
-                            .setEventLogLevel(EventLogLevel.INFO)
-                            .setEvent(eventName)
-                            .setEventType(EventType.audit)
-                            .setPayload(response.toString()));
-                    return response;
-                });
-    }
-
     protected <T> T exchange(String urlTemplate, Class<T> responseType, String tenantId, String calledFrom, String eventName) {
         HttpHeaders httpHeaders = new HttpHeaders();
         httpHeaders.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
@@ -209,7 +178,7 @@ public abstract class AbstractAmsWorker {
                 });
     }
 
-    protected <T> ResponseEntity<T> exchangeCurrentFlagsStatus(String urlTemplate, Class responseType, String tenantId, FineractCurrentAccountRequest requestBody, String calledFrom, String eventName) {
+    protected <T> T exchangeCurrentFlagsStatus(String urlTemplate, Class responseType, String tenantId, FineractCurrentAccountRequest requestBody, String calledFrom, String eventName) {
         HttpHeaders httpHeaders = new HttpHeaders();
         httpHeaders.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
         httpHeaders.set("Authorization", authTokenHelper.generateAuthToken());
@@ -237,7 +206,7 @@ public abstract class AbstractAmsWorker {
                             .setEvent(eventName)
                             .setEventType(EventType.audit)
                             .setPayload(response.toString()));
-                    return response;
+                    return response.getBody();
                 });
     }
 
