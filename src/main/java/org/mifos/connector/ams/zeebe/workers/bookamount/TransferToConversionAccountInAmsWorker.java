@@ -328,7 +328,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
         log.info("Adding hold item to disposal account {}", disposalAccountAmsId);
         Integer outHoldReasonId = paymentTypeConfig.findPaymentTypeIdByOperation(String.format("%s.%s", paymentScheme, "outHoldReasonId"));
         String bodyItem = painMapper.writeValueAsString(new HoldAmountBody(transactionDate, totalAmountWithFee, outHoldReasonId, locale, FORMAT));
-        String holdTransactionUrl = String.format("%s%d/transactions?command=holdAmount", incomingMoneyApi.substring(1), disposalAccountAmsId);
+        String holdTransactionUrl = String.format("%s%s/transactions?command=holdAmount", incomingMoneyApi.substring(1), disposalAccountAmsId);
         batchItemBuilder.add(tenantIdentifier, items, holdTransactionUrl, bodyItem, false);
 
         String holdAmountOperation = "transferToConversionAccountInAms.DisposalAccount.HoldTransactionAmount";
@@ -350,7 +350,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
         httpHeaders.set("Authorization", authTokenHelper.generateAuthToken());
         httpHeaders.set("Fineract-Platform-TenantId", tenantIdentifier);
         LinkedHashMap<String, Object> accountDetails = restTemplate.exchange(
-                String.format("%s/%s%d", fineractApiUrl, incomingMoneyApi.substring(1), disposalAccountAmsId),
+                String.format("%s/%s%s", fineractApiUrl, incomingMoneyApi.substring(1), disposalAccountAmsId),
                 HttpMethod.GET,
                 new HttpEntity<>(httpHeaders),
                 LinkedHashMap.class
@@ -359,7 +359,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
         BigDecimal availableBalance = new BigDecimal(summary.get("availableBalance").toString());
         if (availableBalance.signum() < 0) {
             restTemplate.exchange(
-                    String.format("%s/%ssavingsaccounts/%d/transactions/%d?command=releaseAmount", fineractApiUrl, incomingMoneyApi.substring(1), disposalAccountAmsId, lastHoldTransactionId),
+                    String.format("%s/%ssavingsaccounts/%s/transactions/%d?command=releaseAmount", fineractApiUrl, incomingMoneyApi.substring(1), disposalAccountAmsId, lastHoldTransactionId),
                     HttpMethod.POST,
                     new HttpEntity<>(httpHeaders),
                     Object.class
@@ -371,7 +371,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
         // prepare release transaction
         items.clear();
 
-        String releaseTransactionUrl = String.format("%s%d/transactions/%d?command=releaseAmount", incomingMoneyApi.substring(1), disposalAccountAmsId, lastHoldTransactionId);
+        String releaseTransactionUrl = String.format("%s%s/transactions/%d?command=releaseAmount", incomingMoneyApi.substring(1), disposalAccountAmsId, lastHoldTransactionId);
         batchItemBuilder.add(tenantIdentifier, items, releaseTransactionUrl, null, false);
         String releaseAmountOperation = "transferToConversionAccountInAms.DisposalAccount.ReleaseTransactionAmount";
         addDetails(tenantIdentifier, pain001.getDocument(), transactionGroupId, transactionCategoryPurposeCode, internalCorrelationId,
@@ -512,7 +512,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
             List<TransactionItem> items = new ArrayList<>();
             Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
 
-            String holdTransactionUrl = String.format("%s%d/transactions?command=holdAmount", incomingMoneyApi.substring(1), disposalAccountAmsId);
+            String holdTransactionUrl = String.format("%s%s/transactions?command=holdAmount", incomingMoneyApi.substring(1), disposalAccountAmsId);
 
             Integer outHoldReasonId = paymentTypeConfig.findPaymentTypeIdByOperation(String.format("%s.%s", paymentScheme, "outHoldReasonId"));
             HoldAmountBody holdAmountBody = new HoldAmountBody(
@@ -555,7 +555,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
             httpHeaders.set("Authorization", authTokenHelper.generateAuthToken());
             httpHeaders.set("Fineract-Platform-TenantId", tenantIdentifier);
             LinkedHashMap<String, Object> accountDetails = restTemplate.exchange(
-                            String.format("%s/%s%d", fineractApiUrl, incomingMoneyApi.substring(1), disposalAccountAmsId),
+                            String.format("%s/%s%s", fineractApiUrl, incomingMoneyApi.substring(1), disposalAccountAmsId),
                             HttpMethod.GET,
                             new HttpEntity<>(httpHeaders),
                             LinkedHashMap.class)
@@ -564,7 +564,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
             BigDecimal availableBalance = new BigDecimal(summary.get("availableBalance").toString());
             if (availableBalance.signum() < 0) {
                 restTemplate.exchange(
-                        String.format("%s/%ssavingsaccounts/%d/transactions/%d?command=releaseAmount", fineractApiUrl, incomingMoneyApi.substring(1), disposalAccountAmsId, lastHoldTransactionId),
+                        String.format("%s/%ssavingsaccounts/%s/transactions/%d?command=releaseAmount", fineractApiUrl, incomingMoneyApi.substring(1), disposalAccountAmsId, lastHoldTransactionId),
                         HttpMethod.POST,
                         new HttpEntity<>(httpHeaders),
                         Object.class
@@ -574,7 +574,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 
             items.clear();
 
-            String releaseTransactionUrl = String.format("%s%d/transactions/%d?command=releaseAmount", incomingMoneyApi.substring(1), disposalAccountAmsId, lastHoldTransactionId);
+            String releaseTransactionUrl = String.format("%s%s/transactions/%d?command=releaseAmount", incomingMoneyApi.substring(1), disposalAccountAmsId, lastHoldTransactionId);
             batchItemBuilder.add(tenantIdentifier, items, releaseTransactionUrl, null, false);
             String releaseAmountOperation = "withdrawTheAmountFromDisposalAccountInAMS.DisposalAccount.ReleaseTransactionAmount";
             addDetails(tenantIdentifier, null, internalCorrelationId, transactionCategoryPurposeCode, internalCorrelationId,
@@ -583,7 +583,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
                     partnerAccountSecondaryIdentifier, unstructured, disposalAccountAmsId, conversionAccountAmsId, false,
                     document.getFIToFIPmtCxlReq().getUndrlyg().get(0).getTxInf().get(0).getOrgnlEndToEndId());
 
-            String disposalAccountWithdrawRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), disposalAccountAmsId, "withdrawal");
+            String disposalAccountWithdrawRelativeUrl = String.format("%s%s/transactions?command=%s", incomingMoneyApi.substring(1), disposalAccountAmsId, "withdrawal");
 
             String withdrawAmountOperation = "withdrawTheAmountFromDisposalAccountInAMS.DisposalAccount.WithdrawTransactionAmount";
             String configOperationKey = String.format("%s.%s", paymentScheme, withdrawAmountOperation);
@@ -633,7 +633,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 
             batchItemBuilder.add(tenantIdentifier, items, camt053RelativeUrl, camt053Body, true);
 
-            String conversionAccountDepositRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "deposit");
+            String conversionAccountDepositRelativeUrl = String.format("%s%s/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "deposit");
 
             String depositAmountOperation = "withdrawTheAmountFromDisposalAccountInAMS.ConversionAccount.DepositTransactionAmount";
             addExchange(tenantIdentifier, amount, paymentScheme, transactionDate, painMapper, paymentTypeConfig, batchItemBuilder, items, conversionAccountDepositRelativeUrl, depositAmountOperation);
