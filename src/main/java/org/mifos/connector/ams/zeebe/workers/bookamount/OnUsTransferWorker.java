@@ -191,7 +191,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 
             List<TransactionItem> items = new ArrayList<>();
 
-            String holdTransactionUrl = String.format("%s%d/transactions?command=holdAmount", incomingMoneyApi.substring(1), debtorDisposalAccountAmsId);
+            String holdTransactionUrl = String.format("%s%s/transactions?command=holdAmount", incomingMoneyApi.substring(1), debtorDisposalAccountAmsId);
 
             Integer outHoldReasonId = paymentTypeConfig.findPaymentTypeIdByOperation(String.format("%s.%s", paymentScheme, "outHoldReasonId"));
             HoldAmountBody body = new HoldAmountBody(
@@ -226,7 +226,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
             httpHeaders.set("Authorization", authTokenHelper.generateAuthToken());
             httpHeaders.set("Fineract-Platform-TenantId", tenantIdentifier);
             LinkedHashMap<String, Object> accountDetails = restTemplate.exchange(
-                            String.format("%s/%s%d", fineractApiUrl, incomingMoneyApi.substring(1), debtorDisposalAccountAmsId),
+                            String.format("%s/%s%s", fineractApiUrl, incomingMoneyApi.substring(1), debtorDisposalAccountAmsId),
                             HttpMethod.GET,
                             new HttpEntity<>(httpHeaders),
                             LinkedHashMap.class)
@@ -235,7 +235,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
             BigDecimal availableBalance = new BigDecimal(summary.get("availableBalance").toString());
             if (availableBalance.signum() < 0) {
                 restTemplate.exchange(
-                        String.format("%s/%ssavingsaccounts/%d/transactions/%d?command=releaseAmount", fineractApiUrl, incomingMoneyApi.substring(1), debtorDisposalAccountAmsId, lastHoldTransactionId),
+                        String.format("%s/%ssavingsaccounts/%s/transactions/%d?command=releaseAmount", fineractApiUrl, incomingMoneyApi.substring(1), debtorDisposalAccountAmsId, lastHoldTransactionId),
                         HttpMethod.POST,
                         new HttpEntity<>(httpHeaders),
                         Object.class
@@ -245,7 +245,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 
             items.clear();
 
-            String releaseTransactionUrl = String.format("%s%d/transactions/%d?command=releaseAmount", incomingMoneyApi.substring(1), debtorDisposalAccountAmsId, lastHoldTransactionId);
+            String releaseTransactionUrl = String.format("%s%s/transactions/%d?command=releaseAmount", incomingMoneyApi.substring(1), debtorDisposalAccountAmsId, lastHoldTransactionId);
             batchItemBuilder.add(tenantIdentifier, items, releaseTransactionUrl, null, false);
             String releaseAmountOperation = "transferTheAmountBetweenDisposalAccounts.Debtor.DisposalAccount.ReleaseTransactionAmount";
             addDetails(tenantIdentifier, internalCorrelationId, transactionCategoryPurposeCode, internalCorrelationId,
@@ -253,7 +253,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
                     paymentTypeConfig, paymentScheme, releaseAmountOperation, partnerName, partnerAccountIban,
                     partnerAccountSecondaryIdentifier, unstructured, null, null);
 
-            String debtorDisposalWithdrawalRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), debtorDisposalAccountAmsId, "withdrawal");
+            String debtorDisposalWithdrawalRelativeUrl = String.format("%s%s/transactions?command=%s", incomingMoneyApi.substring(1), debtorDisposalAccountAmsId, "withdrawal");
 
             String withdrawAmountOperation = "transferTheAmountBetweenDisposalAccounts.Debtor.DisposalAccount.WithdrawTransactionAmount";
             String withdrawAmountConfigOperationKey = String.format("%s.%s", paymentScheme, withdrawAmountOperation);
@@ -382,7 +382,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 
                 bodyItem = painMapper.writeValueAsString(transactionBody);
 
-                String debtorConversionDepositRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), debtorConversionAccountAmsId, "deposit");
+                String debtorConversionDepositRelativeUrl = String.format("%s%s/transactions?command=%s", incomingMoneyApi.substring(1), debtorConversionAccountAmsId, "deposit");
 
                 batchItemBuilder.add(tenantIdentifier, items, debtorConversionDepositRelativeUrl, bodyItem, false);
 
@@ -426,7 +426,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 
             bodyItem = painMapper.writeValueAsString(transactionBody);
 
-            String creditorDisposalDepositRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), creditorDisposalAccountAmsId, "deposit");
+            String creditorDisposalDepositRelativeUrl = String.format("%s%s/transactions?command=%s", incomingMoneyApi.substring(1), creditorDisposalAccountAmsId, "deposit");
 
             batchItemBuilder.add(tenantIdentifier, items, creditorDisposalDepositRelativeUrl, bodyItem, false);
 
@@ -480,7 +480,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 
                 bodyItem = painMapper.writeValueAsString(transactionBody);
 
-                String debtorConversionWithdrawRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), debtorConversionAccountAmsId, "withdrawal");
+                String debtorConversionWithdrawRelativeUrl = String.format("%s%s/transactions?command=%s", incomingMoneyApi.substring(1), debtorConversionAccountAmsId, "withdrawal");
 
                 batchItemBuilder.add(tenantIdentifier, items, debtorConversionWithdrawRelativeUrl, bodyItem, false);
 

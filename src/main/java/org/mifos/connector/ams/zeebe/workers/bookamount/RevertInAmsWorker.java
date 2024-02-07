@@ -147,7 +147,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 
             log.debug("Re-depositing amount {} in disposal account {}", amount, disposalAccountAmsId);
 
-            String disposalAccountDepositRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), disposalAccountAmsId, "deposit");
+            String disposalAccountDepositRelativeUrl = String.format("%s%s/transactions?command=%s", incomingMoneyApi.substring(1), disposalAccountAmsId, "deposit");
 
             Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
 
@@ -247,7 +247,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                 batchItemBuilder.add(tenantIdentifier, items, camt053RelativeUrl, camt053Body, true);
             }
 
-            String conversionAccountWithdrawRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "withdrawal");
+            String conversionAccountWithdrawRelativeUrl = String.format("%s%s/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "withdrawal");
 
             String withdrawAmountOperation = "revertInAms.ConversionAccount.WithdrawTransactionAmount";
             String withdrawAmountConfigOperationKey = String.format("%s.%s", paymentScheme, withdrawAmountOperation);
@@ -379,7 +379,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                     .setPayload(tqEntity.toString())
                     .setCorrelationIds(Map.of("CorrelationId", internalCorrelationId)));
             TransactionQueryPayload tqResponse = restTemplate.exchange(
-                            String.format("%s/%s%d/transactions/query", fineractApiUrl, incomingMoneyApi.substring(1), disposalAccountAmsId),
+                            String.format("%s/%s%s/transactions/query", fineractApiUrl, incomingMoneyApi.substring(1), disposalAccountAmsId),
                             HttpMethod.POST,
                             tqEntity,
                             TransactionQueryPayload.class)
@@ -466,7 +466,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 
             List<TransactionItem> items = new ArrayList<>();
 
-            String disposalAccountDepositRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), disposalAccountAmsId, "deposit");
+            String disposalAccountDepositRelativeUrl = String.format("%s%s/transactions?command=%s", incomingMoneyApi.substring(1), disposalAccountAmsId, "deposit");
 
             Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
 
@@ -529,7 +529,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 
             batchItemBuilder.add(tenantIdentifier, items, camt053RelativeUrl, camt053Body, true);
 
-            String conversionAccountWithdrawRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "withdrawal");
+            String conversionAccountWithdrawRelativeUrl = String.format("%s%s/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "withdrawal");
 
 
             String withdrawAmountOperation = "revertWithoutFeeInAms.ConversionAccount.WithdrawTransactionAmount";
@@ -693,7 +693,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
             String transactionDate = LocalDate.now().format(DateTimeFormatter.ofPattern(FORMAT));
             List<TransactionItem> items = new ArrayList<>();
 
-            String disposalAccountDepositRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), disposalAccountAmsId, "deposit");
+            String disposalAccountDepositRelativeUrl = String.format("%s%s/transactions?command=%s", incomingMoneyApi.substring(1), disposalAccountAmsId, "deposit");
             Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
 
             String depositAmountOperation = "depositTheAmountOnDisposalInAms.DisposalAccount.DepositTransactionAmount";
@@ -766,7 +766,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 
             batchItemBuilder.add(tenantIdentifier, items, camt053RelativeUrl, camt053Body, true);
 
-            String conversionAccountWithdrawRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "withdrawal");
+            String conversionAccountWithdrawRelativeUrl = String.format("%s%s/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "withdrawal");
 
             String withdrawAmountOperation = "depositTheAmountOnDisposalInAms.ConversionAccount.WithdrawTransactionAmount";
             String withdrawAmountConfigOperationKey = String.format("%s.%s", paymentScheme, withdrawAmountOperation);

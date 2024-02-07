@@ -229,7 +229,11 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
                 } else {
                     transactionDetails.setSupplementaryData(List.of(new SupplementaryData1().withEnvelope(new SupplementaryDataEnvelope1().withAdditionalProperty("InternalCorrelationId", transactionFeeInternalCorrelationId))));
                 }
-                transactionDetails.getAmountDetails().getTransactionAmount().getAmount().setAmount(transactionFeeAmount);
+                if (transactionDetails.getAmountDetails() != null) {
+                    transactionDetails.getAmountDetails().getTransactionAmount().getAmount().setAmount(transactionFeeAmount);
+                } else {
+                    transactionDetails.setAmountDetails(new AmountAndCurrencyExchange3().withTransactionAmount(new AmountAndCurrencyExchangeDetails3().withAmount(new ActiveOrHistoricCurrencyAndAmount().withAmount(transactionFeeAmount))));
+                }
 
                 String withdrawFeePaymentTypeCode = Optional.ofNullable(paymentTypeConfig.findPaymentTypeCodeByOperation(String.format("%s.%s", paymentScheme, withdrawFeeOperation))).orElse("");
                 transactionDetails.setAdditionalTransactionInformation(withdrawFeePaymentTypeCode);
