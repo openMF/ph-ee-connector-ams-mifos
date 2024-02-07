@@ -144,8 +144,8 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
             MDC.put("internalCorrelationId", internalCorrelationId);
             log.debug("Debtor exchange worker starting, using api path {}", apiPath);
 
-            String disposalAccountWithdrawRelativeUrl = String.format("%s%d/transactions?command=%s", apiPath, disposalAccountAmsId, "withdrawal");
-            String conversionAccountDepositRelativeUrl = String.format("%s%d/transactions?command=%s", apiPath, conversionAccountAmsId, "deposit");
+            String disposalAccountWithdrawRelativeUrl = String.format("%s%s/transactions?command=%s", apiPath, disposalAccountAmsId, "withdrawal");
+            String conversionAccountDepositRelativeUrl = String.format("%s%s/transactions?command=%s", apiPath, conversionAccountAmsId, "deposit");
             Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
 
             Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001 = painMapper.readValue(originalPain001, Pain00100110CustomerCreditTransferInitiationV10MessageSchema.class);
