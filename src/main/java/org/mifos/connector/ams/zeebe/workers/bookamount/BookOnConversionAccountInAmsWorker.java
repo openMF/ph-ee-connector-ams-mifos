@@ -14,6 +14,8 @@ import iso.std.iso._20022.tech.json.camt_053_001.*;
 import iso.std.iso._20022.tech.json.camt_053_001.ActiveOrHistoricCurrencyAndAmountRange2.CreditDebitCode;
 import iso.std.iso._20022.tech.json.pain_001_001.CreditTransferTransaction40;
 import iso.std.iso._20022.tech.json.pain_001_001.Pain00100110CustomerCreditTransferInitiationV10MessageSchema;
+import iso.std.iso._20022.tech.json.pain_001_001.PartyIdentification135;
+import iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16;
 import iso.std.iso._20022.tech.xsd.pacs_004_001.PaymentTransactionInformation27;
 import iso.std.iso._20022.tech.xsd.pacs_004_001.RemittanceInformation5;
 import jakarta.xml.bind.JAXBException;
@@ -50,6 +52,9 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 
     @Value("${fineract.incoming-money-api}")
     protected String incomingMoneyApi;
+
+    @Value("${fineract.current-account-api}")
+    protected String currentAccountApi;
 
     @Autowired
     private ConfigFactory paymentTypeConfigFactory;
@@ -126,134 +131,74 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
                                               String debtorIban,
                                               String accountProductType) {
         try {
-            transactionDate = transactionDate.replaceAll("-", "");
-
-            Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001;
-            pain001 = painMapper.readValue(originalPain001, Pain00100110CustomerCreditTransferInitiationV10MessageSchema.class);
-
+            // STEP 0 - collect / extract information
             MDC.put("internalCorrelationId", internalCorrelationId);
-
             log.info("Starting book debit on conversion account worker");
-
             log.info("Withdrawing amount {} from conversion account {} of tenant {}", amount, conversionAccountAmsId, tenantIdentifier);
-
-            String conversionAccountWithdrawalRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "withdrawal");
-
+            transactionDate = transactionDate.replaceAll("-", "");
+            String apiPath = accountProductType.equalsIgnoreCase("SAVINGS") ? incomingMoneyApi.substring(1) : currentAccountApi.substring(1);
             Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
-            String withdrawAmountOperation = "bookOnConversionAccountInAms.ConversionAccount.WithdrawTransactionAmount";
-            String configOperationKey = String.format("%s.%s", paymentScheme, withdrawAmountOperation);
-            Integer paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(configOperationKey);
-            String paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(configOperationKey);
-
-            TransactionBody body = new TransactionBody(
-                    transactionDate,
-                    amount,
-                    paymentTypeId,
-                    "",
-                    FORMAT,
-                    locale);
-
-            String bodyItem = painMapper.writeValueAsString(body);
-
+            Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001 = painMapper.readValue(originalPain001, Pain00100110CustomerCreditTransferInitiationV10MessageSchema.class);
+            BankToCustomerStatementV08 convertedStatement = camt053Mapper.toCamt053Entry(pain001.getDocument());
+            ReportEntry10 convertedCamt053Entry = convertedStatement.getStatement().get(0).getEntry().get(0);
+            EntryTransaction10 transactionDetails = convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0);
+            CreditTransferTransaction40 creditTransferTransaction = pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0);
+            String unstructured = Optional.ofNullable(creditTransferTransaction.getRemittanceInformation()).map(RemittanceInformation16::getUnstructured).map(List::toString).orElse("");
+            PartyIdentification135 creditor = creditTransferTransaction.getCreditor();
+            String endToEndId = creditTransferTransaction.getPaymentIdentification().getEndToEndIdentification();
+            String creditorId = contactDetailsUtil.getId(creditor.getContactDetails());
+            String creditorIban = creditTransferTransaction.getCreditorAccount().getIdentification().getIban();
+            String creditorName = creditor.getName();
             List<TransactionItem> items = new ArrayList<>();
 
-            batchItemBuilder.add(tenantIdentifier, items, conversionAccountWithdrawalRelativeUrl, bodyItem, false);
+            // STEP 1a - batch: withdraw amount
+            String conversionAccountWithdrawalRelativeUrl = String.format("%s%d/transactions?command=%s", apiPath, conversionAccountAmsId, "withdrawal");
+            String withdrawAmountOperation = "bookOnConversionAccountInAms.ConversionAccount.WithdrawTransactionAmount";
+            String withdrawAmountConfigOperationKey = String.format("%s.%s", paymentScheme, withdrawAmountOperation);
+            Integer withdrawAmountPaymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(withdrawAmountConfigOperationKey);
+            String withdrawAmountPaymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(withdrawAmountConfigOperationKey);
 
-            BankToCustomerStatementV08 convertedStatement = camt053Mapper.toCamt053Entry(pain001.getDocument());
-            ReportEntry10 convertedcamt053Entry = convertedStatement.getStatement().get(0).getEntry().get(0);
-            EntryTransaction10 transactionDetails = convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0);
+            String withdrawAmountBodyItem = painMapper.writeValueAsString(new TransactionBody(transactionDate, amount, withdrawAmountPaymentTypeId, "", FORMAT, locale));
+            batchItemBuilder.add(tenantIdentifier, items, conversionAccountWithdrawalRelativeUrl, withdrawAmountBodyItem, false);
+
+            // STEP 1b - batch: withdraw amount details
             transactionDetails.setCreditDebitIndicator(CreditDebitCode.DBIT);
-            convertedcamt053Entry.setCreditDebitIndicator(CreditDebitCode.DBIT);
-            convertedcamt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "BOOKED"));
-            transactionDetails.setAdditionalTransactionInformation(paymentTypeCode);
-            String camt053Entry = serializationHelper.writeCamt053AsString(accountProductType, convertedcamt053Entry);
+            convertedCamt053Entry.setCreditDebitIndicator(CreditDebitCode.DBIT);
+            convertedCamt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "BOOKED"));
+            transactionDetails.setAdditionalTransactionInformation(withdrawAmountPaymentTypeCode);
+            String withdrawDetailsCamt053Entry = serializationHelper.writeCamt053AsString(accountProductType, convertedCamt053Entry);
+            String withdrawDetailsCamt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
+            String withdrawDetailsCamt053Body = painMapper.writeValueAsString(new DtSavingsTransactionDetails(internalCorrelationId, withdrawDetailsCamt053Entry, debtorIban, withdrawAmountPaymentTypeCode, transactionGroupId, creditorName, creditorIban, null, creditorId, unstructured, transactionCategoryPurposeCode, paymentScheme, conversionAccountAmsId, null, endToEndId));
+            batchItemBuilder.add(tenantIdentifier, items, withdrawDetailsCamt053RelativeUrl, withdrawDetailsCamt053Body, true);
 
-            String camt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
-
-            CreditTransferTransaction40 creditTransferTransaction = pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0);
-            DtSavingsTransactionDetails td = new DtSavingsTransactionDetails(
-                    internalCorrelationId,
-                    camt053Entry,
-                    pain001.getDocument().getPaymentInformation().get(0).getDebtorAccount().getIdentification().getIban(),
-                    paymentTypeCode,
-                    transactionGroupId,
-                    creditTransferTransaction.getCreditor().getName(),
-                    creditTransferTransaction.getCreditorAccount().getIdentification().getIban(),
-                    null,
-                    contactDetailsUtil.getId(creditTransferTransaction.getCreditor().getContactDetails()),
-                    Optional.ofNullable(creditTransferTransaction.getRemittanceInformation())
-                            .map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(List::toString).orElse(""),
-                    transactionCategoryPurposeCode,
-                    paymentScheme,
-                    conversionAccountAmsId,
-                    null,
-                    creditTransferTransaction.getPaymentIdentification().getEndToEndIdentification());
-
-            String camt053Body = painMapper.writeValueAsString(td);
-
-            batchItemBuilder.add(tenantIdentifier, items, camt053RelativeUrl, camt053Body, true);
-
+            // STEP 2c - batch: withdraw fee, if any
             if (!BigDecimal.ZERO.equals(transactionFeeAmount)) {
-
                 log.info("Withdrawing fee {} from conversion account {}", transactionFeeAmount, conversionAccountAmsId);
-
                 String withdrawFeeOperation = "bookOnConversionAccountInAms.ConversionAccount.WithdrawTransactionFee";
                 String withdrawFeeConfigOperationKey = String.format("%s.%s", paymentScheme, withdrawFeeOperation);
-                paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(withdrawFeeConfigOperationKey);
-                paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(withdrawFeeConfigOperationKey);
-                transactionDetails.setAdditionalTransactionInformation(paymentTypeCode);
+                Integer withdrawFeePaymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(withdrawFeeConfigOperationKey);
+                String withdrawFeePaymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(withdrawFeeConfigOperationKey);
+                transactionDetails.setAdditionalTransactionInformation(withdrawFeePaymentTypeCode);
                 transactionDetails.getSupplementaryData().clear();
                 camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001.getDocument(), transactionDetails, transactionFeeCategoryPurposeCode);
                 camt053Mapper.refillOtherIdentification(pain001.getDocument(), transactionDetails);
 
-                camt053Entry = serializationHelper.writeCamt053AsString(accountProductType, convertedcamt053Entry);
+                String withdrawFeeBodyItem = painMapper.writeValueAsString(new TransactionBody(transactionDate, transactionFeeAmount, withdrawFeePaymentTypeId, "", FORMAT, locale));
+                batchItemBuilder.add(tenantIdentifier, items, conversionAccountWithdrawalRelativeUrl, withdrawFeeBodyItem, false);
 
-                body = new TransactionBody(
-                        transactionDate,
-                        transactionFeeAmount,
-                        paymentTypeId,
-                        "",
-                        FORMAT,
-                        locale);
-
-                bodyItem = painMapper.writeValueAsString(body);
-
-                batchItemBuilder.add(tenantIdentifier, items, conversionAccountWithdrawalRelativeUrl, bodyItem, false);
-
-                td = new DtSavingsTransactionDetails(
-                        transactionFeeInternalCorrelationId,
-                        camt053Entry,
-                        pain001.getDocument().getPaymentInformation().get(0).getDebtorAccount().getIdentification().getIban(),
-                        paymentTypeCode,
-                        transactionGroupId,
-                        creditTransferTransaction.getCreditor().getName(),
-                        creditTransferTransaction.getCreditorAccount().getIdentification().getIban(),
-                        null,
-                        contactDetailsUtil.getId(creditTransferTransaction.getCreditor().getContactDetails()),
-                        Optional.ofNullable(creditTransferTransaction.getRemittanceInformation())
-                                .map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(List::toString).orElse(""),
-                        transactionFeeCategoryPurposeCode,
-                        paymentScheme,
-                        conversionAccountAmsId,
-                        null,
-                        creditTransferTransaction.getPaymentIdentification().getEndToEndIdentification());
-                camt053Body = painMapper.writeValueAsString(td);
-                batchItemBuilder.add(tenantIdentifier, items, camt053RelativeUrl, camt053Body, true);
+                String withdrawFeeCamt053Entry = serializationHelper.writeCamt053AsString(accountProductType, convertedCamt053Entry);
+                String withdrawFeeDetailsCamt053Body = painMapper.writeValueAsString(new DtSavingsTransactionDetails(transactionFeeInternalCorrelationId, withdrawFeeCamt053Entry, debtorIban, withdrawFeePaymentTypeCode, transactionGroupId, creditorName, creditorIban, null, creditorId, unstructured, transactionFeeCategoryPurposeCode, paymentScheme, conversionAccountAmsId, null, endToEndId));
+                batchItemBuilder.add(tenantIdentifier, items, withdrawDetailsCamt053RelativeUrl, withdrawFeeDetailsCamt053Body, true);
             }
 
-            doBatch(items,
-                    tenantIdentifier,
-                    -1,
-                    conversionAccountAmsId,
-                    internalCorrelationId,
-                    "bookOnConversionAccountInAms");
+            doBatch(items, tenantIdentifier, -1, conversionAccountAmsId, internalCorrelationId, "bookOnConversionAccountInAms");
 
             log.info("Book debit on conversion account has finished  successfully");
 
             MDC.remove("internalCorrelationId");
         } catch (JsonProcessingException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
         }
 
         return null;

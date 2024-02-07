@@ -137,14 +137,16 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
                                                   String transactionFeeInternalCorrelationId,
                                                   String accountProductType) {
         try {
-            // STEP 0 - extract information
+            // STEP 0 - collect / extract information
             String transactionDate = LocalDate.now().format(PATTERN);
             String apiPath = accountProductType.equalsIgnoreCase("SAVINGS") ? incomingMoneyApi.substring(1) : currentAccountApi.substring(1);
+
+            MDC.put("internalCorrelationId", internalCorrelationId);
+            log.debug("Debtor exchange worker starting, using api path {}", apiPath);
+
             String disposalAccountWithdrawRelativeUrl = String.format("%s%d/transactions?command=%s", apiPath, disposalAccountAmsId, "withdrawal");
             String conversionAccountDepositRelativeUrl = String.format("%s%d/transactions?command=%s", apiPath, conversionAccountAmsId, "deposit");
-
-            log.debug("Debtor exchange worker starting, using api path {}", apiPath);
-            MDC.put("internalCorrelationId", internalCorrelationId);
+            Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
 
             Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001 = painMapper.readValue(originalPain001, Pain00100110CustomerCreditTransferInitiationV10MessageSchema.class);
 
@@ -162,11 +164,11 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
             String partnerAccountIban = pain001Transaction.getCreditorAccount().getIdentification().getIban();
             String partnerAccountSecondaryIdentifier = contactDetailsUtil.getId(pain001Transaction.getCreditor().getContactDetails());
             String unstructured = Optional.ofNullable(pain001Transaction.getRemittanceInformation())
-                    .map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(List::toString).orElse("");
+                    .map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(List::toString)
+                    .orElse("");
             CustomerCreditTransferInitiationV10 pain001Document = pain001.getDocument();
             String endToEndId = pain001Transaction.getPaymentIdentification().getEndToEndIdentification();
             String debtorIban = pain001PaymentInstruction.getDebtorAccount().getIdentification().getIban();
-            Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
 
 
             // STEP 1 - batch: add hold and release items [only for savings account]
@@ -273,7 +275,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
                 batchItemBuilder.add(tenantIdentifier, items, "datatables/dt_savings_transaction_details/$.resourceId", depositAmountCamt053Body, true);
             } else { // CURRENT account executes deposit amount and details in one step
                 String depositAmountTransactionBody = painMapper.writeValueAsString(new CurrentAccountTransactionBody(amount, FORMAT, locale, depositAmountPaymentTypeId, currency, List.of(
-                    new CurrentAccountTransactionBody.DataTable(List.of(new CurrentAccountTransactionBody.Entry(debtorIban, depositAmountCamt053, internalCorrelationId, partnerName, partnerAccountIban)), "dt_current_transaction_details"))
+                        new CurrentAccountTransactionBody.DataTable(List.of(new CurrentAccountTransactionBody.Entry(debtorIban, depositAmountCamt053, internalCorrelationId, partnerName, partnerAccountIban)), "dt_current_transaction_details"))
                 ));
                 batchItemBuilder.add(tenantIdentifier, items, conversionAccountDepositRelativeUrl, depositAmountTransactionBody, false);
             }
@@ -304,18 +306,13 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
                     batchItemBuilder.add(tenantIdentifier, items, "datatables/dt_savings_transaction_details/$.resourceId", depositFeeCamt053Body, true);
                 } else { // CURRENT account executes deposit fee and details in one step
                     String depositFeeTransactionBody = painMapper.writeValueAsString(new CurrentAccountTransactionBody(transactionFeeAmount, FORMAT, locale, depositFeePaymentTypeId, currency, List.of(
-                        new CurrentAccountTransactionBody.DataTable(List.of(new CurrentAccountTransactionBody.Entry(debtorIban, depositFeeCamt053, transactionFeeInternalCorrelationId, partnerName, partnerAccountIban)), "dt_current_transaction_details"))
+                            new CurrentAccountTransactionBody.DataTable(List.of(new CurrentAccountTransactionBody.Entry(debtorIban, depositFeeCamt053, transactionFeeInternalCorrelationId, partnerName, partnerAccountIban)), "dt_current_transaction_details"))
                     ));
                     batchItemBuilder.add(tenantIdentifier, items, conversionAccountDepositRelativeUrl, depositFeeTransactionBody, false);
                 }
             }
 
-            doBatch(items,
-                    tenantIdentifier,
-                    disposalAccountAmsId,
-                    conversionAccountAmsId,
-                    internalCorrelationId,
-                    "transferToConversionAccountInAms");
+            doBatch(items, tenantIdentifier, disposalAccountAmsId, conversionAccountAmsId, internalCorrelationId, "transferToConversionAccountInAms");
 
         } catch (ZeebeBpmnError z) {
             throw z;
