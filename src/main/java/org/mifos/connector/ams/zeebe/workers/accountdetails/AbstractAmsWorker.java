@@ -4,7 +4,6 @@ import com.baasflow.commons.events.EventLogLevel;
 import com.baasflow.commons.events.EventService;
 import com.baasflow.commons.events.EventType;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.fineract.client.models.CurrentAccountResponseData;
 import org.mifos.connector.ams.fineract.currentaccount.request.BaseQuery;
 import org.mifos.connector.ams.fineract.currentaccount.request.DatatableQuery;
 import org.mifos.connector.ams.fineract.currentaccount.request.FineractCurrentAccountRequest;

@@ -2,6 +2,7 @@ package org.mifos.connector.ams.fineract.currentaccount.response;
 
 import lombok.Data;
 
+@Data
 public class CAGetResponse {
 
 

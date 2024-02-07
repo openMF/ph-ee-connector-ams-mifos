@@ -10,7 +10,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.mifos.connector.ams.common.SavingsAccountStatusType;
 import org.mifos.connector.ams.common.util.BeanWalker;
 import org.mifos.connector.ams.fineract.currentaccount.response.CAGetResponse;
-import org.mifos.connector.ams.fineract.currentaccount.response.CAGetResponse.StringEnumOptionData;
 import org.mifos.connector.ams.fineract.currentaccount.response.FineractResponse;
 import org.mifos.connector.ams.fineract.currentaccount.response.PageFineractResponse;
 import org.mifos.connector.ams.log.EventLogUtil;
@@ -102,13 +101,13 @@ public class GetAccountDetailsFromAmsWorker extends AbstractAmsWorker {
             CAGetResponse disposalAccount = lookupCurrentAccountGet(iban, disposalSub, tenantIdentifier);
             CAGetResponse conversionAccount = lookupCurrentAccountGet(iban, conversionSub, tenantIdentifier);
 
-            String disposalAccountStatus = BeanWalker.of(disposalAccount).get(CAGetResponse::getStatus).get(StringEnumOptionData::getId).get();
-            String conversionAccountStatus = BeanWalker.of(conversionAccount).get(CAGetResponse::getStatus).get(StringEnumOptionData::getId).get();
+            String disposalAccountStatus = BeanWalker.of(disposalAccount).get(CAGetResponse::getStatus).get(CAGetResponse.Status::getId).get();
+            String conversionAccountStatus = BeanWalker.of(conversionAccount).get(CAGetResponse::getStatus).get(CAGetResponse.Status::getId).get();
 
             Boolean AccountStatusCheckResult = (Objects.equals(disposalAccountStatus, "ACTIVE") ||
                     Objects.equals(conversionAccountStatus, "ACTIVE"));
-            Boolean CurrencyCheckResult = (Objects.equals(BeanWalker.of(disposalAccount).get(CAGetResponse::getCurrency).get(CurrencyData::getCode).get(), "HUF") ||
-                    Objects.equals(BeanWalker.of(conversionAccount).get(CAGetResponse::getCurrency).get(CurrencyData::getCode).get(), "HUF"));
+            Boolean CurrencyCheckResult = (Objects.equals(BeanWalker.of(disposalAccount).get(CAGetResponse::getCurrency).get(CAGetResponse.Currency::getCode).get(), "HUF") ||
+                    Objects.equals(BeanWalker.of(conversionAccount).get(CAGetResponse::getCurrency).get(CAGetResponse.Currency::getCode).get(), "HUF"));
             //TODO map fineract response
             String status = AccountAmsStatus.NOT_READY_TO_RECEIVE_MONEY.name();
 
