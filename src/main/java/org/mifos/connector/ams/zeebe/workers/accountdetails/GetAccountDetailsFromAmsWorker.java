@@ -7,12 +7,10 @@ import io.camunda.zeebe.client.api.worker.JobClient;
 import io.camunda.zeebe.spring.client.annotation.JobWorker;
 import io.camunda.zeebe.spring.client.annotation.Variable;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.fineract.client.models.CurrencyData;
-import org.apache.fineract.client.models.CurrentAccountResponseData;
-import org.apache.fineract.client.models.GetSavingsAccountsAccountIdResponse;
-import org.apache.fineract.client.models.StringEnumOptionData;
 import org.mifos.connector.ams.common.SavingsAccountStatusType;
 import org.mifos.connector.ams.common.util.BeanWalker;
+import org.mifos.connector.ams.fineract.currentaccount.response.CAGetResponse;
+import org.mifos.connector.ams.fineract.currentaccount.response.CAGetResponse.StringEnumOptionData;
 import org.mifos.connector.ams.fineract.currentaccount.response.FineractResponse;
 import org.mifos.connector.ams.fineract.currentaccount.response.PageFineractResponse;
 import org.mifos.connector.ams.log.EventLogUtil;
@@ -101,16 +99,16 @@ public class GetAccountDetailsFromAmsWorker extends AbstractAmsWorker {
 
             FineractResponse disposalAccountData = BeanWalker.of(lookupCurrentAccountPostFlagsAndStatus(iban, disposalSub, tenantIdentifier)).get(PageFineractResponse::getContent).get(element(0)).get();
 
-            CurrentAccountResponseData disposalAccount = lookupCurrentAccountGet(iban, disposalSub, tenantIdentifier);
-            CurrentAccountResponseData conversionAccount = lookupCurrentAccountGet(iban, conversionSub, tenantIdentifier);
+            CAGetResponse disposalAccount = lookupCurrentAccountGet(iban, disposalSub, tenantIdentifier);
+            CAGetResponse conversionAccount = lookupCurrentAccountGet(iban, conversionSub, tenantIdentifier);
 
-            String disposalAccountStatus = BeanWalker.of(disposalAccount).get(CurrentAccountResponseData::getStatus).get(StringEnumOptionData::getId).get();
-            String conversionAccountStatus = BeanWalker.of(conversionAccount).get(CurrentAccountResponseData::getStatus).get(StringEnumOptionData::getId).get();
+            String disposalAccountStatus = BeanWalker.of(disposalAccount).get(CAGetResponse::getStatus).get(StringEnumOptionData::getId).get();
+            String conversionAccountStatus = BeanWalker.of(conversionAccount).get(CAGetResponse::getStatus).get(StringEnumOptionData::getId).get();
 
             Boolean AccountStatusCheckResult = (Objects.equals(disposalAccountStatus, "ACTIVE") ||
                     Objects.equals(conversionAccountStatus, "ACTIVE"));
-            Boolean CurrencyCheckResult = (Objects.equals(BeanWalker.of(disposalAccount).get(CurrentAccountResponseData::getCurrency).get(CurrencyData::getCode).get(), "HUF") ||
-                    Objects.equals(BeanWalker.of(conversionAccount).get(CurrentAccountResponseData::getCurrency).get(CurrencyData::getCode).get(), "HUF"));
+            Boolean CurrencyCheckResult = (Objects.equals(BeanWalker.of(disposalAccount).get(CAGetResponse::getCurrency).get(CurrencyData::getCode).get(), "HUF") ||
+                    Objects.equals(BeanWalker.of(conversionAccount).get(CAGetResponse::getCurrency).get(CurrencyData::getCode).get(), "HUF"));
             //TODO map fineract response
             String status = AccountAmsStatus.NOT_READY_TO_RECEIVE_MONEY.name();
 
@@ -136,10 +134,10 @@ public class GetAccountDetailsFromAmsWorker extends AbstractAmsWorker {
 
             outputVariables.put("accountAmsStatus", status);
 
-            String conversionAccountId = BeanWalker.of(conversionAccount).get(CurrentAccountResponseData::getId).get();
+            String conversionAccountId = BeanWalker.of(conversionAccount).get(CAGetResponse::getId).get();
             if (Objects.nonNull(conversionAccountId)) outputVariables.put("conversionAccountAmsId", conversionAccountId);
 
-            String disposalAccountId = BeanWalker.of(disposalAccount).get(CurrentAccountResponseData::getId).get();
+            String disposalAccountId = BeanWalker.of(disposalAccount).get(CAGetResponse::getId).get();
             if (Objects.nonNull(disposalAccountId)) outputVariables.put("disposalAccountAmsId", disposalAccountId);
 
             String flagCode = BeanWalker.of(disposalAccountData).get(FineractResponse::getFlagCode).get();

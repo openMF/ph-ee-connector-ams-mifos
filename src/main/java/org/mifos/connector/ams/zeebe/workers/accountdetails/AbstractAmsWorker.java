@@ -10,6 +10,7 @@ import org.mifos.connector.ams.fineract.currentaccount.request.DatatableQuery;
 import org.mifos.connector.ams.fineract.currentaccount.request.FineractCurrentAccountRequest;
 import org.mifos.connector.ams.fineract.currentaccount.request.Query;
 import org.mifos.connector.ams.fineract.currentaccount.request.Request;
+import org.mifos.connector.ams.fineract.currentaccount.response.CAGetResponse;
 import org.mifos.connector.ams.fineract.currentaccount.response.PageFineractResponse;
 import org.mifos.connector.ams.log.EventLogUtil;
 import org.mifos.connector.ams.zeebe.workers.utils.AuthTokenHelper;
@@ -104,13 +105,13 @@ public abstract class AbstractAmsWorker {
                 "lookupAccount");
     }
 
-    protected CurrentAccountResponseData lookupCurrentAccountGet(String iban, String accountSubValue, String tenantId) {
+    protected CAGetResponse lookupCurrentAccountGet(String iban, String accountSubValue, String tenantId) {
         return exchange(UriComponentsBuilder
                         .fromHttpUrl(fineractApiUrl)
                         .path(accountUrl)
                         .pathSegment("iban", iban, accountSubValue, "query")
                         .encode().toUriString(),
-                CurrentAccountResponseData.class,
+                CAGetResponse.class,
                 tenantId,
                 "ams_connector",
                 "lookupAccount");
