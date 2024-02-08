@@ -18,6 +18,7 @@ import iso.std.iso._20022.tech.xsd.pacs_004_001.PaymentTransactionInformation27;
 import jakarta.xml.bind.JAXBException;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
+import org.json.JSONObject;
 import org.mifos.connector.ams.common.SerializationHelper;
 import org.mifos.connector.ams.fineract.Config;
 import org.mifos.connector.ams.fineract.ConfigFactory;
@@ -33,10 +34,7 @@ import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.MediaType;
+import org.springframework.http.*;
 import org.springframework.stereotype.Component;
 
 import javax.xml.datatype.DatatypeFactory;
@@ -280,7 +278,11 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 
             String lastTransactionId = doBatch(items, tenantIdentifier, disposalAccountAmsId, conversionAccountAmsId, internalCorrelationId, "revertInAms");
 
-            BigDecimal runningBalanceDerived = queryRunningBalance(internalCorrelationId, disposalAccountAmsId, tenantIdentifier, lastTransactionId);
+            log.debug("querying running balance for account {}", disposalAccountAmsId);
+            BigDecimal runningBalanceDerived = accountProductType.equalsIgnoreCase("SAVINGS") ?
+                    queryRunningBalance(internalCorrelationId, disposalAccountAmsId, tenantIdentifier, lastTransactionId)
+                    : queryCurrentAccountBalance(apiPath, internalCorrelationId, disposalAccountAmsId, tenantIdentifier);
+
             return Map.of("availableBalance", runningBalanceDerived.toString());
 
         } catch (JsonProcessingException e) {
@@ -288,6 +290,28 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
         } finally {
             MDC.remove("internalCorrelationId");
         }
+    }
+
+    private BigDecimal queryCurrentAccountBalance(String apiPath, String internalCorrelationId, String disposalAccountAmsId, String tenantIdentifier) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Authorization", authTokenHelper.generateAuthToken());
+        headers.set("Fineract-Platform-TenantId", tenantIdentifier);
+        headers.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
+        String url = String.format("%s/%s/%s", fineractApiUrl, apiPath, disposalAccountAmsId);
+
+        return eventService.auditedEvent(event -> event.setSourceModule("ams_connector")
+                        .setEvent("revertInAms - availableBalanceRequest")
+                        .setEventLogLevel(EventLogLevel.INFO)
+                        .setEventType(EventType.audit)
+                        .setPayload("GET " + url)
+                        .setCorrelationIds(Map.of("CorrelationId", internalCorrelationId)), event ->
+                {
+                    ResponseEntity<String> responseEntity = restTemplate.exchange(url, HttpMethod.GET, new HttpEntity<>(headers), String.class);
+                    String responseData = responseEntity.getBody();
+                    event.setPayload(event.getPayload() + " -> " + responseData);
+                    return new JSONObject(responseData).getBigDecimal("availableBalance");
+                }
+        );
     }
 
     @NotNull
@@ -769,3 +793,4 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
         return null;
     }
 }
+
