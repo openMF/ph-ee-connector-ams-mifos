@@ -283,7 +283,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                     queryRunningBalance(internalCorrelationId, disposalAccountAmsId, tenantIdentifier, lastTransactionId)
                     : queryCurrentAccountBalance(apiPath, internalCorrelationId, disposalAccountAmsId, tenantIdentifier);
 
-            return Map.of("availableBalance", runningBalanceDerived.toString());
+            return Map.of("accountBalance", runningBalanceDerived.toString());
 
         } catch (JsonProcessingException e) {
             throw new RuntimeException("failed in revert", e);
