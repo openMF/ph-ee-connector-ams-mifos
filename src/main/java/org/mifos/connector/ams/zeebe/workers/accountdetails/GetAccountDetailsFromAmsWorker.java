@@ -12,6 +12,7 @@ import org.mifos.connector.ams.common.SavingsAccountStatusType;
 import org.mifos.connector.ams.common.util.BeanWalker;
 import org.mifos.connector.ams.fineract.currentaccount.response.CAGetResponse;
 import org.mifos.connector.ams.fineract.currentaccount.response.FineractResponse;
+import org.mifos.connector.ams.fineract.currentaccount.response.IdentifiersResponse;
 import org.mifos.connector.ams.fineract.currentaccount.response.PageFineractResponse;
 import org.mifos.connector.ams.log.EventLogUtil;
 import org.mifos.connector.ams.log.LogInternalCorrelationId;
@@ -22,16 +23,14 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.stream.Collectors;
+import java.util.Optional;
 
 import static org.mifos.connector.ams.common.util.BeanWalker.element;
-import static org.mifos.connector.ams.fineract.AccountType.CURRENT;
 
 @Component
 @Slf4j
@@ -102,6 +101,7 @@ public class GetAccountDetailsFromAmsWorker extends AbstractAmsWorker {
 
             CAGetResponse disposalAccount = lookupCurrentAccountGet(iban, disposalSub, tenantIdentifier);
             CAGetResponse conversionAccount = lookupCurrentAccountGet(iban, conversionSub, tenantIdentifier);
+            IdentifiersResponse disposalAccountIdentifiers = lookupIdentifiersGet(iban, disposalSub, tenantIdentifier);
 
             String disposalAccountStatus = BeanWalker.of(disposalAccount).get(CAGetResponse::getStatus).get(CAGetResponse.Status::getId).get();
             String conversionAccountStatus = BeanWalker.of(conversionAccount).get(CAGetResponse::getStatus).get(CAGetResponse.Status::getId).get();
@@ -136,7 +136,8 @@ public class GetAccountDetailsFromAmsWorker extends AbstractAmsWorker {
             outputVariables.put("accountAmsStatus", status);
 
             String conversionAccountId = BeanWalker.of(conversionAccount).get(CAGetResponse::getId).get();
-            if (Objects.nonNull(conversionAccountId)) outputVariables.put("conversionAccountAmsId", conversionAccountId);
+            if (Objects.nonNull(conversionAccountId))
+                outputVariables.put("conversionAccountAmsId", conversionAccountId);
 
             String disposalAccountId = BeanWalker.of(disposalAccount).get(CAGetResponse::getId).get();
             if (Objects.nonNull(disposalAccountId)) outputVariables.put("disposalAccountAmsId", disposalAccountId);
@@ -146,10 +147,12 @@ public class GetAccountDetailsFromAmsWorker extends AbstractAmsWorker {
             if (Objects.nonNull(flagCodes)) outputVariables.put("disposalAccountFlags", flagCodes);
 
             String disposalAccountStatusType = disposalAccountData.get(element(0)).get(FineractResponse::getStatusType).get();
-            if (Objects.nonNull(conversionAccountId)) outputVariables.put("disposalAccountAmsStatusType", disposalAccountStatusType);
+            if (Objects.nonNull(conversionAccountId))
+                outputVariables.put("disposalAccountAmsStatusType", disposalAccountStatusType);
 
-            String accountNo = "NOT_PROVIDED";
-            if (Objects.nonNull(conversionAccountId)) outputVariables.put("internalAccountId", accountNo);
+            String internalAccountId = Optional.ofNullable(BeanWalker.of(disposalAccountIdentifiers).get(IdentifiersResponse::getSecondaryIdentifiers).get()).orElse(List.of())
+                    .stream().filter(x -> Objects.equals(x.getIdType(), "alias")).map(IdentifiersResponse.Identifier::getValue).findFirst().orElse("NOT_PROVIDED");
+            if (Objects.nonNull(conversionAccountId)) outputVariables.put("internalAccountId", internalAccountId);
 
             outputVariables.put("accountProductType", "CURRENT");
             outputVariables.put("reasonCode", reasonCode);
