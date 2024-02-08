@@ -249,7 +249,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
                     batchItemBuilder.add(tenantIdentifier, items, "datatables/dt_savings_transaction_details/$.resourceId", withdrawFeeCamt053Body, true);
 
                 } else { // CURRENT account executes withdrawal and details in one step
-                    String withdrawFeeTransactionBody = painMapper.writeValueAsString(new CurrentAccountTransactionBody(transactionFeeAmount, FORMAT, locale, withdrawAmountPaymentTypeId, currency, List.of(
+                    String withdrawFeeTransactionBody = painMapper.writeValueAsString(new CurrentAccountTransactionBody(transactionFeeAmount, FORMAT, locale, withdrawFeePaymentTypeId, currency, List.of(
                             new CurrentAccountTransactionBody.DataTable(List.of(new CurrentAccountTransactionBody.Entry(debtorIban, withdrawFeeCamt053, transactionFeeInternalCorrelationId, partnerName, partnerAccountIban)), "dt_current_transaction_details"))
                     ));
                     batchItemBuilder.add(tenantIdentifier, items, disposalAccountWithdrawRelativeUrl, withdrawFeeTransactionBody, false);
