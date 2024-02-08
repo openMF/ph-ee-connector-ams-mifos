@@ -151,6 +151,8 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
             String transactionDate = hyphenatedTransactionDate.replaceAll("-", "");
             Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001 = painMapper.readValue(originalPain001, Pain00100110CustomerCreditTransferInitiationV10MessageSchema.class);
             String apiPath = accountProductType.equalsIgnoreCase("SAVINGS") ? incomingMoneyApi.substring(1) : currentAccountApi.substring(1);
+            String savingsAccountDetailsRelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
+            String conversionAccountWithdrawRelativeUrl = String.format("%s%s/transactions?command=%s", apiPath, conversionAccountAmsId, "withdrawal");
             String disposalAccountDepositRelativeUrl = String.format("%s%s/transactions?command=%s", apiPath, disposalAccountAmsId, "deposit");
             Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
             CustomerCreditTransferInitiationV10 pain001Document = pain001.getDocument();
@@ -167,9 +169,11 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
             String creditorName = creditTransferTransaction.getCreditor().getName();
             String creditorIban = creditTransferTransaction.getCreditorAccount().getIdentification().getIban();
             String endToEndId = creditTransferTransaction.getPaymentIdentification().getEndToEndIdentification();
+
             List<TransactionItem> items = new ArrayList<>();
 
             // STEP 1a - re-deposit amount in disposal account
+            log.debug("re-deposit amount {} in disposal account: {}", amount, disposalAccountAmsId);
             String depositAmountOperation = "revertInAms.DisposalAccount.DepositTransactionAmount";
             String depositAmountConfigOperationKey = String.format("%s.%s", paymentScheme, depositAmountOperation);
             Integer depositAmountPaymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(depositAmountConfigOperationKey);
@@ -183,11 +187,10 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
             camt053Entry.setCreditDebitIndicator(CreditDebitCode.CRDT);
             camt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "BOOKED"));
             String camt053 = serializationHelper.writeCamt053AsString(accountProductType, camt053Entry);
-            String camt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
 
             if (accountProductType.equalsIgnoreCase("SAVINGS")) {
                 String depositAmountTransactionBody = painMapper.writeValueAsString(new DtSavingsTransactionDetails(internalCorrelationId, camt053, debtorIban, depositAmountPaymentTypeCode, transactionGroupId, creditorName, creditorIban, null, creditorId, unstructured, transactionCategoryPurposeCode, paymentScheme, conversionAccountAmsId, disposalAccountAmsId, endToEndId));
-                batchItemBuilder.add(tenantIdentifier, items, camt053RelativeUrl, depositAmountTransactionBody, true);
+                batchItemBuilder.add(tenantIdentifier, items, savingsAccountDetailsRelativeUrl, depositAmountTransactionBody, true);
             } else {
                 String depositAmountTransactionBody = painMapper.writeValueAsString(new CurrentAccountTransactionBody(amount, FORMAT, locale, depositAmountPaymentTypeId, currency, List.of(
                         new CurrentAccountTransactionBody.DataTable(List.of(new CurrentAccountTransactionBody.Entry(debtorIban, camt053, internalCorrelationId, creditorName, creditorIban)), "dt_current_transaction_details"))));
@@ -211,7 +214,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                     batchItemBuilder.add(tenantIdentifier, items, disposalAccountDepositRelativeUrl, depositFeeBodyItem, false);
 
                     String depositFeeDetailsBody = painMapper.writeValueAsString(new DtSavingsTransactionDetails(transactionFeeInternalCorrelationId, camt053, debtorIban, depositFeePaymentTypeCode, transactionGroupId, creditorName, creditorIban, null, creditorId, unstructured, transactionFeeCategoryPurposeCode, paymentScheme, conversionAccountAmsId, disposalAccountAmsId, endToEndId));
-                    batchItemBuilder.add(tenantIdentifier, items, camt053RelativeUrl, depositFeeDetailsBody, true);
+                    batchItemBuilder.add(tenantIdentifier, items, savingsAccountDetailsRelativeUrl, depositFeeDetailsBody, true);
                 } else {  // CURRENT account executes withdrawal and details in one step
                     String depositFeeTransactionBody = painMapper.writeValueAsString(new CurrentAccountTransactionBody(transactionFeeAmount, FORMAT, locale, depositFeePaymentTypeId, currency, List.of(
                             new CurrentAccountTransactionBody.DataTable(List.of(new CurrentAccountTransactionBody.Entry(debtorIban, camt053, transactionFeeInternalCorrelationId, creditorName, creditorIban)), "dt_current_transaction_details")))
@@ -222,7 +225,6 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 
             // STEP 2a - withdraw amount from conversion account
             log.debug("Withdrawing {} from conversion account {}", amount, conversionAccountAmsId);
-            String conversionAccountWithdrawRelativeUrl = String.format("%s%s/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "withdrawal");
             String withdrawAmountOperation = "revertInAms.ConversionAccount.WithdrawTransactionAmount";
             String withdrawAmountConfigOperationKey = String.format("%s.%s", paymentScheme, withdrawAmountOperation);
             Integer withdrawAmountPaymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(withdrawAmountConfigOperationKey);
@@ -240,7 +242,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                 String withdrawAmountBodyItem = painMapper.writeValueAsString(new TransactionBody(transactionDate, amount, withdrawAmountPaymentTypeId, "", FORMAT, locale));
                 batchItemBuilder.add(tenantIdentifier, items, conversionAccountWithdrawRelativeUrl, withdrawAmountBodyItem, false);
                 String withdrawAmountDetailsBody = painMapper.writeValueAsString(new DtSavingsTransactionDetails(internalCorrelationId, camt053, debtorIban, withdrawAmountPaymentTypeCode, transactionGroupId, creditorName, creditorIban, null, creditorId, unstructured, transactionCategoryPurposeCode, paymentScheme, conversionAccountAmsId, disposalAccountAmsId, endToEndId));
-                batchItemBuilder.add(tenantIdentifier, items, camt053RelativeUrl, withdrawAmountDetailsBody, true);
+                batchItemBuilder.add(tenantIdentifier, items, savingsAccountDetailsRelativeUrl, withdrawAmountDetailsBody, true);
             } else { // CURRENT account executes withdrawal and details in one step
                 String withdrawAmountTransactionBody = painMapper.writeValueAsString(new CurrentAccountTransactionBody(amount, FORMAT, locale, withdrawAmountPaymentTypeId, currency, List.of(
                         new CurrentAccountTransactionBody.DataTable(List.of(new CurrentAccountTransactionBody.Entry(debtorIban, camt053, internalCorrelationId, creditorName, creditorIban)), "dt_current_transaction_details")))
@@ -267,7 +269,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                     batchItemBuilder.add(tenantIdentifier, items, conversionAccountWithdrawRelativeUrl, withdrawFeeBodyItem, false);
 
                     String withdrawAmountDetailsBody = painMapper.writeValueAsString(new DtSavingsTransactionDetails(transactionFeeInternalCorrelationId, camt053, debtorIban, withdrawFeePaymentTypeCode, transactionGroupId, creditorName, creditorIban, null, creditorId, unstructured, transactionFeeCategoryPurposeCode, paymentScheme, conversionAccountAmsId, disposalAccountAmsId, endToEndId));
-                    batchItemBuilder.add(tenantIdentifier, items, camt053RelativeUrl, withdrawAmountDetailsBody, true);
+                    batchItemBuilder.add(tenantIdentifier, items, savingsAccountDetailsRelativeUrl, withdrawAmountDetailsBody, true);
                 } else {  // CURRENT account executes withdrawal and details in one step
                     String withdrawFeeTransactionBody = painMapper.writeValueAsString(new CurrentAccountTransactionBody(transactionFeeAmount, FORMAT, locale, withdrawFeePaymentTypeId, currency, List.of(
                             new CurrentAccountTransactionBody.DataTable(List.of(new CurrentAccountTransactionBody.Entry(debtorIban, camt053, transactionFeeInternalCorrelationId, creditorName, creditorIban)), "dt_current_transaction_details")))
