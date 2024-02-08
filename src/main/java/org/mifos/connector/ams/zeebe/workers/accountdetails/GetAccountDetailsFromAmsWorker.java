@@ -12,6 +12,7 @@ import org.mifos.connector.ams.common.SavingsAccountStatusType;
 import org.mifos.connector.ams.common.util.BeanWalker;
 import org.mifos.connector.ams.fineract.currentaccount.response.CAGetResponse;
 import org.mifos.connector.ams.fineract.currentaccount.response.FineractResponse;
+import org.mifos.connector.ams.fineract.currentaccount.response.Identifier;
 import org.mifos.connector.ams.fineract.currentaccount.response.IdentifiersResponse;
 import org.mifos.connector.ams.fineract.currentaccount.response.PageFineractResponse;
 import org.mifos.connector.ams.log.EventLogUtil;
@@ -40,10 +41,10 @@ public class GetAccountDetailsFromAmsWorker extends AbstractAmsWorker {
     private String incomingMoneyApi;
 
     @Value("${ams.account-type-key.conversion}")
-    public String conversionSub;
+    private String conversionSub;
 
     @Value("${ams.account-type-key.disposal}")
-    public String disposalSub;
+    private String disposalSub;
     @Autowired
     private EventService eventService;
 
@@ -151,7 +152,7 @@ public class GetAccountDetailsFromAmsWorker extends AbstractAmsWorker {
                 outputVariables.put("disposalAccountAmsStatusType", disposalAccountStatusType);
 
             String internalAccountId = Optional.ofNullable(BeanWalker.of(disposalAccountIdentifiers).get(IdentifiersResponse::getSecondaryIdentifiers).get()).orElse(List.of())
-                    .stream().filter(x -> Objects.equals(x.getIdType(), "alias")).map(IdentifiersResponse.Identifier::getValue).findFirst().orElse("NOT_PROVIDED");
+                    .stream().filter(x -> Objects.equals(x.getIdType(), "alias")).map(Identifier::getValue).findFirst().orElse("NOT_PROVIDED");
             if (Objects.nonNull(conversionAccountId)) outputVariables.put("internalAccountId", internalAccountId);
 
             outputVariables.put("accountProductType", "CURRENT");

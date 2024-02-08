@@ -1,22 +1,14 @@
 package org.mifos.connector.ams.fineract.currentaccount.response;
 
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
 import java.util.List;
 
 @Data
 public class IdentifiersResponse {
-    List<Identifier> primaryIdentifiers;
-    List<Identifier> secondaryIdentifiers;
-
-    @Data
-    public class Identifier {
-        private String idType;
-        private String value;
-        private String subValue;
-
-    }
-
+    private List<Identifier> primaryIdentifiers;
+    private List<Identifier> secondaryIdentifiers;
 }
 
