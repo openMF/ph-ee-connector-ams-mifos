@@ -283,7 +283,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                     queryRunningBalance(internalCorrelationId, disposalAccountAmsId, tenantIdentifier, lastTransactionId)
                     : queryCurrentAccountBalance(apiPath, internalCorrelationId, disposalAccountAmsId, tenantIdentifier);
 
-            return Map.of("accountBalance", runningBalanceDerived.toString());
+            return Map.of("availableBalance", runningBalanceDerived.toString());
 
         } catch (JsonProcessingException e) {
             throw new RuntimeException("failed in revert", e);
@@ -309,7 +309,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                     ResponseEntity<String> responseEntity = restTemplate.exchange(url, HttpMethod.GET, new HttpEntity<>(headers), String.class);
                     String responseData = responseEntity.getBody();
                     event.setPayload(event.getPayload() + " -> " + responseData);
-                    return new JSONObject(responseData).getBigDecimal("availableBalance");
+                    return new JSONObject(responseData).getBigDecimal("accountBalance");
                 }
         );
     }
