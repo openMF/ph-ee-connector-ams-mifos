@@ -17,6 +17,7 @@ import iso.std.iso._20022.tech.json.pain_001_001.*;
 import iso.std.iso._20022.tech.xsd.pacs_004_001.PaymentTransactionInformation27;
 import jakarta.xml.bind.JAXBException;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 import org.mifos.connector.ams.common.SerializationHelper;
 import org.mifos.connector.ams.fineract.Config;
 import org.mifos.connector.ams.fineract.ConfigFactory;
@@ -102,6 +103,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                                            @Variable String transactionGroupId,
                                            @Variable String transactionCategoryPurposeCode,
                                            @Variable BigDecimal amount,
+                                           @Variable String currency,
                                            @Variable String transactionFeeCategoryPurposeCode,
                                            @Variable BigDecimal transactionFeeAmount,
                                            @Variable String tenantIdentifier,
@@ -119,6 +121,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                         transactionGroupId,
                         transactionCategoryPurposeCode,
                         amount,
+                        currency,
                         transactionFeeCategoryPurposeCode,
                         transactionFeeAmount,
                         tenantIdentifier,
@@ -136,6 +139,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                                     String transactionGroupId,
                                     String transactionCategoryPurposeCode,
                                     BigDecimal amount,
+                                    String currency,
                                     String transactionFeeCategoryPurposeCode,
                                     BigDecimal transactionFeeAmount,
                                     String tenantIdentifier,
@@ -170,17 +174,25 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
             String depositAmountConfigOperationKey = String.format("%s.%s", paymentScheme, depositAmountOperation);
             Integer depositAmountPaymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(depositAmountConfigOperationKey);
             String depositAmountPaymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(depositAmountConfigOperationKey);
-            String depositAmountBodyItem = painMapper.writeValueAsString(new TransactionBody(transactionDate, amount, depositAmountPaymentTypeId, "", FORMAT, locale));
-            batchItemBuilder.add(tenantIdentifier, items, disposalAccountDepositRelativeUrl, depositAmountBodyItem, false);
+            if (accountProductType.equalsIgnoreCase("SAVINGS")) {
+                String depositAmountCamt053 = painMapper.writeValueAsString(new TransactionBody(transactionDate, amount, depositAmountPaymentTypeId, "", FORMAT, locale));
+                batchItemBuilder.add(tenantIdentifier, items, disposalAccountDepositRelativeUrl, depositAmountCamt053, false);
+            } // // CURRENT account executes deposit and details in one step
 
             camt053Fragment.setAdditionalTransactionInformation(depositAmountPaymentTypeCode);
             camt053Entry.setCreditDebitIndicator(CreditDebitCode.CRDT);
             camt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "BOOKED"));
             String camt053 = serializationHelper.writeCamt053AsString(accountProductType, camt053Entry);
-            var camt053Body = painMapper.writeValueAsString(new DtSavingsTransactionDetails(internalCorrelationId, camt053, debtorIban, depositAmountPaymentTypeCode, transactionGroupId, creditorName, creditorIban, null, creditorId, unstructured, transactionCategoryPurposeCode, paymentScheme, conversionAccountAmsId, disposalAccountAmsId, endToEndId));
             String camt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
-            batchItemBuilder.add(tenantIdentifier, items, camt053RelativeUrl, camt053Body, true);
 
+            if (accountProductType.equalsIgnoreCase("SAVINGS")) {
+                String depositAmountTransactionBody = painMapper.writeValueAsString(new DtSavingsTransactionDetails(internalCorrelationId, camt053, debtorIban, depositAmountPaymentTypeCode, transactionGroupId, creditorName, creditorIban, null, creditorId, unstructured, transactionCategoryPurposeCode, paymentScheme, conversionAccountAmsId, disposalAccountAmsId, endToEndId));
+                batchItemBuilder.add(tenantIdentifier, items, camt053RelativeUrl, depositAmountTransactionBody, true);
+            } else {
+                String depositAmountTransactionBody = painMapper.writeValueAsString(new CurrentAccountTransactionBody(amount, FORMAT, locale, depositAmountPaymentTypeId, currency, List.of(
+                        new CurrentAccountTransactionBody.DataTable(List.of(new CurrentAccountTransactionBody.Entry(debtorIban, camt053, internalCorrelationId, creditorName, creditorIban)), "dt_current_transaction_details"))));
+                batchItemBuilder.add(tenantIdentifier, items, disposalAccountDepositRelativeUrl, depositAmountTransactionBody, false);
+            }
             // STEP 1b - re-deposit fee in disposal account
             if (!BigDecimal.ZERO.equals(transactionFeeAmount)) {
                 log.debug("Re-depositing fee {} in disposal account {}", transactionFeeAmount, disposalAccountAmsId);
@@ -193,19 +205,28 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                 pain001Camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001Document, camt053Fragment, transactionFeeCategoryPurposeCode);
                 pain001Camt053Mapper.refillOtherIdentification(pain001Document, camt053Fragment);
                 camt053 = serializationHelper.writeCamt053AsString(accountProductType, camt053Entry);
-                var depositFeeBodyItem = painMapper.writeValueAsString(new TransactionBody(transactionDate, transactionFeeAmount, depositFeePaymentTypeId, "", FORMAT, locale));
-                batchItemBuilder.add(tenantIdentifier, items, disposalAccountDepositRelativeUrl, depositFeeBodyItem, false);
 
-                camt053Body = painMapper.writeValueAsString(new DtSavingsTransactionDetails(transactionFeeInternalCorrelationId, camt053, debtorIban, depositFeePaymentTypeCode, transactionGroupId, creditorName, creditorIban, null, creditorId, unstructured, transactionFeeCategoryPurposeCode, paymentScheme, conversionAccountAmsId, disposalAccountAmsId, endToEndId));
-                batchItemBuilder.add(tenantIdentifier, items, camt053RelativeUrl, camt053Body, true);
+                if (accountProductType.equalsIgnoreCase("SAVINGS")) {
+                    String depositFeeBodyItem = painMapper.writeValueAsString(new TransactionBody(transactionDate, transactionFeeAmount, depositFeePaymentTypeId, "", FORMAT, locale));
+                    batchItemBuilder.add(tenantIdentifier, items, disposalAccountDepositRelativeUrl, depositFeeBodyItem, false);
+
+                    String depositFeeDetailsBody = painMapper.writeValueAsString(new DtSavingsTransactionDetails(transactionFeeInternalCorrelationId, camt053, debtorIban, depositFeePaymentTypeCode, transactionGroupId, creditorName, creditorIban, null, creditorId, unstructured, transactionFeeCategoryPurposeCode, paymentScheme, conversionAccountAmsId, disposalAccountAmsId, endToEndId));
+                    batchItemBuilder.add(tenantIdentifier, items, camt053RelativeUrl, depositFeeDetailsBody, true);
+                } else {  // CURRENT account executes withdrawal and details in one step
+                    String depositFeeTransactionBody = painMapper.writeValueAsString(new CurrentAccountTransactionBody(transactionFeeAmount, FORMAT, locale, depositFeePaymentTypeId, currency, List.of(
+                            new CurrentAccountTransactionBody.DataTable(List.of(new CurrentAccountTransactionBody.Entry(debtorIban, camt053, transactionFeeInternalCorrelationId, creditorName, creditorIban)), "dt_current_transaction_details")))
+                    );
+                    batchItemBuilder.add(tenantIdentifier, items, disposalAccountDepositRelativeUrl, depositFeeTransactionBody, false);
+                }
             }
 
             // STEP 2a - withdraw amount from conversion account
+            log.debug("Withdrawing {} from conversion account {}", amount, conversionAccountAmsId);
             String conversionAccountWithdrawRelativeUrl = String.format("%s%s/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "withdrawal");
             String withdrawAmountOperation = "revertInAms.ConversionAccount.WithdrawTransactionAmount";
             String withdrawAmountConfigOperationKey = String.format("%s.%s", paymentScheme, withdrawAmountOperation);
-            var withdrawAmountPaymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(withdrawAmountConfigOperationKey);
-            var withdrawAmountPaymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(withdrawAmountConfigOperationKey);
+            Integer withdrawAmountPaymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(withdrawAmountConfigOperationKey);
+            String withdrawAmountPaymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(withdrawAmountConfigOperationKey);
             camt053Fragment.setCreditDebitIndicator(CreditDebitCode.DBIT);
             camt053Fragment.setAdditionalTransactionInformation(withdrawAmountPaymentTypeCode);
             camt053Fragment.setSupplementaryData(new ArrayList<>());
@@ -215,10 +236,17 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
             camt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "BOOKED"));
             camt053 = serializationHelper.writeCamt053AsString(accountProductType, camt053Entry);
 
-            var withdrawAmountBodyItem = painMapper.writeValueAsString(new TransactionBody(transactionDate, amount, withdrawAmountPaymentTypeId, "", FORMAT, locale));
-            batchItemBuilder.add(tenantIdentifier, items, conversionAccountWithdrawRelativeUrl, withdrawAmountBodyItem, false);
-            camt053Body = painMapper.writeValueAsString(new DtSavingsTransactionDetails(internalCorrelationId, camt053, debtorIban, withdrawAmountPaymentTypeCode, transactionGroupId, creditorName, creditorIban, null, creditorId, unstructured, transactionCategoryPurposeCode, paymentScheme, conversionAccountAmsId, disposalAccountAmsId, endToEndId));
-            batchItemBuilder.add(tenantIdentifier, items, camt053RelativeUrl, camt053Body, true);
+            if (accountProductType.equalsIgnoreCase("SAVINGS")) {
+                String withdrawAmountBodyItem = painMapper.writeValueAsString(new TransactionBody(transactionDate, amount, withdrawAmountPaymentTypeId, "", FORMAT, locale));
+                batchItemBuilder.add(tenantIdentifier, items, conversionAccountWithdrawRelativeUrl, withdrawAmountBodyItem, false);
+                String withdrawAmountDetailsBody = painMapper.writeValueAsString(new DtSavingsTransactionDetails(internalCorrelationId, camt053, debtorIban, withdrawAmountPaymentTypeCode, transactionGroupId, creditorName, creditorIban, null, creditorId, unstructured, transactionCategoryPurposeCode, paymentScheme, conversionAccountAmsId, disposalAccountAmsId, endToEndId));
+                batchItemBuilder.add(tenantIdentifier, items, camt053RelativeUrl, withdrawAmountDetailsBody, true);
+            } else { // CURRENT account executes withdrawal and details in one step
+                String withdrawAmountTransactionBody = painMapper.writeValueAsString(new CurrentAccountTransactionBody(amount, FORMAT, locale, withdrawAmountPaymentTypeId, currency, List.of(
+                        new CurrentAccountTransactionBody.DataTable(List.of(new CurrentAccountTransactionBody.Entry(debtorIban, camt053, internalCorrelationId, creditorName, creditorIban)), "dt_current_transaction_details")))
+                );
+                batchItemBuilder.add(tenantIdentifier, items, conversionAccountWithdrawRelativeUrl, withdrawAmountTransactionBody, false);
+            }
 
             // STEP 2b - withdraw fee from conversion account
             if (!BigDecimal.ZERO.equals(transactionFeeAmount)) {
@@ -226,85 +254,93 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 
                 String withdrawFeeOperation = "revertInAms.ConversionAccount.WithdrawTransactionFee";
                 String withdrawFeeConfigOperationKey = String.format("%s.%s", paymentScheme, withdrawFeeOperation);
-                var withdrawFeePaymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(withdrawFeeConfigOperationKey);
-                var withdrawFeePaymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(withdrawFeeConfigOperationKey);
+                Integer withdrawFeePaymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(withdrawFeeConfigOperationKey);
+                String withdrawFeePaymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(withdrawFeeConfigOperationKey);
                 camt053Fragment.setAdditionalTransactionInformation(withdrawFeePaymentTypeCode);
                 camt053Fragment.setSupplementaryData(new ArrayList<>());
                 pain001Camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001Document, camt053Fragment, transactionFeeCategoryPurposeCode);
                 pain001Camt053Mapper.refillOtherIdentification(pain001Document, camt053Fragment);
                 camt053 = serializationHelper.writeCamt053AsString(accountProductType, camt053Entry);
 
-                var withdrawFeeBodyItem = painMapper.writeValueAsString(new TransactionBody(transactionDate, transactionFeeAmount, withdrawFeePaymentTypeId, "", FORMAT, locale));
-                batchItemBuilder.add(tenantIdentifier, items, conversionAccountWithdrawRelativeUrl, withdrawFeeBodyItem, false);
+                if (accountProductType.equalsIgnoreCase("SAVINGS")) {
+                    String withdrawFeeBodyItem = painMapper.writeValueAsString(new TransactionBody(transactionDate, transactionFeeAmount, withdrawFeePaymentTypeId, "", FORMAT, locale));
+                    batchItemBuilder.add(tenantIdentifier, items, conversionAccountWithdrawRelativeUrl, withdrawFeeBodyItem, false);
 
-                camt053Body = painMapper.writeValueAsString(new DtSavingsTransactionDetails(transactionFeeInternalCorrelationId, camt053, debtorIban, withdrawFeePaymentTypeCode, transactionGroupId, creditorName, creditorIban, null, creditorId, unstructured, transactionFeeCategoryPurposeCode, paymentScheme, conversionAccountAmsId, disposalAccountAmsId, endToEndId));
-                batchItemBuilder.add(tenantIdentifier, items, camt053RelativeUrl, camt053Body, true);
+                    String withdrawAmountDetailsBody = painMapper.writeValueAsString(new DtSavingsTransactionDetails(transactionFeeInternalCorrelationId, camt053, debtorIban, withdrawFeePaymentTypeCode, transactionGroupId, creditorName, creditorIban, null, creditorId, unstructured, transactionFeeCategoryPurposeCode, paymentScheme, conversionAccountAmsId, disposalAccountAmsId, endToEndId));
+                    batchItemBuilder.add(tenantIdentifier, items, camt053RelativeUrl, withdrawAmountDetailsBody, true);
+                } else {  // CURRENT account executes withdrawal and details in one step
+                    String withdrawFeeTransactionBody = painMapper.writeValueAsString(new CurrentAccountTransactionBody(transactionFeeAmount, FORMAT, locale, withdrawFeePaymentTypeId, currency, List.of(
+                            new CurrentAccountTransactionBody.DataTable(List.of(new CurrentAccountTransactionBody.Entry(debtorIban, camt053, transactionFeeInternalCorrelationId, creditorName, creditorIban)), "dt_current_transaction_details")))
+                    );
+                    batchItemBuilder.add(tenantIdentifier, items, conversionAccountWithdrawRelativeUrl, withdrawFeeTransactionBody, false);
+                }
             }
 
-            String lastTransactionId = doBatch(items,
-                    tenantIdentifier,
-                    disposalAccountAmsId,
-                    conversionAccountAmsId,
-                    internalCorrelationId,
-                    "revertInAms");
+            String lastTransactionId = doBatch(items, tenantIdentifier, disposalAccountAmsId, conversionAccountAmsId, internalCorrelationId, "revertInAms");
 
-            TransactionQueryBody tqBody = TransactionQueryBody.builder()
-                    .request(TransactionQueryRequest.builder()
-                            .baseQuery(TransactionQueryBaseQuery.builder()
-                                    .columnFilters(new TransactionQueryColumnFilter[]{TransactionQueryColumnFilter.builder()
-                                            .column("id")
-                                            .filters(new TransactionQueryFilter[]{TransactionQueryFilter.builder()
-                                                    .operator("EQ")
-                                                    .values(new String[]{lastTransactionId})
-                                                    .build()})
-                                            .build()})
-                                    .resultColumns(new String[]{"running_balance_derived"})
-                                    .build())
-                            .build())
-                    .dateFormat("yyyy-MM-dd")
-                    .locale("en")
-                    .page(0)
-                    .size(1)
-                    .sorts(new String[]{})
-                    .build();
-
-            HttpHeaders httpHeaders = new HttpHeaders();
-            httpHeaders.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
-            httpHeaders.set("Authorization", authTokenHelper.generateAuthToken());
-            httpHeaders.set("Fineract-Platform-TenantId", tenantIdentifier);
-            HttpEntity<TransactionQueryBody> tqEntity = new HttpEntity<>(tqBody, httpHeaders);
-            eventService.sendEvent(builder -> builder
-                    .setSourceModule("ams_connector")
-                    .setEvent("revertInAms")
-                    .setEventLogLevel(EventLogLevel.INFO)
-                    .setEventType(EventType.audit)
-                    .setPayload(tqEntity.toString())
-                    .setCorrelationIds(Map.of("CorrelationId", internalCorrelationId)));
-            TransactionQueryPayload tqResponse = restTemplate.exchange(
-                            String.format("%s/%s%s/transactions/query", fineractApiUrl, incomingMoneyApi.substring(1), disposalAccountAmsId),
-                            HttpMethod.POST,
-                            tqEntity,
-                            TransactionQueryPayload.class)
-                    .getBody();
-            eventService.sendEvent(builder -> builder
-                    .setEvent("revertInAms")
-                    .setSourceModule("ams_connector")
-                    .setEventLogLevel(EventLogLevel.INFO)
-                    .setEventType(EventType.audit)
-                    .setPayload(tqResponse.toString())
-                    .setCorrelationIds(Map.of("CorrelationId", internalCorrelationId)));
-
-            List<TransactionQueryContent> content = tqResponse.content();
-            if (content.isEmpty()) {
-                return Map.of("availableBalance", -1);
-            }
-            BigDecimal runningBalanceDerived = content.get(0).runningBalanceDerived().setScale(2, RoundingMode.HALF_UP);
+            BigDecimal runningBalanceDerived = queryRunningBalance(internalCorrelationId, disposalAccountAmsId, tenantIdentifier, lastTransactionId);
             return Map.of("availableBalance", runningBalanceDerived.toString());
 
         } catch (JsonProcessingException e) {
             throw new RuntimeException("failed in revert", e);
         } finally {
             MDC.remove("internalCorrelationId");
+        }
+    }
+
+    @NotNull
+    private BigDecimal queryRunningBalance(String internalCorrelationId, String disposalAccountAmsId, String tenantIdentifier, String lastTransactionId) {
+        TransactionQueryBody tqBody = TransactionQueryBody.builder()
+                .request(TransactionQueryRequest.builder()
+                        .baseQuery(TransactionQueryBaseQuery.builder()
+                                .columnFilters(new TransactionQueryColumnFilter[]{TransactionQueryColumnFilter.builder()
+                                        .column("id")
+                                        .filters(new TransactionQueryFilter[]{TransactionQueryFilter.builder()
+                                                .operator("EQ")
+                                                .values(new String[]{lastTransactionId})
+                                                .build()})
+                                        .build()})
+                                .resultColumns(new String[]{"running_balance_derived"})
+                                .build())
+                        .build())
+                .dateFormat("yyyy-MM-dd")
+                .locale("en")
+                .page(0)
+                .size(1)
+                .sorts(new String[]{})
+                .build();
+
+        HttpHeaders httpHeaders = new HttpHeaders();
+        httpHeaders.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
+        httpHeaders.set("Authorization", authTokenHelper.generateAuthToken());
+        httpHeaders.set("Fineract-Platform-TenantId", tenantIdentifier);
+        HttpEntity<TransactionQueryBody> tqEntity = new HttpEntity<>(tqBody, httpHeaders);
+        eventService.sendEvent(builder -> builder
+                .setSourceModule("ams_connector")
+                .setEvent("revertInAms")
+                .setEventLogLevel(EventLogLevel.INFO)
+                .setEventType(EventType.audit)
+                .setPayload(tqEntity.toString())
+                .setCorrelationIds(Map.of("CorrelationId", internalCorrelationId)));
+        TransactionQueryPayload tqResponse = restTemplate.exchange(
+                        String.format("%s/%s%s/transactions/query", fineractApiUrl, incomingMoneyApi.substring(1), disposalAccountAmsId),
+                        HttpMethod.POST,
+                        tqEntity,
+                        TransactionQueryPayload.class)
+                .getBody();
+        eventService.sendEvent(builder -> builder
+                .setEvent("revertInAms")
+                .setSourceModule("ams_connector")
+                .setEventLogLevel(EventLogLevel.INFO)
+                .setEventType(EventType.audit)
+                .setPayload(tqResponse.toString())
+                .setCorrelationIds(Map.of("CorrelationId", internalCorrelationId)));
+
+        List<TransactionQueryContent> content = tqResponse.content();
+        if (content.isEmpty()) {
+            return BigDecimal.valueOf(-1);
+        } else {
+            return content.get(0).runningBalanceDerived().setScale(2, RoundingMode.HALF_UP);
         }
     }
 
