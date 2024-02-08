@@ -153,7 +153,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
             List<TransactionItem> items = new ArrayList<>();
 
             // STEP 1a - batch: withdraw amount
-            String conversionAccountWithdrawalRelativeUrl = String.format("%s%s/transactions?command=%s", apiPath, conversionAccountAmsId, "withdrawal");
+            String currentAccountWithdrawalRelativeUrl = String.format("%s%s/transactions?command=%s", apiPath, conversionAccountAmsId, "withdrawal");
             String withdrawAmountOperation = "bookOnConversionAccountInAms.ConversionAccount.WithdrawTransactionAmount";
             String withdrawAmountConfigOperationKey = String.format("%s.%s", paymentScheme, withdrawAmountOperation);
             String withdrawAmountPaymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(withdrawAmountConfigOperationKey);
@@ -161,7 +161,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 
             if (accountProductType.equalsIgnoreCase("SAVINGS")) {
                 String withdrawAmountBodyItem = painMapper.writeValueAsString(new TransactionBody(transactionDate, amount, withdrawAmountPaymentTypeId, "", FORMAT, locale));
-                batchItemBuilder.add(tenantIdentifier, items, conversionAccountWithdrawalRelativeUrl, withdrawAmountBodyItem, false);
+                batchItemBuilder.add(tenantIdentifier, items, currentAccountWithdrawalRelativeUrl, withdrawAmountBodyItem, false);
             } // CURRENT account sends a single call only at the details step
 
 
@@ -180,7 +180,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
                 String withdrawAmountTransactionBody = painMapper.writeValueAsString(new CurrentAccountTransactionBody(amount, FORMAT, locale, withdrawAmountPaymentTypeId, currency, List.of(
                         new CurrentAccountTransactionBody.DataTable(List.of(new CurrentAccountTransactionBody.Entry(debtorIban, withdrawDetailsCamt053Entry, internalCorrelationId, creditorName, creditorIban)), "dt_current_transaction_details"))
                 ));
-                batchItemBuilder.add(tenantIdentifier, items, conversionAccountWithdrawalRelativeUrl, withdrawAmountTransactionBody, false);
+                batchItemBuilder.add(tenantIdentifier, items, currentAccountWithdrawalRelativeUrl, withdrawAmountTransactionBody, false);
             }
 
             // STEP 2c - batch: withdraw fee, if any
@@ -197,7 +197,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 
                 if (accountProductType.equalsIgnoreCase("SAVINGS")) {
                     String withdrawFeeBodyItem = painMapper.writeValueAsString(new TransactionBody(transactionDate, transactionFeeAmount, withdrawFeePaymentTypeId, "", FORMAT, locale));
-                    batchItemBuilder.add(tenantIdentifier, items, conversionAccountWithdrawalRelativeUrl, withdrawFeeBodyItem, false);
+                    batchItemBuilder.add(tenantIdentifier, items, currentAccountWithdrawalRelativeUrl, withdrawFeeBodyItem, false);
                 }
 
                 String withdrawFeeCamt053Entry = serializationHelper.writeCamt053AsString(accountProductType, convertedCamt053Entry);
@@ -209,7 +209,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
                     String withdrawFeeTransactionBody = painMapper.writeValueAsString(new CurrentAccountTransactionBody(transactionFeeAmount, FORMAT, locale, withdrawFeePaymentTypeId, currency, List.of(
                             new CurrentAccountTransactionBody.DataTable(List.of(new CurrentAccountTransactionBody.Entry(debtorIban, withdrawFeeCamt053Entry, transactionFeeInternalCorrelationId, creditorName, creditorIban)), "dt_current_transaction_details"))
                     ));
-                    batchItemBuilder.add(tenantIdentifier, items, conversionAccountWithdrawalRelativeUrl, withdrawFeeTransactionBody, false);
+                    batchItemBuilder.add(tenantIdentifier, items, currentAccountWithdrawalRelativeUrl, withdrawFeeTransactionBody, false);
                 }
             }
 
