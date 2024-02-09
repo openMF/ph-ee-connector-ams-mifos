@@ -236,7 +236,7 @@ public class GetAccountDetailsFromAmsWorker extends AbstractAmsWorker {
             log.trace("IBAN {} status is {}", iban, status);
             HashMap<String, Object> outputVariables = new HashMap<>();
             outputVariables.put("accountAmsStatus", status);
-            outputVariables.put("accountProductType", "SAVING");
+            outputVariables.put("accountProductType", "SAVINGS");
             outputVariables.put("conversionAccountAmsId", conversionAccountAmsId);
             outputVariables.put("disposalAccountAmsId", disposalAccountAmsId);
             outputVariables.put("disposalAccountFlags", flags);
