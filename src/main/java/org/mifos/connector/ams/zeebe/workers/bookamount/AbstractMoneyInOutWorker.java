@@ -1,9 +1,5 @@
 package org.mifos.connector.ams.zeebe.workers.bookamount;
 
-import static org.apache.hc.core5.http.HttpStatus.SC_CONFLICT;
-import static org.apache.hc.core5.http.HttpStatus.SC_LOCKED;
-import static org.apache.hc.core5.http.HttpStatus.SC_OK;
-
 import java.net.ConnectException;
 import java.net.SocketTimeoutException;
 import java.util.List;
@@ -40,6 +36,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.camunda.zeebe.spring.client.exception.ZeebeBpmnError;
 import lombok.extern.slf4j.Slf4j;
+
+import static org.apache.hc.core5.http.HttpStatus.*;
 
 @Component
 @Slf4j
@@ -419,6 +417,12 @@ public abstract class AbstractMoneyInOutWorker {
                         idempotencyPostfix++;
                         retryCount--;
                         continue retry;
+                    }
+                    case SC_FORBIDDEN -> {
+                        if (responseItem.getBody() != null && responseItem.getBody().contains("error.msg.overdraft.not.allowed")) {
+                            log.error("Overdraft is not allowed for request [{}]", idempotencyKey);
+                            throw new ZeebeBpmnError("Error_InsufficientFunds", "Insufficient funds");
+                        }
                     }
                     default -> throw new RuntimeException("An unexpected error occurred for request " + idempotencyKey + ": " + statusCode);
                 }
