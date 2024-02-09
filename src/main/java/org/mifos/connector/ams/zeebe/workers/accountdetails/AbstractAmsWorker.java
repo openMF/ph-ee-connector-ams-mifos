@@ -90,7 +90,7 @@ public abstract class AbstractAmsWorker {
                                                 .table("dt_current_account_flags")
                                                 .query(new Query().resultColumns(Set.of(currentAccountFlagResult))))))
                 .page(0)
-                .size(1);
+                .size(20);
 
 
         return exchangeCurrentFlagsStatus(UriComponentsBuilder
