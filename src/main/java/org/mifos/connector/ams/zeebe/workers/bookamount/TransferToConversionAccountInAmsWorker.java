@@ -357,7 +357,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
         String holdTransactionUrl = String.format("%s%s/transactions?command=holdAmount", incomingMoneyApi.substring(1), disposalAccountAmsId);
         batchItemBuilder.add(tenantIdentifier, items, holdTransactionUrl, bodyItem, false);
 
-        String holdAmountOperation = "transferToConversionAccountInAms.DisposalAccount.HoldTransactionAmount";
+        String holdAmountOperation = "outHoldReasonId";
         String paymentTypeCode = Optional.ofNullable(paymentTypeConfig.findPaymentTypeCodeByOperation(String.format("%s.%s", paymentScheme, holdAmountOperation))).orElse("");
         transactionDetails.setAdditionalTransactionInformation(paymentTypeCode);
         if (pain0011 != null) {
