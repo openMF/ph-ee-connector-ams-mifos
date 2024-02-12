@@ -423,6 +423,7 @@ public abstract class AbstractMoneyInOutWorker {
                             log.error("Overdraft is not allowed for request [{}]", idempotencyKey);
                             throw new ZeebeBpmnError("Error_InsufficientFunds", "Insufficient funds");
                         }
+                        throw new ZeebeBpmnError("Error_CaughtException", "Forbidden");
                     }
                     default -> throw new RuntimeException("An unexpected error occurred for request " + idempotencyKey + ": " + statusCode);
                 }
