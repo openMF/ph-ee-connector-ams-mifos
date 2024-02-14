@@ -44,14 +44,14 @@
         <appender-ref ref="WIRE_LOG"/>
     </logger>
 
-    <logger name="org" level="INFO"/>
     <logger name="com" level="INFO"/>
-    <logger name="org.apache.camel.health" level="INFO"/>
-    <logger name="org.apache.camel.impl.health" level="INFO"/>
     <logger name="io" level="INFO"/>
+    <logger name="org" level="INFO"/>
+    <logger name="software" level="INFO"/>
+
+    <logger name="hu.dpc" level="DEBUG"/>
     <logger name="io.camunda.zeebe" level="DEBUG"/>
-    <logger name="hu.dpc" level="INFO"/>
-    <logger name="org.mifos.connector.ams" level="INFO" />
+    <logger name="org.mifos.connector.ams" level="DEBUG" />
 
     <root level="DEBUG">
         <appender-ref ref="CONSOLE"/>
