@@ -42,16 +42,11 @@ public class SerializationHelper {
     EntryTransaction10 removeFieldsFromCurrentAccount(EntryTransaction10 transactionDetail) {
         transactionDetail.setAmountDetails(null);
         transactionDetail.setAdditionalTransactionInformation(null);
-
-        logger.info("removing supplementaryData from transactionDetails: " + transactionDetail.getSupplementaryData());
         transactionDetail.getSupplementaryData().forEach(data -> {
             try {
                 Object omSupplementaryData = data.getEnvelope().getAdditionalProperties().get("OrderManagerSupplementaryData");
                 if (omSupplementaryData == null) return;
-
-                logger.debug("ordermanager supplementaryData: " + omSupplementaryData + " - type: " + omSupplementaryData.getClass().getName());
                 ((Map) omSupplementaryData).remove("transactionCreationChannel");
-                logger.info("removed supplementaryData from transactionDetail: " + transactionDetail.getSupplementaryData());
             } catch (Exception e) {
                 logger.warn("failed to remove supplementaryData from transactionDetail: " + transactionDetail.getSupplementaryData(), e);
             }
