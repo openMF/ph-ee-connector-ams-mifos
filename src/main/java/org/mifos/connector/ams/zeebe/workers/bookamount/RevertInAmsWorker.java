@@ -167,6 +167,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
             String creditorName = creditTransferTransaction.getCreditor().getName();
             String creditorIban = creditTransferTransaction.getCreditorAccount().getIdentification().getIban();
             String endToEndId = creditTransferTransaction.getPaymentIdentification().getEndToEndIdentification();
+            String partnerAccountSecondaryIdentifier = contactDetailsUtil.getId(pain001Document.getPaymentInformation().get(0).getDebtor().getContactDetails());
 
             List<TransactionItem> items = new ArrayList<>();
 
@@ -191,7 +192,23 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                 batchItemBuilder.add(tenantIdentifier, items, savingsAccountDetailsRelativeUrl, depositAmountTransactionBody, true);
             } else {
                 String depositAmountTransactionBody = painMapper.writeValueAsString(new CurrentAccountTransactionBody(amount, FORMAT, locale, depositAmountPaymentTypeId, currency, List.of(
-                        new CurrentAccountTransactionBody.DataTable(List.of(new CurrentAccountTransactionBody.Entry(debtorIban, camt053, internalCorrelationId, creditorName, creditorIban)), "dt_current_transaction_details"))));
+                        new CurrentAccountTransactionBody.DataTable(List.of(new CurrentAccountTransactionBody.Entry(
+                                debtorIban,
+                                camt053,
+                                internalCorrelationId,
+                                creditorName,
+                                creditorIban,
+                                transactionGroupId,
+                                endToEndId,
+                                transactionCategoryPurposeCode,
+                                paymentScheme,
+                                unstructured,
+                                conversionAccountAmsId,
+                                disposalAccountAmsId,
+                                partnerAccountSecondaryIdentifier,
+                                null,
+                                null
+                        )), "dt_current_transaction_details"))));
                 batchItemBuilder.add(tenantIdentifier, items, disposalAccountDepositRelativeUrl, depositAmountTransactionBody, false);
             }
             // STEP 1b - re-deposit fee in disposal account
@@ -215,7 +232,23 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                     batchItemBuilder.add(tenantIdentifier, items, savingsAccountDetailsRelativeUrl, depositFeeDetailsBody, true);
                 } else {  // CURRENT account executes withdrawal and details in one step
                     String depositFeeTransactionBody = painMapper.writeValueAsString(new CurrentAccountTransactionBody(transactionFeeAmount, FORMAT, locale, depositFeePaymentTypeId, currency, List.of(
-                            new CurrentAccountTransactionBody.DataTable(List.of(new CurrentAccountTransactionBody.Entry(debtorIban, camt053, transactionFeeInternalCorrelationId, creditorName, creditorIban)), "dt_current_transaction_details")))
+                            new CurrentAccountTransactionBody.DataTable(List.of(new CurrentAccountTransactionBody.Entry(
+                                    debtorIban,
+                                    camt053,
+                                    transactionFeeInternalCorrelationId,
+                                    creditorName,
+                                    creditorIban,
+                                    transactionGroupId,
+                                    endToEndId,
+                                    transactionFeeCategoryPurposeCode,
+                                    paymentScheme,
+                                    unstructured,
+                                    disposalAccountAmsId,
+                                    conversionAccountAmsId,
+                                    partnerAccountSecondaryIdentifier,
+                                    null,
+                                    null
+                                    )), "dt_current_transaction_details")))
                     );
                     batchItemBuilder.add(tenantIdentifier, items, disposalAccountDepositRelativeUrl, depositFeeTransactionBody, false);
                 }
@@ -243,7 +276,23 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                 batchItemBuilder.add(tenantIdentifier, items, savingsAccountDetailsRelativeUrl, withdrawAmountDetailsBody, true);
             } else { // CURRENT account executes withdrawal and details in one step
                 String withdrawAmountTransactionBody = painMapper.writeValueAsString(new CurrentAccountTransactionBody(amount, FORMAT, locale, withdrawAmountPaymentTypeId, currency, List.of(
-                        new CurrentAccountTransactionBody.DataTable(List.of(new CurrentAccountTransactionBody.Entry(debtorIban, camt053, internalCorrelationId, creditorName, creditorIban)), "dt_current_transaction_details")))
+                        new CurrentAccountTransactionBody.DataTable(List.of(new CurrentAccountTransactionBody.Entry(
+                                debtorIban,
+                                camt053,
+                                internalCorrelationId,
+                                creditorName,
+                                creditorIban,
+                                transactionGroupId,
+                                endToEndId,
+                                transactionCategoryPurposeCode,
+                                paymentScheme,
+                                unstructured,
+                                disposalAccountAmsId,
+                                conversionAccountAmsId,
+                                partnerAccountSecondaryIdentifier,
+                                null,
+                                null
+                                )), "dt_current_transaction_details")))
                 );
                 batchItemBuilder.add(tenantIdentifier, items, conversionAccountWithdrawRelativeUrl, withdrawAmountTransactionBody, false);
             }
@@ -270,7 +319,23 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                     batchItemBuilder.add(tenantIdentifier, items, savingsAccountDetailsRelativeUrl, withdrawAmountDetailsBody, true);
                 } else {  // CURRENT account executes withdrawal and details in one step
                     String withdrawFeeTransactionBody = painMapper.writeValueAsString(new CurrentAccountTransactionBody(transactionFeeAmount, FORMAT, locale, withdrawFeePaymentTypeId, currency, List.of(
-                            new CurrentAccountTransactionBody.DataTable(List.of(new CurrentAccountTransactionBody.Entry(debtorIban, camt053, transactionFeeInternalCorrelationId, creditorName, creditorIban)), "dt_current_transaction_details")))
+                            new CurrentAccountTransactionBody.DataTable(List.of(new CurrentAccountTransactionBody.Entry(
+                                    debtorIban,
+                                    camt053,
+                                    transactionFeeInternalCorrelationId,
+                                    creditorName,
+                                    creditorIban,
+                                    transactionGroupId,
+                                    endToEndId,
+                                    transactionFeeCategoryPurposeCode,
+                                    paymentScheme,
+                                    unstructured,
+                                    disposalAccountAmsId,
+                                    conversionAccountAmsId,
+                                    partnerAccountSecondaryIdentifier,
+                                    null,
+                                    null
+                            )), "dt_current_transaction_details")))
                     );
                     batchItemBuilder.add(tenantIdentifier, items, conversionAccountWithdrawRelativeUrl, withdrawFeeTransactionBody, false);
                 }

@@ -35,6 +35,15 @@ public class CurrentAccountTransactionBody {
         private String internal_correlation_id;
         private String partner_name;
         private String partner_account_iban;
+        private String transaction_group_id;
+        private String end_to_end_id;
+        private String category_purpose_code;
+        private String payment_scheme;
+        private String remittance_information_unstructured;
+        private String source_ams_account_id;
+        private String target_ams_account_id;
+        private String partner_secondary_identifier;  // secondary
+        private String partner_account_internal_account_id; // onus / ig2
+        private String valueDated; // onus / ig2
     }
 }
-

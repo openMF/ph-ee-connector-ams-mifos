@@ -133,15 +133,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
             String depositAmountConfigOperationKey = String.format("%s.%s", paymentScheme, depositAmountOperation);
             var paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(depositAmountConfigOperationKey);
             var paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(depositAmountConfigOperationKey);
-
-            var body = new TransactionBody(
-                    transactionDate,
-                    amount,
-                    paymentTypeId,
-                    "",
-                    FORMAT,
-                    locale);
-
+            var body = new TransactionBody(transactionDate, amount, paymentTypeId, "", FORMAT, locale);
             var bodyItem = painMapper.writeValueAsString(body);
 
             batchItemBuilder.add(tenantIdentifier, items, disposalAccountDepositRelativeUrl, bodyItem, false);

@@ -210,7 +210,23 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 
             } else {  // CURRENT account executes withdrawal and details in one step
                 String withdrawAmountTransactionBody = painMapper.writeValueAsString(new CurrentAccountTransactionBody(amount, FORMAT, locale, withdrawAmountPaymentTypeId, currency, List.of(
-                        new CurrentAccountTransactionBody.DataTable(List.of(new CurrentAccountTransactionBody.Entry(debtorIban, withdrawAmountCamt053, internalCorrelationId, partnerName, partnerAccountIban)), "dt_current_transaction_details"))
+                        new CurrentAccountTransactionBody.DataTable(List.of(new CurrentAccountTransactionBody.Entry(
+                                debtorIban,
+                                withdrawAmountCamt053,
+                                internalCorrelationId,
+                                partnerName,
+                                partnerAccountIban,
+                                transactionGroupId,
+                                endToEndId,
+                                transactionCategoryPurposeCode,
+                                paymentScheme,
+                                unstructured,
+                                disposalAccountAmsId,
+                                conversionAccountAmsId,
+                                partnerAccountSecondaryIdentifier,
+                                null,
+                                null
+                        )), "dt_current_transaction_details"))
                 ));
                 batchItemBuilder.add(tenantIdentifier, items, disposalAccountWithdrawRelativeUrl, withdrawAmountTransactionBody, false);
             }
@@ -250,7 +266,23 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 
                 } else { // CURRENT account executes withdrawal and details in one step
                     String withdrawFeeTransactionBody = painMapper.writeValueAsString(new CurrentAccountTransactionBody(transactionFeeAmount, FORMAT, locale, withdrawFeePaymentTypeId, currency, List.of(
-                            new CurrentAccountTransactionBody.DataTable(List.of(new CurrentAccountTransactionBody.Entry(debtorIban, withdrawFeeCamt053, transactionFeeInternalCorrelationId, partnerName, partnerAccountIban)), "dt_current_transaction_details"))
+                            new CurrentAccountTransactionBody.DataTable(List.of(new CurrentAccountTransactionBody.Entry(
+                                    debtorIban,
+                                    withdrawFeeCamt053,
+                                    transactionFeeInternalCorrelationId,
+                                    partnerName,
+                                    partnerAccountIban,
+                                    transactionGroupId,
+                                    endToEndId,
+                                    transactionFeeCategoryPurposeCode,
+                                    paymentScheme,
+                                    unstructured,
+                                    disposalAccountAmsId,
+                                    conversionAccountAmsId,
+                                    partnerAccountSecondaryIdentifier,
+                                    null,
+                                    null
+                                    )), "dt_current_transaction_details"))
                     ));
                     batchItemBuilder.add(tenantIdentifier, items, disposalAccountWithdrawRelativeUrl, withdrawFeeTransactionBody, false);
                 }
@@ -291,7 +323,23 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
                 batchItemBuilder.add(tenantIdentifier, items, "datatables/dt_savings_transaction_details/$.resourceId", depositAmountCamt053Body, true);
             } else { // CURRENT account executes deposit amount and details in one step
                 String depositAmountTransactionBody = painMapper.writeValueAsString(new CurrentAccountTransactionBody(amount, FORMAT, locale, depositAmountPaymentTypeId, currency, List.of(
-                        new CurrentAccountTransactionBody.DataTable(List.of(new CurrentAccountTransactionBody.Entry(debtorIban, depositAmountCamt053, internalCorrelationId, partnerName, partnerAccountIban)), "dt_current_transaction_details"))
+                        new CurrentAccountTransactionBody.DataTable(List.of(new CurrentAccountTransactionBody.Entry(
+                                debtorIban,
+                                depositAmountCamt053,
+                                internalCorrelationId,
+                                partnerName,
+                                partnerAccountIban,
+                                transactionGroupId,
+                                endToEndId,
+                                transactionCategoryPurposeCode,
+                                paymentScheme,
+                                unstructured,
+                                disposalAccountAmsId,
+                                conversionAccountAmsId,
+                                partnerAccountSecondaryIdentifier,
+                                null,
+                                null
+                        )), "dt_current_transaction_details"))
                 ));
                 batchItemBuilder.add(tenantIdentifier, items, conversionAccountDepositRelativeUrl, depositAmountTransactionBody, false);
             }
@@ -331,7 +379,23 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
                     batchItemBuilder.add(tenantIdentifier, items, "datatables/dt_savings_transaction_details/$.resourceId", depositFeeCamt053Body, true);
                 } else { // CURRENT account executes deposit fee and details in one step
                     String depositFeeTransactionBody = painMapper.writeValueAsString(new CurrentAccountTransactionBody(transactionFeeAmount, FORMAT, locale, depositFeePaymentTypeId, currency, List.of(
-                            new CurrentAccountTransactionBody.DataTable(List.of(new CurrentAccountTransactionBody.Entry(debtorIban, depositFeeCamt053, transactionFeeInternalCorrelationId, partnerName, partnerAccountIban)), "dt_current_transaction_details"))
+                            new CurrentAccountTransactionBody.DataTable(List.of(new CurrentAccountTransactionBody.Entry(
+                                    debtorIban,
+                                    depositFeeCamt053,
+                                    transactionFeeInternalCorrelationId,
+                                    partnerName,
+                                    partnerAccountIban,
+                                    transactionGroupId,
+                                    endToEndId,
+                                    transactionFeeCategoryPurposeCode,
+                                    paymentScheme,
+                                    unstructured,
+                                    disposalAccountAmsId,
+                                    conversionAccountAmsId,
+                                    partnerAccountSecondaryIdentifier,
+                                    null,
+                                    null
+                            )), "dt_current_transaction_details"))
                     ));
                     batchItemBuilder.add(tenantIdentifier, items, conversionAccountDepositRelativeUrl, depositFeeTransactionBody, false);
                 }

@@ -151,6 +151,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
             String creditorIban = creditTransferTransaction.getCreditorAccount().getIdentification().getIban();
             String creditorName = creditor.getName();
             List<TransactionItem> items = new ArrayList<>();
+            String partnerAccountSecondaryIdentifier = contactDetailsUtil.getId(pain001.getDocument().getPaymentInformation().get(0).getDebtor().getContactDetails());
 
             // STEP 1a - batch: withdraw amount
             String currentAccountWithdrawalRelativeUrl = String.format("%s%s/transactions?command=%s", apiPath, conversionAccountAmsId, "withdrawal");
@@ -178,7 +179,23 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
                 batchItemBuilder.add(tenantIdentifier, items, withdrawDetailsCamt053RelativeUrl, withdrawDetailsCamt053Body, true);
             } else {  // CURRENT account executes withdrawal and details in one step
                 String withdrawAmountTransactionBody = painMapper.writeValueAsString(new CurrentAccountTransactionBody(amount, FORMAT, locale, withdrawAmountPaymentTypeId, currency, List.of(
-                        new CurrentAccountTransactionBody.DataTable(List.of(new CurrentAccountTransactionBody.Entry(debtorIban, withdrawDetailsCamt053Entry, internalCorrelationId, creditorName, creditorIban)), "dt_current_transaction_details"))
+                        new CurrentAccountTransactionBody.DataTable(List.of(new CurrentAccountTransactionBody.Entry(
+                                debtorIban,
+                                withdrawDetailsCamt053Entry,
+                                internalCorrelationId,
+                                creditorName,
+                                creditorIban,
+                                transactionGroupId,
+                                endToEndId,
+                                transactionCategoryPurposeCode,
+                                paymentScheme,
+                                unstructured,
+                                conversionAccountAmsId,
+                                null,
+                                partnerAccountSecondaryIdentifier,
+                                null,
+                                null
+                        )), "dt_current_transaction_details"))
                 ));
                 batchItemBuilder.add(tenantIdentifier, items, currentAccountWithdrawalRelativeUrl, withdrawAmountTransactionBody, false);
             }
@@ -207,7 +224,23 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
                     batchItemBuilder.add(tenantIdentifier, items, withdrawDetailsCamt053RelativeUrl, withdrawFeeDetailsCamt053Body, true);
                 } else {  // CURRENT account executes withdrawal and details in one step
                     String withdrawFeeTransactionBody = painMapper.writeValueAsString(new CurrentAccountTransactionBody(transactionFeeAmount, FORMAT, locale, withdrawFeePaymentTypeId, currency, List.of(
-                            new CurrentAccountTransactionBody.DataTable(List.of(new CurrentAccountTransactionBody.Entry(debtorIban, withdrawFeeCamt053Entry, transactionFeeInternalCorrelationId, creditorName, creditorIban)), "dt_current_transaction_details"))
+                            new CurrentAccountTransactionBody.DataTable(List.of(new CurrentAccountTransactionBody.Entry(
+                                    debtorIban,
+                                    withdrawFeeCamt053Entry,
+                                    transactionFeeInternalCorrelationId,
+                                    creditorName,
+                                    creditorIban,
+                                    transactionGroupId,
+                                    endToEndId,
+                                    transactionFeeCategoryPurposeCode,
+                                    paymentScheme,
+                                    unstructured,
+                                    conversionAccountAmsId,
+                                    null,
+                                    partnerAccountSecondaryIdentifier,
+                                    null,
+                                    null
+                            )), "dt_current_transaction_details"))
                     ));
                     batchItemBuilder.add(tenantIdentifier, items, currentAccountWithdrawalRelativeUrl, withdrawFeeTransactionBody, false);
                 }
