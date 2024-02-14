@@ -10,7 +10,6 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
-import java.util.Optional;
 
 @Component
 public class SerializationHelper {
@@ -38,20 +37,22 @@ public class SerializationHelper {
         }
     }
 
-    private EntryTransaction10 removeFieldsFromCurrentAccount(EntryTransaction10 transactionDetail) {
+    EntryTransaction10 removeFieldsFromCurrentAccount(EntryTransaction10 transactionDetail) {
         transactionDetail.setAmountDetails(null);
         transactionDetail.setAdditionalTransactionInformation(null);
 
         try {
             logger.info("removing supplementaryData from transactionDetail: " + transactionDetail.getSupplementaryData());
-            Optional.ofNullable(transactionDetail.getSupplementaryData())
-                    .map(it -> it.get(0))
-                    .map(it -> it.getEnvelope())
-                    .map(it -> it.getAdditionalProperties())
-                    .map(it -> it.get("OrderManagerSupplementaryData"))
-                    .map(it -> ((Map) it).remove("transactionCreationChannel"));
+            Object omSupplementaryData = transactionDetail.getSupplementaryData()
+                    .get(0)
+                    .getEnvelope()
+                    .getAdditionalProperties()
+                    .get("OrderManagerSupplementaryData");
+            logger.debug("ordermanager supplementaryData: " + omSupplementaryData + " - type: " + omSupplementaryData.getClass().getName());
+            ((Map) omSupplementaryData).remove("transactionCreationChannel");
             logger.info("removed supplementaryData from transactionDetail: " + transactionDetail.getSupplementaryData());
-        } catch (Exception ignore) {
+        } catch (Exception e) {
+            logger.warn("failed to remove supplementaryData from transactionDetail: " + transactionDetail.getSupplementaryData(), e);
         }
         return transactionDetail;
     }

@@ -59,7 +59,8 @@ class TestRevertInAmsWorker {
                 "transactionFeeCategoryPurposeCode",
                 BigDecimal.ONE,
                 "binx",
-                "CURRENT"
+                "CURRENT",
+                null
         );
 
         logger.info("output: {}", output);
@@ -95,7 +96,8 @@ class TestRevertInAmsWorker {
                 "transactionFeeCategoryPurposeCode",
                 BigDecimal.ONE,
                 "binx",
-                "SAVINGS"
+                "SAVINGS",
+                null
         );
 
         logger.info("output: {}", output);
