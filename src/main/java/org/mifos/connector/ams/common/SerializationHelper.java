@@ -3,12 +3,14 @@ package org.mifos.connector.ams.common;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import iso.std.iso._20022.tech.json.camt_053_001.EntryTransaction10;
 import iso.std.iso._20022.tech.json.camt_053_001.ReportEntry10;
+import iso.std.iso._20022.tech.json.camt_053_001.SupplementaryData1;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.Map;
 
 @Component
@@ -41,24 +43,19 @@ public class SerializationHelper {
         transactionDetail.setAmountDetails(null);
         transactionDetail.setAdditionalTransactionInformation(null);
 
-        try {
-            logger.info("removing supplementaryData from transactionDetail: " + transactionDetail.getSupplementaryData());
-            Map<String, Object> additionalProperties = transactionDetail.getSupplementaryData()
-                    .get(0)
-                    .getEnvelope()
-                    .getAdditionalProperties();
-            logger.debug("additionalProperties: " + additionalProperties);
-            additionalProperties.keySet().forEach(key -> {
-                logger.debug("key: " + key + " - value: " + additionalProperties.get(key));
-                logger.debug("key type: " + key.getClass().getName() + " - value type: " + additionalProperties.get(key).getClass().getName());
-            });
-            Object omSupplementaryData = additionalProperties.get("OrderManagerSupplementaryData");
-            logger.debug("ordermanager supplementaryData: " + omSupplementaryData + " - type: " + omSupplementaryData.getClass().getName());
-            ((Map) omSupplementaryData).remove("transactionCreationChannel");
-            logger.info("removed supplementaryData from transactionDetail: " + transactionDetail.getSupplementaryData());
-        } catch (Exception e) {
-            logger.warn("failed to remove supplementaryData from transactionDetail: " + transactionDetail.getSupplementaryData(), e);
-        }
+        logger.info("removing supplementaryData from transactionDetails: " + transactionDetail.getSupplementaryData());
+        transactionDetail.getSupplementaryData().forEach(data -> {
+            try {
+                Object omSupplementaryData = data.getEnvelope().getAdditionalProperties().get("OrderManagerSupplementaryData");
+                if (omSupplementaryData == null) return;
+
+                logger.debug("ordermanager supplementaryData: " + omSupplementaryData + " - type: " + omSupplementaryData.getClass().getName());
+                ((Map) omSupplementaryData).remove("transactionCreationChannel");
+                logger.info("removed supplementaryData from transactionDetail: " + transactionDetail.getSupplementaryData());
+            } catch (Exception e) {
+                logger.warn("failed to remove supplementaryData from transactionDetail: " + transactionDetail.getSupplementaryData(), e);
+            }
+        });
         return transactionDetail;
     }
 }
