@@ -105,7 +105,8 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                                            @Variable String transactionFeeCategoryPurposeCode,
                                            @Variable BigDecimal transactionFeeAmount,
                                            @Variable String tenantIdentifier,
-                                           @Variable String accountProductType
+                                           @Variable String accountProductType,
+                                           @Variable String valueDated
     ) {
         return eventService.auditedEvent(
                 eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "revertInAms", internalCorrelationId, transactionGroupId, eventBuilder),
@@ -123,7 +124,8 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                         transactionFeeCategoryPurposeCode,
                         transactionFeeAmount,
                         tenantIdentifier,
-                        accountProductType
+                        accountProductType,
+                        valueDated
                 ));
     }
 
@@ -141,7 +143,8 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                                     String transactionFeeCategoryPurposeCode,
                                     BigDecimal transactionFeeAmount,
                                     String tenantIdentifier,
-                                    String accountProductType
+                                    String accountProductType,
+                                    String valueDated
     ) {
         try {
             // STEP 0 - collect / extract information
@@ -207,7 +210,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                                 disposalAccountAmsId,
                                 partnerAccountSecondaryIdentifier,
                                 null,
-                                null
+                                valueDated
                         )), "dt_current_transaction_details"))));
                 batchItemBuilder.add(tenantIdentifier, items, disposalAccountDepositRelativeUrl, depositAmountTransactionBody, false);
             }
@@ -247,7 +250,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                                     conversionAccountAmsId,
                                     partnerAccountSecondaryIdentifier,
                                     null,
-                                    null
+                                    valueDated
                                     )), "dt_current_transaction_details")))
                     );
                     batchItemBuilder.add(tenantIdentifier, items, disposalAccountDepositRelativeUrl, depositFeeTransactionBody, false);
@@ -291,7 +294,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                                 conversionAccountAmsId,
                                 partnerAccountSecondaryIdentifier,
                                 null,
-                                null
+                                valueDated
                                 )), "dt_current_transaction_details")))
                 );
                 batchItemBuilder.add(tenantIdentifier, items, conversionAccountWithdrawRelativeUrl, withdrawAmountTransactionBody, false);
@@ -334,7 +337,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                                     conversionAccountAmsId,
                                     partnerAccountSecondaryIdentifier,
                                     null,
-                                    null
+                                    valueDated
                             )), "dt_current_transaction_details")))
                     );
                     batchItemBuilder.add(tenantIdentifier, items, conversionAccountWithdrawRelativeUrl, withdrawFeeTransactionBody, false);

@@ -102,7 +102,9 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
                                                  @Variable String conversionAccountAmsId,
                                                  @Variable String tenantIdentifier,
                                                  @Variable String transactionFeeInternalCorrelationId,
-                                                 @Variable String accountProductType) {
+                                                 @Variable String accountProductType,
+                                                 @Variable String valueDated
+                                                 ) {
         log.info("transferToConversionAccountInAms");
         eventService.auditedEvent(
                 eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "transferToConversionAccountInAms", internalCorrelationId, transactionGroupId, eventBuilder),
@@ -119,7 +121,8 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
                         conversionAccountAmsId,
                         tenantIdentifier,
                         transactionFeeInternalCorrelationId,
-                        accountProductType));
+                        accountProductType,
+                        valueDated));
     }
 
     @SuppressWarnings("unchecked")
@@ -136,7 +139,8 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
                                                   String conversionAccountAmsId,
                                                   String tenantIdentifier,
                                                   String transactionFeeInternalCorrelationId,
-                                                  String accountProductType) {
+                                                  String accountProductType,
+                                                  String valueDated) {
         try {
             // STEP 0 - collect / extract information
             String transactionDate = LocalDate.now().format(PATTERN);
@@ -225,7 +229,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
                                 conversionAccountAmsId,
                                 partnerAccountSecondaryIdentifier,
                                 null,
-                                null
+                                valueDated
                         )), "dt_current_transaction_details"))
                 ));
                 batchItemBuilder.add(tenantIdentifier, items, disposalAccountWithdrawRelativeUrl, withdrawAmountTransactionBody, false);
@@ -281,7 +285,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
                                     conversionAccountAmsId,
                                     partnerAccountSecondaryIdentifier,
                                     null,
-                                    null
+                                    valueDated
                                     )), "dt_current_transaction_details"))
                     ));
                     batchItemBuilder.add(tenantIdentifier, items, disposalAccountWithdrawRelativeUrl, withdrawFeeTransactionBody, false);
@@ -338,7 +342,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
                                 conversionAccountAmsId,
                                 partnerAccountSecondaryIdentifier,
                                 null,
-                                null
+                                valueDated
                         )), "dt_current_transaction_details"))
                 ));
                 batchItemBuilder.add(tenantIdentifier, items, conversionAccountDepositRelativeUrl, depositAmountTransactionBody, false);
@@ -394,7 +398,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
                                     conversionAccountAmsId,
                                     partnerAccountSecondaryIdentifier,
                                     null,
-                                    null
+                                    valueDated
                             )), "dt_current_transaction_details"))
                     ));
                     batchItemBuilder.add(tenantIdentifier, items, conversionAccountDepositRelativeUrl, depositFeeTransactionBody, false);

@@ -95,7 +95,9 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
                                              @Variable BigDecimal transactionFeeAmount,
                                              @Variable String tenantIdentifier,
                                              @Variable String debtorIban,
-                                             @Variable String accountProductType) {
+                                             @Variable String accountProductType,
+                                             @Variable String valueDated
+                                             ) {
         log.info("bookOnConversionAccountInAms");
         eventService.auditedEvent(
                 eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "bookOnConversionAccountInAms", internalCorrelationId, transactionGroupId, eventBuilder),
@@ -113,7 +115,8 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
                         transactionFeeAmount,
                         tenantIdentifier,
                         debtorIban,
-                        accountProductType));
+                        accountProductType,
+                        valueDated));
     }
 
     private Void bookOnConversionAccountInAms(String originalPain001,
@@ -130,7 +133,8 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
                                               BigDecimal transactionFeeAmount,
                                               String tenantIdentifier,
                                               String debtorIban,
-                                              String accountProductType) {
+                                              String accountProductType,
+                                              String valueDated) {
         try {
             // STEP 0 - collect / extract information
             MDC.put("internalCorrelationId", internalCorrelationId);
@@ -194,7 +198,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
                                 null,
                                 partnerAccountSecondaryIdentifier,
                                 null,
-                                null
+                                valueDated
                         )), "dt_current_transaction_details"))
                 ));
                 batchItemBuilder.add(tenantIdentifier, items, currentAccountWithdrawalRelativeUrl, withdrawAmountTransactionBody, false);
@@ -239,7 +243,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
                                     null,
                                     partnerAccountSecondaryIdentifier,
                                     null,
-                                    null
+                                    valueDated
                             )), "dt_current_transaction_details"))
                     ));
                     batchItemBuilder.add(tenantIdentifier, items, currentAccountWithdrawalRelativeUrl, withdrawFeeTransactionBody, false);
