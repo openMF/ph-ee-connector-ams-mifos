@@ -9,6 +9,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
+import java.util.Map;
+import java.util.Optional;
+
 @Component
 public class SerializationHelper {
     private Logger logger = LoggerFactory.getLogger(this.getClass());
@@ -38,7 +41,18 @@ public class SerializationHelper {
     private EntryTransaction10 removeFieldsFromCurrentAccount(EntryTransaction10 transactionDetail) {
         transactionDetail.setAmountDetails(null);
         transactionDetail.setAdditionalTransactionInformation(null);
-        transactionDetail.setSupplementaryData(null);
+
+        try {
+            logger.info("removing supplementaryData from transactionDetail: " + transactionDetail.getSupplementaryData());
+            Optional.ofNullable(transactionDetail.getSupplementaryData())
+                    .map(it -> it.get(0))
+                    .map(it -> it.getEnvelope())
+                    .map(it -> it.getAdditionalProperties())
+                    .map(it -> it.get("OrderManagerSupplementaryData"))
+                    .map(it -> ((Map) it).remove("transactionCreationChannel"));
+            logger.info("removed supplementaryData from transactionDetail: " + transactionDetail.getSupplementaryData());
+        } catch (Exception ignore) {
+        }
         return transactionDetail;
     }
 }

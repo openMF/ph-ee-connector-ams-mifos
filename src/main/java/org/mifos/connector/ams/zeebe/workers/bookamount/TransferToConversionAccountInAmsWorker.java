@@ -105,7 +105,6 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
                                                  @Variable String accountProductType,
                                                  @Variable String valueDated
                                                  ) {
-        log.info("transferToConversionAccountInAms");
         eventService.auditedEvent(
                 eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "transferToConversionAccountInAms", internalCorrelationId, transactionGroupId, eventBuilder),
                 eventBuilder -> transferToConversionAccountInAms(transactionGroupId,
