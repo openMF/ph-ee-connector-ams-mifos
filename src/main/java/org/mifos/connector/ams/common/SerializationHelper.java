@@ -43,11 +43,16 @@ public class SerializationHelper {
 
         try {
             logger.info("removing supplementaryData from transactionDetail: " + transactionDetail.getSupplementaryData());
-            Object omSupplementaryData = transactionDetail.getSupplementaryData()
+            Map<String, Object> additionalProperties = transactionDetail.getSupplementaryData()
                     .get(0)
                     .getEnvelope()
-                    .getAdditionalProperties()
-                    .get("OrderManagerSupplementaryData");
+                    .getAdditionalProperties();
+            logger.debug("additionalProperties: " + additionalProperties);
+            additionalProperties.keySet().forEach(key -> {
+                logger.debug("key: " + key + " - value: " + additionalProperties.get(key));
+                logger.debug("key type: " + key.getClass().getName() + " - value type: " + additionalProperties.get(key).getClass().getName());
+            });
+            Object omSupplementaryData = additionalProperties.get("OrderManagerSupplementaryData");
             logger.debug("ordermanager supplementaryData: " + omSupplementaryData + " - type: " + omSupplementaryData.getClass().getName());
             ((Map) omSupplementaryData).remove("transactionCreationChannel");
             logger.info("removed supplementaryData from transactionDetail: " + transactionDetail.getSupplementaryData());
