@@ -17,10 +17,13 @@ public class ZeebeClientConfiguration {
     @Value("${zeebe.client.max-execution-threads}")
     private int zeebeClientMaxThreads;
 
+    @Value("${zeebe.client.poll-interval}")
+    private int zeebeClientPollInterval;
+
     @Bean
     public ZeebeClient setup() {
         return ZeebeClient.newClientBuilder().gatewayAddress(zeebeBrokerContactpoint).usePlaintext()
-                .defaultJobPollInterval(Duration.ofMillis(1)).defaultJobWorkerMaxJobsActive(2000)
+                .defaultJobPollInterval(Duration.ofMillis(zeebeClientPollInterval)).defaultJobWorkerMaxJobsActive(2000)
                 .numJobWorkerExecutionThreads(zeebeClientMaxThreads).build();
     }
 }
