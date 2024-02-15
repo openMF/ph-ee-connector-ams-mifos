@@ -148,6 +148,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
             ReportEntry10 convertedCamt053Entry = convertedStatement.getStatement().get(0).getEntry().get(0);
             EntryTransaction10 transactionDetails = convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0);
             CreditTransferTransaction40 creditTransferTransaction = pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0);
+            String transactionCreationChannel = batchItemBuilder.findTransactionCreationChannel(creditTransferTransaction.getSupplementaryData());
             String unstructured = Optional.ofNullable(creditTransferTransaction.getRemittanceInformation()).map(RemittanceInformation16::getUnstructured).map(List::toString).orElse("");
             PartyIdentification135 creditor = creditTransferTransaction.getCreditor();
             String endToEndId = creditTransferTransaction.getPaymentIdentification().getEndToEndIdentification();
@@ -177,7 +178,6 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
             transactionDetails.setAdditionalTransactionInformation(withdrawAmountPaymentTypeCode);
             String withdrawDetailsCamt053Entry = serializationHelper.writeCamt053AsString(accountProductType, convertedCamt053Entry);
             String withdrawDetailsCamt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
-            String transactionCreationChannel = batchItemBuilder.findTransactionCreationChannel(creditTransferTransaction.getSupplementaryData());
 
             if (accountProductType.equalsIgnoreCase("SAVINGS")) {
                 String withdrawDetailsCamt053Body = painMapper.writeValueAsString(new DtSavingsTransactionDetails(internalCorrelationId, withdrawDetailsCamt053Entry, debtorIban, withdrawAmountPaymentTypeCode, transactionGroupId, creditorName, creditorIban, null, creditorId, unstructured, transactionCategoryPurposeCode, paymentScheme, conversionAccountAmsId, null, endToEndId));

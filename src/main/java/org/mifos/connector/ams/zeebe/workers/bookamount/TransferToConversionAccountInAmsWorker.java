@@ -153,16 +153,18 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
             Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
 
             Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001 = painMapper.readValue(originalPain001, Pain00100110CustomerCreditTransferInitiationV10MessageSchema.class);
+            CustomerCreditTransferInitiationV10 pain001Document = pain001.getDocument();
+            String transactionCreationChannel = batchItemBuilder.findTransactionCreationChannel(pain001Document.getSupplementaryData());
 
             log.debug("Withdrawing amount {} from disposal account {} with fee: {}", amount, disposalAccountAmsId, transactionFeeAmount);
             boolean hasFee = !BigDecimal.ZERO.equals(transactionFeeAmount);
             BigDecimal totalAmountWithFee = hasFee ? amount.add(transactionFeeAmount) : amount;
 
-            BankToCustomerStatementV08 convertedStatement = camt053Mapper.toCamt053Entry(pain001.getDocument());
+            BankToCustomerStatementV08 convertedStatement = camt053Mapper.toCamt053Entry(pain001Document);
             ReportEntry10 convertedCamt053Entry = convertedStatement.getStatement().get(0).getEntry().get(0);
             EntryTransaction10 transactionDetails = convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0);
             transactionDetails.getAmountDetails().getTransactionAmount().getAmount().setAmount(totalAmountWithFee);
-            PaymentInstruction34 pain001PaymentInstruction = pain001.getDocument().getPaymentInformation().get(0);
+            PaymentInstruction34 pain001PaymentInstruction = pain001Document.getPaymentInformation().get(0);
             CreditTransferTransaction40 pain001Transaction = pain001PaymentInstruction.getCreditTransferTransactionInformation().get(0);
             String partnerName = pain001Transaction.getCreditor().getName();
             String partnerAccountIban = pain001Transaction.getCreditorAccount().getIdentification().getIban();
@@ -170,7 +172,6 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
             String unstructured = Optional.ofNullable(pain001Transaction.getRemittanceInformation())
                     .map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(List::toString)
                     .orElse("");
-            CustomerCreditTransferInitiationV10 pain001Document = pain001.getDocument();
             String endToEndId = pain001Transaction.getPaymentIdentification().getEndToEndIdentification();
             String debtorIban = pain001PaymentInstruction.getDebtorAccount().getIdentification().getIban();
 
@@ -206,7 +207,6 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
                 camt053Mapper.refillOtherIdentification(pain001Document, transactionDetails);
             }
             String withdrawAmountCamt053 = serializationHelper.writeCamt053AsString(accountProductType, convertedCamt053Entry);
-            String transactionCreationChannel = batchItemBuilder.findTransactionCreationChannel(pain001Document.getSupplementaryData());
 
             if (accountProductType.equalsIgnoreCase("SAVINGS")) {
                 String withdrawAmountCamt053Body = painMapper.writeValueAsString(new DtSavingsTransactionDetails(internalCorrelationId, withdrawAmountCamt053, debtorIban, paymentTypeCode, transactionGroupId, partnerName, partnerAccountIban, null, partnerAccountSecondaryIdentifier, unstructured, transactionCategoryPurposeCode, paymentScheme, disposalAccountAmsId, conversionAccountAmsId, endToEndId));
@@ -472,7 +472,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
         String releaseTransactionUrl = String.format("%s%s/transactions/%d?command=releaseAmount", incomingMoneyApi.substring(1), disposalAccountAmsId, lastHoldTransactionId);
         batchItemBuilder.add(tenantIdentifier, items, releaseTransactionUrl, null, false);
         String releaseAmountOperation = "transferToConversionAccountInAms.DisposalAccount.ReleaseTransactionAmount";
-        addDetails(tenantIdentifier, pain001.getDocument(), transactionGroupId, transactionCategoryPurposeCode, internalCorrelationId,
+        addDetails(tenantIdentifier, pain001Document, transactionGroupId, transactionCategoryPurposeCode, internalCorrelationId,
                 accountProductType, batchItemBuilder, items, convertedCamt053Entry, "datatables/dt_savings_transaction_details/$.resourceId", iban,
                 paymentTypeConfig, paymentScheme, releaseAmountOperation, partnerName, partnerAccountIban,
                 partnerAccountSecondaryIdentifier, unstructured, null, null, false, pain001Transaction.getPaymentIdentification().getEndToEndIdentification());

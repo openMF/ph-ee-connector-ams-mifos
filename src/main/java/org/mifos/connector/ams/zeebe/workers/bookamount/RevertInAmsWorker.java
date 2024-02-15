@@ -159,6 +159,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
             CustomerCreditTransferInitiationV10 pain001Document = pain001.getDocument();
             PaymentInstruction34 paymentInstruction = pain001Document.getPaymentInformation().get(0);
             CreditTransferTransaction40 creditTransferTransaction = paymentInstruction.getCreditTransferTransactionInformation().get(0);
+            String transactionCreationChannel = batchItemBuilder.findTransactionCreationChannel(pain001Document.getSupplementaryData());
 
             BankToCustomerStatementV08 convertedStatement = pain001Camt053Mapper.toCamt053Entry(pain001Document);
             ReportEntry10 camt053Entry = convertedStatement.getStatement().get(0).getEntry().get(0);
@@ -189,7 +190,6 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
             camt053Entry.setCreditDebitIndicator(CreditDebitCode.CRDT);
             camt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "BOOKED"));
             String camt053 = serializationHelper.writeCamt053AsString(accountProductType, camt053Entry);
-            String transactionCreationChannel = batchItemBuilder.findTransactionCreationChannel(pain001Document.getSupplementaryData());
 
             if (accountProductType.equalsIgnoreCase("SAVINGS")) {
                 String depositAmountTransactionBody = painMapper.writeValueAsString(new DtSavingsTransactionDetails(internalCorrelationId, camt053, debtorIban, depositAmountPaymentTypeCode, transactionGroupId, creditorName, creditorIban, null, creditorId, unstructured, transactionCategoryPurposeCode, paymentScheme, conversionAccountAmsId, disposalAccountAmsId, endToEndId));
