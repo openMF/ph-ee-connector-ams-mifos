@@ -409,7 +409,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
                 }
             }
 
-            doBatch(items, tenantIdentifier, disposalAccountAmsId, conversionAccountAmsId, internalCorrelationId, "transferToConversionAccountInAms");
+            doBatch(items, tenantIdentifier, transactionGroupId, disposalAccountAmsId, conversionAccountAmsId, internalCorrelationId, "transferToConversionAccountInAms");
 
         } catch (ZeebeBpmnError z) {
             throw z;
@@ -563,6 +563,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
                                                           @Variable String conversionAccountAmsId,
                                                           @Variable String disposalAccountAmsId,
                                                           @Variable String tenantIdentifier,
+                                                          @Variable String transactionGroupId,
                                                           @Variable String paymentScheme,
                                                           @Variable String transactionCategoryPurposeCode,
                                                           @Variable String camt056,
@@ -579,6 +580,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
                         conversionAccountAmsId,
                         disposalAccountAmsId,
                         tenantIdentifier,
+                        transactionGroupId,
                         paymentScheme,
                         transactionCategoryPurposeCode,
                         camt056,
@@ -592,6 +594,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
                                                            String conversionAccountAmsId,
                                                            String disposalAccountAmsId,
                                                            String tenantIdentifier,
+                                                           String transactionGroupId,
                                                            String paymentScheme,
                                                            String transactionCategoryPurposeCode,
                                                            String camt056,
@@ -766,6 +769,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 
             doBatch(items,
                     tenantIdentifier,
+                    transactionGroupId,
                     disposalAccountAmsId,
                     conversionAccountAmsId,
                     internalCorrelationId,

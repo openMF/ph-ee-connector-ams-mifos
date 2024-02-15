@@ -516,6 +516,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 
             doBatchOnUs(items,
                     tenantIdentifier,
+                    transactionGroupId,
                     debtorDisposalAccountAmsId,
                     debtorConversionAccountAmsId,
                     creditorDisposalAccountAmsId,

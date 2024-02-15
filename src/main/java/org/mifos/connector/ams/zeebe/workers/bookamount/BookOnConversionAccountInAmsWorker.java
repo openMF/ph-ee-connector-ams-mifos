@@ -253,7 +253,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
                 }
             }
 
-            doBatch(items, tenantIdentifier, "-1", conversionAccountAmsId, internalCorrelationId, "bookOnConversionAccountInAms");
+            doBatch(items, tenantIdentifier, transactionGroupId, "-1", conversionAccountAmsId, internalCorrelationId, "bookOnConversionAccountInAms");
 
             log.info("Book debit on conversion account has finished  successfully");
 
@@ -274,6 +274,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
                                                             @Variable BigDecimal amount,
                                                             @Variable String conversionAccountAmsId,
                                                             @Variable String tenantIdentifier,
+                                                            @Variable String transactionGroupId,
                                                             @Variable String paymentScheme,
                                                             @Variable String transactionCategoryPurposeCode,
                                                             @Variable String camt056,
@@ -293,6 +294,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
                 eventBuilder -> withdrawTheAmountFromConversionAccountInAms(amount,
                         conversionAccountAmsId,
                         tenantIdentifier,
+                        transactionGroupId,
                         paymentScheme,
                         transactionCategoryPurposeCode,
                         camt056,
@@ -307,6 +309,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
     private Void withdrawTheAmountFromConversionAccountInAms(BigDecimal amount,
                                                              String conversionAccountAmsId,
                                                              String tenantIdentifier,
+                                                             String transactionGroupId,
                                                              String paymentScheme,
                                                              String transactionCategoryPurposeCode,
                                                              String camt056,
@@ -407,6 +410,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 
             doBatch(items,
                     tenantIdentifier,
+                    transactionGroupId,
                     "-1",
                     conversionAccountAmsId,
                     internalCorrelationId,

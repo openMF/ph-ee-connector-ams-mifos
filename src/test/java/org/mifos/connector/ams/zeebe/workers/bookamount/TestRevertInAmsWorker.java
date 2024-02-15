@@ -107,7 +107,7 @@ class TestRevertInAmsWorker {
     private RevertInAmsWorker setupWorker(Consumer<TransactionItem> validator) {
         RevertInAmsWorker worker = new RevertInAmsWorker() {
             @Override
-            protected String doBatch(List<TransactionItem> items, String tenantId, String disposalAccountId, String conversionAccountId, String internalCorrelationId, String calledFrom) {
+            protected String doBatch(List<TransactionItem> items, String tenantId, String transactionGroupId, String disposalAccountId, String conversionAccountId, String internalCorrelationId, String calledFrom) {
                 logger.debug("executing batch of {} items:", items.size());
                 items.forEach(item -> {
                     logger.info("- {}", item);

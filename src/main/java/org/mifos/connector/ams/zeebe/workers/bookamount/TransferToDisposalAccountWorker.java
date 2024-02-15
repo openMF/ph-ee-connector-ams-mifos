@@ -217,6 +217,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 
             doBatch(items,
                     tenantIdentifier,
+                    transactionGroupId,
                     disposalAccountAmsId,
                     conversionAccountAmsId,
                     internalCorrelationId,
@@ -399,6 +400,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 
             doBatch(items,
                     tenantIdentifier,
+                    transactionGroupId,
                     disposalAccountAmsId,
                     conversionAccountAmsId,
                     internalCorrelationId,
@@ -582,6 +584,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 
             doBatch(items,
                     tenantIdentifier,
+                    transactionGroupId,
                     disposalAccountAmsId,
                     conversionAccountAmsId,
                     internalCorrelationId,

@@ -207,6 +207,7 @@ public class BookCreditedAmountFromTechnicalAccountWorker extends AbstractMoneyI
 
             doBatch(items,
                     tenantIdentifier,
+                    transactionGroupId,
                     "-1",
                     "-1",
                     internalCorrelationId,

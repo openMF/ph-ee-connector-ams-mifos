@@ -349,7 +349,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                 }
             }
 
-            String lastTransactionId = doBatch(items, tenantIdentifier, disposalAccountAmsId, conversionAccountAmsId, internalCorrelationId, "revertInAms");
+            String lastTransactionId = doBatch(items, tenantIdentifier, transactionGroupId, disposalAccountAmsId, conversionAccountAmsId, internalCorrelationId, "revertInAms");
 
             log.debug("querying running balance for account {}", disposalAccountAmsId);
             BigDecimal runningBalanceDerived = accountProductType.equalsIgnoreCase("SAVINGS") ?
@@ -657,6 +657,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 
             doBatch(items,
                     tenantIdentifier,
+                    transactionGroupId,
                     disposalAccountAmsId,
                     conversionAccountAmsId,
                     internalCorrelationId,
@@ -690,6 +691,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                                                 @Variable String conversionAccountAmsId,
                                                 @Variable String disposalAccountAmsId,
                                                 @Variable String tenantIdentifier,
+                                                @Variable String transactionGroupId,
                                                 @Variable String paymentScheme,
                                                 @Variable String transactionCategoryPurposeCode,
                                                 @Variable String generatedPacs004,
@@ -706,6 +708,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                         conversionAccountAmsId,
                         disposalAccountAmsId,
                         tenantIdentifier,
+                        transactionGroupId,
                         paymentScheme,
                         transactionCategoryPurposeCode,
                         generatedPacs004,
@@ -719,6 +722,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                                                  String conversionAccountAmsId,
                                                  String disposalAccountAmsId,
                                                  String tenantIdentifier,
+                                                 String transactionGroupId,
                                                  String paymentScheme,
                                                  String transactionCategoryPurposeCode,
                                                  String originalPacs004,
@@ -855,6 +859,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 
             doBatch(items,
                     tenantIdentifier,
+                    transactionGroupId,
                     disposalAccountAmsId,
                     conversionAccountAmsId,
                     internalCorrelationId,

@@ -271,6 +271,7 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 
             doBatch(items,
                     tenantIdentifier,
+                    transactionGroupId,
                     disposalAccountAmsId,
                     conversionAccountAmsId,
                     internalCorrelationId,

@@ -161,6 +161,7 @@ public abstract class AbstractMoneyInOutWorker {
 
     protected String doBatch(List<TransactionItem> items,
                              String tenantId,
+                             String transactionGroupId,
                              String disposalAccountId,
                              String conversionAccountId,
                              String internalCorrelationId,
@@ -172,11 +173,12 @@ public abstract class AbstractMoneyInOutWorker {
                         conversionAccountId,
                         internalCorrelationId,
                         eventBuilder),
-                eventBuilder -> doBatchInternal(items, tenantId, internalCorrelationId, calledFrom));
+                eventBuilder -> doBatchInternal(items, tenantId, transactionGroupId, internalCorrelationId, calledFrom));
     }
 
     protected void doBatchOnUs(List<TransactionItem> items,
                                String tenantId,
+                               String transactionGroupId,
                                String debtorDisposalAccountAmsId,
                                String debtorConversionAccountAmsId,
                                String creditorDisposalAccountAmsId,
@@ -189,7 +191,7 @@ public abstract class AbstractMoneyInOutWorker {
                         creditorDisposalAccountAmsId,
                         internalCorrelationId,
                         eventBuilder),
-                eventBuilder -> doBatchInternal(items, tenantId, internalCorrelationId, "transferTheAmountBetweenDisposalAccounts"));
+                eventBuilder -> doBatchInternal(items, tenantId, transactionGroupId, internalCorrelationId, "transferTheAmountBetweenDisposalAccounts"));
     }
 
     private Long holdBatchInternal(List<TransactionItem> items, String tenantId, String internalCorrelationId, String from) {
@@ -318,11 +320,12 @@ public abstract class AbstractMoneyInOutWorker {
         throw new RuntimeException("Failed to execute transaction " + internalCorrelationId);
     }
 
-    private String doBatchInternal(List<TransactionItem> items, String tenantId, String internalCorrelationId, String from) {
+    private String doBatchInternal(List<TransactionItem> items, String tenantId, String transactionGroupId, String internalCorrelationId, String from) {
         HttpHeaders httpHeaders = new HttpHeaders();
         httpHeaders.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
         httpHeaders.set("Authorization", authTokenHelper.generateAuthToken());
         httpHeaders.set("Fineract-Platform-TenantId", tenantId);
+        httpHeaders.set("transactionGroupId", transactionGroupId);
         int idempotencyPostfix = 0;
         var entity = new HttpEntity<>(items, httpHeaders);
 

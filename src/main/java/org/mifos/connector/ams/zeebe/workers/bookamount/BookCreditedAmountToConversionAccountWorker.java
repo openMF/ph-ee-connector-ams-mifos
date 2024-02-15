@@ -177,6 +177,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
 
             doBatch(items,
                     tenantIdentifier,
+                    transactionGroupId,
                     "-1",
                     conversionAccountAmsId,
                     internalCorrelationId,
@@ -297,6 +298,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
 
             doBatch(items,
                     tenantIdentifier,
+                    transactionGroupId,
                     "-1",
                     conversionAccountAmsId,
                     internalCorrelationId,
@@ -418,6 +420,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
 
             doBatch(items,
                     tenantIdentifier,
+                    transactionGroupId,
                     "-1",
                     conversionAccountAmsId,
                     internalCorrelationId,
