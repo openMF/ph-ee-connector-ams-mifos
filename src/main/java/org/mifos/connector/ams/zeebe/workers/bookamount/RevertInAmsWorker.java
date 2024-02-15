@@ -189,6 +189,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
             camt053Entry.setCreditDebitIndicator(CreditDebitCode.CRDT);
             camt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "BOOKED"));
             String camt053 = serializationHelper.writeCamt053AsString(accountProductType, camt053Entry);
+            String transactionCreationChannel = batchItemBuilder.findTransactionCreationChannel(pain001Document.getSupplementaryData());
 
             if (accountProductType.equalsIgnoreCase("SAVINGS")) {
                 String depositAmountTransactionBody = painMapper.writeValueAsString(new DtSavingsTransactionDetails(internalCorrelationId, camt053, debtorIban, depositAmountPaymentTypeCode, transactionGroupId, creditorName, creditorIban, null, creditorId, unstructured, transactionCategoryPurposeCode, paymentScheme, conversionAccountAmsId, disposalAccountAmsId, endToEndId));
@@ -208,6 +209,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                                 unstructured,
                                 conversionAccountAmsId,
                                 disposalAccountAmsId,
+                                transactionCreationChannel,
                                 partnerAccountSecondaryIdentifier,
                                 null,
                                 valueDated
@@ -248,6 +250,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                                     unstructured,
                                     disposalAccountAmsId,
                                     conversionAccountAmsId,
+                                    transactionCreationChannel,
                                     partnerAccountSecondaryIdentifier,
                                     null,
                                     valueDated
@@ -292,6 +295,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                                 unstructured,
                                 disposalAccountAmsId,
                                 conversionAccountAmsId,
+                                transactionCreationChannel,
                                 partnerAccountSecondaryIdentifier,
                                 null,
                                 valueDated
@@ -335,6 +339,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                                     unstructured,
                                     disposalAccountAmsId,
                                     conversionAccountAmsId,
+                                    transactionCreationChannel,
                                     partnerAccountSecondaryIdentifier,
                                     null,
                                     valueDated

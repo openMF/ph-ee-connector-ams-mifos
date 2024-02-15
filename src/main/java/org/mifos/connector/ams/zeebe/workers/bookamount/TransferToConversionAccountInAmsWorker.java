@@ -206,6 +206,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
                 camt053Mapper.refillOtherIdentification(pain001Document, transactionDetails);
             }
             String withdrawAmountCamt053 = serializationHelper.writeCamt053AsString(accountProductType, convertedCamt053Entry);
+            String transactionCreationChannel = batchItemBuilder.findTransactionCreationChannel(pain001Document.getSupplementaryData());
 
             if (accountProductType.equalsIgnoreCase("SAVINGS")) {
                 String withdrawAmountCamt053Body = painMapper.writeValueAsString(new DtSavingsTransactionDetails(internalCorrelationId, withdrawAmountCamt053, debtorIban, paymentTypeCode, transactionGroupId, partnerName, partnerAccountIban, null, partnerAccountSecondaryIdentifier, unstructured, transactionCategoryPurposeCode, paymentScheme, disposalAccountAmsId, conversionAccountAmsId, endToEndId));
@@ -226,6 +227,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
                                 unstructured,
                                 disposalAccountAmsId,
                                 conversionAccountAmsId,
+                                transactionCreationChannel,
                                 partnerAccountSecondaryIdentifier,
                                 null,
                                 valueDated
@@ -282,6 +284,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
                                     unstructured,
                                     disposalAccountAmsId,
                                     conversionAccountAmsId,
+                                    transactionCreationChannel,
                                     partnerAccountSecondaryIdentifier,
                                     null,
                                     valueDated
@@ -339,6 +342,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
                                 unstructured,
                                 disposalAccountAmsId,
                                 conversionAccountAmsId,
+                                transactionCreationChannel,
                                 partnerAccountSecondaryIdentifier,
                                 null,
                                 valueDated
@@ -395,6 +399,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
                                     unstructured,
                                     disposalAccountAmsId,
                                     conversionAccountAmsId,
+                                    transactionCreationChannel,
                                     partnerAccountSecondaryIdentifier,
                                     null,
                                     valueDated

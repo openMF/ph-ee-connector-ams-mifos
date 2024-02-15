@@ -42,6 +42,7 @@ public class CurrentAccountTransactionBody {
         private String remittance_information_unstructured;
         private String source_ams_account_id;
         private String target_ams_account_id;
+        private String transactionCreationChannel;
         private String partner_secondary_identifier;  // secondary
         private String partner_account_internal_account_id; // onus / ig2
         private String valueDated; // onus / ig2

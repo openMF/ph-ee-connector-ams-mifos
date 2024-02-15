@@ -97,7 +97,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
                                              @Variable String debtorIban,
                                              @Variable String accountProductType,
                                              @Variable String valueDated
-                                             ) {
+    ) {
         log.info("bookOnConversionAccountInAms");
         eventService.auditedEvent(
                 eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "bookOnConversionAccountInAms", internalCorrelationId, transactionGroupId, eventBuilder),
@@ -177,6 +177,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
             transactionDetails.setAdditionalTransactionInformation(withdrawAmountPaymentTypeCode);
             String withdrawDetailsCamt053Entry = serializationHelper.writeCamt053AsString(accountProductType, convertedCamt053Entry);
             String withdrawDetailsCamt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
+            String transactionCreationChannel = batchItemBuilder.findTransactionCreationChannel(creditTransferTransaction.getSupplementaryData());
 
             if (accountProductType.equalsIgnoreCase("SAVINGS")) {
                 String withdrawDetailsCamt053Body = painMapper.writeValueAsString(new DtSavingsTransactionDetails(internalCorrelationId, withdrawDetailsCamt053Entry, debtorIban, withdrawAmountPaymentTypeCode, transactionGroupId, creditorName, creditorIban, null, creditorId, unstructured, transactionCategoryPurposeCode, paymentScheme, conversionAccountAmsId, null, endToEndId));
@@ -196,6 +197,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
                                 unstructured,
                                 conversionAccountAmsId,
                                 null,
+                                transactionCreationChannel,
                                 partnerAccountSecondaryIdentifier,
                                 null,
                                 valueDated
@@ -241,6 +243,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
                                     unstructured,
                                     conversionAccountAmsId,
                                     null,
+                                    transactionCreationChannel,
                                     partnerAccountSecondaryIdentifier,
                                     null,
                                     valueDated
