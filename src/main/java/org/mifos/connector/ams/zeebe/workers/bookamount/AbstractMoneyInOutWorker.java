@@ -419,7 +419,8 @@ public abstract class AbstractMoneyInOutWorker {
                         continue retry;
                     }
                     case SC_FORBIDDEN -> {
-                        if (responseItem.getBody() != null && responseItem.getBody().contains("error.msg.overdraft.not.allowed")) {
+                        String body = responseItem.getBody();
+                        if (body != null && (body.contains("error.msg.overdraft.not.allowed") || body.contains("error.msg.available.balance.violated"))) {
                             log.error("Overdraft is not allowed for request [{}]", idempotencyKey);
                             throw new ZeebeBpmnError("Error_InsufficientFunds", "Insufficient funds");
                         }
