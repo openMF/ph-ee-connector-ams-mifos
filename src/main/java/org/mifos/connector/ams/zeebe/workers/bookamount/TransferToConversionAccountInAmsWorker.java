@@ -472,7 +472,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
         String releaseTransactionUrl = String.format("%s%s/transactions/%d?command=releaseAmount", incomingMoneyApi.substring(1), disposalAccountAmsId, lastHoldTransactionId);
         batchItemBuilder.add(tenantIdentifier, items, releaseTransactionUrl, null, false);
         String releaseAmountOperation = "transferToConversionAccountInAms.DisposalAccount.ReleaseTransactionAmount";
-        addDetails(tenantIdentifier, pain001Document, transactionGroupId, transactionCategoryPurposeCode, internalCorrelationId,
+        addDetails(tenantIdentifier, pain001.getDocument(), transactionGroupId, transactionCategoryPurposeCode, internalCorrelationId,
                 accountProductType, batchItemBuilder, items, convertedCamt053Entry, "datatables/dt_savings_transaction_details/$.resourceId", iban,
                 paymentTypeConfig, paymentScheme, releaseAmountOperation, partnerName, partnerAccountIban,
                 partnerAccountSecondaryIdentifier, unstructured, null, null, false, pain001Transaction.getPaymentIdentification().getEndToEndIdentification());
