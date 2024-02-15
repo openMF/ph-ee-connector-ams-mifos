@@ -250,7 +250,7 @@ public class GetAccountDetailsFromAmsWorker extends AbstractAmsWorker {
     }
 
     private GetSavingsAccountsAccountIdResponse retrieveCurrencyIdAndStatus(Long accountCurrencyId, String tenantId) {
-        return exchange(UriComponentsBuilder
+        return lookupExchange(UriComponentsBuilder
                         .fromHttpUrl(fineractApiUrl)
                         .path(incomingMoneyApi)
                         .path(String.format("%d", accountCurrencyId))

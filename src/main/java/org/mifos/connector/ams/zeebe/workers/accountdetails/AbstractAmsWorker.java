@@ -106,7 +106,7 @@ public abstract class AbstractAmsWorker {
     }
 
     protected CAGetResponse lookupCurrentAccountGet(String iban, String accountSubValue, String tenantId) {
-        return exchange(UriComponentsBuilder
+        return lookupExchange(UriComponentsBuilder
                         .fromHttpUrl(fineractApiUrl)
                         .path(accountUrl)
                         .pathSegment("iban", iban, accountSubValue)
@@ -118,7 +118,7 @@ public abstract class AbstractAmsWorker {
     }
 
     protected IdentifiersResponse lookupIdentifiersGet(String iban, String accountSubValue, String tenantId) {
-        return exchange(UriComponentsBuilder
+        return lookupExchange(UriComponentsBuilder
                         .fromHttpUrl(fineractApiUrl)
                         .path(accountUrl)
                         .pathSegment("iban", iban, accountSubValue, "identifiers")
@@ -131,7 +131,7 @@ public abstract class AbstractAmsWorker {
 
 
     protected AmsDataTableQueryResponse[] lookupSavingsAccount(String iban, String tenantId) {
-        return exchange(UriComponentsBuilder
+        return lookupExchange(UriComponentsBuilder
                         .fromHttpUrl(fineractApiUrl)
                         .path(datatableQueryApi)
                         .queryParam("columnFilter", columnFilter)
@@ -146,7 +146,7 @@ public abstract class AbstractAmsWorker {
 
     @SuppressWarnings("unchecked")
     protected List<Object> lookupFlags(Long accountId, String tenantId) {
-        List<LinkedHashMap<String, Object>> flags = exchange(UriComponentsBuilder
+        List<LinkedHashMap<String, Object>> flags = lookupExchange(UriComponentsBuilder
                         .fromHttpUrl(fineractApiUrl)
                         .path(flagsQueryApi)
                         .queryParam("columnFilter", flagsColumnFilter)
@@ -160,7 +160,7 @@ public abstract class AbstractAmsWorker {
         return flags.stream().map(flagResult -> flagResult.get(flagsResultColumns)).collect(Collectors.toList());
     }
 
-    protected <T> T exchange(String urlTemplate, Class<T> responseType, String tenantId, String calledFrom, String eventName) {
+    protected <T> T lookupExchange(String urlTemplate, Class<T> responseType, String tenantId, String calledFrom, String eventName) {
         HttpHeaders httpHeaders = new HttpHeaders();
         httpHeaders.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
         httpHeaders.set("Authorization", authTokenHelper.generateAuthToken());

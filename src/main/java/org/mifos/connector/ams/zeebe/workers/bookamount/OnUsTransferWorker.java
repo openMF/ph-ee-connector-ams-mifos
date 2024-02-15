@@ -219,12 +219,13 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
                     paymentTypeConfig, paymentScheme, null, partnerName, partnerAccountIban,
                     partnerAccountSecondaryIdentifier, unstructured, null, null);
 
-            Long lastHoldTransactionId = holdBatch(items, tenantIdentifier, debtorDisposalAccountAmsId, creditorDisposalAccountAmsId, internalCorrelationId, "transferToConversionAccountInAms");
+            Long lastHoldTransactionId = holdBatch(items, tenantIdentifier, transactionGroupId, debtorDisposalAccountAmsId, creditorDisposalAccountAmsId, internalCorrelationId, "transferToConversionAccountInAms");
 
             HttpHeaders httpHeaders = new HttpHeaders();
             httpHeaders.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
             httpHeaders.set("Authorization", authTokenHelper.generateAuthToken());
             httpHeaders.set("Fineract-Platform-TenantId", tenantIdentifier);
+            httpHeaders.set("X-Correlation-ID", transactionGroupId);
             LinkedHashMap<String, Object> accountDetails = restTemplate.exchange(
                             String.format("%s/%s%s", fineractApiUrl, incomingMoneyApi.substring(1), debtorDisposalAccountAmsId),
                             HttpMethod.GET,

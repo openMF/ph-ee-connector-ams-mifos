@@ -441,12 +441,13 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
         String camt053Body = painMapper.writeValueAsString(td);
         batchItemBuilder.add(tenantIdentifier, items, "datatables/dt_savings_transaction_details/$.resourceId", camt053Body, true);
 
-        Long lastHoldTransactionId = holdBatch(items, tenantIdentifier, disposalAccountAmsId, conversionAccountAmsId, internalCorrelationId, "transferToConversionAccountInAms");
+        Long lastHoldTransactionId = holdBatch(items, tenantIdentifier, transactionGroupId, disposalAccountAmsId, conversionAccountAmsId, internalCorrelationId, "transferToConversionAccountInAms");
 
         HttpHeaders httpHeaders = new HttpHeaders();
         httpHeaders.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
         httpHeaders.set("Authorization", authTokenHelper.generateAuthToken());
         httpHeaders.set("Fineract-Platform-TenantId", tenantIdentifier);
+        httpHeaders.set("X-Correlation-ID", transactionGroupId);
         LinkedHashMap<String, Object> accountDetails = restTemplate.exchange(
                 String.format("%s/%s%s", fineractApiUrl, incomingMoneyApi.substring(1), disposalAccountAmsId),
                 HttpMethod.GET,
@@ -649,12 +650,13 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
                     partnerAccountSecondaryIdentifier, unstructured, disposalAccountAmsId, conversionAccountAmsId, false,
                     document.getFIToFIPmtCxlReq().getUndrlyg().get(0).getTxInf().get(0).getOrgnlEndToEndId());
 
-            Long lastHoldTransactionId = holdBatch(items, tenantIdentifier, disposalAccountAmsId, conversionAccountAmsId, internalCorrelationId, "transferToConversionAccountInAms");
+            Long lastHoldTransactionId = holdBatch(items, tenantIdentifier, transactionGroupId, disposalAccountAmsId, conversionAccountAmsId, internalCorrelationId, "transferToConversionAccountInAms");
 
             HttpHeaders httpHeaders = new HttpHeaders();
             httpHeaders.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
             httpHeaders.set("Authorization", authTokenHelper.generateAuthToken());
             httpHeaders.set("Fineract-Platform-TenantId", tenantIdentifier);
+            httpHeaders.set("X-Correlation-ID", transactionGroupId);
             LinkedHashMap<String, Object> accountDetails = restTemplate.exchange(
                             String.format("%s/%s%s", fineractApiUrl, incomingMoneyApi.substring(1), disposalAccountAmsId),
                             HttpMethod.GET,

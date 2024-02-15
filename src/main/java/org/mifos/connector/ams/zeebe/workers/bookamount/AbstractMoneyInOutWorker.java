@@ -79,72 +79,10 @@ public abstract class AbstractMoneyInOutWorker {
 
     protected static final String FORMAT = "yyyyMMdd";
 
-    protected ResponseEntity<Object> release(String currencyAccountAmsId, Integer holdAmountId, String tenantId) {
-        HttpHeaders httpHeaders = new HttpHeaders();
-        httpHeaders.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
-        httpHeaders.set("Authorization", authTokenHelper.generateAuthToken());
-        httpHeaders.set("Fineract-Platform-TenantId", tenantId);
-        var entity = new HttpEntity<>(null, httpHeaders);
-
-        var urlTemplate = UriComponentsBuilder.fromHttpUrl(fineractApiUrl)
-                .path(incomingMoneyApi)
-                .path(String.format("%s", currencyAccountAmsId))
-                .path("/transactions")
-                .path(String.format("/%s", holdAmountId))
-                .queryParam("command", "releaseAmount")
-                .encode()
-                .toUriString();
-
-        log.trace("calling {} with HttpHeaders {}", urlTemplate, httpHeaders);
-
-        return eventService.auditedEvent(
-                // TODO internalCorrelationId?
-                eventBuilder -> EventLogUtil.initFineractCall(urlTemplate, currencyAccountAmsId, "-1", null, eventBuilder),
-                eventBuilder -> restTemplate.exchange(urlTemplate,
-                        HttpMethod.POST,
-                        entity,
-                        Object.class));
-    }
-
-    protected ResponseEntity<Object> hold(Integer holdReasonId, String transactionDate, Object amount, String currencyAccountAmsId, String tenantId) {
-        var body = new HoldAmountBody(
-                transactionDate,
-                amount,
-                holdReasonId,
-                locale,
-                FORMAT
-        );
-        return doExchange(body, currencyAccountAmsId, "holdAmount", tenantId);
-    }
-
-    protected <T> ResponseEntity<Object> doExchange(T body, String currencyAccountAmsId, String command, String tenantId) {
-        HttpHeaders httpHeaders = new HttpHeaders();
-        httpHeaders.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
-        httpHeaders.set("Authorization", authTokenHelper.generateAuthToken());
-        httpHeaders.set("Fineract-Platform-TenantId", tenantId);
-        var entity = new HttpEntity<>(body, httpHeaders);
-
-        var urlTemplate = UriComponentsBuilder.fromHttpUrl(fineractApiUrl)
-                .path(incomingMoneyApi)
-                .path(String.format("%s", currencyAccountAmsId))
-                .path("/transactions")
-                .queryParam("command", command)
-                .encode()
-                .toUriString();
-
-        log.trace("calling {} with HttpHeaders {}", urlTemplate, httpHeaders);
-
-        return eventService.auditedEvent(
-                // TODO internalCorrelationId?
-                eventBuilder -> EventLogUtil.initFineractCall(urlTemplate, currencyAccountAmsId, "-1", null, eventBuilder),
-                eventBuilder -> restTemplate.exchange(urlTemplate,
-                        HttpMethod.POST,
-                        entity,
-                        Object.class));
-    }
 
     protected Long holdBatch(List<TransactionItem> items,
                              String tenantId,
+                             String transactionGroupId,
                              String disposalAccountId,
                              String conversionAccountId,
                              String internalCorrelationId,
@@ -156,7 +94,7 @@ public abstract class AbstractMoneyInOutWorker {
                         conversionAccountId,
                         internalCorrelationId,
                         eventBuilder),
-                eventBuilder -> holdBatchInternal(items, tenantId, internalCorrelationId, calledFrom));
+                eventBuilder -> holdBatchInternal(transactionGroupId, items, tenantId, internalCorrelationId, calledFrom));
     }
 
     protected String doBatch(List<TransactionItem> items,
@@ -194,11 +132,12 @@ public abstract class AbstractMoneyInOutWorker {
                 eventBuilder -> doBatchInternal(items, tenantId, transactionGroupId, internalCorrelationId, "transferTheAmountBetweenDisposalAccounts"));
     }
 
-    private Long holdBatchInternal(List<TransactionItem> items, String tenantId, String internalCorrelationId, String from) {
+    private Long holdBatchInternal(String transactionGroupId, List<TransactionItem> items, String tenantId, String internalCorrelationId, String from) {
         HttpHeaders httpHeaders = new HttpHeaders();
         httpHeaders.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
         httpHeaders.set("Authorization", authTokenHelper.generateAuthToken());
         httpHeaders.set("Fineract-Platform-TenantId", tenantId);
+        httpHeaders.set("X-Correlation-ID", transactionGroupId);
         int idempotencyPostfix = 0;
         var entity = new HttpEntity<>(items, httpHeaders);
 
@@ -266,7 +205,7 @@ public abstract class AbstractMoneyInOutWorker {
                     throw new RuntimeException(responseBody);
                 }
 
-                batchResponseList = painMapper.readValue(responseBody, new TypeReference<List<BatchResponse>>() {
+                batchResponseList = painMapper.readValue(responseBody, new TypeReference<>() {
                 });
                 if (batchResponseList == null) {
                     return null;
@@ -325,7 +264,7 @@ public abstract class AbstractMoneyInOutWorker {
         httpHeaders.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
         httpHeaders.set("Authorization", authTokenHelper.generateAuthToken());
         httpHeaders.set("Fineract-Platform-TenantId", tenantId);
-        httpHeaders.set("transactionGroupId", transactionGroupId);
+        httpHeaders.set("X-Correlation-ID", transactionGroupId);
         int idempotencyPostfix = 0;
         var entity = new HttpEntity<>(items, httpHeaders);
 
