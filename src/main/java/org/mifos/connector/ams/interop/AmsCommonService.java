@@ -76,6 +76,8 @@ public class AmsCommonService {
         Map<String, Object> headers = new HashMap<>();
         headers.put(CXF_TRACE_HEADER, true);
         headers.put(HTTP_METHOD, "GET");
+        logger.info(":{}",e.getProperty(PARTY_ID_TYPE,String.class));
+        logger.info(":{}",e.getProperty(PARTY_ID,String.class));
         headers.put(HTTP_PATH, amsInteropPartiesPath.replace("{idType}", e.getProperty(PARTY_ID_TYPE, String.class)).replace("{idValue}",
                 e.getProperty(PARTY_ID, String.class)));
         headers.putAll(tenantService.getHeaders(e.getProperty(TENANT_ID, String.class)));

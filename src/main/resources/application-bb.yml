@@ -14,11 +14,12 @@ ams:
         password: password
         authtype: basic
         fspId: payerfsp
-      - name: "lion"
+      - name: "wakanda"
         user: mifos
         password: password
         authtype: basic
         fspId: payeefsp
+
 
 # Savings : S , Loan : L
 accountPrefixes: "S,L"
