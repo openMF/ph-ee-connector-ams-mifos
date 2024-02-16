@@ -125,7 +125,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                         transactionFeeAmount,
                         tenantIdentifier,
                         accountProductType,
-                        valueDated
+                        Boolean.parseBoolean(Optional.ofNullable(valueDated).orElse("false"))
                 ));
     }
 
@@ -144,7 +144,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                                     BigDecimal transactionFeeAmount,
                                     String tenantIdentifier,
                                     String accountProductType,
-                                    String valueDated
+                                    boolean valueDated
     ) {
         try {
             // STEP 0 - collect / extract information

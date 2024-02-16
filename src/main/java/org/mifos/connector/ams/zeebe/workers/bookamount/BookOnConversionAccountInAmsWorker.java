@@ -116,7 +116,8 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
                         tenantIdentifier,
                         debtorIban,
                         accountProductType,
-                        valueDated));
+                        Boolean.parseBoolean(Optional.ofNullable(valueDated).orElse("false"))
+                ));
     }
 
     private Void bookOnConversionAccountInAms(String originalPain001,
@@ -134,7 +135,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
                                               String tenantIdentifier,
                                               String debtorIban,
                                               String accountProductType,
-                                              String valueDated) {
+                                              boolean valueDated) {
         try {
             // STEP 0 - collect / extract information
             MDC.put("internalCorrelationId", internalCorrelationId);

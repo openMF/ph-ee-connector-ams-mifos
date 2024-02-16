@@ -60,7 +60,7 @@ class TestRevertInAmsWorker {
                 BigDecimal.ONE,
                 "binx",
                 "CURRENT",
-                null
+                false
         );
 
         logger.info("output: {}", output);
@@ -97,7 +97,7 @@ class TestRevertInAmsWorker {
                 BigDecimal.ONE,
                 "binx",
                 "SAVINGS",
-                null
+                false
         );
 
         logger.info("output: {}", output);

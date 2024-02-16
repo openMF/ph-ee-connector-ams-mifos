@@ -121,7 +121,8 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
                         tenantIdentifier,
                         transactionFeeInternalCorrelationId,
                         accountProductType,
-                        valueDated));
+                        Boolean.parseBoolean(Optional.ofNullable(valueDated).orElse("false"))
+                ));
     }
 
     @SuppressWarnings("unchecked")
@@ -139,7 +140,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
                                                   String tenantIdentifier,
                                                   String transactionFeeInternalCorrelationId,
                                                   String accountProductType,
-                                                  String valueDated) {
+                                                  boolean valueDated) {
         try {
             // STEP 0 - collect / extract information
             String transactionDate = LocalDate.now().format(PATTERN);
