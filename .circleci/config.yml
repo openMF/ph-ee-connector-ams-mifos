@@ -55,7 +55,7 @@ jobs:
           name: Build Docker image
           command: |
             #Check for PR title Validity
-            
+
             IMAGE_TAG=$CIRCLE_TAG
             ./gradlew checkstyleMain
             ./gradlew clean bootJar

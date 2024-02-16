@@ -10,8 +10,6 @@ import static org.mifos.connector.ams.zeebe.ZeebeVariables.TENANT_ID;
 
 import java.util.HashMap;
 import java.util.Map;
-
-import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.Exchange;
 import org.mifos.connector.ams.camel.cxfrs.CxfrsUtil;
 import org.mifos.connector.ams.tenant.TenantService;
@@ -23,7 +21,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.stereotype.Component;
 
 @Component
-@Slf4j
 @ConditionalOnExpression("'${ams.local.version}'.equals('1.2')")
 public class AmsFinXService extends AmsCommonService implements AmsService {
 
@@ -51,8 +48,8 @@ public class AmsFinXService extends AmsCommonService implements AmsService {
         Map<String, Object> headers = new HashMap<>();
         headers.put(CXF_TRACE_HEADER, true);
         headers.put(HTTP_METHOD, "GET");
-        logger.info(":{}",amsInteropAccountsPath);
-        logger.info(":{}",e);
+        logger.info(":{}", amsInteropAccountsPath);
+        logger.info(":{}", e);
         headers.put(HTTP_PATH, amsInteropAccountsPath.replace("{externalAccountId}", e.getProperty(EXTERNAL_ACCOUNT_ID, String.class)));
         headers.putAll(tenantService.getHeaders(e.getProperty(TENANT_ID, String.class)));
         cxfrsUtil.sendInOut("cxfrs:bean:ams.local.interop", e, headers, null);
