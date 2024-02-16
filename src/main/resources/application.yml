@@ -50,6 +50,8 @@ server:
     contextPath: /fineract
   port: 7070
 
+
+
 management:
   endpoint:
     health:

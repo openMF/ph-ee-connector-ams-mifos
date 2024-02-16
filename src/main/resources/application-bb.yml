@@ -14,7 +14,22 @@ ams:
         password: password
         authtype: basic
         fspId: payerfsp
-      - name: "lion"
+      - name: "wakanda"
+        user: mifos
+        password: password
+        authtype: basic
+        fspId: payerfsp
+      - name: "venus"
+        user: mifos
+        password: password
+        authtype: basic
+        fspId: payeefsp
+      - name: "jupiter"
+        user: mifos
+        password: password
+        authtype: basic
+        fspId: payeefsp
+      - name: "pluto"
         user: mifos
         password: password
         authtype: basic
