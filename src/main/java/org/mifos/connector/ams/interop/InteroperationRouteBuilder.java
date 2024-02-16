@@ -145,7 +145,7 @@ public class InteroperationRouteBuilder extends ErrorHandlerRouteBuilder {
                     }
                 }).log("Response body from get-external-account").choice()
                 // check if http status code is <= 202
-                .when(e -> e.getIn().getHeader(Exchange.HTTP_RESPONSE_CODE, Integer.class) <= 202).unmarshal()
+                .log("${body}").when(e -> e.getIn().getHeader(Exchange.HTTP_RESPONSE_CODE, Integer.class) <= 202).unmarshal()
                 .json(JsonLibrary.Jackson, PartyFspResponseDTO.class)
                 .process(e -> e.setProperty(EXTERNAL_ACCOUNT_ID, e.getIn().getBody(PartyFspResponseDTO.class).getAccountId()))
                 .process(exchange -> {

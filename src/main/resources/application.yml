@@ -1,5 +1,5 @@
 camel:
-  server-port: 5000
+  server-port: 50569
   springboot:
     main-run-controller: true
   dataformat:
@@ -38,6 +38,8 @@ spring:
     date-format: org.mifos.connector.fineractstub.RFC3339DateFormat
     serialization:
       WRITE_DATES_AS_TIMESTAMPS: false
+  server:
+    port: 7073
 
 
 springfox:
@@ -48,7 +50,9 @@ springfox:
 server:
   servlet:
     contextPath: /fineract
-  port: 7070
+  port: 7079
+
+
 
 management:
   endpoint:
