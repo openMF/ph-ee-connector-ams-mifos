@@ -1,5 +1,5 @@
 camel:
-  server-port: 50569
+  server-port: 5000
   springboot:
     main-run-controller: true
   dataformat:
@@ -39,7 +39,7 @@ spring:
     serialization:
       WRITE_DATES_AS_TIMESTAMPS: false
   server:
-    port: 7073
+    port: 7070
 
 
 springfox:
