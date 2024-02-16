@@ -136,7 +136,7 @@ public class InteroperationRouteBuilder extends ErrorHandlerRouteBuilder {
                     try {
                         amsService.getExternalAccount(exchange);
                     } catch (TenantNotExistException e) {
-                        log.debug(e.getMessage());
+                        log.info(e.getMessage());
                         exchange.setProperty(ERROR_CODE, PaymentHubError.PayeeFspNotConfigured.getErrorCode());
                         exchange.setProperty(ERROR_INFORMATION, PaymentHubError.PayeeFspNotConfigured.getErrorDescription());
                         exchange.setProperty(ERROR_PAYLOAD, PaymentHubError.PayeeFspNotConfigured.getErrorDescription());
