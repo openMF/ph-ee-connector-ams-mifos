@@ -148,7 +148,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
             ReportEntry10 convertedCamt053Entry = convertedStatement.getStatement().get(0).getEntry().get(0);
             EntryTransaction10 transactionDetails = convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0);
             CreditTransferTransaction40 creditTransferTransaction = pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0);
-            String transactionCreationChannel = batchItemBuilder.findTransactionCreationChannel(pain001.getDocument().getSupplementaryData());
+            String transactionCreationChannel = batchItemBuilder.findTransactionCreationChannel(creditTransferTransaction.getSupplementaryData());
             String unstructured = Optional.ofNullable(creditTransferTransaction.getRemittanceInformation()).map(RemittanceInformation16::getUnstructured).map(List::toString).orElse("");
             PartyIdentification135 creditor = creditTransferTransaction.getCreditor();
             String endToEndId = creditTransferTransaction.getPaymentIdentification().getEndToEndIdentification();

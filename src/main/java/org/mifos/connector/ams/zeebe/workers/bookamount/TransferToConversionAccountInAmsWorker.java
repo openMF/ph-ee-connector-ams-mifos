@@ -154,7 +154,9 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 
             Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001 = painMapper.readValue(originalPain001, Pain00100110CustomerCreditTransferInitiationV10MessageSchema.class);
             CustomerCreditTransferInitiationV10 pain001Document = pain001.getDocument();
-            String transactionCreationChannel = batchItemBuilder.findTransactionCreationChannel(pain001Document.getSupplementaryData());
+            PaymentInstruction34 pain001PaymentInstruction = pain001Document.getPaymentInformation().get(0);
+            CreditTransferTransaction40 creditTransferTransaction = pain001PaymentInstruction.getCreditTransferTransactionInformation().get(0);
+            String transactionCreationChannel = batchItemBuilder.findTransactionCreationChannel(creditTransferTransaction.getSupplementaryData());
 
             log.debug("Withdrawing amount {} from disposal account {} with fee: {}", amount, disposalAccountAmsId, transactionFeeAmount);
             boolean hasFee = !BigDecimal.ZERO.equals(transactionFeeAmount);
@@ -164,22 +166,20 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
             ReportEntry10 convertedCamt053Entry = convertedStatement.getStatement().get(0).getEntry().get(0);
             EntryTransaction10 transactionDetails = convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0);
             transactionDetails.getAmountDetails().getTransactionAmount().getAmount().setAmount(totalAmountWithFee);
-            PaymentInstruction34 pain001PaymentInstruction = pain001Document.getPaymentInformation().get(0);
-            CreditTransferTransaction40 pain001Transaction = pain001PaymentInstruction.getCreditTransferTransactionInformation().get(0);
-            String partnerName = pain001Transaction.getCreditor().getName();
-            String partnerAccountIban = pain001Transaction.getCreditorAccount().getIdentification().getIban();
-            String partnerAccountSecondaryIdentifier = contactDetailsUtil.getId(pain001Transaction.getCreditor().getContactDetails());
-            String unstructured = Optional.ofNullable(pain001Transaction.getRemittanceInformation())
+            String partnerName = creditTransferTransaction.getCreditor().getName();
+            String partnerAccountIban = creditTransferTransaction.getCreditorAccount().getIdentification().getIban();
+            String partnerAccountSecondaryIdentifier = contactDetailsUtil.getId(creditTransferTransaction.getCreditor().getContactDetails());
+            String unstructured = Optional.ofNullable(creditTransferTransaction.getRemittanceInformation())
                     .map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(List::toString)
                     .orElse("");
-            String endToEndId = pain001Transaction.getPaymentIdentification().getEndToEndIdentification();
+            String endToEndId = creditTransferTransaction.getPaymentIdentification().getEndToEndIdentification();
             String debtorIban = pain001PaymentInstruction.getDebtorAccount().getIdentification().getIban();
 
 
             // STEP 1 - batch: add hold and release items [only for savings account]
             List<TransactionItem> items = new ArrayList<>();
             if (accountProductType.equalsIgnoreCase("SAVINGS")) {
-                holdAndReleaseForSavingsAccount(transactionGroupId, transactionCategoryPurposeCode, internalCorrelationId, paymentScheme, disposalAccountAmsId, conversionAccountAmsId, tenantIdentifier, debtorIban, accountProductType, paymentTypeConfig, transactionDate, totalAmountWithFee, items, transactionDetails, pain001Document, convertedCamt053Entry, partnerName, partnerAccountIban, partnerAccountSecondaryIdentifier, unstructured, endToEndId, pain001, pain001Transaction);
+                holdAndReleaseForSavingsAccount(transactionGroupId, transactionCategoryPurposeCode, internalCorrelationId, paymentScheme, disposalAccountAmsId, conversionAccountAmsId, tenantIdentifier, debtorIban, accountProductType, paymentTypeConfig, transactionDate, totalAmountWithFee, items, transactionDetails, pain001Document, convertedCamt053Entry, partnerName, partnerAccountIban, partnerAccountSecondaryIdentifier, unstructured, endToEndId, pain001, creditTransferTransaction);
             } else {
                 log.info("No hold and release because disposal account {} is not a savings account", disposalAccountAmsId);
             }

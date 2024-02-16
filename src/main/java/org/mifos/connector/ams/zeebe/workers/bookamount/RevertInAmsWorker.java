@@ -159,7 +159,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
             CustomerCreditTransferInitiationV10 pain001Document = pain001.getDocument();
             PaymentInstruction34 paymentInstruction = pain001Document.getPaymentInformation().get(0);
             CreditTransferTransaction40 creditTransferTransaction = paymentInstruction.getCreditTransferTransactionInformation().get(0);
-            String transactionCreationChannel = batchItemBuilder.findTransactionCreationChannel(pain001Document.getSupplementaryData());
+            String transactionCreationChannel = batchItemBuilder.findTransactionCreationChannel(creditTransferTransaction.getSupplementaryData());
 
             BankToCustomerStatementV08 convertedStatement = pain001Camt053Mapper.toCamt053Entry(pain001Document);
             ReportEntry10 camt053Entry = convertedStatement.getStatement().get(0).getEntry().get(0);
