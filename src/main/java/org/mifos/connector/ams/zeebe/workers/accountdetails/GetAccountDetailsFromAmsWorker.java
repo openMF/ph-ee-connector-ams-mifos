@@ -112,10 +112,10 @@ public class GetAccountDetailsFromAmsWorker extends AbstractAmsWorker {
             Boolean CurrencyCheckResult = (Objects.equals(BeanWalker.of(disposalAccount).get(CAGetResponse::getCurrency).get(CAGetResponse.Currency::getCode).get(), "HUF") ||
                     Objects.equals(BeanWalker.of(conversionAccount).get(CAGetResponse::getCurrency).get(CAGetResponse.Currency::getCode).get(), "HUF"));
             //TODO map fineract response
-            String status = AccountAmsStatus.NOT_READY_TO_RECEIVE_MONEY.name();
+            String status = AccountAmsStatus.NOT_READY_FOR_TRANSACTION.name();
 
             if (AccountStatusCheckResult && CurrencyCheckResult) {
-                status = AccountAmsStatus.READY_TO_RECEIVE_MONEY.name();
+                status = AccountAmsStatus.READY_FOR_TRANSACTION.name();
             } else {
                 log.info("Conversion account currency: {}, disposal account: {}. Account is not ready to receive money.", conversionAccount, disposalAccount);
             }
@@ -171,7 +171,7 @@ public class GetAccountDetailsFromAmsWorker extends AbstractAmsWorker {
                 log.debug("Account not found in AMS, returning reasonCode based on scheme and direction: {}-{}: {}", paymentSchemePrefix, direction, reasonCode);
 
                 return Map.of(
-                        "accountAmsStatus", AccountAmsStatus.NOT_READY_TO_RECEIVE_MONEY.name(),
+                        "accountAmsStatus", AccountAmsStatus.NOT_READY_FOR_TRANSACTION.name(),
                         "reasonCode", reasonCode,
                         "accountProductType", "NOT_PROVIDED",
                         "conversionAccountAmsId", "NOT_PROVIDED",
@@ -182,7 +182,7 @@ public class GetAccountDetailsFromAmsWorker extends AbstractAmsWorker {
                 );
             }
 
-            String status = AccountAmsStatus.NOT_READY_TO_RECEIVE_MONEY.name();
+            String status = AccountAmsStatus.NOT_READY_FOR_TRANSACTION.name();
 
             var responseItem = response[0];
             Long accountConversionId = responseItem.conversion_account_id();
@@ -205,7 +205,7 @@ public class GetAccountDetailsFromAmsWorker extends AbstractAmsWorker {
                     && currency.equalsIgnoreCase(disposal.getCurrency().getCode())
                     && conversion.getStatus().getId() == 300
                     && disposal.getStatus().getId() == 300) {
-                status = AccountAmsStatus.READY_TO_RECEIVE_MONEY.name();
+                status = AccountAmsStatus.READY_FOR_TRANSACTION.name();
             } else {
                 log.info("Conversion account currency: {}, disposal account: {}. Account is not ready to receive money.", conversion, disposal);
             }
@@ -229,7 +229,7 @@ public class GetAccountDetailsFromAmsWorker extends AbstractAmsWorker {
                 log.info("CLOSED account, returning reasonCode based on scheme and direction: {}-{}: {}", paymentSchemePrefix, direction, reasonCode);
             }
 
-            if (AccountAmsStatus.NOT_READY_TO_RECEIVE_MONEY.name().equalsIgnoreCase(status) && SavingsAccountStatusType.ACTIVE.equals(statusType)) {
+            if (AccountAmsStatus.NOT_READY_FOR_TRANSACTION.name().equalsIgnoreCase(status) && SavingsAccountStatusType.ACTIVE.equals(statusType)) {
                 statusType = SavingsAccountStatusType.INVALID;
                 reasonCode = "AM03";
             }
