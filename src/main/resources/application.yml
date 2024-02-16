@@ -38,8 +38,6 @@ spring:
     date-format: org.mifos.connector.fineractstub.RFC3339DateFormat
     serialization:
       WRITE_DATES_AS_TIMESTAMPS: false
-  server:
-    port: 7070
 
 
 springfox:
@@ -50,7 +48,7 @@ springfox:
 server:
   servlet:
     contextPath: /fineract
-  port: 7079
+  port: 7070
 
 
 
