@@ -136,14 +136,14 @@ public class InteroperationRouteBuilder extends ErrorHandlerRouteBuilder {
                     try {
                         amsService.getExternalAccount(exchange);
                     } catch (TenantNotExistException e) {
-                        log.info(e.getMessage());
+                        log.debug(e.getMessage());
                         exchange.setProperty(ERROR_CODE, PaymentHubError.PayeeFspNotConfigured.getErrorCode());
                         exchange.setProperty(ERROR_INFORMATION, PaymentHubError.PayeeFspNotConfigured.getErrorDescription());
                         exchange.setProperty(ERROR_PAYLOAD, PaymentHubError.PayeeFspNotConfigured.getErrorDescription());
                         exchange.getIn().setHeader(Exchange.HTTP_RESPONSE_CODE, 404);
                         exchange.setProperty(IS_ERROR_SET_MANUALLY, true);
                     }
-                }).log("${body}").log("Response body from get-external-account").choice()
+                }).log("Response body from get-external-account").choice()
 
                 // check if http status code is <= 202
                 .when(e -> e.getIn().getHeader(Exchange.HTTP_RESPONSE_CODE, Integer.class) <= 202).unmarshal()

@@ -48,8 +48,8 @@ public class AmsFinXService extends AmsCommonService implements AmsService {
         Map<String, Object> headers = new HashMap<>();
         headers.put(CXF_TRACE_HEADER, true);
         headers.put(HTTP_METHOD, "GET");
-        logger.info(":{}", amsInteropAccountsPath);
-        logger.info(":{}", e.getProperty(EXTERNAL_ACCOUNT_ID, String.class));
+        logger.debug(":{}", amsInteropAccountsPath);
+        logger.debug(":{}", e.getProperty(EXTERNAL_ACCOUNT_ID, String.class));
         headers.put(HTTP_PATH, amsInteropAccountsPath.replace("{externalAccountId}", e.getProperty(EXTERNAL_ACCOUNT_ID, String.class)));
         headers.putAll(tenantService.getHeaders(e.getProperty(TENANT_ID, String.class)));
         cxfrsUtil.sendInOut("cxfrs:bean:ams.local.interop", e, headers, null);
