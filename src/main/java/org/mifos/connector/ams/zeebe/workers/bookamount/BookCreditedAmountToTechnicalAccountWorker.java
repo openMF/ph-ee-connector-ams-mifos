@@ -31,6 +31,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -41,6 +42,9 @@ public class BookCreditedAmountToTechnicalAccountWorker extends AbstractMoneyInO
 
     @Value("${fineract.incoming-money-api}")
     private String incomingMoneyApi;
+
+    @Value("${fineract.current-account-api}")
+    protected String currentAccountApi;
 
     @Value("${fineract.locale}")
     private String locale;
@@ -83,7 +87,7 @@ public class BookCreditedAmountToTechnicalAccountWorker extends AbstractMoneyInO
     public void bookCreditedAmountToTechnicalAccount(JobClient jobClient,
                                                      ActivatedJob activatedJob,
                                                      @Variable String originalPacs008,
-                                                     @Variable String amount,
+                                                     @Variable BigDecimal amount,
                                                      @Variable String tenantIdentifier,
                                                      @Variable String paymentScheme,
                                                      @Variable String transactionDate,
@@ -93,7 +97,9 @@ public class BookCreditedAmountToTechnicalAccountWorker extends AbstractMoneyInO
                                                      @Variable String transactionCategoryPurposeCode,
                                                      @Variable String caseIdentifier,
                                                      @Variable String pacs004,
-                                                     @Variable String accountProductType) {
+                                                     @Variable String accountProductType,
+                                                     @Variable String valueDated
+    ) {
         log.info("bookCreditedAmountToTechnicalAccount");
         eventService.auditedEvent(
                 eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "bookCreditedAmountToTechnicalAccount", internalCorrelationId, transactionGroupId, eventBuilder),
@@ -108,11 +114,13 @@ public class BookCreditedAmountToTechnicalAccountWorker extends AbstractMoneyInO
                         transactionCategoryPurposeCode,
                         caseIdentifier,
                         pacs004,
-                        accountProductType));
+                        accountProductType,
+                        Boolean.parseBoolean(Optional.ofNullable(valueDated).orElse("false"))
+                ));
     }
 
     private Void bookCreditedAmountToTechnicalAccount(String originalPacs008,
-                                                      String amount,
+                                                      BigDecimal amount,
                                                       String tenantIdentifier,
                                                       String paymentScheme,
                                                       String transactionDate,
@@ -122,74 +130,78 @@ public class BookCreditedAmountToTechnicalAccountWorker extends AbstractMoneyInO
                                                       String transactionCategoryPurposeCode,
                                                       String caseIdentifier,
                                                       String originalPacs004,
-                                                      String accountProductType) {
+                                                      String accountProductType,
+                                                      boolean valueDated
+    ) {
         try {
+            // STEP 0 - collect / extract information
             log.info("Incoming money, bookCreditedAmountToTechnicalAccount worker started with variables");
-            iso.std.iso._20022.tech.xsd.pacs_008_001.Document pacs008 = jaxbUtils.unmarshalPacs008(originalPacs008);
             MDC.put("internalCorrelationId", internalCorrelationId);
-
             Config technicalAccountConfig = technicalAccountConfigFactory.getConfig(tenantIdentifier);
-
+            String apiPath = accountProductType.equalsIgnoreCase("SAVINGS") ? incomingMoneyApi.substring(1) : currentAccountApi.substring(1);
             String taLookup = String.format("%s.%s", paymentScheme, caseIdentifier);
-            log.debug("Looking up account id for {}", taLookup);
             Integer recallTechnicalAccountId = technicalAccountConfig.findPaymentTypeIdByOperation(taLookup);
-
-            String conversionAccountWithdrawalRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), recallTechnicalAccountId, "deposit");
-
+            String conversionAccountWithdrawalRelativeUrl = String.format("%s%d/transactions?command=%s", apiPath, recallTechnicalAccountId, "deposit");
             Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
             String configOperationKey = String.format("%s.%s.%s", paymentScheme, "bookCreditedAmountToTechnicalAccount", caseIdentifier);
             Integer paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(configOperationKey);
             String paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(configOperationKey);
 
-            TransactionBody body = new TransactionBody(transactionDate, amount, paymentTypeId, "", FORMAT, locale);
-            String bodyItem = painMapper.writeValueAsString(body);
-
-            List<TransactionItem> items = new ArrayList<>();
-            batchItemBuilder.add(tenantIdentifier, items, conversionAccountWithdrawalRelativeUrl, bodyItem, false);
-
+            iso.std.iso._20022.tech.xsd.pacs_008_001.Document pacs008 = jaxbUtils.unmarshalPacs008(originalPacs008);
+            CreditTransferTransactionInformation11 creditTransferTransactionInformation11 = pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0);
             BankToCustomerStatementV08 intermediateCamt053 = pacs008Camt053Mapper.toCamt053Entry(pacs008);
             ReportEntry10 reportEntry10 = intermediateCamt053.getStatement().get(0).getEntry().get(0);
             EntryTransaction10 entryTransaction10 = reportEntry10.getEntryDetails().get(0).getTransactionDetails().get(0);
+            String creditorIban = creditTransferTransactionInformation11.getCdtrAcct().getId().getIBAN();
+            String debtorIban = creditTransferTransactionInformation11.getDbtrAcct().getId().getIBAN();
+            String debtorContactDetails = contactDetailsUtil.getId(creditTransferTransactionInformation11.getDbtr().getCtctDtls());
+            String unstructured = Optional.ofNullable(creditTransferTransactionInformation11.getRmtInf()).map(RemittanceInformation5::getUstrd).map(List::toString).orElse("");
+            String endToEndId = creditTransferTransactionInformation11.getPmtId().getEndToEndId();
+            String debtorName = creditTransferTransactionInformation11.getDbtr().getNm();
+            String partnerAccountSecondaryIdentifier = contactDetailsUtil.getId(creditTransferTransactionInformation11.getCdtr().getCtctDtls());
+            List<TransactionItem> items = new ArrayList<>();
+
+            // STEP 1 - batch: withdraw amount
+            if (accountProductType.equalsIgnoreCase("SAVINGS")) {
+                String bodyItem = painMapper.writeValueAsString(new TransactionBody(transactionDate, amount, paymentTypeId, "", FORMAT, locale));
+                batchItemBuilder.add(tenantIdentifier, items, conversionAccountWithdrawalRelativeUrl, bodyItem, false);
+            } // CURRENT account sends a single call only at the details step
+
+            // STEP 2 - batch: withdraw details
             entryTransaction10.setAdditionalTransactionInformation(paymentTypeCode);
             entryTransaction10.setCreditDebitIndicator(CreditDebitCode.CRDT);
             reportEntry10.setCreditDebitIndicator(CreditDebitCode.CRDT);
             reportEntry10.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "BOOKED"));
-            ReportEntry10 camt053 = originalPacs004 == null
-                    ? reportEntry10
-                    : enhanceFromPacs004(originalPacs004, paymentTypeCode, intermediateCamt053);
+            ReportEntry10 camt053 = originalPacs004 == null ? reportEntry10 : enhanceFromPacs004(originalPacs004, paymentTypeCode, intermediateCamt053);
             String camt053Entry = serializationHelper.writeCamt053AsString(accountProductType, camt053);
 
-            String camt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
+            if (accountProductType.equalsIgnoreCase("SAVINGS")) {
+                String camt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
+                String camt053Body = painMapper.writeValueAsString(new DtSavingsTransactionDetails(internalCorrelationId, camt053Entry, creditorIban, paymentTypeCode, transactionGroupId, debtorName, debtorIban, null, debtorContactDetails, unstructured, transactionCategoryPurposeCode, paymentScheme, null, null, endToEndId));
+                batchItemBuilder.add(tenantIdentifier, items, camt053RelativeUrl, camt053Body, true);
+            } else {
+                String camt053Body = painMapper.writeValueAsString(new CurrentAccountTransactionBody(amount, FORMAT, locale, paymentTypeId, currency, List.of(new CurrentAccountTransactionBody.DataTable(List.of(new CurrentAccountTransactionBody.Entry(
+                        creditorIban,
+                        camt053Entry,
+                        internalCorrelationId,
+                        debtorName,
+                        debtorIban,
+                        transactionGroupId,
+                        endToEndId,
+                        transactionCategoryPurposeCode,
+                        paymentScheme,
+                        unstructured,
+                        null,
+                        null,
+                        null,
+                        partnerAccountSecondaryIdentifier,
+                        null,
+                        valueDated
+                )), "dt_current_account_transaction_details"))));
+                batchItemBuilder.add(tenantIdentifier, items, conversionAccountWithdrawalRelativeUrl, camt053Body, false);
+            }
 
-            CreditTransferTransactionInformation11 creditTransferTransactionInformation11 = pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0);
-            DtSavingsTransactionDetails td = new DtSavingsTransactionDetails(
-                    internalCorrelationId,
-                    camt053Entry,
-                    creditTransferTransactionInformation11.getCdtrAcct().getId().getIBAN(),
-                    paymentTypeCode,
-                    transactionGroupId,
-                    creditTransferTransactionInformation11.getDbtr().getNm(),
-                    creditTransferTransactionInformation11.getDbtrAcct().getId().getIBAN(),
-                    null,
-                    contactDetailsUtil.getId(creditTransferTransactionInformation11.getDbtr().getCtctDtls()),
-                    Optional.ofNullable(creditTransferTransactionInformation11.getRmtInf()).map(RemittanceInformation5::getUstrd).map(List::toString).orElse(""),
-                    transactionCategoryPurposeCode,
-                    paymentScheme,
-                    null,
-                    null,
-                    creditTransferTransactionInformation11.getPmtId().getEndToEndId());
-
-            String camt053Body = painMapper.writeValueAsString(td);
-
-            batchItemBuilder.add(tenantIdentifier, items, camt053RelativeUrl, camt053Body, true);
-
-            doBatch(items,
-                    tenantIdentifier,
-                    transactionGroupId,
-                    "-1",
-                    "-1",
-                    internalCorrelationId,
-                    "bookCreditedAmountToTechnicalAccount");
+            doBatch(items, tenantIdentifier, transactionGroupId, "-1", "-1", internalCorrelationId, "bookCreditedAmountToTechnicalAccount");
         } catch (Exception e) {
             log.error("Worker to book incoming money in AMS has failed, dispatching user task to handle conversion account deposit", e);
             throw new ZeebeBpmnError("Error_BookToConversionToBeHandledManually", e.getMessage());
