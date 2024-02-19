@@ -178,6 +178,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
                                 valueDated)
                         ), "dt_current_transaction_details")
                 )));
+                batchItemBuilder.add(tenantIdentifier, items, conversionAccountWithdrawalRelativeUrl, camt053Body, false);
             }
 
             doBatch(items,
