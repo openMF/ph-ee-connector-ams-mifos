@@ -143,6 +143,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
             log.info("Withdrawing amount {} from conversion account {} of tenant {}", amount, conversionAccountAmsId, tenantIdentifier);
             transactionDate = transactionDate.replaceAll("-", "");
             String apiPath = accountProductType.equalsIgnoreCase("SAVINGS") ? incomingMoneyApi.substring(1) : currentAccountApi.substring(1);
+            String currentAccountWithdrawalRelativeUrl = String.format("%s%s/transactions?command=%s", apiPath, conversionAccountAmsId, "withdrawal");
             Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
             Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001 = painMapper.readValue(originalPain001, Pain00100110CustomerCreditTransferInitiationV10MessageSchema.class);
             BankToCustomerStatementV08 convertedStatement = camt053Mapper.toCamt053Entry(pain001.getDocument());
@@ -160,7 +161,6 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
             String partnerAccountSecondaryIdentifier = contactDetailsUtil.getId(pain001.getDocument().getPaymentInformation().get(0).getDebtor().getContactDetails());
 
             // STEP 1a - batch: withdraw amount
-            String currentAccountWithdrawalRelativeUrl = String.format("%s%s/transactions?command=%s", apiPath, conversionAccountAmsId, "withdrawal");
             String withdrawAmountOperation = "bookOnConversionAccountInAms.ConversionAccount.WithdrawTransactionAmount";
             String withdrawAmountConfigOperationKey = String.format("%s.%s", paymentScheme, withdrawAmountOperation);
             String withdrawAmountPaymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(withdrawAmountConfigOperationKey);
@@ -255,9 +255,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
             }
 
             doBatch(items, tenantIdentifier, transactionGroupId, "-1", conversionAccountAmsId, internalCorrelationId, "bookOnConversionAccountInAms");
-
-            log.info("Book debit on conversion account has finished  successfully");
-
+            log.info("Book debit on conversion account has finished successfully");
             MDC.remove("internalCorrelationId");
         } catch (JsonProcessingException e) {
             log.error(e.getMessage(), e);
