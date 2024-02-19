@@ -157,42 +157,19 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
                 batchItemBuilder.add(tenantIdentifier, items, disposalAccountDepositRelativeUrl, bodyItem, false);
             } // CURRENT account sends a single call only at the details step
 
+            // STEP 2 - batch: deposit details
             transactionDetails.setCreditDebitIndicator(CreditDebitCode.CRDT);
             convertedCamt053Entry.setCreditDebitIndicator(CreditDebitCode.CRDT);
             convertedCamt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "BOOKED"));
             transactionDetails.setAdditionalTransactionInformation(paymentTypeCode);
             String camt053Entry = serializationHelper.writeCamt053AsString(accountProductType, convertedCamt053Entry);
 
-            // STEP 2 - batch: deposit details
             if (accountProductType.equalsIgnoreCase("SAVINGS")) {
                 var camt053Body = painMapper.writeValueAsString(new DtSavingsTransactionDetails(internalCorrelationId, camt053Entry, creditorIban, paymentTypeCode, transactionGroupId, debtorName, debtorIban, null, debtorContactDetails, unstructured, transactionCategoryPurposeCode, paymentScheme, conversionAccountAmsId, disposalAccountAmsId, endToEndId));
                 String camt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
                 batchItemBuilder.add(tenantIdentifier, items, camt053RelativeUrl, camt053Body, true);
             } else {
-                var camt053Body = painMapper.writeValueAsString(new CurrentAccountTransactionBody(amount,
-                        FORMAT,
-                        locale,
-                        paymentTypeId,
-                        currency,
-                        List.of(new CurrentAccountTransactionBody.DataTable(List.of(new CurrentAccountTransactionBody.Entry(
-                                creditorIban,
-                                camt053Entry,
-                                internalCorrelationId,
-                                debtorName,
-                                debtorIban,
-                                transactionGroupId,
-                                endToEndId,
-                                transactionCategoryPurposeCode,
-                                paymentScheme,
-                                unstructured,
-                                conversionAccountAmsId,
-                                disposalAccountAmsId,
-                                null,
-                                partnerAccountSecondaryIdentifier,
-                                null,
-                                valueDated
-                        )), "dt_current_transaction_details"))
-                ));
+                var camt053Body = painMapper.writeValueAsString(new CurrentAccountTransactionBody(amount, FORMAT, locale, paymentTypeId, currency, List.of(new CurrentAccountTransactionBody.DataTable(List.of(new CurrentAccountTransactionBody.Entry(creditorIban, camt053Entry, internalCorrelationId, debtorName, debtorIban, transactionGroupId, endToEndId, transactionCategoryPurposeCode, paymentScheme, unstructured, conversionAccountAmsId, disposalAccountAmsId, null, partnerAccountSecondaryIdentifier, null, valueDated)), "dt_current_transaction_details"))));
                 batchItemBuilder.add(tenantIdentifier, items, disposalAccountDepositRelativeUrl, camt053Body, true);
             }
 
