@@ -171,7 +171,6 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
                 batchItemBuilder.add(tenantIdentifier, items, currentAccountWithdrawalRelativeUrl, withdrawAmountBodyItem, false);
             } // CURRENT account sends a single call only at the details step
 
-
             // STEP 1b - batch: withdraw amount details
             transactionDetails.setCreditDebitIndicator(CreditDebitCode.DBIT);
             convertedCamt053Entry.setCreditDebitIndicator(CreditDebitCode.DBIT);
