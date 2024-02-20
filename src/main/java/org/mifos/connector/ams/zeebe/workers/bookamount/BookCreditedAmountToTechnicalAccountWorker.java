@@ -197,7 +197,7 @@ public class BookCreditedAmountToTechnicalAccountWorker extends AbstractMoneyInO
                         partnerAccountSecondaryIdentifier,
                         null,
                         valueDated
-                )), "dt_current_account_transaction_details"))));
+                )), "dt_current_transaction_details"))));
                 batchItemBuilder.add(tenantIdentifier, items, conversionAccountWithdrawalRelativeUrl, camt053Body, false);
             }
 

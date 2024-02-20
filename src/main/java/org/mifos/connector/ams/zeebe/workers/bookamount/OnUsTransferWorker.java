@@ -277,7 +277,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
                         creditorContactDetails,
                         null,
                         valueDated
-                )), "dt_current_account_transaction_details"))));
+                )), "dt_current_transaction_details"))));
                 batchItemBuilder.add(tenantIdentifier, items, debtorDisposalWithdrawalRelativeUrl, bodyItem, false);
             }
 
@@ -322,7 +322,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
                             creditorContactDetails,
                             null,
                             valueDated
-                    )), "dt_current_account_transaction_details"))));
+                    )), "dt_current_transaction_details"))));
                     batchItemBuilder.add(tenantIdentifier, items, debtorDisposalWithdrawalRelativeUrl, camt053Body, false);
                 }
 
@@ -365,7 +365,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
                             creditorContactDetails,
                             null,
                             valueDated
-                    )), "dt_current_account_transaction_details"))));
+                    )), "dt_current_transaction_details"))));
                     batchItemBuilder.add(tenantIdentifier, items, debtorConversionDepositRelativeUrl, camt053Body, false);
                 }
             }
@@ -413,7 +413,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
                         creditorContactDetails,
                         null,
                         valueDated
-                )), "dt_current_account_transaction_details"))));
+                )), "dt_current_transaction_details"))));
                 batchItemBuilder.add(tenantIdentifier, items, creditorDisposalDepositRelativeUrl, camt053Body, false);
             }
 
@@ -464,7 +464,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
                             creditorContactDetails,
                             null,
                             valueDated
-                    )), "dt_current_account_transaction_details"))));
+                    )), "dt_current_transaction_details"))));
                     batchItemBuilder.add(tenantIdentifier, items, debtorConversionWithdrawRelativeUrl, camt053Body, false);
                 }
             }
