@@ -40,7 +40,12 @@ public class Config {
     }
 
     public String findPaymentTypeIdByOperation(String operation) {
-        return paymentTypeIdConfigs.get(operation);
+        Object result = paymentTypeIdConfigs.get(operation);
+        if (result instanceof Integer) {
+            return String.valueOf(result);
+        } else {
+            return (String) result;
+        }
     }
 
     public String findPaymentTypeCodeByOperation(String operation) {
