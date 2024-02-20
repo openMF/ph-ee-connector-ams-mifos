@@ -179,7 +179,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
             log.debug("re-deposit amount {} in disposal account: {}", amount, disposalAccountAmsId);
             String depositAmountOperation = "revertInAms.DisposalAccount.DepositTransactionAmount";
             String depositAmountConfigOperationKey = String.format("%s.%s", paymentScheme, depositAmountOperation);
-            Integer depositAmountPaymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(depositAmountConfigOperationKey);
+            String depositAmountPaymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(depositAmountConfigOperationKey);
             String depositAmountPaymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(depositAmountConfigOperationKey);
             if (accountProductType.equalsIgnoreCase("SAVINGS")) {
                 String depositAmountCamt053 = painMapper.writeValueAsString(new TransactionBody(transactionDate, amount, depositAmountPaymentTypeId, "", FORMAT, locale));
@@ -221,7 +221,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                 log.debug("Re-depositing fee {} in disposal account {}", transactionFeeAmount, disposalAccountAmsId);
                 String depositFeeOperation = "revertInAms.DisposalAccount.DepositTransactionFee";
                 String depositFeeConfigOperationKey = String.format("%s.%s", paymentScheme, depositFeeOperation);
-                Integer depositFeePaymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(depositFeeConfigOperationKey);
+                String depositFeePaymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(depositFeeConfigOperationKey);
                 String depositFeePaymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(depositFeeConfigOperationKey);
                 camt053Fragment.setAdditionalTransactionInformation(depositFeePaymentTypeCode);
                 camt053Fragment.setSupplementaryData(new ArrayList<>());
@@ -264,7 +264,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
             log.debug("Withdrawing {} from conversion account {}", amount, conversionAccountAmsId);
             String withdrawAmountOperation = "revertInAms.ConversionAccount.WithdrawTransactionAmount";
             String withdrawAmountConfigOperationKey = String.format("%s.%s", paymentScheme, withdrawAmountOperation);
-            Integer withdrawAmountPaymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(withdrawAmountConfigOperationKey);
+            String withdrawAmountPaymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(withdrawAmountConfigOperationKey);
             String withdrawAmountPaymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(withdrawAmountConfigOperationKey);
             camt053Fragment.setCreditDebitIndicator(CreditDebitCode.DBIT);
             camt053Fragment.setAdditionalTransactionInformation(withdrawAmountPaymentTypeCode);
@@ -310,7 +310,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 
                 String withdrawFeeOperation = "revertInAms.ConversionAccount.WithdrawTransactionFee";
                 String withdrawFeeConfigOperationKey = String.format("%s.%s", paymentScheme, withdrawFeeOperation);
-                Integer withdrawFeePaymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(withdrawFeeConfigOperationKey);
+                String withdrawFeePaymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(withdrawFeeConfigOperationKey);
                 String withdrawFeePaymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(withdrawFeeConfigOperationKey);
                 camt053Fragment.setAdditionalTransactionInformation(withdrawFeePaymentTypeCode);
                 camt053Fragment.setSupplementaryData(new ArrayList<>());
@@ -513,7 +513,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
             PaymentInstruction34 paymentInstruction = pain001.getDocument().getPaymentInformation().get(0);
             CreditTransferTransaction40 creditTransferTransaction = paymentInstruction.getCreditTransferTransactionInformation().get(0);
             String debtorIban = paymentInstruction.getDebtorAccount().getIdentification().getIban();
-            Integer depositPaymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(depositAmountConfigOperationKey);
+            String depositPaymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(depositAmountConfigOperationKey);
             String depositPaymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(depositAmountConfigOperationKey);
             String creditorName = creditTransferTransaction.getCreditor().getName();
             String creditorIban = creditTransferTransaction.getCreditorAccount().getIdentification().getIban();
@@ -742,9 +742,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
             var copy = DatatypeFactory.newDefaultInstance().newXMLGregorianCalendar(GregorianCalendar.from(zdt));
             camt053Entry.getValueDate().setAdditionalProperty("Date", copy);
             EntryTransaction10 transactionDetails = camt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0);
-            if ("CURRENT".equalsIgnoreCase(accountProductType)) {
-                // do not set AdditionalTransactionInformation for current account
-            } else {
+            if ("SAVINGS".equalsIgnoreCase(accountProductType)) {
                 transactionDetails.setAdditionalTransactionInformation(paymentTypeCode);
             }
             transactionDetails.setCreditDebitIndicator(CreditDebitCode.CRDT);
@@ -780,9 +778,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
             String withdrawAmountConfigOperationKey = String.format("%s.%s", paymentScheme, withdrawAmountOperation);
             paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(withdrawAmountConfigOperationKey);
             paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(withdrawAmountConfigOperationKey);
-            if ("CURRENT".equalsIgnoreCase(accountProductType)) {
-                // do not set AdditionalTransactionInformation for current account
-            } else {
+            if ("SAVINGS".equalsIgnoreCase(accountProductType)) {
                 transactionDetails.setAdditionalTransactionInformation(paymentTypeCode);
             }
             transactionDetails.setCreditDebitIndicator(CreditDebitCode.DBIT);

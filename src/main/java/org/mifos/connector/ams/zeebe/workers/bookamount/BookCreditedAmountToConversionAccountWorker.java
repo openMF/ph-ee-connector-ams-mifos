@@ -126,7 +126,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
             Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
             String depositAmountOperation = "bookCreditedAmountToConversionAccount.ConversionAccount.DepositTransactionAmount";
             String configOperationKey = String.format("%s.%s", paymentScheme, depositAmountOperation);
-            Integer paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(configOperationKey);
+            String paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(configOperationKey);
             String paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(configOperationKey);
             String savingsAccountCamt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
             iso.std.iso._20022.tech.xsd.pacs_008_001.Document pacs008 = jaxbUtils.unmarshalPacs008(originalPacs008);
@@ -251,7 +251,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
 
             Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
             String configOperationKey = String.format("%s.%s", paymentScheme, "bookCreditedAmountToConversionAccountInRecall.ConversionAccount.DepositTransactionAmount");
-            Integer paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(configOperationKey);
+            String paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(configOperationKey);
             String paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(configOperationKey);
 
             TransactionBody body = new TransactionBody(
@@ -368,7 +368,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
             Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
             String depositAmountOperation = "bookCreditedAmountToConversionAccountInReturn.ConversionAccount.DepositTransactionAmount";
             String configOperationKey = String.format("%s.%s", paymentScheme, depositAmountOperation);
-            Integer paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(configOperationKey);
+            String paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(configOperationKey);
             String paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(configOperationKey);
 
             iso.std.iso._20022.tech.xsd.pacs_004_001.Document pacs_004 = jaxbUtils.unmarshalPacs004(pacs004);

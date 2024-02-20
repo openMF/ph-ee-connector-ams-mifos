@@ -5,10 +5,10 @@ import java.util.Map;
 public class Config {
 
     private String tenant;
-    private Map<String, Integer> paymentTypeIdConfigs;
+    private Map<String, String> paymentTypeIdConfigs;
     private Map<String, String> paymentTypeCodeConfigs;
 
-    Config(String tenant, Map<String, Integer> ptiConfigs, Map<String, String> ptcConfigs) {
+    Config(String tenant, Map<String, String> ptiConfigs, Map<String, String> ptcConfigs) {
         super();
         this.tenant = tenant;
         this.paymentTypeIdConfigs = ptiConfigs;
@@ -23,11 +23,11 @@ public class Config {
         this.tenant = tenant;
     }
 
-    public Map<String, Integer> getPaymentTypeIdConfigs() {
+    public Map<String, String> getPaymentTypeIdConfigs() {
         return paymentTypeIdConfigs;
     }
 
-    public void setPaymentTypeIdConfigs(Map<String, Integer> configs) {
+    public void setPaymentTypeIdConfigs(Map<String, String> configs) {
         this.paymentTypeIdConfigs = configs;
     }
 
@@ -39,7 +39,7 @@ public class Config {
         this.paymentTypeCodeConfigs = configs;
     }
 
-    public Integer findPaymentTypeIdByOperation(String operation) {
+    public String findPaymentTypeIdByOperation(String operation) {
         return paymentTypeIdConfigs.get(operation);
     }
 

@@ -156,7 +156,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
             // STEP 0 - collect / extract information
             log.debug("transferTheAmountBetweenDisposalAccounts - Incoming pain.001: {}", originalPain001);
             Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
-            Integer outHoldReasonId = paymentTypeConfig.findPaymentTypeIdByOperation(String.format("%s.%s", paymentScheme, "outHoldReasonId"));
+            String outHoldReasonId = paymentTypeConfig.findPaymentTypeIdByOperation(String.format("%s.%s", paymentScheme, "outHoldReasonId"));
             String savingsCamt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
             String apiPath = accountProductType.equalsIgnoreCase("SAVINGS") ? incomingMoneyApi.substring(1) : currentAccountApi.substring(1);
 
@@ -235,7 +235,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
             String debtorDisposalWithdrawalRelativeUrl = String.format("%s%s/transactions?command=%s", apiPath, debtorDisposalAccountAmsId, "withdrawal");
             String withdrawAmountOperation = "transferTheAmountBetweenDisposalAccounts.Debtor.DisposalAccount.WithdrawTransactionAmount";
             String withdrawAmountConfigOperationKey = String.format("%s.%s", paymentScheme, withdrawAmountOperation);
-            Integer withdrawPaymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(withdrawAmountConfigOperationKey);
+            String withdrawPaymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(withdrawAmountConfigOperationKey);
             String withdrawPaymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(withdrawAmountConfigOperationKey);
 
             if (accountProductType.equalsIgnoreCase("SAVINGS")) {

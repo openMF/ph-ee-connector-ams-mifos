@@ -14,7 +14,7 @@ public class CurrentAccountTransactionBody {
     private BigDecimal transactionAmount;
     private String dateFormat;
     private String locale;
-    private Integer paymentTypeId;
+    private String paymentTypeId;
     private String currencyCode;
     private List<DataTable> datatables;
 

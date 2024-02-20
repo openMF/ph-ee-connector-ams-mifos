@@ -164,7 +164,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
             String withdrawAmountOperation = "bookOnConversionAccountInAms.ConversionAccount.WithdrawTransactionAmount";
             String withdrawAmountConfigOperationKey = String.format("%s.%s", paymentScheme, withdrawAmountOperation);
             String withdrawAmountPaymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(withdrawAmountConfigOperationKey);
-            Integer withdrawAmountPaymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(withdrawAmountConfigOperationKey);
+            String withdrawAmountPaymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(withdrawAmountConfigOperationKey);
 
             if (accountProductType.equalsIgnoreCase("SAVINGS")) {
                 String withdrawAmountBodyItem = painMapper.writeValueAsString(new TransactionBody(transactionDate, amount, withdrawAmountPaymentTypeId, "", FORMAT, locale));
@@ -211,7 +211,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
                 log.info("Withdrawing fee {} from conversion account {}", transactionFeeAmount, conversionAccountAmsId);
                 String withdrawFeeOperation = "bookOnConversionAccountInAms.ConversionAccount.WithdrawTransactionFee";
                 String withdrawFeeConfigOperationKey = String.format("%s.%s", paymentScheme, withdrawFeeOperation);
-                Integer withdrawFeePaymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(withdrawFeeConfigOperationKey);
+                String withdrawFeePaymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(withdrawFeeConfigOperationKey);
                 String withdrawFeePaymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(withdrawFeeConfigOperationKey);
                 transactionDetails.setAdditionalTransactionInformation(withdrawFeePaymentTypeCode);
                 transactionDetails.setSupplementaryData(new ArrayList<>());
@@ -333,7 +333,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
             Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
             String withdrawAmountOperation = "withdrawTheAmountFromConversionAccountInAms.ConversionAccount.WithdrawTransactionAmount";
             String configOperationKey = String.format("%s.%s", paymentScheme, withdrawAmountOperation);
-            Integer paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(configOperationKey);
+            String paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(configOperationKey);
             String paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(configOperationKey);
 
             TransactionBody body = new TransactionBody(

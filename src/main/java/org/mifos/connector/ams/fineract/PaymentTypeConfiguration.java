@@ -29,7 +29,7 @@ public class PaymentTypeConfiguration {
     public ConfigFactory paymentTypeConfigFactory() throws JsonProcessingException {
         Map<String, Map<String, List<LinkedHashMap<String, Object>>>> tenantConfigs = readTenantConfigs();
 
-        Map<String, Map<String, Integer>> paymentTypeIdConfigMap = new HashMap<>();
+        Map<String, Map<String, String>> paymentTypeIdConfigMap = new HashMap<>();
         Map<String, Map<String, String>> paymentTypeCodeConfigMap = new HashMap<>();
         for (Entry<String, Map<String, List<LinkedHashMap<String, Object>>>> tenantEntry : tenantConfigs.entrySet()) {
             populateConfigMap(paymentTypeIdConfigMap, tenantEntry, "paymentTypeConfigs", "Operation", "FineractId");
@@ -65,7 +65,7 @@ public class PaymentTypeConfiguration {
     public ConfigFactory technicalAccountConfigFactory() throws JsonProcessingException {
         Map<String, Map<String, List<LinkedHashMap<String, Object>>>> tenantConfigs = readTenantConfigs();
 
-        Map<String, Map<String, Integer>> paymentTypeConfigMap = new HashMap<>();
+        Map<String, Map<String, String>> paymentTypeConfigMap = new HashMap<>();
         for (Entry<String, Map<String, List<LinkedHashMap<String, Object>>>> tenantEntry : tenantConfigs.entrySet()) {
             populateConfigMap(paymentTypeConfigMap, tenantEntry, "technicalAccountConfigs", "Operation", "AccountId");
         }
