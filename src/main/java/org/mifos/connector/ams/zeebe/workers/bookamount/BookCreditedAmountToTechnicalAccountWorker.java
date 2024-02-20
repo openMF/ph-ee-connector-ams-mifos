@@ -141,7 +141,7 @@ public class BookCreditedAmountToTechnicalAccountWorker extends AbstractMoneyInO
             String apiPath = accountProductType.equalsIgnoreCase("SAVINGS") ? incomingMoneyApi.substring(1) : currentAccountApi.substring(1);
             String taLookup = String.format("%s.%s", paymentScheme, caseIdentifier);
             String recallTechnicalAccountId = technicalAccountConfig.findPaymentTypeIdByOperation(taLookup);
-            String conversionAccountWithdrawalRelativeUrl = String.format("%s%d/transactions?command=%s", apiPath, recallTechnicalAccountId, "deposit");
+            String conversionAccountWithdrawalRelativeUrl = String.format("%s%s/transactions?command=%s", apiPath, recallTechnicalAccountId, "deposit");
             Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
             String configOperationKey = String.format("%s.%s.%s", paymentScheme, "bookCreditedAmountToTechnicalAccount", caseIdentifier);
             String paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(configOperationKey);
