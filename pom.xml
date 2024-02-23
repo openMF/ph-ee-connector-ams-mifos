@@ -233,11 +233,6 @@
             <artifactId>spring-cloud-starter-aws-secrets-manager-config</artifactId>
             <version>2.4.4</version>
         </dependency>
-		<dependency>
-			<groupId>org.codehaus.janino</groupId>
-			<artifactId>janino</artifactId>
-			<version>3.1.11</version>
-		</dependency>
     </dependencies>
 
     <build>
