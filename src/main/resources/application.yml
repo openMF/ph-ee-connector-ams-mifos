@@ -28,6 +28,10 @@ management:
                     include:
                         - camelHealth
                         - zeebeClient
+    endpoints:
+        web:
+            exposure:
+                include: health, info, prometheus
 
 baasflow:
     events:
