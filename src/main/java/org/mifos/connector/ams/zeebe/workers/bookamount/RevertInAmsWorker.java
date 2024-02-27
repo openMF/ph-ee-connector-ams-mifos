@@ -789,6 +789,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
             camt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "BOOKED"));
             camt053 = serializeCamt053orFragment(accountProductType, transactionDetails, camt053Entry);
 
+            // STEP 3 - withdraw amount and details
             if (accountProductType.equalsIgnoreCase("SAVINGS")) {
                 var bodyItem = painMapper.writeValueAsString(new TransactionBody(transactionDate, amount, withdrawPaymentTypeId, "", FORMAT, locale));
                 batchItemBuilder.add(tenantIdentifier, items, withdrawRelativeUrl, bodyItem, false);
