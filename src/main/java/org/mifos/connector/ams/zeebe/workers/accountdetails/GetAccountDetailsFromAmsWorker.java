@@ -107,9 +107,9 @@ public class GetAccountDetailsFromAmsWorker extends AbstractAmsWorker {
             String disposalAccountStatus = BeanWalker.of(disposalAccount).get(CAGetResponse::getStatus).get(CAGetResponse.Status::getId).get();
             String conversionAccountStatus = BeanWalker.of(conversionAccount).get(CAGetResponse::getStatus).get(CAGetResponse.Status::getId).get();
 
-            Boolean AccountStatusCheckResult = (Objects.equals(disposalAccountStatus, "ACTIVE") ||
+            Boolean AccountStatusCheckResult = (Objects.equals(disposalAccountStatus, "ACTIVE") &&
                     Objects.equals(conversionAccountStatus, "ACTIVE"));
-            Boolean CurrencyCheckResult = (Objects.equals(BeanWalker.of(disposalAccount).get(CAGetResponse::getCurrency).get(CAGetResponse.Currency::getCode).get(), "HUF") ||
+            Boolean CurrencyCheckResult = (Objects.equals(BeanWalker.of(disposalAccount).get(CAGetResponse::getCurrency).get(CAGetResponse.Currency::getCode).get(), "HUF") &&
                     Objects.equals(BeanWalker.of(conversionAccount).get(CAGetResponse::getCurrency).get(CAGetResponse.Currency::getCode).get(), "HUF"));
             //TODO map fineract response
             String status = AccountAmsStatus.NOT_READY_FOR_TRANSACTION.name();
