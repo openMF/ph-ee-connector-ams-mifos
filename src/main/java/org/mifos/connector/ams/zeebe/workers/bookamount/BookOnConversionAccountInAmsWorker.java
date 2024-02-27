@@ -270,6 +270,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
     public void withdrawTheAmountFromConversionAccountInAms(JobClient client,
                                                             ActivatedJob activatedJob,
                                                             @Variable BigDecimal amount,
+                                                            @Variable String currency,
                                                             @Variable String conversionAccountAmsId,
                                                             @Variable String tenantIdentifier,
                                                             @Variable String transactionGroupId,
@@ -281,7 +282,9 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
                                                             @Variable String pacs002,
                                                             @Variable String transactionDate,
                                                             @Variable String internalCorrelationId,
-                                                            @Variable String accountProductType) {
+                                                            @Variable String accountProductType,
+                                                            @Variable String valueDated
+                                                            ) {
         log.info("withdrawTheAmountFromConversionAccountInAms");
         eventService.auditedEvent(
                 eventBuilder -> EventLogUtil.initZeebeJob(activatedJob,
@@ -290,6 +293,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
                         null,
                         eventBuilder),
                 eventBuilder -> withdrawTheAmountFromConversionAccountInAms(amount,
+                        currency,
                         conversionAccountAmsId,
                         tenantIdentifier,
                         transactionGroupId,
@@ -299,12 +303,15 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
                         debtorIban,
                         generatedPacs004,
                         pacs002,
-                        transactionDate,
+                        transactionDate == null ? LocalDate.now().format(DateTimeFormatter.ofPattern(FORMAT)) : transactionDate,
                         internalCorrelationId,
-                        accountProductType));
+                        accountProductType,
+                        Boolean.parseBoolean(Optional.ofNullable(valueDated).orElse("false"))
+                ));
     }
 
     private Void withdrawTheAmountFromConversionAccountInAms(BigDecimal amount,
+                                                             String currency,
                                                              String conversionAccountAmsId,
                                                              String tenantIdentifier,
                                                              String transactionGroupId,
@@ -316,39 +323,34 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
                                                              String originalPacs002,
                                                              String transactionDate,
                                                              String internalCorrelationId,
-                                                             String accountProductType) {
+                                                             String accountProductType,
+                                                             boolean valueDated) {
         try {
+            // STEP 0 - collect / extract information
             log.info("Withdrawing amount {} from conversion account {} of tenant {}", amount, conversionAccountAmsId, tenantIdentifier);
-
-            if (transactionDate == null) {
-                transactionDate = LocalDate.now().format(DateTimeFormatter.ofPattern(FORMAT));
-            }
-
             iso.std.iso._20022.tech.xsd.pacs_004_001.Document pacs004 = jaxbUtils.unmarshalPacs004(originalPacs004);
-
             iso.std.iso._20022.tech.xsd.pacs_002_001.Document pacs002 = jaxbUtils.unmarshalPacs002(originalPacs002);
 
-            String conversionAccountWithdrawalRelativeUrl = String.format("%s%s/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "withdrawal");
-
+            String apiPath = accountProductType.equalsIgnoreCase("SAVINGS") ? incomingMoneyApi.substring(1) : currentAccountApi.substring(1);
+            String conversionAccountWithdrawalRelativeUrl = String.format("%s%s/transactions?command=%s", apiPath, conversionAccountAmsId, "withdrawal");
             Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
             String withdrawAmountOperation = "withdrawTheAmountFromConversionAccountInAms.ConversionAccount.WithdrawTransactionAmount";
             String configOperationKey = String.format("%s.%s", paymentScheme, withdrawAmountOperation);
             String paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(configOperationKey);
             String paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(configOperationKey);
-
-            TransactionBody body = new TransactionBody(
-                    transactionDate,
-                    amount,
-                    paymentTypeId,
-                    "",
-                    FORMAT,
-                    locale);
-
-            String bodyItem = painMapper.writeValueAsString(body);
-
+            PaymentTransactionInformation27 paymentTransactionInformation = pacs004.getPmtRtr().getTxInf().get(0);
+            String unstructured = Optional.ofNullable(paymentTransactionInformation.getOrgnlTxRef().getRmtInf()).map(RemittanceInformation5::getUstrd).map(List::toString).orElse("");
+            String creditorIban = paymentTransactionInformation.getOrgnlTxRef().getCdtrAcct().getId().getIBAN();
+            String debtorName = paymentTransactionInformation.getOrgnlTxRef().getDbtr().getNm();
+            String debtorContactDetails = contactDetailsUtil.getId(paymentTransactionInformation.getOrgnlTxRef().getDbtr().getCtctDtls());
+            String endToEndId = paymentTransactionInformation.getOrgnlEndToEndId();
             List<TransactionItem> items = new ArrayList<>();
 
-            batchItemBuilder.add(tenantIdentifier, items, conversionAccountWithdrawalRelativeUrl, bodyItem, false);
+            // STEP 1 - withdraw amount
+            if (accountProductType.equalsIgnoreCase("SAVINGS")) {
+                String bodyItem = painMapper.writeValueAsString(new TransactionBody(transactionDate, amount, paymentTypeId, "", FORMAT, locale));
+                batchItemBuilder.add(tenantIdentifier, items, conversionAccountWithdrawalRelativeUrl, bodyItem, false);
+            }
 
             Pacs004ToCamt053Converter converter = new Pacs004ToCamt053Converter();
             ReportEntry10 camt053Entry = converter.convert(pacs004,
@@ -359,8 +361,6 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
                                                     .withTransactionDetails(List.of(new EntryTransaction10()))))))))).getStatement().get(0).getEntry().get(0);
             camt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "BOOKED"));
             camt053Entry.setCreditDebitIndicator(CreditDebitCode.DBIT);
-
-            PaymentTransactionInformation27 paymentTransactionInformation = pacs004.getPmtRtr().getTxInf().get(0);
 
             XMLGregorianCalendar orgnlCreDtTm = pacs002.getFIToFIPmtStsRpt().getOrgnlGrpInfAndSts().getOrgnlCreDtTm();
             if (orgnlCreDtTm == null) {
@@ -379,40 +379,32 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
 
             String camt053 = serializationHelper.writeCamt053AsString(accountProductType, camt053Entry);
 
-            String camt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
+            if (accountProductType.equalsIgnoreCase("SAVINGS")) {
+                String camt053Body = painMapper.writeValueAsString(new DtSavingsTransactionDetails(internalCorrelationId, camt053, creditorIban, paymentTypeCode, internalCorrelationId, debtorName, debtorIban, null, debtorContactDetails, unstructured, transactionCategoryPurposeCode, paymentScheme, conversionAccountAmsId, null, endToEndId));
+                batchItemBuilder.add(tenantIdentifier, items, "datatables/dt_savings_transaction_details/$.resourceId", camt053Body, true);
+            } else {
+                String camt053Body = painMapper.writeValueAsString(new CurrentAccountTransactionBody(amount, FORMAT, locale, paymentTypeId, currency, List.of(new CurrentAccountTransactionBody.DataTable(List.of(new CurrentAccountTransactionBody.Entry(
+                        creditorIban,
+                        camt053,
+                        internalCorrelationId,
+                        debtorName,
+                        debtorIban,
+                        transactionGroupId,
+                        endToEndId,
+                        transactionCategoryPurposeCode,
+                        paymentScheme,
+                        unstructured,
+                        conversionAccountAmsId,
+                        null,
+                        null,
+                        debtorContactDetails,
+                        null,
+                        valueDated
+                )), "dt_current_transaction_details"))));
+                batchItemBuilder.add(tenantIdentifier, items, conversionAccountWithdrawalRelativeUrl, camt053Body, false);
+            }
 
-            String remittanceInformationUnstructured = Optional.ofNullable(paymentTransactionInformation.getOrgnlTxRef().getRmtInf())
-                    .map(RemittanceInformation5::getUstrd).map(List::toString)
-                    .orElse("");
-
-            DtSavingsTransactionDetails td = new DtSavingsTransactionDetails(
-                    internalCorrelationId,
-                    camt053,
-                    paymentTransactionInformation.getOrgnlTxRef().getCdtrAcct().getId().getIBAN(),
-                    paymentTypeCode,
-                    internalCorrelationId,
-                    paymentTransactionInformation.getOrgnlTxRef().getDbtr().getNm(),
-                    paymentTransactionInformation.getOrgnlTxRef().getDbtrAcct().getId().getIBAN(),
-                    null,
-                    contactDetailsUtil.getId(paymentTransactionInformation.getOrgnlTxRef().getDbtr().getCtctDtls()),
-                    remittanceInformationUnstructured,
-                    transactionCategoryPurposeCode,
-                    paymentScheme,
-                    conversionAccountAmsId,
-                    null,
-                    paymentTransactionInformation.getOrgnlEndToEndId());
-
-            String camt053Body = painMapper.writeValueAsString(td);
-
-            batchItemBuilder.add(tenantIdentifier, items, camt053RelativeUrl, camt053Body, true);
-
-            doBatch(items,
-                    tenantIdentifier,
-                    transactionGroupId,
-                    "-1",
-                    conversionAccountAmsId,
-                    internalCorrelationId,
-                    "withdrawTheAmountFromConversionAccountInAms");
+            doBatch(items, tenantIdentifier, transactionGroupId, "-1", conversionAccountAmsId, internalCorrelationId, "withdrawTheAmountFromConversionAccountInAms");
         } catch (JAXBException | JsonProcessingException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
