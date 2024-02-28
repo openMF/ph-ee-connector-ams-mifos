@@ -17,8 +17,7 @@ import iso.std.iso._20022.tech.json.pain_001_001.CustomerCreditTransferInitiatio
 import iso.std.iso._20022.tech.json.pain_001_001.Pain00100110CustomerCreditTransferInitiationV10MessageSchema;
 import lombok.extern.slf4j.Slf4j;
 import org.mifos.connector.ams.common.SerializationHelper;
-import org.mifos.connector.ams.fineract.Config;
-import org.mifos.connector.ams.fineract.ConfigFactory;
+import org.mifos.connector.ams.fineract.TenantConfigs;
 import org.mifos.connector.ams.log.EventLogUtil;
 import org.mifos.connector.ams.log.LogInternalCorrelationId;
 import org.mifos.connector.ams.log.TraceZeebeArguments;
@@ -52,7 +51,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
     protected String currentAccountApi;
 
     @Autowired
-    private ConfigFactory paymentTypeConfigFactory;
+    private TenantConfigs tenantConfigs;
 
     @Autowired
     private BatchItemBuilder batchItemBuilder;
@@ -103,7 +102,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
                                                                         @Variable String creditorInternalAccountId,
                                                                         @Variable String accountProductType,
                                                                         @Variable String valueDated
-                                                                        ) {
+    ) {
         log.info("transferTheAmountBetweenDisposalAccounts");
         return eventService.auditedEvent(
                 eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "transferTheAmountBetweenDisposalAccounts", internalCorrelationId, transactionGroupId, eventBuilder),
@@ -155,8 +154,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
         try {
             // STEP 0 - collect / extract information
             log.debug("transferTheAmountBetweenDisposalAccounts - Incoming pain.001: {}", originalPain001);
-            Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
-            String outHoldReasonId = paymentTypeConfig.findPaymentTypeIdByOperation(String.format("%s.%s", paymentScheme, "outHoldReasonId"));
+            String outHoldReasonId = tenantConfigs.findPaymentTypeId(tenantIdentifier, String.format("%s.%s", paymentScheme, "outHoldReasonId"));
             String savingsCamt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
             String apiPath = accountProductType.equalsIgnoreCase("SAVINGS") ? incomingMoneyApi.substring(1) : currentAccountApi.substring(1);
 
@@ -192,7 +190,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
                 batchItemBuilder.add(tenantIdentifier, items, holdTransactionUrl, bodyItem, false);
 
                 // STEP 1b - transaction details
-                String paymentTypeCode1 = Optional.ofNullable(paymentTypeConfig.findPaymentTypeCodeByOperation(String.format("%s.%s", paymentScheme, null))).orElse("");
+                String paymentTypeCode1 = Optional.ofNullable(tenantConfigs.findResourceCode(tenantIdentifier, String.format("%s.%s", paymentScheme, null))).orElse("");
                 convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode1);
                 String camt053 = serializationHelper.writeCamt053AsString(accountProductType, convertedcamt053Entry);
 
@@ -222,7 +220,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
                 batchItemBuilder.add(tenantIdentifier, items, releaseTransactionUrl, null, false);
                 String releaseAmountOperation = "transferTheAmountBetweenDisposalAccounts.Debtor.DisposalAccount.ReleaseTransactionAmount";
                 String releaseOperationKey = String.format("%s.%s", paymentScheme, releaseAmountOperation);
-                String paymentTypeCode2 = Optional.ofNullable(paymentTypeConfig.findPaymentTypeCodeByOperation(releaseOperationKey)).orElse("");
+                String paymentTypeCode2 = Optional.ofNullable(tenantConfigs.findResourceCode(tenantIdentifier, releaseOperationKey)).orElse("");
                 convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode2);
                 String camt0531 = serializationHelper.writeCamt053AsString(accountProductType, convertedcamt053Entry);
 
@@ -235,8 +233,8 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
             String debtorDisposalWithdrawalRelativeUrl = String.format("%s%s/transactions?command=%s", apiPath, debtorDisposalAccountAmsId, "withdrawal");
             String withdrawAmountOperation = "transferTheAmountBetweenDisposalAccounts.Debtor.DisposalAccount.WithdrawTransactionAmount";
             String withdrawAmountConfigOperationKey = String.format("%s.%s", paymentScheme, withdrawAmountOperation);
-            String withdrawPaymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(withdrawAmountConfigOperationKey);
-            String withdrawPaymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(withdrawAmountConfigOperationKey);
+            String withdrawPaymentTypeId = tenantConfigs.findPaymentTypeId(tenantIdentifier, withdrawAmountConfigOperationKey);
+            String withdrawPaymentTypeCode = tenantConfigs.findResourceCode(tenantIdentifier, withdrawAmountConfigOperationKey);
 
             if (accountProductType.equalsIgnoreCase("SAVINGS")) {
                 String bodyItem = painMapper.writeValueAsString(new TransactionBody(interbankSettlementDate, amount, withdrawPaymentTypeId, "", FORMAT, locale));
@@ -285,8 +283,8 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
                 // STEP 5 - withdraw fee
                 String withdrawFeeDisposalOperation = "transferTheAmountBetweenDisposalAccounts.Debtor.DisposalAccount.WithdrawTransactionFee";
                 String withdrawFeeDisposalConfigOperationKey = String.format("%s.%s", paymentScheme, withdrawFeeDisposalOperation);
-                withdrawPaymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(withdrawFeeDisposalConfigOperationKey);
-                withdrawPaymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(withdrawFeeDisposalConfigOperationKey);
+                withdrawPaymentTypeId = tenantConfigs.findPaymentTypeId(tenantIdentifier, withdrawFeeDisposalConfigOperationKey);
+                withdrawPaymentTypeCode = tenantConfigs.findResourceCode(tenantIdentifier, withdrawFeeDisposalConfigOperationKey);
 
                 if (accountProductType.equalsIgnoreCase("SAVINGS")) {
                     var bodyItem = painMapper.writeValueAsString(new TransactionBody(interbankSettlementDate, transactionFeeAmount, withdrawPaymentTypeId, "", FORMAT, locale));
@@ -329,8 +327,8 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
                 // STEP 6 - deposit fee
                 String depositFeeOperation = "transferTheAmountBetweenDisposalAccounts.Debtor.ConversionAccount.DepositTransactionFee";
                 String depositFeeConfigOperationKey = String.format("%s.%s", paymentScheme, depositFeeOperation);
-                var depositPaymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(depositFeeConfigOperationKey);
-                var depositPaymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(depositFeeConfigOperationKey);
+                var depositPaymentTypeId = tenantConfigs.findPaymentTypeId(tenantIdentifier, depositFeeConfigOperationKey);
+                var depositPaymentTypeCode = tenantConfigs.findResourceCode(tenantIdentifier, depositFeeConfigOperationKey);
                 transactionDetails.setAdditionalTransactionInformation(depositPaymentTypeCode);
                 transactionDetails.getSupplementaryData().clear();
                 transactionDetails.setCreditDebitIndicator(CreditDebitCode.CRDT);
@@ -372,8 +370,8 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 
             String depositAmountOperation = "transferTheAmountBetweenDisposalAccounts.Creditor.DisposalAccount.DepositTransactionAmount";
             String depositAmountConfigOperationKey = String.format("%s.%s", paymentScheme, depositAmountOperation);
-            var depositPaymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(depositAmountConfigOperationKey);
-            var depositPaymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(depositAmountConfigOperationKey);
+            var depositPaymentTypeId = tenantConfigs.findPaymentTypeId(tenantIdentifier, depositAmountConfigOperationKey);
+            var depositPaymentTypeCode = tenantConfigs.findResourceCode(tenantIdentifier, depositAmountConfigOperationKey);
             transactionDetails.setAdditionalTransactionInformation(depositPaymentTypeCode);
             transactionDetails.getSupplementaryData().clear();
             camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001.getDocument(), transactionDetails, transactionCategoryPurposeCode);
@@ -421,8 +419,8 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
             if (hasFee) {
                 String withdrawFeeConversionOperation = "transferTheAmountBetweenDisposalAccounts.Debtor.ConversionAccount.WithdrawTransactionFee";
                 String withdrawFeeConversionConfigOperationKey = String.format("%s.%s", paymentScheme, withdrawFeeConversionOperation);
-                depositPaymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(withdrawFeeConversionConfigOperationKey);
-                depositPaymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(withdrawFeeConversionConfigOperationKey);
+                depositPaymentTypeId = tenantConfigs.findPaymentTypeId(tenantIdentifier, withdrawFeeConversionConfigOperationKey);
+                depositPaymentTypeCode = tenantConfigs.findResourceCode(tenantIdentifier, withdrawFeeConversionConfigOperationKey);
                 transactionDetails.setAdditionalTransactionInformation(depositPaymentTypeCode);
                 transactionDetails.getSupplementaryData().clear();
                 transactionDetails.setCreditDebitIndicator(CreditDebitCode.DBIT);

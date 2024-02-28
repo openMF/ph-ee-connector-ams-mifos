@@ -15,8 +15,7 @@ import iso.std.iso._20022.tech.xsd.pacs_008_001.CreditTransferTransactionInforma
 import iso.std.iso._20022.tech.xsd.pacs_008_001.RemittanceInformation5;
 import lombok.extern.slf4j.Slf4j;
 import org.mifos.connector.ams.common.SerializationHelper;
-import org.mifos.connector.ams.fineract.Config;
-import org.mifos.connector.ams.fineract.ConfigFactory;
+import org.mifos.connector.ams.fineract.TenantConfigs;
 import org.mifos.connector.ams.log.EventLogUtil;
 import org.mifos.connector.ams.log.LogInternalCorrelationId;
 import org.mifos.connector.ams.log.TraceZeebeArguments;
@@ -49,7 +48,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
     protected String currentAccountApi;
 
     @Autowired
-    private ConfigFactory paymentTypeConfigFactory;
+    private TenantConfigs tenantConfigs;
 
     @Autowired
     private JAXBUtils jaxbUtils;
@@ -124,11 +123,10 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
             log.info("book to conversion account in payment (pacs.008) {} started for {} on {} ", internalCorrelationId, paymentScheme, tenantIdentifier);
             String apiPath = accountProductType.equalsIgnoreCase("SAVINGS") ? incomingMoneyApi.substring(1) : currentAccountApi.substring(1);
             String conversionAccountWithdrawalRelativeUrl = String.format("%s%s/transactions?command=%s", apiPath, conversionAccountAmsId, "deposit");
-            Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
             String depositAmountOperation = "bookCreditedAmountToConversionAccount.ConversionAccount.DepositTransactionAmount";
             String configOperationKey = String.format("%s.%s", paymentScheme, depositAmountOperation);
-            String paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(configOperationKey);
-            String paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(configOperationKey);
+            String paymentTypeId = tenantConfigs.findPaymentTypeId(tenantIdentifier, configOperationKey);
+            String paymentTypeCode = tenantConfigs.findResourceCode(tenantIdentifier, configOperationKey);
             iso.std.iso._20022.tech.xsd.pacs_008_001.Document pacs008 = jaxbUtils.unmarshalPacs008(originalPacs008);
             CreditTransferTransactionInformation11 creditTransferTransaction = pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0);
             String unstructured = Optional.ofNullable(creditTransferTransaction.getRmtInf()).map(RemittanceInformation5::getUstrd).map(List::toString).orElse("");
@@ -245,10 +243,9 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
 
             String apiPath = accountProductType.equalsIgnoreCase("SAVINGS") ? incomingMoneyApi.substring(1) : currentAccountApi.substring(1);
             String conversionAccountWithdrawalRelativeUrl = String.format("%s%s/transactions?command=%s", apiPath, conversionAccountAmsId, "deposit");
-            Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
             String configOperationKey = String.format("%s.%s", paymentScheme, "bookCreditedAmountToConversionAccountInRecall.ConversionAccount.DepositTransactionAmount");
-            String paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(configOperationKey);
-            String paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(configOperationKey);
+            String paymentTypeId = tenantConfigs.findPaymentTypeId(tenantIdentifier, configOperationKey);
+            String paymentTypeCode = tenantConfigs.findResourceCode(tenantIdentifier, configOperationKey);
             List<TransactionItem> items = new ArrayList<>();
 
             if (accountProductType.equalsIgnoreCase("SAVINGS")) {
@@ -363,11 +360,10 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
             log.info("book to conversion account in return (pacs.004) {} started for {} on {} ", internalCorrelationId, paymentScheme, tenantIdentifier);
             String apiPath = accountProductType.equalsIgnoreCase("SAVINGS") ? incomingMoneyApi.substring(1) : currentAccountApi.substring(1);
             String conversionAccountWithdrawalRelativeUrl = String.format("%s%s/transactions?command=%s", apiPath, conversionAccountAmsId, "deposit");
-            Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
             String depositAmountOperation = "bookCreditedAmountToConversionAccountInReturn.ConversionAccount.DepositTransactionAmount";
             String configOperationKey = String.format("%s.%s", paymentScheme, depositAmountOperation);
-            String paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(configOperationKey);
-            String paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(configOperationKey);
+            String paymentTypeId = tenantConfigs.findPaymentTypeId(tenantIdentifier, configOperationKey);
+            String paymentTypeCode = tenantConfigs.findResourceCode(tenantIdentifier, configOperationKey);
             iso.std.iso._20022.tech.xsd.pacs_004_001.Document pacs_004 = jaxbUtils.unmarshalPacs004(pacs004);
             OriginalTransactionReference13 transactionReference = pacs_004.getPmtRtr().getTxInf().get(0).getOrgnlTxRef();
             String debtorIban = transactionReference.getDbtrAcct().getId().getIBAN();

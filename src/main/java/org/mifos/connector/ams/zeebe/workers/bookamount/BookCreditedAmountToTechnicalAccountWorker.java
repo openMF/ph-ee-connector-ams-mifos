@@ -18,8 +18,7 @@ import iso.std.iso._20022.tech.xsd.pacs_008_001.RemittanceInformation5;
 import jakarta.xml.bind.JAXBException;
 import lombok.extern.slf4j.Slf4j;
 import org.mifos.connector.ams.common.SerializationHelper;
-import org.mifos.connector.ams.fineract.Config;
-import org.mifos.connector.ams.fineract.ConfigFactory;
+import org.mifos.connector.ams.fineract.TenantConfigs;
 import org.mifos.connector.ams.log.EventLogUtil;
 import org.mifos.connector.ams.log.LogInternalCorrelationId;
 import org.mifos.connector.ams.log.TraceZeebeArguments;
@@ -53,10 +52,7 @@ public class BookCreditedAmountToTechnicalAccountWorker extends AbstractMoneyInO
     private BatchItemBuilder batchItemBuilder;
 
     @Autowired
-    private ConfigFactory paymentTypeConfigFactory;
-
-    @Autowired
-    private ConfigFactory technicalAccountConfigFactory;
+    private TenantConfigs tenantConfigs;
 
     @Autowired
     private JAXBUtils jaxbUtils;
@@ -137,15 +133,13 @@ public class BookCreditedAmountToTechnicalAccountWorker extends AbstractMoneyInO
             // STEP 0 - collect / extract information
             log.info("Incoming money, bookCreditedAmountToTechnicalAccount worker started with variables");
             MDC.put("internalCorrelationId", internalCorrelationId);
-            Config technicalAccountConfig = technicalAccountConfigFactory.getConfig(tenantIdentifier);
             String apiPath = accountProductType.equalsIgnoreCase("SAVINGS") ? incomingMoneyApi.substring(1) : currentAccountApi.substring(1);
             String taLookup = String.format("%s.%s", paymentScheme, caseIdentifier);
-            String recallTechnicalAccountId = technicalAccountConfig.findPaymentTypeIdByOperation(taLookup);
+            String recallTechnicalAccountId = tenantConfigs.findPaymentTypeId(tenantIdentifier, taLookup);
             String conversionAccountWithdrawalRelativeUrl = String.format("%s%s/transactions?command=%s", apiPath, recallTechnicalAccountId, "deposit");
-            Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
             String configOperationKey = String.format("%s.%s.%s", paymentScheme, "bookCreditedAmountToTechnicalAccount", caseIdentifier);
-            String paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(configOperationKey);
-            String paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(configOperationKey);
+            String paymentTypeId = tenantConfigs.findPaymentTypeId(tenantIdentifier, configOperationKey);
+            String paymentTypeCode = tenantConfigs.findResourceCode(tenantIdentifier, configOperationKey);
 
             iso.std.iso._20022.tech.xsd.pacs_008_001.Document pacs008 = jaxbUtils.unmarshalPacs008(originalPacs008);
             CreditTransferTransactionInformation11 creditTransferTransactionInformation11 = pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0);

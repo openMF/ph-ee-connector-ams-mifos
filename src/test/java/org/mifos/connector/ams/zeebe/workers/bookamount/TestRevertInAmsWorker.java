@@ -3,8 +3,7 @@ package org.mifos.connector.ams.zeebe.workers.bookamount;
 import com.baasflow.commons.events.EventService;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
-import org.mifos.connector.ams.fineract.Config;
-import org.mifos.connector.ams.fineract.ConfigFactory;
+import org.mifos.connector.ams.fineract.TenantConfigs;
 import org.mifos.connector.ams.fineract.savingsaccounttransaction.response.TransactionQueryPayload;
 import org.mifos.connector.ams.mapstruct.Pain001Camt053Mapper;
 import org.mifos.connector.ams.zeebe.workers.utils.AuthTokenHelper;
@@ -119,11 +118,9 @@ class TestRevertInAmsWorker {
         };
         worker.eventService = mock(EventService.class);
         worker.incomingMoneyApi = "/savingsaccounts/";
-        worker.paymentTypeConfigFactory = mock(ConfigFactory.class);
-        Config configMock = mock(Config.class);
-        when(worker.paymentTypeConfigFactory.getConfig(any())).thenReturn(configMock);
-        when(configMock.findPaymentTypeCodeByOperation(any())).thenReturn("some code");
-        when(configMock.findPaymentTypeCodeByOperation(any())).thenReturn("some other code");
+        worker.tenantConfigs = mock(TenantConfigs.class);
+        when(worker.tenantConfigs.findPaymentTypeId(any(), any())).thenReturn("some code");
+        when(worker.tenantConfigs.findResourceCode(any(), any())).thenReturn("some other code");
 
         worker.batchItemBuilder = new BatchItemBuilder();
 

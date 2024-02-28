@@ -21,8 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 import org.mifos.connector.ams.common.SerializationHelper;
-import org.mifos.connector.ams.fineract.Config;
-import org.mifos.connector.ams.fineract.ConfigFactory;
+import org.mifos.connector.ams.fineract.TenantConfigs;
 import org.mifos.connector.ams.fineract.savingsaccounttransaction.request.*;
 import org.mifos.connector.ams.fineract.savingsaccounttransaction.response.TransactionQueryContent;
 import org.mifos.connector.ams.fineract.savingsaccounttransaction.response.TransactionQueryPayload;
@@ -63,7 +62,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
     protected String currentAccountApi;
 
     @Autowired
-    ConfigFactory paymentTypeConfigFactory;
+    TenantConfigs tenantConfigs;
 
     @Autowired
     private JAXBUtils jaxbUtils;
@@ -155,7 +154,6 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
             String apiPath = accountProductType.equalsIgnoreCase("SAVINGS") ? incomingMoneyApi.substring(1) : currentAccountApi.substring(1);
             String conversionAccountWithdrawRelativeUrl = String.format("%s%s/transactions?command=%s", apiPath, conversionAccountAmsId, "withdrawal");
             String disposalAccountDepositRelativeUrl = String.format("%s%s/transactions?command=%s", apiPath, disposalAccountAmsId, "deposit");
-            Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
             CustomerCreditTransferInitiationV10 pain001Document = pain001.getDocument();
             PaymentInstruction34 paymentInstruction = pain001Document.getPaymentInformation().get(0);
             CreditTransferTransaction40 creditTransferTransaction = paymentInstruction.getCreditTransferTransactionInformation().get(0);
@@ -179,8 +177,8 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
             log.debug("re-deposit amount {} in disposal account: {}", amount, disposalAccountAmsId);
             String depositAmountOperation = "revertInAms.DisposalAccount.DepositTransactionAmount";
             String depositAmountConfigOperationKey = String.format("%s.%s", paymentScheme, depositAmountOperation);
-            String depositAmountPaymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(depositAmountConfigOperationKey);
-            String depositAmountPaymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(depositAmountConfigOperationKey);
+            String depositAmountPaymentTypeId = tenantConfigs.findPaymentTypeId(tenantIdentifier, depositAmountConfigOperationKey);
+            String depositAmountPaymentTypeCode = tenantConfigs.findResourceCode(tenantIdentifier, depositAmountConfigOperationKey);
             if (accountProductType.equalsIgnoreCase("SAVINGS")) {
                 String depositAmountCamt053 = painMapper.writeValueAsString(new TransactionBody(transactionDate, amount, depositAmountPaymentTypeId, "", FORMAT, locale));
                 batchItemBuilder.add(tenantIdentifier, items, disposalAccountDepositRelativeUrl, depositAmountCamt053, false);
@@ -221,8 +219,8 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                 log.debug("Re-depositing fee {} in disposal account {}", transactionFeeAmount, disposalAccountAmsId);
                 String depositFeeOperation = "revertInAms.DisposalAccount.DepositTransactionFee";
                 String depositFeeConfigOperationKey = String.format("%s.%s", paymentScheme, depositFeeOperation);
-                String depositFeePaymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(depositFeeConfigOperationKey);
-                String depositFeePaymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(depositFeeConfigOperationKey);
+                String depositFeePaymentTypeId = tenantConfigs.findPaymentTypeId(tenantIdentifier, depositFeeConfigOperationKey);
+                String depositFeePaymentTypeCode = tenantConfigs.findResourceCode(tenantIdentifier, depositFeeConfigOperationKey);
                 camt053Fragment.setAdditionalTransactionInformation(depositFeePaymentTypeCode);
                 camt053Fragment.setSupplementaryData(new ArrayList<>());
                 pain001Camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001Document, camt053Fragment, transactionFeeCategoryPurposeCode);
@@ -264,8 +262,8 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
             log.debug("Withdrawing {} from conversion account {}", amount, conversionAccountAmsId);
             String withdrawAmountOperation = "revertInAms.ConversionAccount.WithdrawTransactionAmount";
             String withdrawAmountConfigOperationKey = String.format("%s.%s", paymentScheme, withdrawAmountOperation);
-            String withdrawAmountPaymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(withdrawAmountConfigOperationKey);
-            String withdrawAmountPaymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(withdrawAmountConfigOperationKey);
+            String withdrawAmountPaymentTypeId = tenantConfigs.findPaymentTypeId(tenantIdentifier, withdrawAmountConfigOperationKey);
+            String withdrawAmountPaymentTypeCode = tenantConfigs.findResourceCode(tenantIdentifier, withdrawAmountConfigOperationKey);
             camt053Fragment.setCreditDebitIndicator(CreditDebitCode.DBIT);
             camt053Fragment.setAdditionalTransactionInformation(withdrawAmountPaymentTypeCode);
             camt053Fragment.setSupplementaryData(new ArrayList<>());
@@ -310,8 +308,8 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 
                 String withdrawFeeOperation = "revertInAms.ConversionAccount.WithdrawTransactionFee";
                 String withdrawFeeConfigOperationKey = String.format("%s.%s", paymentScheme, withdrawFeeOperation);
-                String withdrawFeePaymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(withdrawFeeConfigOperationKey);
-                String withdrawFeePaymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(withdrawFeeConfigOperationKey);
+                String withdrawFeePaymentTypeId = tenantConfigs.findPaymentTypeId(tenantIdentifier, withdrawFeeConfigOperationKey);
+                String withdrawFeePaymentTypeCode = tenantConfigs.findResourceCode(tenantIdentifier, withdrawFeeConfigOperationKey);
                 camt053Fragment.setAdditionalTransactionInformation(withdrawFeePaymentTypeCode);
                 camt053Fragment.setSupplementaryData(new ArrayList<>());
                 pain001Camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001Document, camt053Fragment, transactionFeeCategoryPurposeCode);
@@ -506,14 +504,13 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
             String conversionAccountWithdrawRelativeUrl = String.format("%s%s/transactions?command=%s", apiPath, conversionAccountAmsId, "withdrawal");
             String disposalAccountDepositRelativeUrl = String.format("%s%s/transactions?command=%s", apiPath, disposalAccountAmsId, "deposit");
             Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001 = painMapper.readValue(originalPain001, Pain00100110CustomerCreditTransferInitiationV10MessageSchema.class);
-            Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
             String depositAmountOperation = "revertWithoutFeeInAms.DisposalAccount.DepositTransactionAmount";
             String depositAmountConfigOperationKey = String.format("%s.%s", paymentScheme, depositAmountOperation);
             PaymentInstruction34 paymentInstruction = pain001.getDocument().getPaymentInformation().get(0);
             CreditTransferTransaction40 creditTransferTransaction = paymentInstruction.getCreditTransferTransactionInformation().get(0);
             String debtorIban = paymentInstruction.getDebtorAccount().getIdentification().getIban();
-            String depositPaymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(depositAmountConfigOperationKey);
-            String depositPaymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(depositAmountConfigOperationKey);
+            String depositPaymentTypeId = tenantConfigs.findPaymentTypeId(tenantIdentifier, depositAmountConfigOperationKey);
+            String depositPaymentTypeCode = tenantConfigs.findResourceCode(tenantIdentifier, depositAmountConfigOperationKey);
             String creditorName = creditTransferTransaction.getCreditor().getName();
             String creditorIban = creditTransferTransaction.getCreditorAccount().getIdentification().getIban();
             String creditorContactDetails = contactDetailsUtil.getId(creditTransferTransaction.getCreditor().getContactDetails());
@@ -549,8 +546,8 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
             // STEP 3 - batch: withdraw
             String withdrawAmountOperation = "revertWithoutFeeInAms.ConversionAccount.WithdrawTransactionAmount";
             String withdrawAmountConfigOperationKey = String.format("%s.%s", paymentScheme, withdrawAmountOperation);
-            var withdrawPaymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(withdrawAmountConfigOperationKey);
-            var withdrawPaymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(withdrawAmountConfigOperationKey);
+            var withdrawPaymentTypeId = tenantConfigs.findPaymentTypeId(tenantIdentifier, withdrawAmountConfigOperationKey);
+            var withdrawPaymentTypeCode = tenantConfigs.findResourceCode(tenantIdentifier, withdrawAmountConfigOperationKey);
             camt053Fragment.setCreditDebitIndicator(CreditDebitCode.DBIT);
 
             String withdrawCamt053 = serializationHelper.writeCamt053AsString(accountProductType, reportEntry);
@@ -589,8 +586,8 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 
                 String withdrawFeeOperation = "revertWithoutFeeInAms.ConversionAccount.WithdrawTransactionFee";
                 String withdrawFeeConfigOperationKey = String.format("%s.%s", paymentScheme, withdrawFeeOperation);
-                withdrawPaymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(withdrawFeeConfigOperationKey);
-                withdrawPaymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(withdrawFeeConfigOperationKey);
+                withdrawPaymentTypeId = tenantConfigs.findPaymentTypeId(tenantIdentifier, withdrawFeeConfigOperationKey);
+                withdrawPaymentTypeCode = tenantConfigs.findResourceCode(tenantIdentifier, withdrawFeeConfigOperationKey);
                 camt053Fragment.getSupplementaryData().clear();
                 pain001Camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001.getDocument(), camt053Fragment, transactionFeeCategoryPurposeCode);
                 pain001Camt053Mapper.refillOtherIdentification(pain001.getDocument(), camt053Fragment);
@@ -708,16 +705,15 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
             String transactionDate = LocalDate.now().format(DateTimeFormatter.ofPattern(FORMAT));
             String apiPath = accountProductType.equalsIgnoreCase("SAVINGS") ? incomingMoneyApi.substring(1) : currentAccountApi.substring(1);
             String disposalAccountDepositRelativeUrl = String.format("%s%s/transactions?command=%s", apiPath, disposalAccountAmsId, "deposit");
-            Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
             String depositAmountOperation = "depositTheAmountOnDisposalInAms.DisposalAccount.DepositTransactionAmount";
             String depositAmountConfigOperationKey = String.format("%s.%s", paymentScheme, depositAmountOperation);
-            String depositPaymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(depositAmountConfigOperationKey);
-            String depositPaymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(depositAmountConfigOperationKey);
-            String withdrawRelativeUrl = String.format("%s%s/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "withdrawal");
+            String depositPaymentTypeId = tenantConfigs.findPaymentTypeId(tenantIdentifier, depositAmountConfigOperationKey);
+            String depositPaymentTypeCode = tenantConfigs.findResourceCode(tenantIdentifier, depositAmountConfigOperationKey);
+            String withdrawRelativeUrl = String.format("%s%s/transactions?command=%s", apiPath, conversionAccountAmsId, "withdrawal");
             String withdrawAmountOperation = "depositTheAmountOnDisposalInAms.ConversionAccount.WithdrawTransactionAmount";
             String withdrawAmountConfigOperationKey = String.format("%s.%s", paymentScheme, withdrawAmountOperation);
-            String withdrawPaymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(withdrawAmountConfigOperationKey);
-            String withdrawPaymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(withdrawAmountConfigOperationKey);
+            String withdrawPaymentTypeId = tenantConfigs.findPaymentTypeId(tenantIdentifier, withdrawAmountConfigOperationKey);
+            String withdrawPaymentTypeCode = tenantConfigs.findResourceCode(tenantIdentifier, withdrawAmountConfigOperationKey);
 
             iso.std.iso._20022.tech.xsd.pacs_004_001.Document pacs004 = jaxbUtils.unmarshalPacs004(originalPacs004);
             iso.std.iso._20022.tech.xsd.pacs_002_001.Document pacs002 = jaxbUtils.unmarshalPacs002(originalPacs002);

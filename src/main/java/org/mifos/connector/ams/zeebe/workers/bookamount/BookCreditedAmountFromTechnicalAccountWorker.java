@@ -19,8 +19,7 @@ import iso.std.iso._20022.tech.xsd.pacs_008_001.RemittanceInformation5;
 import jakarta.xml.bind.JAXBException;
 import lombok.extern.slf4j.Slf4j;
 import org.mifos.connector.ams.common.SerializationHelper;
-import org.mifos.connector.ams.fineract.Config;
-import org.mifos.connector.ams.fineract.ConfigFactory;
+import org.mifos.connector.ams.fineract.TenantConfigs;
 import org.mifos.connector.ams.log.EventLogUtil;
 import org.mifos.connector.ams.log.LogInternalCorrelationId;
 import org.mifos.connector.ams.log.TraceZeebeArguments;
@@ -56,10 +55,7 @@ public class BookCreditedAmountFromTechnicalAccountWorker extends AbstractMoneyI
     private BatchItemBuilder batchItemBuilder;
 
     @Autowired
-    private ConfigFactory paymentTypeConfigFactory;
-
-    @Autowired
-    private ConfigFactory technicalAccountConfigFactory;
+    private TenantConfigs tenantConfigs;
 
     @Autowired
     private JAXBUtils jaxbUtils;
@@ -141,20 +137,18 @@ public class BookCreditedAmountFromTechnicalAccountWorker extends AbstractMoneyI
             iso.std.iso._20022.tech.xsd.pacs_008_001.Document pacs008 = jaxbUtils.unmarshalPacs008(originalPacs008);
             iso.std.iso._20022.tech.xsd.pacs_004_001.Document pacs004 = jaxbUtils.unmarshalPacs004(originalPacs004);
             iso.std.iso._20022.tech.xsd.pacs_002_001.Document pacs002 = jaxbUtils.unmarshalPacs002(originalPacs002);
-            Config technicalAccountConfig = technicalAccountConfigFactory.getConfig(tenantIdentifier);
             String apiPath = accountProductType.equalsIgnoreCase("SAVINGS") ? incomingMoneyApi.substring(1) : currentAccountApi.substring(1);
 
             List<TransactionItem> items = new ArrayList<>();
 
             String taLookup = String.format("%s.%s", paymentScheme, caseIdentifier);
-            String recallTechnicalAccountId = technicalAccountConfig.findPaymentTypeIdByOperation(taLookup);
+            String recallTechnicalAccountId = tenantConfigs.findPaymentTypeId(tenantIdentifier, taLookup);
             log.debug("Recall technical account id resolved for {}: {}", taLookup, recallTechnicalAccountId);
 
             String technicalAccountWithdrawalRelativeUrl = String.format("%s%s/transactions?command=%s", apiPath, recallTechnicalAccountId, "withdrawal");
-            Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
             String configOperationKey = String.format("%s.%s.%s", paymentScheme, "bookCreditedAmountFromTechnicalAccount", caseIdentifier);
-            String paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(String.format("%s.%s.%s", paymentScheme, "bookCreditedAmountFromTechnicalAccount", caseIdentifier));
-            String paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(configOperationKey);
+            String paymentTypeId = tenantConfigs.findPaymentTypeId(tenantIdentifier, configOperationKey);
+            String paymentTypeCode = tenantConfigs.findResourceCode(tenantIdentifier, configOperationKey);
 
             if (accountProductType.equalsIgnoreCase("SAVINGS")) {
                 String bodyItem = painMapper.writeValueAsString(new TransactionBody(transactionDate, amount, paymentTypeId, "", FORMAT, locale));

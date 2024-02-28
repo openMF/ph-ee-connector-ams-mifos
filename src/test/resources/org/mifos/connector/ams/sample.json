@@ -1,0 +1,20 @@
+{
+  "key1": {
+    "paymentTypeConfigs": [
+      {
+        "Operation": "HCT_INST.bookCreditedAmountToConversionAccount.ConversionAccount.DepositTransactionAmount",
+        "ResourceCode": "AFR101",
+        "FineractId": 4
+      }
+    ]
+  },
+  "key2": {
+    "paymentTypeConfigs": [
+      {
+        "Operation": "HCT_INST.bookCreditedAmountToConversionAccount.ConversionAccount.DepositTransactionAmount",
+        "ResourceCode": "AFR102",
+        "FineractId": 4
+      }
+    ]
+  }
+}

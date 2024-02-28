@@ -20,8 +20,7 @@ import iso.std.iso._20022.tech.xsd.camt_056_001.RemittanceInformation5;
 import jakarta.xml.bind.JAXBException;
 import lombok.extern.slf4j.Slf4j;
 import org.mifos.connector.ams.common.SerializationHelper;
-import org.mifos.connector.ams.fineract.Config;
-import org.mifos.connector.ams.fineract.ConfigFactory;
+import org.mifos.connector.ams.fineract.TenantConfigs;
 import org.mifos.connector.ams.log.EventLogUtil;
 import org.mifos.connector.ams.log.LogInternalCorrelationId;
 import org.mifos.connector.ams.log.TraceZeebeArguments;
@@ -59,7 +58,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
     protected String currentAccountApi;
 
     @Autowired
-    private ConfigFactory paymentTypeConfigFactory;
+    private TenantConfigs tenantConfigs;
 
     @Autowired
     private JAXBUtils jaxbUtils;
@@ -152,7 +151,6 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 
             String disposalAccountWithdrawRelativeUrl = String.format("%s%s/transactions?command=%s", apiPath, disposalAccountAmsId, "withdrawal");
             String conversionAccountDepositRelativeUrl = String.format("%s%s/transactions?command=%s", apiPath, conversionAccountAmsId, "deposit");
-            Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
 
             Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001 = painMapper.readValue(originalPain001, Pain00100110CustomerCreditTransferInitiationV10MessageSchema.class);
             CustomerCreditTransferInitiationV10 pain001Document = pain001.getDocument();
@@ -181,7 +179,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
             // STEP 1 - batch: add hold and release items [only for savings account]
             List<TransactionItem> items = new ArrayList<>();
             if (accountProductType.equalsIgnoreCase("SAVINGS")) {
-                holdAndReleaseForSavingsAccount(transactionGroupId, transactionCategoryPurposeCode, internalCorrelationId, paymentScheme, disposalAccountAmsId, conversionAccountAmsId, tenantIdentifier, debtorIban, accountProductType, paymentTypeConfig, transactionDate, totalAmountWithFee, items, transactionDetails, pain001Document, convertedCamt053Entry, partnerName, partnerAccountIban, partnerAccountSecondaryIdentifier, unstructured, endToEndId, pain001, creditTransferTransaction);
+                holdAndReleaseForSavingsAccount(transactionGroupId, transactionCategoryPurposeCode, internalCorrelationId, paymentScheme, disposalAccountAmsId, conversionAccountAmsId, tenantIdentifier, debtorIban, accountProductType, transactionDate, totalAmountWithFee, items, transactionDetails, pain001Document, convertedCamt053Entry, partnerName, partnerAccountIban, partnerAccountSecondaryIdentifier, unstructured, endToEndId, pain001, creditTransferTransaction);
             } else {
                 log.info("No hold and release because disposal account {} is not a savings account", disposalAccountAmsId);
             }
@@ -192,7 +190,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
             convertedCamt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "PENDING"));
 
             String withdrawAmountOperation = "transferToConversionAccountInAms.DisposalAccount.WithdrawTransactionAmount";
-            String withdrawAmountPaymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(String.format("%s.%s", paymentScheme, withdrawAmountOperation));
+            String withdrawAmountPaymentTypeId = tenantConfigs.findPaymentTypeId(tenantIdentifier, String.format("%s.%s", paymentScheme, withdrawAmountOperation));
 
             if (accountProductType.equalsIgnoreCase("SAVINGS")) {
                 String withdrawAmountTransactionBody = painMapper.writeValueAsString(new TransactionBody(transactionDate, amount, withdrawAmountPaymentTypeId, "", FORMAT, locale));
@@ -201,7 +199,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 
             // STEP 2b - batch: add withdrawal details
             transactionDetails.getAmountDetails().getTransactionAmount().getAmount().setAmount(amount);
-            String paymentTypeCode = Optional.ofNullable(paymentTypeConfig.findPaymentTypeCodeByOperation(String.format("%s.%s", paymentScheme, withdrawAmountOperation))).orElse("");
+            String paymentTypeCode = Optional.ofNullable(tenantConfigs.findResourceCode(tenantIdentifier, String.format("%s.%s", paymentScheme, withdrawAmountOperation))).orElse("");
             transactionDetails.setAdditionalTransactionInformation(paymentTypeCode);
             if (pain001Document != null) {
                 transactionDetails.getSupplementaryData().clear();
@@ -242,7 +240,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
             if (hasFee) {
                 log.debug("Withdrawing fee {} from disposal account {}", transactionFeeAmount, disposalAccountAmsId);
                 String withdrawFeeOperation = "transferToConversionAccountInAms.DisposalAccount.WithdrawTransactionFee";
-                String withdrawFeePaymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(String.format("%s.%s", paymentScheme, withdrawFeeOperation));
+                String withdrawFeePaymentTypeId = tenantConfigs.findPaymentTypeId(tenantIdentifier, String.format("%s.%s", paymentScheme, withdrawFeeOperation));
                 if (accountProductType.equalsIgnoreCase("SAVINGS")) {
                     String withdrawFeeTransactionBody = painMapper.writeValueAsString(new TransactionBody(transactionDate, transactionFeeAmount, withdrawFeePaymentTypeId, "", FORMAT, locale));
                     batchItemBuilder.add(tenantIdentifier, items, disposalAccountWithdrawRelativeUrl, withdrawFeeTransactionBody, false);
@@ -259,7 +257,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
                     transactionDetails.setAmountDetails(new AmountAndCurrencyExchange3().withTransactionAmount(new AmountAndCurrencyExchangeDetails3().withAmount(new ActiveOrHistoricCurrencyAndAmount().withAmount(transactionFeeAmount))));
                 }
 
-                String withdrawFeePaymentTypeCode = Optional.ofNullable(paymentTypeConfig.findPaymentTypeCodeByOperation(String.format("%s.%s", paymentScheme, withdrawFeeOperation))).orElse("");
+                String withdrawFeePaymentTypeCode = Optional.ofNullable(tenantConfigs.findResourceCode(tenantIdentifier, String.format("%s.%s", paymentScheme, withdrawFeeOperation))).orElse("");
                 transactionDetails.setAdditionalTransactionInformation(withdrawFeePaymentTypeCode);
                 if (pain001Document != null) {
                     transactionDetails.getSupplementaryData().clear();
@@ -299,7 +297,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
             // STEP 3a - batch: deposit amount
             log.info("Depositing amount {} to conversion account {}", amount, conversionAccountAmsId);
             String depositAmountOperation = "transferToConversionAccountInAms.ConversionAccount.DepositTransactionAmount";
-            String depositAmountPaymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(String.format("%s.%s", paymentScheme, depositAmountOperation));
+            String depositAmountPaymentTypeId = tenantConfigs.findPaymentTypeId(tenantIdentifier, String.format("%s.%s", paymentScheme, depositAmountOperation));
             if (accountProductType.equalsIgnoreCase("SAVINGS")) {
                 String depositAmountTransactionBody = painMapper.writeValueAsString(new TransactionBody(transactionDate, amount, depositAmountPaymentTypeId, "", FORMAT, locale));
                 batchItemBuilder.add(tenantIdentifier, items, conversionAccountDepositRelativeUrl, depositAmountTransactionBody, false);
@@ -318,7 +316,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
             }
             transactionDetails.setCreditDebitIndicator(CreditDebitCode.CRDT);
             convertedCamt053Entry.setCreditDebitIndicator(CreditDebitCode.CRDT);
-            String depositAmountPaymentTypeCode = Optional.ofNullable(paymentTypeConfig.findPaymentTypeCodeByOperation(String.format("%s.%s", paymentScheme, depositAmountOperation))).orElse("");
+            String depositAmountPaymentTypeCode = Optional.ofNullable(tenantConfigs.findResourceCode(tenantIdentifier, String.format("%s.%s", paymentScheme, depositAmountOperation))).orElse("");
             transactionDetails.setAdditionalTransactionInformation(depositAmountPaymentTypeCode);
             if (pain001Document != null) {
                 transactionDetails.getSupplementaryData().clear();
@@ -357,7 +355,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
             if (hasFee) {
                 log.debug("Depositing fee {} to conversion account {}", transactionFeeAmount, conversionAccountAmsId);
                 String depositFeeOperation = "transferToConversionAccountInAms.ConversionAccount.DepositTransactionFee";
-                String depositFeePaymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(String.format("%s.%s", paymentScheme, depositFeeOperation));
+                String depositFeePaymentTypeId = tenantConfigs.findPaymentTypeId(tenantIdentifier, String.format("%s.%s", paymentScheme, depositFeeOperation));
                 if (accountProductType.equalsIgnoreCase("SAVINGS")) {
                     String depositFeeTransactionBody = painMapper.writeValueAsString(new TransactionBody(transactionDate, transactionFeeAmount, depositFeePaymentTypeId, "", FORMAT, locale));
                     batchItemBuilder.add(tenantIdentifier, items, conversionAccountDepositRelativeUrl, depositFeeTransactionBody, false);
@@ -375,7 +373,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
                     transactionDetails.setAmountDetails(new AmountAndCurrencyExchange3().withTransactionAmount(new AmountAndCurrencyExchangeDetails3().withAmount(new ActiveOrHistoricCurrencyAndAmount().withAmount(transactionFeeAmount))));
                 }
 
-                String depositFeePaymentTypeCode = Optional.ofNullable(paymentTypeConfig.findPaymentTypeCodeByOperation(String.format("%s.%s", paymentScheme, depositFeeOperation))).orElse("");
+                String depositFeePaymentTypeCode = Optional.ofNullable(tenantConfigs.findResourceCode(tenantIdentifier, String.format("%s.%s", paymentScheme, depositFeeOperation))).orElse("");
                 transactionDetails.setAdditionalTransactionInformation(depositFeePaymentTypeCode);
                 if (pain001Document != null) {
                     transactionDetails.getSupplementaryData().clear();
@@ -424,15 +422,15 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
         return null;
     }
 
-    private void holdAndReleaseForSavingsAccount(String transactionGroupId, String transactionCategoryPurposeCode, String internalCorrelationId, String paymentScheme, String disposalAccountAmsId, String conversionAccountAmsId, String tenantIdentifier, String iban, String accountProductType, Config paymentTypeConfig, String transactionDate, BigDecimal totalAmountWithFee, List<TransactionItem> items, EntryTransaction10 transactionDetails, CustomerCreditTransferInitiationV10 pain0011, ReportEntry10 convertedCamt053Entry, String partnerName, String partnerAccountIban, String partnerAccountSecondaryIdentifier, String unstructured, String endToEndId, Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001, CreditTransferTransaction40 pain001Transaction) throws JsonProcessingException {
+    private void holdAndReleaseForSavingsAccount(String transactionGroupId, String transactionCategoryPurposeCode, String internalCorrelationId, String paymentScheme, String disposalAccountAmsId, String conversionAccountAmsId, String tenantIdentifier, String iban, String accountProductType, String transactionDate, BigDecimal totalAmountWithFee, List<TransactionItem> items, EntryTransaction10 transactionDetails, CustomerCreditTransferInitiationV10 pain0011, ReportEntry10 convertedCamt053Entry, String partnerName, String partnerAccountIban, String partnerAccountSecondaryIdentifier, String unstructured, String endToEndId, Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001, CreditTransferTransaction40 pain001Transaction) throws JsonProcessingException {
         log.info("Adding hold item to disposal account {}", disposalAccountAmsId);
-        String outHoldReasonId = paymentTypeConfig.findPaymentTypeIdByOperation(String.format("%s.%s", paymentScheme, "outHoldReasonId"));
+        String outHoldReasonId = tenantConfigs.findPaymentTypeId(tenantIdentifier, String.format("%s.%s", paymentScheme, "outHoldReasonId"));
         String bodyItem = painMapper.writeValueAsString(new HoldAmountBody(transactionDate, totalAmountWithFee, outHoldReasonId, locale, FORMAT));
         String holdTransactionUrl = String.format("%s%s/transactions?command=holdAmount", incomingMoneyApi.substring(1), disposalAccountAmsId);
         batchItemBuilder.add(tenantIdentifier, items, holdTransactionUrl, bodyItem, false);
 
         String holdAmountOperation = "outHoldReasonId";
-        String paymentTypeCode = Optional.ofNullable(paymentTypeConfig.findPaymentTypeCodeByOperation(String.format("%s.%s", paymentScheme, holdAmountOperation))).orElse("");
+        String paymentTypeCode = Optional.ofNullable(tenantConfigs.findResourceCode(tenantIdentifier, String.format("%s.%s", paymentScheme, holdAmountOperation))).orElse("");
         transactionDetails.setAdditionalTransactionInformation(paymentTypeCode);
         if (pain0011 != null) {
             transactionDetails.getSupplementaryData().clear();
@@ -477,7 +475,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
         String releaseAmountOperation = "transferToConversionAccountInAms.DisposalAccount.ReleaseTransactionAmount";
         addDetails(tenantIdentifier, pain001.getDocument(), transactionGroupId, transactionCategoryPurposeCode, internalCorrelationId,
                 accountProductType, batchItemBuilder, items, convertedCamt053Entry, "datatables/dt_savings_transaction_details/$.resourceId", iban,
-                paymentTypeConfig, paymentScheme, releaseAmountOperation, partnerName, partnerAccountIban,
+                paymentScheme, releaseAmountOperation, partnerName, partnerAccountIban,
                 partnerAccountSecondaryIdentifier, unstructured, null, null, false, pain001Transaction.getPaymentIdentification().getEndToEndIdentification());
     }
 
@@ -493,7 +491,6 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
             ReportEntry10 convertedCamt053Entry,
             String camt053RelativeUrl,
             String accountIban,
-            Config paymentTypeConfig,
             String paymentScheme,
             String paymentTypeOperation,
             String partnerName,
@@ -504,7 +501,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
             String targetAmsAccountId,
             boolean includeSupplementary,
             String endToEndId) throws JsonProcessingException {
-        String paymentTypeCode = Optional.ofNullable(paymentTypeConfig.findPaymentTypeCodeByOperation(String.format("%s.%s", paymentScheme, paymentTypeOperation))).orElse("");
+        String paymentTypeCode = Optional.ofNullable(tenantConfigs.findResourceCode(tenantIdentifier, String.format("%s.%s", paymentScheme, paymentTypeOperation))).orElse("");
         EntryTransaction10 transactionDetails = convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0);
         transactionDetails.setAdditionalTransactionInformation(paymentTypeCode);
         if (pain001 != null) {
@@ -600,17 +597,16 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
             iso.std.iso._20022.tech.xsd.camt_056_001.Document document = jaxbUtils.unmarshalCamt056(camt056);
             Camt056ToCamt053Converter converter = new Camt056ToCamt053Converter();
             BankToCustomerStatementV08 statement = converter.convert(document, new BankToCustomerStatementV08());
-            Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
             String apiPath = accountProductType.equalsIgnoreCase("SAVINGS") ? incomingMoneyApi.substring(1) : currentAccountApi.substring(1);
             String holdTransactionUrl = String.format("%s%s/transactions?command=holdAmount", apiPath, disposalAccountAmsId);
             String withdrawRelativeUrl = String.format("%s%s/transactions?command=%s", apiPath, disposalAccountAmsId, "withdrawal");
             String withdrawAmountOperation = "withdrawTheAmountFromDisposalAccountInAMS.DisposalAccount.WithdrawTransactionAmount";
             String withdrawConfigOperationKey = String.format("%s.%s", paymentScheme, withdrawAmountOperation);
-            String withdrawPaymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(withdrawConfigOperationKey);
-            String withdrawPaymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(withdrawConfigOperationKey);
+            String withdrawPaymentTypeId = tenantConfigs.findPaymentTypeId(tenantIdentifier, withdrawConfigOperationKey);
+            String withdrawPaymentTypeCode = tenantConfigs.findResourceCode(tenantIdentifier, withdrawConfigOperationKey);
             String conversionAccountDepositRelativeUrl = String.format("%s%s/transactions?command=%s", apiPath, conversionAccountAmsId, "deposit");
             String depositAmountOperation = "withdrawTheAmountFromDisposalAccountInAMS.ConversionAccount.DepositTransactionAmount";
-            String depositPaymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(String.format("%s.%s", paymentScheme, depositAmountOperation));
+            String depositPaymentTypeId = tenantConfigs.findPaymentTypeId(tenantIdentifier, String.format("%s.%s", paymentScheme, depositAmountOperation));
 
             ReportEntry10 convertedCamt053Entry = statement.getStatement().get(0).getEntry().get(0);
             convertedCamt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "PENDING"));
@@ -628,14 +624,14 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
             String debtorContactDetails = contactDetailsUtil.getId(originalTransactionReference.getDbtr().getCtctDtls());
 
             String holdAmountOperation = "withdrawTheAmountFromDisposalAccountInAMS.DisposalAccount.HoldTransactionAmount";
-            String paymentTypeCode1 = Optional.ofNullable(paymentTypeConfig.findPaymentTypeCodeByOperation(String.format("%s.%s", paymentScheme, holdAmountOperation))).orElse("");
+            String paymentTypeCode1 = Optional.ofNullable(tenantConfigs.findResourceCode(tenantIdentifier, String.format("%s.%s", paymentScheme, holdAmountOperation))).orElse("");
             transactionDetails.setAdditionalTransactionInformation(paymentTypeCode1);
             String camt0531 = serializationHelper.writeCamt053AsString(accountProductType, convertedCamt053Entry);
             List<TransactionItem> items = new ArrayList<>();
 
             if (accountProductType.equalsIgnoreCase("SAVINGS")) {
                 // STEP 1 - hold the amount
-                String outHoldReasonId = paymentTypeConfig.findPaymentTypeIdByOperation(String.format("%s.%s", paymentScheme, "outHoldReasonId"));
+                String outHoldReasonId = tenantConfigs.findPaymentTypeId(tenantIdentifier, String.format("%s.%s", paymentScheme, "outHoldReasonId"));
                 String bodyItem = painMapper.writeValueAsString(new HoldAmountBody(transactionDate, amount, outHoldReasonId, locale, FORMAT));
                 batchItemBuilder.add(tenantIdentifier, items, holdTransactionUrl, bodyItem, false);
 
@@ -662,7 +658,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
                 String releaseTransactionUrl = String.format("%s%s/transactions/%d?command=releaseAmount", apiPath, disposalAccountAmsId, lastHoldTransactionId);
                 batchItemBuilder.add(tenantIdentifier, items, releaseTransactionUrl, null, false);
                 String releaseAmountOperation = "withdrawTheAmountFromDisposalAccountInAMS.DisposalAccount.ReleaseTransactionAmount";
-                String releasePaymentTypeCode = Optional.ofNullable(paymentTypeConfig.findPaymentTypeCodeByOperation(String.format("%s.%s", paymentScheme, releaseAmountOperation))).orElse("");
+                String releasePaymentTypeCode = Optional.ofNullable(tenantConfigs.findResourceCode(tenantIdentifier, String.format("%s.%s", paymentScheme, releaseAmountOperation))).orElse("");
                 transactionDetails.setAdditionalTransactionInformation(releasePaymentTypeCode);
                 String camt053 = serializationHelper.writeCamt053AsString(accountProductType, convertedCamt053Entry);
                 String camt053Body = painMapper.writeValueAsString(new DtSavingsTransactionDetails(internalCorrelationId, camt053, iban, releasePaymentTypeCode, internalCorrelationId, debtorName, debtorIban, null, partnerAccountSecondaryIdentifier, unstructured, transactionCategoryPurposeCode, paymentScheme, disposalAccountAmsId, conversionAccountAmsId, endToEndId));
@@ -715,7 +711,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
             }
 
             var depositConfigOperationKey = String.format("%s.%s", paymentScheme, depositAmountOperation);
-            var depositPaymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(depositConfigOperationKey);
+            var depositPaymentTypeCode = tenantConfigs.findResourceCode(tenantIdentifier, depositConfigOperationKey);
             transactionDetails.setAdditionalTransactionInformation(depositPaymentTypeCode);
             transactionDetails.setCreditDebitIndicator(CreditDebitCode.CRDT);
             convertedCamt053Entry.setCreditDebitIndicator(CreditDebitCode.CRDT);
