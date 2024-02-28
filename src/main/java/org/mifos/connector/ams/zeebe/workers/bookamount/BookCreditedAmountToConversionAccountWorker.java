@@ -361,7 +361,8 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
             // STEP 0 - collect / extract information
             MDC.put("internalCorrelationId", internalCorrelationId);
             log.info("book to conversion account in return (pacs.004) {} started for {} on {} ", internalCorrelationId, paymentScheme, tenantIdentifier);
-            String conversionAccountWithdrawalRelativeUrl = String.format("%s%s/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "deposit");
+            String apiPath = accountProductType.equalsIgnoreCase("SAVINGS") ? incomingMoneyApi.substring(1) : currentAccountApi.substring(1);
+            String conversionAccountWithdrawalRelativeUrl = String.format("%s%s/transactions?command=%s", apiPath, conversionAccountAmsId, "deposit");
             Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
             String depositAmountOperation = "bookCreditedAmountToConversionAccountInReturn.ConversionAccount.DepositTransactionAmount";
             String configOperationKey = String.format("%s.%s", paymentScheme, depositAmountOperation);
