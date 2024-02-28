@@ -12,8 +12,7 @@
     "paymentTypeConfigs": [
       {
         "Operation": "HCT_INST.bookCreditedAmountToConversionAccount.ConversionAccount.DepositTransactionAmount",
-        "ResourceCode": "AFR102",
-        "FineractId": 4
+        "ResourceCode": "AFR102"
       }
     ]
   }

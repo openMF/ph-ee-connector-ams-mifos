@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 public class TenantConfigsTest {
     private Logger logger = LoggerFactory.getLogger(this.getClass());
@@ -21,6 +22,8 @@ public class TenantConfigsTest {
         logger.info("tenant configs: \n{}", tenantConfigs);
         assertNotNull(tenantConfigs.getTenants().get("key1").getPaymentTypeConfigs().get(0).getResourceCode());
         assertNotNull(tenantConfigs.getTenants().get("key1").findPaymentTypeByOperation("HCT_INST.bookCreditedAmountToConversionAccount.ConversionAccount.DepositTransactionAmount").getResourceCode());
+        assertNotNull(tenantConfigs.getTenants().get("key1").findPaymentTypeByOperation("HCT_INST.bookCreditedAmountToConversionAccount.ConversionAccount.DepositTransactionAmount").getFineractId());
+        assertNull(tenantConfigs.getTenants().get("key2").findPaymentTypeByOperation("HCT_INST.bookCreditedAmountToConversionAccount.ConversionAccount.DepositTransactionAmount").getFineractId());
     }
 
 }

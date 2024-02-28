@@ -7,6 +7,7 @@ import lombok.Data;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Data
 public class TenantConfigs {
@@ -18,17 +19,15 @@ public class TenantConfigs {
     }
 
     public String findPaymentTypeId(String tenant, String operation) {
-        return tenants
-                .get(tenant)
-                .findPaymentTypeByOperation(operation)
-                .getFineractId();
+        return Optional.ofNullable(tenants.get(tenant).findPaymentTypeByOperation(operation))
+                .map(PaymentTypeConfig::getFineractId)
+                .orElse(null);
     }
 
     public String findResourceCode(String tenant, String operation) {
-        return tenants
-                .get(tenant)
-                .findPaymentTypeByOperation(operation)
-                .getResourceCode();
+        return Optional.ofNullable(tenants.get(tenant).findPaymentTypeByOperation(operation))
+                .map(PaymentTypeConfig::getResourceCode)
+                .orElse(null);
     }
 
 

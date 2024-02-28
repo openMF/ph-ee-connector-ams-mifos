@@ -140,6 +140,7 @@ public class BookCreditedAmountToTechnicalAccountWorker extends AbstractMoneyInO
             String configOperationKey = String.format("%s.%s.%s", paymentScheme, "bookCreditedAmountToTechnicalAccount", caseIdentifier);
             String paymentTypeId = tenantConfigs.findPaymentTypeId(tenantIdentifier, configOperationKey);
             String paymentTypeCode = tenantConfigs.findResourceCode(tenantIdentifier, configOperationKey);
+            String url = String.format("%s%s/transactions?command=%s", apiPath, paymentTypeId, "deposit");
 
             iso.std.iso._20022.tech.xsd.pacs_008_001.Document pacs008 = jaxbUtils.unmarshalPacs008(originalPacs008);
             CreditTransferTransactionInformation11 creditTransferTransactionInformation11 = pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0);
@@ -192,7 +193,7 @@ public class BookCreditedAmountToTechnicalAccountWorker extends AbstractMoneyInO
                         null,
                         valueDated
                 )), "dt_current_transaction_details"))));
-                batchItemBuilder.add(tenantIdentifier, items, conversionAccountWithdrawalRelativeUrl, camt053Body, false);
+                batchItemBuilder.add(tenantIdentifier, items, url, camt053Body, false);
             }
 
             doBatch(items, tenantIdentifier, transactionGroupId, "-1", "-1", internalCorrelationId, "bookCreditedAmountToTechnicalAccount");
