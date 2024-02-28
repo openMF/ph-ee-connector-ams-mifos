@@ -46,6 +46,14 @@ public class TenantConfigs {
                     .findFirst()
                     .orElse(null);
         }
+
+        public TechnicalAccountConfig findTechnicalAccountByOperation(String operation) {
+            return technicalAccountConfigs
+                    .stream()
+                    .filter(x -> x.getOperation().equals(operation))
+                    .findFirst()
+                    .orElse(null);
+        }
     }
 
     @Data
