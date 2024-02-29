@@ -405,7 +405,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
                         transactionCategoryPurposeCode,
                         paymentScheme,
                         unstructured,
-                        creditorDisposalAccountAmsId,
+                        debtorDisposalAccountAmsId,
                         creditorDisposalAccountAmsId,
                         null,
                         creditorContactDetails,
