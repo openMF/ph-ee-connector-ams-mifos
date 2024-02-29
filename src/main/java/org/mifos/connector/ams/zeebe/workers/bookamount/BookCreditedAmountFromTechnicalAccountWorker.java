@@ -150,6 +150,7 @@ public class BookCreditedAmountFromTechnicalAccountWorker extends AbstractMoneyI
             String technicalAccountWithdrawalRelativeUrl = String.format("%s%s/transactions?command=%s", apiPath, recallTechnicalAccountId, "withdrawal");
             String paymentTypeId = paymentTypeConfig.getFineractId();
             String paymentTypeCode = paymentTypeConfig.getResourceCode();
+            String direction = paymentTypeConfig.getDirection();
 
             if (accountProductType.equalsIgnoreCase("SAVINGS")) {
                 String bodyItem = painMapper.writeValueAsString(new TransactionBody(transactionDate, amount, paymentTypeId, "", FORMAT, locale));
@@ -204,7 +205,8 @@ public class BookCreditedAmountFromTechnicalAccountWorker extends AbstractMoneyI
                         null,
                         debtorContactDetails,
                         null,
-                        valueDated
+                        valueDated,
+                        direction
                 )), "dt_current_transaction_details"))));
                 batchItemBuilder.add(tenantIdentifier, items, technicalAccountWithdrawalRelativeUrl, bodyItem, false);
             }

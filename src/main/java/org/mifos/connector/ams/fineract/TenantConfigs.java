@@ -22,6 +22,12 @@ public class TenantConfigs {
         return tenants.get(key);
     }
 
+    public String findDirection(String tenant, String direction) {
+        return Optional.ofNullable(tenants.get(tenant).findPaymentTypeByOperation(direction))
+                .map(PaymentTypeConfig::getDirection)
+                .orElse(null);
+    }
+
     public String findPaymentTypeId(String tenant, String operation) {
         return Optional.ofNullable(tenants.get(tenant).findPaymentTypeByOperation(operation))
                 .map(PaymentTypeConfig::getFineractId)
@@ -51,6 +57,8 @@ public class TenantConfigs {
 
     @Data
     public static class PaymentTypeConfig {
+        @JsonProperty("Direction")
+        private String direction;
         @JsonProperty("Operation")
         private String operation;
         @JsonProperty("ResourceCode")

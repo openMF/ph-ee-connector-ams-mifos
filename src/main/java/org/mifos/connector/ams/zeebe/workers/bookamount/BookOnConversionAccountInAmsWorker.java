@@ -163,6 +163,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
             String withdrawAmountConfigOperationKey = String.format("%s.%s", paymentScheme, withdrawAmountOperation);
             String withdrawAmountPaymentTypeId = tenantConfigs.findPaymentTypeId(tenantIdentifier, withdrawAmountConfigOperationKey);
             String withdrawAmountPaymentTypeCode = tenantConfigs.findResourceCode(tenantIdentifier, withdrawAmountConfigOperationKey);
+            String direction = tenantConfigs.findDirection(tenantIdentifier, withdrawAmountConfigOperationKey);
 
             if (accountProductType.equalsIgnoreCase("SAVINGS")) {
                 String withdrawAmountBodyItem = painMapper.writeValueAsString(new TransactionBody(transactionDate, amount, withdrawAmountPaymentTypeId, "", FORMAT, locale));
@@ -198,7 +199,8 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
                                 transactionCreationChannel,
                                 partnerAccountSecondaryIdentifier,
                                 null,
-                                valueDated
+                                valueDated,
+                                direction
                         )), "dt_current_transaction_details"))
                 ));
                 batchItemBuilder.add(tenantIdentifier, items, currentAccountWithdrawalRelativeUrl, withdrawAmountTransactionBody, false);
@@ -244,7 +246,8 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
                                     transactionCreationChannel,
                                     partnerAccountSecondaryIdentifier,
                                     null,
-                                    valueDated
+                                    valueDated,
+                                    direction
                             )), "dt_current_transaction_details"))
                     ));
                     batchItemBuilder.add(tenantIdentifier, items, currentAccountWithdrawalRelativeUrl, withdrawFeeTransactionBody, false);
@@ -335,6 +338,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
             String configOperationKey = String.format("%s.%s", paymentScheme, withdrawAmountOperation);
             String paymentTypeId = tenantConfigs.findPaymentTypeId(tenantIdentifier, configOperationKey);
             String paymentTypeCode = tenantConfigs.findResourceCode(tenantIdentifier, configOperationKey);
+            String direction = tenantConfigs.findDirection(tenantIdentifier, configOperationKey);
             PaymentTransactionInformation27 paymentTransactionInformation = pacs004.getPmtRtr().getTxInf().get(0);
             String unstructured = Optional.ofNullable(paymentTransactionInformation.getOrgnlTxRef().getRmtInf()).map(RemittanceInformation5::getUstrd).map(List::toString).orElse("");
             String creditorIban = paymentTransactionInformation.getOrgnlTxRef().getCdtrAcct().getId().getIBAN();
@@ -396,7 +400,8 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
                         null,
                         debtorContactDetails,
                         null,
-                        valueDated
+                        valueDated,
+                        direction
                 )), "dt_current_transaction_details"))));
                 batchItemBuilder.add(tenantIdentifier, items, conversionAccountWithdrawalRelativeUrl, camt053Body, false);
             }

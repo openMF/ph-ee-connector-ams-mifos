@@ -190,7 +190,9 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
             convertedCamt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "PENDING"));
 
             String withdrawAmountOperation = "transferToConversionAccountInAms.DisposalAccount.WithdrawTransactionAmount";
-            String withdrawAmountPaymentTypeId = tenantConfigs.findPaymentTypeId(tenantIdentifier, String.format("%s.%s", paymentScheme, withdrawAmountOperation));
+            String configOperationKey = String.format("%s.%s", paymentScheme, withdrawAmountOperation);
+            String withdrawAmountPaymentTypeId = tenantConfigs.findPaymentTypeId(tenantIdentifier, configOperationKey);
+            String direction = tenantConfigs.findDirection(tenantIdentifier, configOperationKey);
 
             if (accountProductType.equalsIgnoreCase("SAVINGS")) {
                 String withdrawAmountTransactionBody = painMapper.writeValueAsString(new TransactionBody(transactionDate, amount, withdrawAmountPaymentTypeId, "", FORMAT, locale));
@@ -199,7 +201,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 
             // STEP 2b - batch: add withdrawal details
             transactionDetails.getAmountDetails().getTransactionAmount().getAmount().setAmount(amount);
-            String paymentTypeCode = Optional.ofNullable(tenantConfigs.findResourceCode(tenantIdentifier, String.format("%s.%s", paymentScheme, withdrawAmountOperation))).orElse("");
+            String paymentTypeCode = Optional.ofNullable(tenantConfigs.findResourceCode(tenantIdentifier, configOperationKey)).orElse("");
             transactionDetails.setAdditionalTransactionInformation(paymentTypeCode);
             if (pain001Document != null) {
                 transactionDetails.getSupplementaryData().clear();
@@ -230,7 +232,8 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
                                 transactionCreationChannel,
                                 partnerAccountSecondaryIdentifier,
                                 null,
-                                valueDated
+                                valueDated,
+                                direction
                         )), "dt_current_transaction_details"))
                 ));
                 batchItemBuilder.add(tenantIdentifier, items, disposalAccountWithdrawRelativeUrl, withdrawAmountTransactionBody, false);
@@ -287,7 +290,8 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
                                     transactionCreationChannel,
                                     partnerAccountSecondaryIdentifier,
                                     null,
-                                    valueDated
+                                    valueDated,
+                                    direction
                             )), "dt_current_transaction_details"))
                     ));
                     batchItemBuilder.add(tenantIdentifier, items, disposalAccountWithdrawRelativeUrl, withdrawFeeTransactionBody, false);
@@ -345,7 +349,8 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
                                 transactionCreationChannel,
                                 partnerAccountSecondaryIdentifier,
                                 null,
-                                valueDated
+                                valueDated,
+                                direction
                         )), "dt_current_transaction_details"))
                 ));
                 batchItemBuilder.add(tenantIdentifier, items, conversionAccountDepositRelativeUrl, depositAmountTransactionBody, false);
@@ -402,7 +407,8 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
                                     transactionCreationChannel,
                                     partnerAccountSecondaryIdentifier,
                                     null,
-                                    valueDated
+                                    valueDated,
+                                    direction
                             )), "dt_current_transaction_details"))
                     ));
                     batchItemBuilder.add(tenantIdentifier, items, conversionAccountDepositRelativeUrl, depositFeeTransactionBody, false);
@@ -624,7 +630,9 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
             String debtorContactDetails = contactDetailsUtil.getId(originalTransactionReference.getDbtr().getCtctDtls());
 
             String holdAmountOperation = "withdrawTheAmountFromDisposalAccountInAMS.DisposalAccount.HoldTransactionAmount";
-            String paymentTypeCode1 = Optional.ofNullable(tenantConfigs.findResourceCode(tenantIdentifier, String.format("%s.%s", paymentScheme, holdAmountOperation))).orElse("");
+            String configOperationKey = String.format("%s.%s", paymentScheme, holdAmountOperation);
+            String paymentTypeCode1 = tenantConfigs.findResourceCode(tenantIdentifier, configOperationKey);
+            String direction = tenantConfigs.findDirection(tenantIdentifier, configOperationKey);
             transactionDetails.setAdditionalTransactionInformation(paymentTypeCode1);
             String camt0531 = serializationHelper.writeCamt053AsString(accountProductType, convertedCamt053Entry);
             List<TransactionItem> items = new ArrayList<>();
@@ -699,7 +707,8 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
                         null,
                         debtorContactDetails,
                         null,
-                        valueDated
+                        valueDated,
+                        direction
                 )), "dt_current_transaction_details"))));
                 batchItemBuilder.add(tenantIdentifier, items, withdrawRelativeUrl, camt053Body, false);
             }
@@ -739,7 +748,8 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
                         null,
                         debtorContactDetails,
                         null,
-                        valueDated
+                        valueDated,
+                        direction
                 )), "dt_current_transaction_details"))));
                 batchItemBuilder.add(tenantIdentifier, items, conversionAccountDepositRelativeUrl, camt053Body, false);
             }

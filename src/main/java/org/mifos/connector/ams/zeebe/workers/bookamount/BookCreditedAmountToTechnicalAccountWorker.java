@@ -140,7 +140,7 @@ public class BookCreditedAmountToTechnicalAccountWorker extends AbstractMoneyInO
             String conversionAccountWithdrawalRelativeUrl = String.format("%s%s/transactions?command=%s", apiPath, recallTechnicalAccountId, "deposit");
             String paymentTypeId = paymentTypeConfig.getFineractId();
             String paymentTypeCode = paymentTypeConfig.getResourceCode();
-
+            String direction = paymentTypeConfig.getDirection();
             iso.std.iso._20022.tech.xsd.pacs_008_001.Document pacs008 = jaxbUtils.unmarshalPacs008(originalPacs008);
             CreditTransferTransactionInformation11 creditTransferTransactionInformation11 = pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0);
             BankToCustomerStatementV08 intermediateCamt053 = pacs008Camt053Mapper.toCamt053Entry(pacs008);
@@ -190,7 +190,8 @@ public class BookCreditedAmountToTechnicalAccountWorker extends AbstractMoneyInO
                         null,
                         partnerAccountSecondaryIdentifier,
                         null,
-                        valueDated
+                        valueDated,
+                        direction
                 )), "dt_current_transaction_details"))));
                 batchItemBuilder.add(tenantIdentifier, items, conversionAccountWithdrawalRelativeUrl, camt053Body, false);
             }

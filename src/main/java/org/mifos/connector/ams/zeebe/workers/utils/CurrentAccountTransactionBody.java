@@ -46,6 +46,6 @@ public class CurrentAccountTransactionBody {
         private String partner_secondary_identifier;  // secondary
         private String partner_account_internal_account_id; // onus / ig2
         private boolean valueDated; // onus / ig2
-//        private String direction;
+        private String direction;
     }
 }

@@ -233,6 +233,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
             String withdrawAmountConfigOperationKey = String.format("%s.%s", paymentScheme, withdrawAmountOperation);
             String withdrawPaymentTypeId = tenantConfigs.findPaymentTypeId(tenantIdentifier, withdrawAmountConfigOperationKey);
             String withdrawPaymentTypeCode = tenantConfigs.findResourceCode(tenantIdentifier, withdrawAmountConfigOperationKey);
+            String direction = tenantConfigs.findDirection(tenantIdentifier, withdrawAmountConfigOperationKey);
 
             if (accountProductType.equalsIgnoreCase("SAVINGS")) {
                 String bodyItem = painMapper.writeValueAsString(new TransactionBody(interbankSettlementDate, amount, withdrawPaymentTypeId, "", FORMAT, locale));
@@ -272,7 +273,8 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
                         transactionCreationChannel,
                         creditorContactDetails,
                         creditorInternalAccountId,
-                        valueDated
+                        valueDated,
+                        direction
                 )), "dt_current_transaction_details"))));
                 batchItemBuilder.add(tenantIdentifier, items, debtorDisposalWithdrawalRelativeUrl, bodyItem, false);
             }
@@ -317,7 +319,8 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
                             transactionCreationChannel,
                             creditorContactDetails,
                             creditorInternalAccountId,
-                            valueDated
+                            valueDated,
+                            direction
                     )), "dt_current_transaction_details"))));
                     batchItemBuilder.add(tenantIdentifier, items, debtorDisposalWithdrawalRelativeUrl, camt053Body, false);
                 }
@@ -360,7 +363,8 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
                             transactionCreationChannel,
                             creditorContactDetails,
                             creditorInternalAccountId,
-                            valueDated
+                            valueDated,
+                            direction
                     )), "dt_current_transaction_details"))));
                     batchItemBuilder.add(tenantIdentifier, items, debtorConversionDepositRelativeUrl, camt053Body, false);
                 }
@@ -408,7 +412,8 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
                         transactionCreationChannel,
                         creditorContactDetails,
                         debtorInternalAccountId,
-                        valueDated
+                        valueDated,
+                        direction
                 )), "dt_current_transaction_details"))));
                 batchItemBuilder.add(tenantIdentifier, items, creditorDisposalDepositRelativeUrl, camt053Body, false);
             }
@@ -459,7 +464,8 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
                             transactionCreationChannel,
                             creditorContactDetails,
                             creditorInternalAccountId,
-                            valueDated
+                            valueDated,
+                            direction
                     )), "dt_current_transaction_details"))));
                     batchItemBuilder.add(tenantIdentifier, items, debtorConversionWithdrawRelativeUrl, camt053Body, false);
                 }

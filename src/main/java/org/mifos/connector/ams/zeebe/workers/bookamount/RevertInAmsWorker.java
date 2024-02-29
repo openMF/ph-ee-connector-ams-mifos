@@ -179,6 +179,8 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
             String depositAmountConfigOperationKey = String.format("%s.%s", paymentScheme, depositAmountOperation);
             String depositAmountPaymentTypeId = tenantConfigs.findPaymentTypeId(tenantIdentifier, depositAmountConfigOperationKey);
             String depositAmountPaymentTypeCode = tenantConfigs.findResourceCode(tenantIdentifier, depositAmountConfigOperationKey);
+            String direction = tenantConfigs.findDirection(tenantIdentifier, depositAmountConfigOperationKey);
+
             if (accountProductType.equalsIgnoreCase("SAVINGS")) {
                 String depositAmountCamt053 = painMapper.writeValueAsString(new TransactionBody(transactionDate, amount, depositAmountPaymentTypeId, "", FORMAT, locale));
                 batchItemBuilder.add(tenantIdentifier, items, disposalAccountDepositRelativeUrl, depositAmountCamt053, false);
@@ -210,7 +212,8 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                                 transactionCreationChannel,
                                 partnerAccountSecondaryIdentifier,
                                 null,
-                                valueDated
+                                valueDated,
+                                direction
                         )), "dt_current_transaction_details"))));
                 batchItemBuilder.add(tenantIdentifier, items, disposalAccountDepositRelativeUrl, depositAmountTransactionBody, false);
             }
@@ -251,7 +254,8 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                                     transactionCreationChannel,
                                     partnerAccountSecondaryIdentifier,
                                     null,
-                                    valueDated
+                                    valueDated,
+                                    direction
                             )), "dt_current_transaction_details")))
                     );
                     batchItemBuilder.add(tenantIdentifier, items, disposalAccountDepositRelativeUrl, depositFeeTransactionBody, false);
@@ -296,7 +300,8 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                                 transactionCreationChannel,
                                 partnerAccountSecondaryIdentifier,
                                 null,
-                                valueDated
+                                valueDated,
+                                direction
                         )), "dt_current_transaction_details")))
                 );
                 batchItemBuilder.add(tenantIdentifier, items, conversionAccountWithdrawRelativeUrl, withdrawAmountTransactionBody, false);
@@ -340,7 +345,8 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                                     transactionCreationChannel,
                                     partnerAccountSecondaryIdentifier,
                                     null,
-                                    valueDated
+                                    valueDated,
+                                    direction
                             )), "dt_current_transaction_details")))
                     );
                     batchItemBuilder.add(tenantIdentifier, items, conversionAccountWithdrawRelativeUrl, withdrawFeeTransactionBody, false);
@@ -506,11 +512,12 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
             Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001 = painMapper.readValue(originalPain001, Pain00100110CustomerCreditTransferInitiationV10MessageSchema.class);
             String depositAmountOperation = "revertWithoutFeeInAms.DisposalAccount.DepositTransactionAmount";
             String depositAmountConfigOperationKey = String.format("%s.%s", paymentScheme, depositAmountOperation);
+            String depositPaymentTypeId = tenantConfigs.findPaymentTypeId(tenantIdentifier, depositAmountConfigOperationKey);
+            String depositPaymentTypeCode = tenantConfigs.findResourceCode(tenantIdentifier, depositAmountConfigOperationKey);
+            String direction = tenantConfigs.findResourceCode(tenantIdentifier, depositAmountConfigOperationKey);
             PaymentInstruction34 paymentInstruction = pain001.getDocument().getPaymentInformation().get(0);
             CreditTransferTransaction40 creditTransferTransaction = paymentInstruction.getCreditTransferTransactionInformation().get(0);
             String debtorIban = paymentInstruction.getDebtorAccount().getIdentification().getIban();
-            String depositPaymentTypeId = tenantConfigs.findPaymentTypeId(tenantIdentifier, depositAmountConfigOperationKey);
-            String depositPaymentTypeCode = tenantConfigs.findResourceCode(tenantIdentifier, depositAmountConfigOperationKey);
             String creditorName = creditTransferTransaction.getCreditor().getName();
             String creditorIban = creditTransferTransaction.getCreditorAccount().getIdentification().getIban();
             String creditorContactDetails = contactDetailsUtil.getId(creditTransferTransaction.getCreditor().getContactDetails());
@@ -539,7 +546,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                 var camt053Body = painMapper.writeValueAsString(new DtSavingsTransactionDetails(internalCorrelationId, depositCamt053, debtorIban, depositPaymentTypeCode, transactionGroupId, creditorName, creditorIban, null, creditorContactDetails, unstructured, transactionCategoryPurposeCode, paymentScheme, conversionAccountAmsId, disposalAccountAmsId, endToEndId));
                 batchItemBuilder.add(tenantIdentifier, items, "datatables/dt_savings_transaction_details/$.resourceId", camt053Body, true);
             } else {
-                var camt053Body = painMapper.writeValueAsString(new CurrentAccountTransactionBody(amount, FORMAT, locale, depositPaymentTypeId, currency, List.of(new CurrentAccountTransactionBody.DataTable(List.of(new CurrentAccountTransactionBody.Entry(debtorIban, depositCamt053, internalCorrelationId, creditorName, creditorIban, transactionGroupId, endToEndId, transactionCategoryPurposeCode, paymentScheme, unstructured, conversionAccountAmsId, disposalAccountAmsId, null, partnerAccountSecondaryIdentifier, null, valueDated)), "dt_current_transaction_details"))));
+                var camt053Body = painMapper.writeValueAsString(new CurrentAccountTransactionBody(amount, FORMAT, locale, depositPaymentTypeId, currency, List.of(new CurrentAccountTransactionBody.DataTable(List.of(new CurrentAccountTransactionBody.Entry(debtorIban, depositCamt053, internalCorrelationId, creditorName, creditorIban, transactionGroupId, endToEndId, transactionCategoryPurposeCode, paymentScheme, unstructured, conversionAccountAmsId, disposalAccountAmsId, null, partnerAccountSecondaryIdentifier, null, valueDated, direction)), "dt_current_transaction_details"))));
                 batchItemBuilder.add(tenantIdentifier, items, disposalAccountDepositRelativeUrl, camt053Body, false);
             }
 
@@ -575,7 +582,8 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                         null,
                         partnerAccountSecondaryIdentifier,
                         null,
-                        valueDated
+                        valueDated,
+                        direction
                 )), "dt_current_transaction_details"))));
                 batchItemBuilder.add(tenantIdentifier, items, conversionAccountWithdrawRelativeUrl, camt03Body, false);
             }
@@ -618,7 +626,8 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                                     null,
                                     partnerAccountSecondaryIdentifier,
                                     null,
-                                    valueDated
+                                    valueDated,
+                                    direction
                             )), "dt_current_transaction_details")
                     )));
                     batchItemBuilder.add(tenantIdentifier, items, conversionAccountWithdrawRelativeUrl, body, false);
@@ -664,7 +673,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                                                 @Variable String internalCorrelationId,
                                                 @Variable String accountProductType,
                                                 @Variable String valueDated
-                                                ) {
+    ) {
         log.info("depositTheAmountOnDisposalInAms");
         eventService.auditedEvent(
                 eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "depositTheAmountOnDisposalInAms",
@@ -709,6 +718,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
             String depositAmountConfigOperationKey = String.format("%s.%s", paymentScheme, depositAmountOperation);
             String depositPaymentTypeId = tenantConfigs.findPaymentTypeId(tenantIdentifier, depositAmountConfigOperationKey);
             String depositPaymentTypeCode = tenantConfigs.findResourceCode(tenantIdentifier, depositAmountConfigOperationKey);
+            String direction = tenantConfigs.findDirection(tenantIdentifier, depositAmountConfigOperationKey);
             String withdrawRelativeUrl = String.format("%s%s/transactions?command=%s", apiPath, conversionAccountAmsId, "withdrawal");
             String withdrawAmountOperation = "depositTheAmountOnDisposalInAms.ConversionAccount.WithdrawTransactionAmount";
             String withdrawAmountConfigOperationKey = String.format("%s.%s", paymentScheme, withdrawAmountOperation);
@@ -775,7 +785,8 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                         null,
                         debtorContactDetails,
                         null,
-                        valueDated
+                        valueDated,
+                        direction
                 )), "dt_current_transaction_details"))));
                 batchItemBuilder.add(tenantIdentifier, items, disposalAccountDepositRelativeUrl, camt053Body, false);
             }
@@ -794,22 +805,23 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                 batchItemBuilder.add(tenantIdentifier, items, "datatables/dt_savings_transaction_details/$.resourceId", camt053Body, true);
             } else {
                 var camt053Body = painMapper.writeValueAsString(new CurrentAccountTransactionBody(amount, FORMAT, locale, withdrawPaymentTypeId, currency, List.of(new CurrentAccountTransactionBody.DataTable(List.of(new CurrentAccountTransactionBody.Entry(
-                    creditorIban,
-                    camt053,
-                    internalCorrelationId,
-                    debtorName,
-                    debtorIban,
-                    transactionGroupId,
-                    endToEndId,
-                    transactionCategoryPurposeCode,
-                    paymentScheme,
-                    unstructured,
-                    null,
-                    disposalAccountAmsId,
-                    null,
-                    debtorContactDetails,
-                    null,
-                    valueDated
+                        creditorIban,
+                        camt053,
+                        internalCorrelationId,
+                        debtorName,
+                        debtorIban,
+                        transactionGroupId,
+                        endToEndId,
+                        transactionCategoryPurposeCode,
+                        paymentScheme,
+                        unstructured,
+                        null,
+                        disposalAccountAmsId,
+                        null,
+                        debtorContactDetails,
+                        null,
+                        valueDated,
+                        direction
                 )), "dt_current_transaction_details"))));
                 batchItemBuilder.add(tenantIdentifier, items, withdrawRelativeUrl, camt053Body, false);
             }

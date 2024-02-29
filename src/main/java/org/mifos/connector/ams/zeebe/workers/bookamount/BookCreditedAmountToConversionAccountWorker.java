@@ -127,6 +127,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
             String configOperationKey = String.format("%s.%s", paymentScheme, depositAmountOperation);
             String paymentTypeId = tenantConfigs.findPaymentTypeId(tenantIdentifier, configOperationKey);
             String paymentTypeCode = tenantConfigs.findResourceCode(tenantIdentifier, configOperationKey);
+            String direction = tenantConfigs.findDirection(tenantIdentifier, configOperationKey);
             iso.std.iso._20022.tech.xsd.pacs_008_001.Document pacs008 = jaxbUtils.unmarshalPacs008(originalPacs008);
             CreditTransferTransactionInformation11 creditTransferTransaction = pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0);
             String unstructured = Optional.ofNullable(creditTransferTransaction.getRmtInf()).map(RemittanceInformation5::getUstrd).map(List::toString).orElse("");
@@ -173,7 +174,8 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
                                 null,
                                 partnerAccountSecondaryIdentifier,
                                 null,
-                                valueDated)
+                                valueDated,
+                                direction)
                         ), "dt_current_transaction_details"))));
                 batchItemBuilder.add(tenantIdentifier, items, conversionAccountWithdrawalRelativeUrl, camt053Body, false);
             }
@@ -246,6 +248,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
             String configOperationKey = String.format("%s.%s", paymentScheme, "bookCreditedAmountToConversionAccountInRecall.ConversionAccount.DepositTransactionAmount");
             String paymentTypeId = tenantConfigs.findPaymentTypeId(tenantIdentifier, configOperationKey);
             String paymentTypeCode = tenantConfigs.findResourceCode(tenantIdentifier, configOperationKey);
+            String direction = tenantConfigs.findDirection(tenantIdentifier, configOperationKey);
             List<TransactionItem> items = new ArrayList<>();
 
             if (accountProductType.equalsIgnoreCase("SAVINGS")) {
@@ -293,7 +296,8 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
                         null,
                         debtorContactDetails,
                         null,
-                        valueDated
+                        valueDated,
+                        direction
                 )), "dt_current_transaction_details"))));
                 batchItemBuilder.add(tenantIdentifier, items, conversionAccountWithdrawalRelativeUrl, camt053Body, false);
             }
@@ -364,6 +368,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
             String configOperationKey = String.format("%s.%s", paymentScheme, depositAmountOperation);
             String paymentTypeId = tenantConfigs.findPaymentTypeId(tenantIdentifier, configOperationKey);
             String paymentTypeCode = tenantConfigs.findResourceCode(tenantIdentifier, configOperationKey);
+            String direction = tenantConfigs.findDirection(tenantIdentifier, configOperationKey);
             iso.std.iso._20022.tech.xsd.pacs_004_001.Document pacs_004 = jaxbUtils.unmarshalPacs004(pacs004);
             OriginalTransactionReference13 transactionReference = pacs_004.getPmtRtr().getTxInf().get(0).getOrgnlTxRef();
             String debtorIban = transactionReference.getDbtrAcct().getId().getIBAN();
@@ -417,7 +422,8 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
                         null,
                         creditorContactDetails,
                         null,
-                        valueDated
+                        valueDated,
+                        direction
                 )), "dt_current_transaction_details"))));
                 batchItemBuilder.add(tenantIdentifier, items, conversionAccountWithdrawalRelativeUrl, bodyItem, false);
             }
