@@ -158,13 +158,13 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
             String savingsCamt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
             String apiPath = accountProductType.equalsIgnoreCase("SAVINGS") ? incomingMoneyApi.substring(1) : currentAccountApi.substring(1);
             Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001 = painMapper.readValue(originalPain001, Pain00100110CustomerCreditTransferInitiationV10MessageSchema.class);
-            String transactionCreationChannel = batchItemBuilder.findTransactionCreationChannel(pain001.getDocument().getSupplementaryData());
             BankToCustomerStatementV08 convertedStatement = camt053Mapper.toCamt053Entry(pain001.getDocument());
             ReportEntry10 convertedcamt053Entry = convertedStatement.getStatement().get(0).getEntry().get(0);
             AmountAndCurrencyExchangeDetails3 withAmountAndCurrency = new AmountAndCurrencyExchangeDetails3().withAmount(new ActiveOrHistoricCurrencyAndAmount().withAmount(amount.add(transactionFeeAmount)).withCurrency(currency));
             EntryTransaction10 transactionDetails = convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0);
             CreditTransferTransaction40 creditTransfer = pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0);
             String creditorName = creditTransfer.getCreditor().getName();
+            String transactionCreationChannel = batchItemBuilder.findTransactionCreationChannel(creditTransfer.getSupplementaryData());
             String creditorContactDetails = contactDetailsUtil.getId(creditTransfer.getCreditor().getContactDetails());
             String debtorContactDetails = contactDetailsUtil.getId(pain001.getDocument().getPaymentInformation().get(0).getDebtor().getContactDetails());
             String unstructured = Optional.ofNullable(creditTransfer.getRemittanceInformation())
