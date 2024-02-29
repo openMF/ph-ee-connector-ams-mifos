@@ -157,8 +157,8 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
             String outHoldReasonId = tenantConfigs.findPaymentTypeId(tenantIdentifier, String.format("%s.%s", paymentScheme, "outHoldReasonId"));
             String savingsCamt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
             String apiPath = accountProductType.equalsIgnoreCase("SAVINGS") ? incomingMoneyApi.substring(1) : currentAccountApi.substring(1);
-
             Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001 = painMapper.readValue(originalPain001, Pain00100110CustomerCreditTransferInitiationV10MessageSchema.class);
+            String transactionCreationChannel = batchItemBuilder.findTransactionCreationChannel(pain001.getDocument().getSupplementaryData());
             BankToCustomerStatementV08 convertedStatement = camt053Mapper.toCamt053Entry(pain001.getDocument());
             ReportEntry10 convertedcamt053Entry = convertedStatement.getStatement().get(0).getEntry().get(0);
             AmountAndCurrencyExchangeDetails3 withAmountAndCurrency = new AmountAndCurrencyExchangeDetails3().withAmount(new ActiveOrHistoricCurrencyAndAmount().withAmount(amount.add(transactionFeeAmount)).withCurrency(currency));
@@ -269,7 +269,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
                         unstructured,
                         debtorDisposalAccountAmsId,
                         creditorDisposalAccountAmsId,
-                        null,
+                        transactionCreationChannel,
                         creditorContactDetails,
                         creditorInternalAccountId,
                         valueDated
@@ -314,7 +314,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
                             unstructured,
                             debtorDisposalAccountAmsId,
                             debtorConversionAccountAmsId,
-                            null,
+                            transactionCreationChannel,
                             creditorContactDetails,
                             creditorInternalAccountId,
                             valueDated
@@ -357,7 +357,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
                             unstructured,
                             debtorDisposalAccountAmsId,
                             debtorConversionAccountAmsId,
-                            null,
+                            transactionCreationChannel,
                             creditorContactDetails,
                             creditorInternalAccountId,
                             valueDated
@@ -405,7 +405,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
                         unstructured,
                         debtorDisposalAccountAmsId,
                         creditorDisposalAccountAmsId,
-                        null,
+                        transactionCreationChannel,
                         creditorContactDetails,
                         debtorInternalAccountId,
                         valueDated
@@ -456,7 +456,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
                             unstructured,
                             debtorConversionAccountAmsId,
                             null,
-                            null,
+                            transactionCreationChannel,
                             creditorContactDetails,
                             creditorInternalAccountId,
                             valueDated
