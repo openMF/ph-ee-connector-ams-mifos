@@ -18,6 +18,10 @@ public class TenantConfigs {
         tenants.put(key, value);
     }
 
+    public Tenant getTenant(String key) {
+        return tenants.get(key);
+    }
+
     public String findPaymentTypeId(String tenant, String operation) {
         return Optional.ofNullable(tenants.get(tenant).findPaymentTypeByOperation(operation))
                 .map(PaymentTypeConfig::getFineractId)
@@ -36,19 +40,8 @@ public class TenantConfigs {
         @JsonProperty("paymentTypeConfigs")
         private List<PaymentTypeConfig> paymentTypeConfigs;
 
-        @JsonProperty("technicalAccountConfigs")
-        private List<TechnicalAccountConfig> technicalAccountConfigs;
-
         public PaymentTypeConfig findPaymentTypeByOperation(String operation) {
             return paymentTypeConfigs
-                    .stream()
-                    .filter(x -> x.getOperation().equals(operation))
-                    .findFirst()
-                    .orElse(null);
-        }
-
-        public TechnicalAccountConfig findTechnicalAccountByOperation(String operation) {
-            return technicalAccountConfigs
                     .stream()
                     .filter(x -> x.getOperation().equals(operation))
                     .findFirst()
@@ -64,12 +57,6 @@ public class TenantConfigs {
         private String resourceCode;
         @JsonProperty("FineractId")
         private String fineractId;
-    }
-
-    @Data
-    public static class TechnicalAccountConfig {
-        @JsonProperty("Operation")
-        private String operation;
         @JsonProperty("AccountId")
         private String accountId;
     }

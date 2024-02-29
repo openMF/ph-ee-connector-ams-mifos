@@ -134,12 +134,12 @@ public class BookCreditedAmountToTechnicalAccountWorker extends AbstractMoneyInO
             log.info("Incoming money, bookCreditedAmountToTechnicalAccount worker started with variables");
             MDC.put("internalCorrelationId", internalCorrelationId);
             String apiPath = accountProductType.equalsIgnoreCase("SAVINGS") ? incomingMoneyApi.substring(1) : currentAccountApi.substring(1);
-            String taLookup = String.format("%s.%s", paymentScheme, caseIdentifier);
-            String recallTechnicalAccountId = tenantConfigs.getTenants().get(tenantIdentifier).findTechnicalAccountByOperation(taLookup).getAccountId();
-            String conversionAccountWithdrawalRelativeUrl = String.format("%s%s/transactions?command=%s", apiPath, recallTechnicalAccountId, "deposit");
             String configOperationKey = String.format("%s.%s.%s", paymentScheme, "bookCreditedAmountToTechnicalAccount", caseIdentifier);
-            String paymentTypeId = tenantConfigs.findPaymentTypeId(tenantIdentifier, configOperationKey);
-            String paymentTypeCode = tenantConfigs.findResourceCode(tenantIdentifier, configOperationKey);
+            TenantConfigs.PaymentTypeConfig paymentTypeConfig = tenantConfigs.getTenant(tenantIdentifier).findPaymentTypeByOperation(configOperationKey);
+            String recallTechnicalAccountId = paymentTypeConfig.getAccountId();
+            String conversionAccountWithdrawalRelativeUrl = String.format("%s%s/transactions?command=%s", apiPath, recallTechnicalAccountId, "deposit");
+            String paymentTypeId = paymentTypeConfig.getFineractId();
+            String paymentTypeCode = paymentTypeConfig.getResourceCode();
 
             iso.std.iso._20022.tech.xsd.pacs_008_001.Document pacs008 = jaxbUtils.unmarshalPacs008(originalPacs008);
             CreditTransferTransactionInformation11 creditTransferTransactionInformation11 = pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0);

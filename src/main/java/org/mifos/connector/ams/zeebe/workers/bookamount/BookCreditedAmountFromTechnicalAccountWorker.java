@@ -142,13 +142,14 @@ public class BookCreditedAmountFromTechnicalAccountWorker extends AbstractMoneyI
             List<TransactionItem> items = new ArrayList<>();
 
             String taLookup = String.format("%s.%s", paymentScheme, caseIdentifier);
-            String recallTechnicalAccountId = tenantConfigs.findPaymentTypeId(tenantIdentifier, taLookup);
-            log.debug("Recall technical account id resolved for {}: {}", taLookup, recallTechnicalAccountId);
 
-            String technicalAccountWithdrawalRelativeUrl = String.format("%s%s/transactions?command=%s", apiPath, recallTechnicalAccountId, "withdrawal");
             String configOperationKey = String.format("%s.%s.%s", paymentScheme, "bookCreditedAmountFromTechnicalAccount", caseIdentifier);
-            String paymentTypeId = tenantConfigs.findPaymentTypeId(tenantIdentifier, configOperationKey);
-            String paymentTypeCode = tenantConfigs.findResourceCode(tenantIdentifier, configOperationKey);
+            TenantConfigs.PaymentTypeConfig paymentTypeConfig = tenantConfigs.getTenant(tenantIdentifier).findPaymentTypeByOperation(configOperationKey);
+            String recallTechnicalAccountId = paymentTypeConfig.getAccountId();
+            log.debug("Recall technical account id resolved for {}: {}", taLookup, recallTechnicalAccountId);
+            String technicalAccountWithdrawalRelativeUrl = String.format("%s%s/transactions?command=%s", apiPath, recallTechnicalAccountId, "withdrawal");
+            String paymentTypeId = paymentTypeConfig.getFineractId();
+            String paymentTypeCode = paymentTypeConfig.getResourceCode();
 
             if (accountProductType.equalsIgnoreCase("SAVINGS")) {
                 String bodyItem = painMapper.writeValueAsString(new TransactionBody(transactionDate, amount, paymentTypeId, "", FORMAT, locale));
