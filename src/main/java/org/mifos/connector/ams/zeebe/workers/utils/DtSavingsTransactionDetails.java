@@ -14,7 +14,7 @@ public record DtSavingsTransactionDetails(@JsonProperty("internal_correlation_id
                                           @JsonProperty("remittance_information_unstructured") String remittanceInformationUnstructured,
                                           @JsonProperty("category_purpose_code") String categoryPurposeCode,
                                           @JsonProperty("payment_scheme") String paymentScheme,
-                                          @JsonProperty("source_ams_account_id") Integer sourceAmsAccountId,
-                                          @JsonProperty("target_ams_account_id") Integer targetAmsAccountId,
+                                          @JsonProperty("source_ams_account_id") String sourceAmsAccountId,
+                                          @JsonProperty("target_ams_account_id") String targetAmsAccountId,
                                           @JsonProperty("end_to_end_id") String endToEndId) {
 }

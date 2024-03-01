@@ -1,9 +1,5 @@
 package org.mifos.connector.ams.zeebe.workers.bookamount;
 
-import static org.apache.hc.core5.http.HttpStatus.SC_CONFLICT;
-import static org.apache.hc.core5.http.HttpStatus.SC_LOCKED;
-import static org.apache.hc.core5.http.HttpStatus.SC_OK;
-
 import java.net.ConnectException;
 import java.net.SocketTimeoutException;
 import java.util.List;
@@ -40,6 +36,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.camunda.zeebe.spring.client.exception.ZeebeBpmnError;
 import lombok.extern.slf4j.Slf4j;
+
+import static org.apache.hc.core5.http.HttpStatus.*;
 
 @Component
 @Slf4j
@@ -81,74 +79,12 @@ public abstract class AbstractMoneyInOutWorker {
 
     protected static final String FORMAT = "yyyyMMdd";
 
-    protected ResponseEntity<Object> release(Integer currencyAccountAmsId, Integer holdAmountId, String tenantId) {
-        HttpHeaders httpHeaders = new HttpHeaders();
-        httpHeaders.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
-        httpHeaders.set("Authorization", authTokenHelper.generateAuthToken());
-        httpHeaders.set("Fineract-Platform-TenantId", tenantId);
-        var entity = new HttpEntity<>(null, httpHeaders);
-
-        var urlTemplate = UriComponentsBuilder.fromHttpUrl(fineractApiUrl)
-                .path(incomingMoneyApi)
-                .path(String.format("%s", currencyAccountAmsId))
-                .path("/transactions")
-                .path(String.format("/%s", holdAmountId))
-                .queryParam("command", "releaseAmount")
-                .encode()
-                .toUriString();
-
-        log.trace("calling {} with HttpHeaders {}", urlTemplate, httpHeaders);
-
-        return eventService.auditedEvent(
-                // TODO internalCorrelationId?
-                eventBuilder -> EventLogUtil.initFineractCall(urlTemplate, currencyAccountAmsId, -1, null, eventBuilder),
-                eventBuilder -> restTemplate.exchange(urlTemplate,
-                        HttpMethod.POST,
-                        entity,
-                        Object.class));
-    }
-
-    protected ResponseEntity<Object> hold(Integer holdReasonId, String transactionDate, Object amount, Integer currencyAccountAmsId, String tenantId) {
-        var body = new HoldAmountBody(
-                transactionDate,
-                amount,
-                holdReasonId,
-                locale,
-                FORMAT
-        );
-        return doExchange(body, currencyAccountAmsId, "holdAmount", tenantId);
-    }
-
-    protected <T> ResponseEntity<Object> doExchange(T body, Integer currencyAccountAmsId, String command, String tenantId) {
-        HttpHeaders httpHeaders = new HttpHeaders();
-        httpHeaders.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
-        httpHeaders.set("Authorization", authTokenHelper.generateAuthToken());
-        httpHeaders.set("Fineract-Platform-TenantId", tenantId);
-        var entity = new HttpEntity<>(body, httpHeaders);
-
-        var urlTemplate = UriComponentsBuilder.fromHttpUrl(fineractApiUrl)
-                .path(incomingMoneyApi)
-                .path(String.format("%s", currencyAccountAmsId))
-                .path("/transactions")
-                .queryParam("command", command)
-                .encode()
-                .toUriString();
-
-        log.trace("calling {} with HttpHeaders {}", urlTemplate, httpHeaders);
-
-        return eventService.auditedEvent(
-                // TODO internalCorrelationId?
-                eventBuilder -> EventLogUtil.initFineractCall(urlTemplate, currencyAccountAmsId, -1, null, eventBuilder),
-                eventBuilder -> restTemplate.exchange(urlTemplate,
-                        HttpMethod.POST,
-                        entity,
-                        Object.class));
-    }
 
     protected Long holdBatch(List<TransactionItem> items,
                              String tenantId,
-                             Integer disposalAccountId,
-                             Integer conversionAccountId,
+                             String transactionGroupId,
+                             String disposalAccountId,
+                             String conversionAccountId,
                              String internalCorrelationId,
                              String calledFrom) {
         return eventService.auditedEvent(
@@ -158,13 +94,14 @@ public abstract class AbstractMoneyInOutWorker {
                         conversionAccountId,
                         internalCorrelationId,
                         eventBuilder),
-                eventBuilder -> holdBatchInternal(items, tenantId, internalCorrelationId, calledFrom));
+                eventBuilder -> holdBatchInternal(transactionGroupId, items, tenantId, internalCorrelationId, calledFrom));
     }
 
     protected String doBatch(List<TransactionItem> items,
                              String tenantId,
-                             Integer disposalAccountId,
-                             Integer conversionAccountId,
+                             String transactionGroupId,
+                             String disposalAccountId,
+                             String conversionAccountId,
                              String internalCorrelationId,
                              String calledFrom) {
         return eventService.auditedEvent(
@@ -174,14 +111,15 @@ public abstract class AbstractMoneyInOutWorker {
                         conversionAccountId,
                         internalCorrelationId,
                         eventBuilder),
-                eventBuilder -> doBatchInternal(items, tenantId, internalCorrelationId, calledFrom));
+                eventBuilder -> doBatchInternal(items, tenantId, transactionGroupId, internalCorrelationId, calledFrom));
     }
 
     protected void doBatchOnUs(List<TransactionItem> items,
                                String tenantId,
-                               Integer debtorDisposalAccountAmsId,
-                               Integer debtorConversionAccountAmsId,
-                               Integer creditorDisposalAccountAmsId,
+                               String transactionGroupId,
+                               String debtorDisposalAccountAmsId,
+                               String debtorConversionAccountAmsId,
+                               String creditorDisposalAccountAmsId,
                                String internalCorrelationId) {
         eventService.auditedEvent(
                 eventBuilder -> EventLogUtil.initFineractBatchCallOnUs("transferTheAmountBetweenDisposalAccounts",
@@ -191,14 +129,15 @@ public abstract class AbstractMoneyInOutWorker {
                         creditorDisposalAccountAmsId,
                         internalCorrelationId,
                         eventBuilder),
-                eventBuilder -> doBatchInternal(items, tenantId, internalCorrelationId, "transferTheAmountBetweenDisposalAccounts"));
+                eventBuilder -> doBatchInternal(items, tenantId, transactionGroupId, internalCorrelationId, "transferTheAmountBetweenDisposalAccounts"));
     }
 
-    private Long holdBatchInternal(List<TransactionItem> items, String tenantId, String internalCorrelationId, String from) {
+    private Long holdBatchInternal(String transactionGroupId, List<TransactionItem> items, String tenantId, String internalCorrelationId, String from) {
         HttpHeaders httpHeaders = new HttpHeaders();
         httpHeaders.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
         httpHeaders.set("Authorization", authTokenHelper.generateAuthToken());
         httpHeaders.set("Fineract-Platform-TenantId", tenantId);
+        httpHeaders.set("X-Correlation-ID", transactionGroupId);
         int idempotencyPostfix = 0;
         var entity = new HttpEntity<>(items, httpHeaders);
 
@@ -266,7 +205,7 @@ public abstract class AbstractMoneyInOutWorker {
                     throw new RuntimeException(responseBody);
                 }
 
-                batchResponseList = painMapper.readValue(responseBody, new TypeReference<List<BatchResponse>>() {
+                batchResponseList = painMapper.readValue(responseBody, new TypeReference<>() {
                 });
                 if (batchResponseList == null) {
                     return null;
@@ -320,11 +259,12 @@ public abstract class AbstractMoneyInOutWorker {
         throw new RuntimeException("Failed to execute transaction " + internalCorrelationId);
     }
 
-    private String doBatchInternal(List<TransactionItem> items, String tenantId, String internalCorrelationId, String from) {
+    private String doBatchInternal(List<TransactionItem> items, String tenantId, String transactionGroupId, String internalCorrelationId, String from) {
         HttpHeaders httpHeaders = new HttpHeaders();
         httpHeaders.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
         httpHeaders.set("Authorization", authTokenHelper.generateAuthToken());
         httpHeaders.set("Fineract-Platform-TenantId", tenantId);
+        httpHeaders.set("X-Correlation-ID", transactionGroupId);
         int idempotencyPostfix = 0;
         var entity = new HttpEntity<>(items, httpHeaders);
 
@@ -419,6 +359,14 @@ public abstract class AbstractMoneyInOutWorker {
                         idempotencyPostfix++;
                         retryCount--;
                         continue retry;
+                    }
+                    case SC_FORBIDDEN -> {
+                        String body = responseItem.getBody();
+                        if (body != null && (body.contains("error.msg.current.insufficient.funds"))) {
+                            log.error("insufficient funds for request [{}]", idempotencyKey);
+                            throw new ZeebeBpmnError("Error_InsufficientFunds", "Insufficient funds");
+                        }
+                        throw new ZeebeBpmnError("Error_CaughtException", "Forbidden");
                     }
                     default -> throw new RuntimeException("An unexpected error occurred for request " + idempotencyKey + ": " + statusCode);
                 }

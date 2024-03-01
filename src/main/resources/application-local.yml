@@ -10,9 +10,15 @@ dfspids: "DFSPID"
 
 fineract:
   api-url: "http://localhost:8080/fineract-provider/api/v1"
+  current-account-api: "/current-accounts/"
   datatable-query-api: "/datatables/dt_client_account_mapping/query"
+  flags-query-api: "/datatables/dt_savings_account_flags/query"
+  flags-column-filter: "savings_account_id"
+  flags-result-columns: "flag_code"
+  current-account-flags-result-columns: "flag_code"
   column-filter: "iban"
   result-columns: "conversion_account_id,disposal_account_id,internal_account_id"
+  current-account-result-columns: "status_type,account_no,external_id,id,product_idg"
   incoming-money-api: "/savingsaccounts/"
   transaction-details-api: "/datatables/dt_savings_transaction_details /"
   datatable-name: "transaction_details"
@@ -33,8 +39,9 @@ fineract:
 
 zeebe:
   client:
-    max-execution-threads: 1000
-    evenly-allocated-max-jobs: 1000
+    connection-mode: ADDRESS
+    security:
+      plaintext: true
   broker:
     contactpoint: "localhost:26500"
 
@@ -62,9 +69,7 @@ ams:
       savingsaccounts-path: ${ams.local.account.base-url}/savingsaccounts
     auth:
       host: http://localhost:8080
-commons:
+
+baasflow:
   events:
-    audit:
-      kafka:
-        brokers: localhost:9092
-        topis: auditlog
+    disabled: true

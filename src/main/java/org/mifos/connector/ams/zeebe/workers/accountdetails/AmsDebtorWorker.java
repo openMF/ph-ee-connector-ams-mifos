@@ -41,7 +41,7 @@ public class AmsDebtorWorker extends AbstractAmsWorker {
 
         eventBuilder.setEvent("getAccountIdsFromAms");
 
-        AmsDataTableQueryResponse[] lookupAccount = lookupAccount(debtorIban, tenantIdentifier);
+        AmsDataTableQueryResponse[] lookupAccount = lookupSavingsAccount(debtorIban, tenantIdentifier);
 
         if (lookupAccount.length == 0) {
             throw new ZeebeBpmnError(debtorIban, String.format("No entry found for IBAN %s", debtorIban));

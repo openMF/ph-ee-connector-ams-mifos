@@ -1,7 +1,12 @@
 package org.mifos.connector;
 
-import java.util.concurrent.TimeUnit;
-
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.fasterxml.jackson.module.afterburner.AfterburnerModule;
+import io.camunda.zeebe.spring.client.EnableZeebeClient;
 import org.apache.camel.Processor;
 import org.apache.hc.client5.http.classic.HttpClient;
 import org.apache.hc.client5.http.config.RequestConfig;
@@ -17,14 +22,7 @@ import org.springframework.http.client.ClientHttpRequestFactory;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.web.client.RestTemplate;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.fasterxml.jackson.module.afterburner.AfterburnerModule;
-
-import io.camunda.zeebe.spring.client.EnableZeebeClient;
+import java.util.concurrent.TimeUnit;
 
 @EnableZeebeClient
 @SpringBootApplication
@@ -36,7 +34,7 @@ public class AmsConnectorApplication {
 
     @Bean
     @Primary
-    public ObjectMapper objectMapper() {
+    public ObjectMapper objectMapper() {  // for zeebe usage
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.registerModule(new AfterburnerModule());
         objectMapper.registerModule(new JavaTimeModule());
@@ -46,11 +44,11 @@ public class AmsConnectorApplication {
                 .configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true)
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     }
-    
+
     @Bean()
     @Qualifier("painMapper")
-    public ObjectMapper painMapper() {
-    	ObjectMapper objectMapper = new ObjectMapper();
+    public ObjectMapper painMapper() {  // for having nice pain messages
+        ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.registerModule(new AfterburnerModule());
         objectMapper.registerModule(new JavaTimeModule());
         objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
@@ -64,7 +62,7 @@ public class AmsConnectorApplication {
     public Processor pojoToString(ObjectMapper objectMapper) {
         return exchange -> exchange.getIn().setBody(objectMapper.writeValueAsString(exchange.getIn().getBody()));
     }
-    
+
     @Bean
     public RestTemplate restTemplate(RestTemplateBuilder builder) {
         PoolingHttpClientConnectionManager connectionManager = new PoolingHttpClientConnectionManager();

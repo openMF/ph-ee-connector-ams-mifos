@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 
     <modelVersion>4.0.0</modelVersion>
 
@@ -8,7 +9,7 @@
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
         <version>3.0.9</version>
-        <relativePath/>
+        <relativePath />
     </parent>
 
     <groupId>org.mifos</groupId>
@@ -22,7 +23,7 @@
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        
+
         <git-commit-id-maven-plugin.version>6.0.0</git-commit-id-maven-plugin.version>
         <baasflow-events-spring-boot-starter.version>1.2.0</baasflow-events-spring-boot-starter.version>
     </properties>
@@ -83,7 +84,7 @@
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-annotations</artifactId>
             <version>2.15.2</version>
-    </dependency>
+        </dependency>
 
         <dependency>
             <groupId>org.apache.fineract</groupId>
@@ -91,10 +92,10 @@
             <version>0.0.0.0-0e6f5eab9</version>
         </dependency>
         <dependency>
-      		<groupId>com.baasflow.events</groupId>
-      		<artifactId>baasflow-events-spring-boot-starter</artifactId>
-      		<version>${baasflow-events-spring-boot-starter.version}</version>
-    	</dependency>
+            <groupId>com.baasflow.events</groupId>
+            <artifactId>baasflow-events-spring-boot-starter</artifactId>
+            <version>${baasflow-events-spring-boot-starter.version}</version>
+        </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
@@ -110,9 +111,9 @@
                     <artifactId>jackson-module-scala_3</artifactId>
                 </exclusion>
                 <exclusion>
-					<groupId>org.yaml</groupId>
-					<artifactId>snakeyaml</artifactId>
-				</exclusion>
+                    <groupId>org.yaml</groupId>
+                    <artifactId>snakeyaml</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
         <dependency>
@@ -189,22 +190,22 @@
             <artifactId>json-schema-validator</artifactId>
             <version>1.0.87</version>
             <exclusions>
-				<exclusion>
-					<groupId>org.yaml</groupId>
-					<artifactId>snakeyaml</artifactId>
-				</exclusion>
-			</exclusions>
+                <exclusion>
+                    <groupId>org.yaml</groupId>
+                    <artifactId>snakeyaml</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
-			<groupId>org.yaml</groupId>
-			<artifactId>snakeyaml</artifactId>
-			<version>2.0</version>
-		</dependency>
+            <groupId>org.yaml</groupId>
+            <artifactId>snakeyaml</artifactId>
+            <version>2.0</version>
+        </dependency>
         <dependency>
-			<groupId>com.google.guava</groupId>
-			<artifactId>guava</artifactId>
-			<version>32.0.1-jre</version>
-		</dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>32.0.1-jre</version>
+        </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
@@ -222,11 +223,21 @@
             <version>${zeebe.version}</version>
             <scope>test</scope>
             <exclusions>
-				<exclusion>
-					<groupId>com.google.guava</groupId>
-					<artifactId>guava</artifactId>
-				</exclusion>
-			</exclusions>
+                <exclusion>
+                    <groupId>com.google.guava</groupId>
+                    <artifactId>guava</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-inline</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.awspring.cloud</groupId>

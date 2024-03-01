@@ -8,8 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import org.mifos.connector.ams.fineract.Config;
-import org.mifos.connector.ams.fineract.ConfigFactory;
+import org.mifos.connector.ams.fineract.TenantConfigs;
 import org.mifos.connector.ams.log.EventLogUtil;
 import org.mifos.connector.ams.log.LogInternalCorrelationId;
 import org.mifos.connector.ams.log.TraceZeebeArguments;
@@ -27,7 +26,6 @@ import org.springframework.stereotype.Component;
 
 import com.baasflow.commons.events.Event;
 import com.baasflow.commons.events.EventService;
-import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.camunda.zeebe.client.api.response.ActivatedJob;
@@ -52,7 +50,7 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
     protected String incomingMoneyApi;
 
     @Autowired
-    private ConfigFactory paymentTypeConfigFactory;
+    private TenantConfigs tenantConfigs;
 
     @Autowired
     private BatchItemBuilder batchItemBuilder;
@@ -74,8 +72,8 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
     @TraceZeebeArguments
     public Map<String, Object> transferNonTransactionalFeeInAms(JobClient jobClient,
                                                                 ActivatedJob activatedJob,
-                                                                @Variable Integer conversionAccountAmsId,
-                                                                @Variable Integer disposalAccountAmsId,
+                                                                @Variable String conversionAccountAmsId,
+                                                                @Variable String disposalAccountAmsId,
                                                                 @Variable String tenantIdentifier,
                                                                 @Variable String paymentScheme,
                                                                 @Variable BigDecimal amount,
@@ -87,7 +85,8 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
         log.info("transferNonTransactionalFeeInAms");
         return eventService.auditedEvent(
                 eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "bookCreditedAmountToTechnicalAccount", internalCorrelationId, transactionGroupId, eventBuilder),
-                eventBuilder -> transferNonTransactionalFeeInAms(conversionAccountAmsId,
+                eventBuilder -> transferNonTransactionalFeeInAms(
+                        conversionAccountAmsId,
                         disposalAccountAmsId,
                         tenantIdentifier,
                         paymentScheme,
@@ -100,8 +99,8 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
                         eventBuilder));
     }
 
-    private Map<String, Object> transferNonTransactionalFeeInAms(Integer conversionAccountAmsId,
-                                                                 Integer disposalAccountAmsId,
+    private Map<String, Object> transferNonTransactionalFeeInAms(String conversionAccountAmsId,
+                                                                 String disposalAccountAmsId,
                                                                  String tenantIdentifier,
                                                                  String paymentScheme,
                                                                  BigDecimal amount,
@@ -111,8 +110,7 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
                                                                  String originalPain001,
                                                                  String debtorIban,
                                                                  Event.Builder eventBuilder) {
-        String disposalAccountWithdrawRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), disposalAccountAmsId, "withdrawal");
-        Config paymentTypeConfig = paymentTypeConfigFactory.getConfig(tenantIdentifier);
+        String disposalAccountWithdrawRelativeUrl = String.format("%s%s/transactions?command=%s", incomingMoneyApi.substring(1), disposalAccountAmsId, "withdrawal");
         log.debug("Got payment scheme {}", paymentScheme);
         String transactionDate = LocalDate.now().format(PATTERN);
         log.debug("Got category purpose code {}", categoryPurpose);
@@ -123,8 +121,8 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 
             String withdrawNonTxFeeDisposalOperation = "transferToConversionAccountInAms.DisposalAccount.WithdrawNonTransactionalFee";
             String withdrawNonTxDisposalConfigOperationKey = String.format("%s.%s.%s", paymentScheme, categoryPurpose, withdrawNonTxFeeDisposalOperation);
-            Integer paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(withdrawNonTxDisposalConfigOperationKey);
-            String paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(withdrawNonTxDisposalConfigOperationKey);
+            String paymentTypeId = tenantConfigs.findPaymentTypeId(tenantIdentifier, withdrawNonTxDisposalConfigOperationKey);
+            String paymentTypeCode = tenantConfigs.findResourceCode(tenantIdentifier, withdrawNonTxDisposalConfigOperationKey);
             log.debug("Looking up {}, got payment type id {}", withdrawNonTxDisposalConfigOperationKey, paymentTypeId);
             TransactionBody body = new TransactionBody(
                     transactionDate,
@@ -175,8 +173,8 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 
             String depositNonTxFeeOperation = "transferToConversionAccountInAms.ConversionAccount.DepositNonTransactionalFee";
             String depositNonTxFeeConfigOperationKey = String.format("%s.%s.%s", paymentScheme, categoryPurpose, depositNonTxFeeOperation);
-            paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(depositNonTxFeeConfigOperationKey);
-            paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(depositNonTxFeeConfigOperationKey);
+            paymentTypeId = tenantConfigs.findPaymentTypeId(tenantIdentifier, depositNonTxFeeConfigOperationKey);
+            paymentTypeCode = tenantConfigs.findResourceCode(tenantIdentifier, depositNonTxFeeConfigOperationKey);
             convertedcamt053.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
             convertedcamt053.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.CRDT);
             convertedcamt053.setCreditDebitIndicator(CreditDebitCode.CRDT);
@@ -193,7 +191,7 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 
             bodyItem = painMapper.writeValueAsString(body);
 
-            String conversionAccountDepositRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "deposit");
+            String conversionAccountDepositRelativeUrl = String.format("%s%s/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "deposit");
 
             batchItemBuilder.add(tenantIdentifier, items, conversionAccountDepositRelativeUrl, bodyItem, false);
 
@@ -222,8 +220,8 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 
             String withdrawNonTxFeeConversionOperation = "transferToConversionAccountInAms.ConversionAccount.WithdrawNonTransactionalFee";
             String withdrawNonTxFeeConversionConfigOperationKey = String.format("%s.%s.%s", paymentScheme, categoryPurpose, withdrawNonTxFeeConversionOperation);
-            paymentTypeId = paymentTypeConfig.findPaymentTypeIdByOperation(withdrawNonTxFeeConversionConfigOperationKey);
-            paymentTypeCode = paymentTypeConfig.findPaymentTypeCodeByOperation(withdrawNonTxFeeConversionConfigOperationKey);
+            paymentTypeId = tenantConfigs.findPaymentTypeId(tenantIdentifier, withdrawNonTxFeeConversionConfigOperationKey);
+            paymentTypeCode = tenantConfigs.findResourceCode(tenantIdentifier, withdrawNonTxFeeConversionConfigOperationKey);
             convertedcamt053.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
             convertedcamt053.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.DBIT);
             convertedcamt053.setCreditDebitIndicator(CreditDebitCode.DBIT);
@@ -240,7 +238,7 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 
             bodyItem = painMapper.writeValueAsString(body);
 
-            String conversionAccountWithdrawRelativeUrl = String.format("%s%d/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "withdrawal");
+            String conversionAccountWithdrawRelativeUrl = String.format("%s%s/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "withdrawal");
 
             batchItemBuilder.add(tenantIdentifier, items, conversionAccountWithdrawRelativeUrl, bodyItem, false);
 
@@ -270,6 +268,7 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 
             doBatch(items,
                     tenantIdentifier,
+                    transactionGroupId,
                     disposalAccountAmsId,
                     conversionAccountAmsId,
                     internalCorrelationId,
