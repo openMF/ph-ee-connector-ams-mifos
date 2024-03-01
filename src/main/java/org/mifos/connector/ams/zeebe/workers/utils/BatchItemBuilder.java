@@ -1,12 +1,17 @@
 package org.mifos.connector.ams.zeebe.workers.utils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import iso.std.iso._20022.tech.json.camt_053_001.ActiveOrHistoricCurrencyAndAmount;
+import iso.std.iso._20022.tech.json.camt_053_001.AmountAndCurrencyExchange3;
+import iso.std.iso._20022.tech.json.camt_053_001.AmountAndCurrencyExchangeDetails3;
+import iso.std.iso._20022.tech.json.camt_053_001.EntryTransaction10;
 import iso.std.iso._20022.tech.json.pain_001_001.SupplementaryData1;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -53,5 +58,21 @@ public class BatchItemBuilder {
         }
         logger.debug("transactionCreationChannel not found in supplementaryData: {}", supplementaryData);
         return null;
+    }
+
+    public void setAmount(EntryTransaction10 entryTransaction10, BigDecimal amount, String currency) {
+        AmountAndCurrencyExchange3 amountDetails = entryTransaction10.getAmountDetails();
+        if (amountDetails == null) {
+            amountDetails = new AmountAndCurrencyExchange3();
+            entryTransaction10.setAmountDetails(amountDetails);
+        }
+
+        AmountAndCurrencyExchangeDetails3 transactionAmount = amountDetails.getTransactionAmount();
+        if (transactionAmount == null) {
+            transactionAmount = new AmountAndCurrencyExchangeDetails3();
+            amountDetails.setTransactionAmount(transactionAmount);
+        }
+
+        transactionAmount.setAmount(new ActiveOrHistoricCurrencyAndAmount(amount, currency));
     }
 }

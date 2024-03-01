@@ -146,6 +146,7 @@ public class BookCreditedAmountToTechnicalAccountWorker extends AbstractMoneyInO
             BankToCustomerStatementV08 intermediateCamt053 = pacs008Camt053Mapper.toCamt053Entry(pacs008);
             ReportEntry10 reportEntry10 = intermediateCamt053.getStatement().get(0).getEntry().get(0);
             EntryTransaction10 entryTransaction10 = reportEntry10.getEntryDetails().get(0).getTransactionDetails().get(0);
+            batchItemBuilder.setAmount(entryTransaction10, amount, currency);
             String creditorIban = creditTransferTransactionInformation11.getCdtrAcct().getId().getIBAN();
             String debtorIban = creditTransferTransactionInformation11.getDbtrAcct().getId().getIBAN();
             String debtorContactDetails = contactDetailsUtil.getId(creditTransferTransactionInformation11.getDbtr().getCtctDtls());

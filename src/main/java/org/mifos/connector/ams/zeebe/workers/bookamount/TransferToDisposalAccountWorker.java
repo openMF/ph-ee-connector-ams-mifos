@@ -140,7 +140,8 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
             String direction = tenantConfigs.findDirection(tenantIdentifier, depositAmountConfigOperationKey);
             iso.std.iso._20022.tech.xsd.pacs_008_001.Document pacs008 = jaxbUtils.unmarshalPacs008(originalPacs008);
             ReportEntry10 convertedCamt053Entry = pacs008Camt053Mapper.toCamt053Entry(pacs008).getStatement().get(0).getEntry().get(0);
-            EntryTransaction10 transactionDetails = convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0);
+            EntryTransaction10 entryTransaction10 = convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0);
+            batchItemBuilder.setAmount(entryTransaction10, amount, currency);
             CreditTransferTransactionInformation11 creditTransferTransaction = pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0);
             String debtorName = creditTransferTransaction.getDbtr().getNm();
             String debtorIban = creditTransferTransaction.getDbtrAcct().getId().getIBAN();
@@ -157,10 +158,10 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
             } // CURRENT account sends a single call only at the details step
 
             // STEP 2 - batch: deposit details
-            transactionDetails.setCreditDebitIndicator(CreditDebitCode.CRDT);
+            entryTransaction10.setCreditDebitIndicator(CreditDebitCode.CRDT);
             convertedCamt053Entry.setCreditDebitIndicator(CreditDebitCode.CRDT);
             convertedCamt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "BOOKED"));
-            transactionDetails.setAdditionalTransactionInformation(paymentTypeCode);
+            entryTransaction10.setAdditionalTransactionInformation(paymentTypeCode);
             String camt053Entry = serializationHelper.writeCamt053AsString(accountProductType, convertedCamt053Entry);
 
             if (accountProductType.equalsIgnoreCase("SAVINGS")) {
@@ -177,8 +178,8 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
             String withdrawAmountConfigOperationKey = String.format("%s.%s", paymentScheme, withdrawAmountOperation);
             paymentTypeId = tenantConfigs.findPaymentTypeId(tenantIdentifier, withdrawAmountConfigOperationKey);
             paymentTypeCode = tenantConfigs.findResourceCode(tenantIdentifier, withdrawAmountConfigOperationKey);
-            transactionDetails.setAdditionalTransactionInformation(paymentTypeCode);
-            transactionDetails.setCreditDebitIndicator(CreditDebitCode.DBIT);
+            entryTransaction10.setAdditionalTransactionInformation(paymentTypeCode);
+            entryTransaction10.setCreditDebitIndicator(CreditDebitCode.DBIT);
             convertedCamt053Entry.setCreditDebitIndicator(CreditDebitCode.DBIT);
             camt053Entry = serializationHelper.writeCamt053AsString(accountProductType, convertedCamt053Entry);
 
@@ -308,10 +309,12 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
 
             BankToCustomerStatementV08 intermediateCamt053 = pacs008Camt053Mapper.toCamt053Entry(pacs008);
             ReportEntry10 convertedCamt053Entry = pacs004Camt053Mapper.convert(pacs004, intermediateCamt053).getStatement().get(0).getEntry().get(0);
-            convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.CRDT);
+            EntryTransaction10 entryTransaction10 = convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0);
+            batchItemBuilder.setAmount(entryTransaction10, amount, currency);
+            entryTransaction10.setCreditDebitIndicator(CreditDebitCode.CRDT);
             convertedCamt053Entry.setCreditDebitIndicator(CreditDebitCode.CRDT);
             convertedCamt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "BOOKED"));
-            convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
+            entryTransaction10.setAdditionalTransactionInformation(paymentTypeCode);
             String camt053Entry = serializationHelper.writeCamt053AsString(accountProductType, convertedCamt053Entry);
 
             CashAccount16 debtorAccount = pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getDbtrAcct();
@@ -355,8 +358,8 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
             String withdrawAmountConfigOperationKey = String.format("%s.%s", paymentScheme, withdrawAmountOperation);
             paymentTypeId = tenantConfigs.findPaymentTypeId(tenantIdentifier, withdrawAmountConfigOperationKey);
             paymentTypeCode = tenantConfigs.findResourceCode(tenantIdentifier, withdrawAmountConfigOperationKey);
-            convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
-            convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.DBIT);
+            entryTransaction10.setAdditionalTransactionInformation(paymentTypeCode);
+            entryTransaction10.setCreditDebitIndicator(CreditDebitCode.DBIT);
             convertedCamt053Entry.setCreditDebitIndicator(CreditDebitCode.DBIT);
             camt053Entry = serializationHelper.writeCamt053AsString(accountProductType, convertedCamt053Entry);
 
@@ -486,8 +489,10 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
                                             .withEntryDetails(List.of(new EntryDetails9()
                                                     .withTransactionDetails(List.of(new EntryTransaction10())))))))));
             ReportEntry10 convertedCamt053Entry = camt053.getStatement().get(0).getEntry().get(0);
-            convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
-            convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.CRDT);
+            EntryTransaction10 entryTransaction10 = convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0);
+            batchItemBuilder.setAmount(entryTransaction10, amount, currency);
+            entryTransaction10.setAdditionalTransactionInformation(paymentTypeCode);
+            entryTransaction10.setCreditDebitIndicator(CreditDebitCode.CRDT);
             convertedCamt053Entry.setCreditDebitIndicator(CreditDebitCode.CRDT);
             convertedCamt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "BOOKED"));
             String camt053Entry = serializationHelper.writeCamt053AsString(accountProductType, convertedCamt053Entry);
@@ -513,8 +518,8 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
             String withdrawAmountConfigOperationKey = String.format("%s.%s", paymentScheme, withdrawAmountOperation);
             paymentTypeId = tenantConfigs.findPaymentTypeId(tenantIdentifier, withdrawAmountConfigOperationKey);
             paymentTypeCode = tenantConfigs.findResourceCode(tenantIdentifier, withdrawAmountConfigOperationKey);
-            convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
-            convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.DBIT);
+            entryTransaction10.setAdditionalTransactionInformation(paymentTypeCode);
+            entryTransaction10.setCreditDebitIndicator(CreditDebitCode.DBIT);
             convertedCamt053Entry.setCreditDebitIndicator(CreditDebitCode.DBIT);
             camt053Entry = serializationHelper.writeCamt053AsString(accountProductType, convertedCamt053Entry);
 

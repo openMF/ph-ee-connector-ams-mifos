@@ -161,7 +161,8 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
             BankToCustomerStatementV08 convertedStatement = camt053Mapper.toCamt053Entry(pain001.getDocument());
             ReportEntry10 convertedcamt053Entry = convertedStatement.getStatement().get(0).getEntry().get(0);
             AmountAndCurrencyExchangeDetails3 withAmountAndCurrency = new AmountAndCurrencyExchangeDetails3().withAmount(new ActiveOrHistoricCurrencyAndAmount().withAmount(amount.add(transactionFeeAmount)).withCurrency(currency));
-            EntryTransaction10 transactionDetails = convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0);
+            EntryTransaction10 entryTransaction10 = convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0);
+            batchItemBuilder.setAmount(entryTransaction10, amount, currency);
             CreditTransferTransaction40 creditTransfer = pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0);
             String creditorName = creditTransfer.getCreditor().getName();
             String transactionCreationChannel = batchItemBuilder.findTransactionCreationChannel(creditTransfer.getSupplementaryData());
@@ -172,9 +173,9 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
             CustomerCreditTransferInitiationV10 pain0011 = pain001.getDocument();
             String endToEndId = pain0011.getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getPaymentIdentification().getEndToEndIdentification();
 
-            transactionDetails.withAmountDetails(new AmountAndCurrencyExchange3().withTransactionAmount(withAmountAndCurrency));
-            transactionDetails.getSupplementaryData().clear();
-            refillOtherId(debtorInternalAccountId, creditorInternalAccountId, transactionDetails);
+            entryTransaction10.withAmountDetails(new AmountAndCurrencyExchange3().withTransactionAmount(withAmountAndCurrency));
+            entryTransaction10.getSupplementaryData().clear();
+            refillOtherId(debtorInternalAccountId, creditorInternalAccountId, entryTransaction10);
 
             String interbankSettlementDate = LocalDate.now().format(PATTERN);
             boolean hasFee = !BigDecimal.ZERO.equals(transactionFeeAmount);
@@ -189,7 +190,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
 
                 // STEP 1b - transaction details
                 String paymentTypeCode1 = Optional.ofNullable(tenantConfigs.findResourceCode(tenantIdentifier, String.format("%s.%s", paymentScheme, null))).orElse("");
-                convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode1);
+                entryTransaction10.setAdditionalTransactionInformation(paymentTypeCode1);
                 String camt053 = serializationHelper.writeCamt053AsString(accountProductType, convertedcamt053Entry);
 
                 String holdCamt053Body1 = painMapper.writeValueAsString(new DtSavingsTransactionDetails(internalCorrelationId, camt053, debtorIban, paymentTypeCode1, internalCorrelationId, creditorName, creditorIban, creditorInternalAccountId, creditorContactDetails, unstructured, transactionCategoryPurposeCode, paymentScheme, null, null, endToEndId));
@@ -219,7 +220,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
                 String releaseAmountOperation = "transferTheAmountBetweenDisposalAccounts.Debtor.DisposalAccount.ReleaseTransactionAmount";
                 String releaseOperationKey = String.format("%s.%s", paymentScheme, releaseAmountOperation);
                 String paymentTypeCode2 = Optional.ofNullable(tenantConfigs.findResourceCode(tenantIdentifier, releaseOperationKey)).orElse("");
-                convertedcamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode2);
+                entryTransaction10.setAdditionalTransactionInformation(paymentTypeCode2);
                 String camt0531 = serializationHelper.writeCamt053AsString(accountProductType, convertedcamt053Entry);
 
                 String camt053Body1 = painMapper.writeValueAsString(new DtSavingsTransactionDetails(internalCorrelationId, camt0531, debtorIban, paymentTypeCode2, internalCorrelationId, creditorName, creditorIban, creditorInternalAccountId, creditorContactDetails, unstructured, transactionCategoryPurposeCode, paymentScheme, null, null, endToEndId));
@@ -240,14 +241,13 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
                 batchItemBuilder.add(tenantIdentifier, items, debtorDisposalWithdrawalRelativeUrl, bodyItem, false);
             } // current account sends amount with details
 
-            transactionDetails.getAmountDetails().getTransactionAmount().getAmount().setAmount(amount);
-            transactionDetails.setAdditionalTransactionInformation(withdrawPaymentTypeCode);
-            transactionDetails.setCreditDebitIndicator(CreditDebitCode.DBIT);
+            entryTransaction10.setAdditionalTransactionInformation(withdrawPaymentTypeCode);
+            entryTransaction10.setCreditDebitIndicator(CreditDebitCode.DBIT);
             convertedcamt053Entry.setCreditDebitIndicator(CreditDebitCode.DBIT);
             convertedcamt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "BOOKED"));
-            camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001.getDocument(), transactionDetails, transactionCategoryPurposeCode);
-            transactionDetails.getSupplementaryData().clear();
-            refillOtherId(debtorInternalAccountId, creditorInternalAccountId, transactionDetails);
+            camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001.getDocument(), entryTransaction10, transactionCategoryPurposeCode);
+            entryTransaction10.getSupplementaryData().clear();
+            refillOtherId(debtorInternalAccountId, creditorInternalAccountId, entryTransaction10);
 
             String camt053Entry = serializationHelper.writeCamt053AsString(accountProductType, convertedcamt053Entry);
             iso.std.iso._20022.tech.json.pain_001_001.CashAccount38 debtorAccount = pain001.getDocument().getPaymentInformation().get(0).getDebtorAccount();
@@ -291,12 +291,12 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
                     batchItemBuilder.add(tenantIdentifier, items, debtorDisposalWithdrawalRelativeUrl, bodyItem, false);
                 }
 
-                transactionDetails.getSupplementaryData().get(0).getEnvelope().setAdditionalProperty("InternalCorrelationId", transactionFeeInternalCorrelationId);
-                transactionDetails.getAmountDetails().getTransactionAmount().getAmount().setAmount(transactionFeeAmount);
-                transactionDetails.setAdditionalTransactionInformation(withdrawPaymentTypeCode);
-                transactionDetails.getSupplementaryData().clear();
-                camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001.getDocument(), transactionDetails, transactionFeeCategoryPurposeCode);
-                refillOtherId(debtorInternalAccountId, creditorInternalAccountId, transactionDetails);
+                entryTransaction10.getSupplementaryData().get(0).getEnvelope().setAdditionalProperty("InternalCorrelationId", transactionFeeInternalCorrelationId);
+                entryTransaction10.getAmountDetails().getTransactionAmount().getAmount().setAmount(transactionFeeAmount);
+                entryTransaction10.setAdditionalTransactionInformation(withdrawPaymentTypeCode);
+                entryTransaction10.getSupplementaryData().clear();
+                camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001.getDocument(), entryTransaction10, transactionFeeCategoryPurposeCode);
+                refillOtherId(debtorInternalAccountId, creditorInternalAccountId, entryTransaction10);
                 camt053Entry = serializationHelper.writeCamt053AsString(accountProductType, convertedcamt053Entry);
 
                 if (accountProductType.equalsIgnoreCase("SAVINGS")) {
@@ -330,13 +330,13 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
                 String depositFeeConfigOperationKey = String.format("%s.%s", paymentScheme, depositFeeOperation);
                 var depositPaymentTypeId = tenantConfigs.findPaymentTypeId(tenantIdentifier, depositFeeConfigOperationKey);
                 var depositPaymentTypeCode = tenantConfigs.findResourceCode(tenantIdentifier, depositFeeConfigOperationKey);
-                transactionDetails.setAdditionalTransactionInformation(depositPaymentTypeCode);
-                transactionDetails.getSupplementaryData().clear();
-                transactionDetails.setCreditDebitIndicator(CreditDebitCode.CRDT);
+                entryTransaction10.setAdditionalTransactionInformation(depositPaymentTypeCode);
+                entryTransaction10.getSupplementaryData().clear();
+                entryTransaction10.setCreditDebitIndicator(CreditDebitCode.CRDT);
                 convertedcamt053Entry.setCreditDebitIndicator(CreditDebitCode.CRDT);
                 convertedcamt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "BOOKED"));
-                camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001.getDocument(), transactionDetails, transactionFeeCategoryPurposeCode);
-                refillOtherId(debtorInternalAccountId, creditorInternalAccountId, transactionDetails);
+                camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001.getDocument(), entryTransaction10, transactionFeeCategoryPurposeCode);
+                refillOtherId(debtorInternalAccountId, creditorInternalAccountId, entryTransaction10);
                 camt053Entry = serializationHelper.writeCamt053AsString(accountProductType, convertedcamt053Entry);
                 String debtorConversionDepositRelativeUrl = String.format("%s%s/transactions?command=%s", apiPath, debtorConversionAccountAmsId, "deposit");
 
@@ -374,10 +374,10 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
             String depositAmountConfigOperationKey = String.format("%s.%s", paymentScheme, depositAmountOperation);
             var depositPaymentTypeId = tenantConfigs.findPaymentTypeId(tenantIdentifier, depositAmountConfigOperationKey);
             var depositPaymentTypeCode = tenantConfigs.findResourceCode(tenantIdentifier, depositAmountConfigOperationKey);
-            transactionDetails.setAdditionalTransactionInformation(depositPaymentTypeCode);
-            transactionDetails.getSupplementaryData().clear();
-            camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001.getDocument(), transactionDetails, transactionCategoryPurposeCode);
-            refillOtherId(debtorInternalAccountId, creditorInternalAccountId, transactionDetails);
+            entryTransaction10.setAdditionalTransactionInformation(depositPaymentTypeCode);
+            entryTransaction10.getSupplementaryData().clear();
+            camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001.getDocument(), entryTransaction10, transactionCategoryPurposeCode);
+            refillOtherId(debtorInternalAccountId, creditorInternalAccountId, entryTransaction10);
             String creditorDisposalDepositRelativeUrl = String.format("%s%s/transactions?command=%s", apiPath, creditorDisposalAccountAmsId, "deposit");
 
             if (accountProductType.equalsIgnoreCase("SAVINGS")) {
@@ -385,9 +385,9 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
                 batchItemBuilder.add(tenantIdentifier, items, creditorDisposalDepositRelativeUrl, bodyItem, false);
             }
 
-            transactionDetails.getSupplementaryData().get(0).getEnvelope().setAdditionalProperty("InternalCorrelationId", internalCorrelationId);
-            transactionDetails.getAmountDetails().getTransactionAmount().getAmount().setAmount(amount);
-            transactionDetails.setCreditDebitIndicator(CreditDebitCode.CRDT);
+            entryTransaction10.getSupplementaryData().get(0).getEnvelope().setAdditionalProperty("InternalCorrelationId", internalCorrelationId);
+            entryTransaction10.getAmountDetails().getTransactionAmount().getAmount().setAmount(amount);
+            entryTransaction10.setCreditDebitIndicator(CreditDebitCode.CRDT);
             convertedcamt053Entry.setCreditDebitIndicator(CreditDebitCode.CRDT);
             convertedcamt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "BOOKED"));
             camt053Entry = serializationHelper.writeCamt053AsString(accountProductType, convertedcamt053Entry);
@@ -424,12 +424,12 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
                 String withdrawFeeConversionConfigOperationKey = String.format("%s.%s", paymentScheme, withdrawFeeConversionOperation);
                 depositPaymentTypeId = tenantConfigs.findPaymentTypeId(tenantIdentifier, withdrawFeeConversionConfigOperationKey);
                 depositPaymentTypeCode = tenantConfigs.findResourceCode(tenantIdentifier, withdrawFeeConversionConfigOperationKey);
-                transactionDetails.setAdditionalTransactionInformation(depositPaymentTypeCode);
-                transactionDetails.getSupplementaryData().clear();
-                transactionDetails.setCreditDebitIndicator(CreditDebitCode.DBIT);
+                entryTransaction10.setAdditionalTransactionInformation(depositPaymentTypeCode);
+                entryTransaction10.getSupplementaryData().clear();
+                entryTransaction10.setCreditDebitIndicator(CreditDebitCode.DBIT);
                 convertedcamt053Entry.setCreditDebitIndicator(CreditDebitCode.DBIT);
                 convertedcamt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "BOOKED"));
-                refillOtherId(debtorInternalAccountId, creditorInternalAccountId, transactionDetails);
+                refillOtherId(debtorInternalAccountId, creditorInternalAccountId, entryTransaction10);
                 String debtorConversionWithdrawRelativeUrl = String.format("%s%s/transactions?command=%s", apiPath, debtorConversionAccountAmsId, "withdrawal");
 
                 if (accountProductType.equalsIgnoreCase("SAVINGS")) {
@@ -437,11 +437,11 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
                     batchItemBuilder.add(tenantIdentifier, items, debtorConversionWithdrawRelativeUrl, bodyItem, false);
                 }
 
-                transactionDetails.getAmountDetails().getTransactionAmount().getAmount().setAmount(transactionFeeAmount);
-                transactionDetails.getSupplementaryData().clear();
-                camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001.getDocument(), transactionDetails, transactionFeeCategoryPurposeCode);
-                refillOtherId(debtorInternalAccountId, creditorInternalAccountId, transactionDetails);
-                transactionDetails.getSupplementaryData().get(0).getEnvelope().setAdditionalProperty("InternalCorrelationId", transactionFeeInternalCorrelationId);
+                entryTransaction10.getAmountDetails().getTransactionAmount().getAmount().setAmount(transactionFeeAmount);
+                entryTransaction10.getSupplementaryData().clear();
+                camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001.getDocument(), entryTransaction10, transactionFeeCategoryPurposeCode);
+                refillOtherId(debtorInternalAccountId, creditorInternalAccountId, entryTransaction10);
+                entryTransaction10.getSupplementaryData().get(0).getEnvelope().setAdditionalProperty("InternalCorrelationId", transactionFeeInternalCorrelationId);
                 camt053Entry = serializationHelper.writeCamt053AsString(accountProductType, convertedcamt053Entry);
 
                 if (accountProductType.equalsIgnoreCase("SAVINGS")) {
@@ -482,18 +482,18 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
     }
 
     private void refillOtherId(String debtorInternalAccountId, String creditorInternalAccountId,
-                               EntryTransaction10 transactionDetails) {
+                               EntryTransaction10 entryTransaction10) {
         boolean isWritten = false;
-        for (SupplementaryData1 supplementaryData : transactionDetails.getSupplementaryData()) {
+        for (SupplementaryData1 supplementaryData : entryTransaction10.getSupplementaryData()) {
             if ("OrderManagerSupplementaryData".equalsIgnoreCase(supplementaryData.getPlaceAndName())) {
                 SupplementaryDataEnvelope1 envelope = supplementaryData.getEnvelope();
-                doRefillOtherId(debtorInternalAccountId, creditorInternalAccountId, transactionDetails, envelope);
+                doRefillOtherId(debtorInternalAccountId, creditorInternalAccountId, entryTransaction10, envelope);
                 isWritten = true;
             }
         }
 
         if (!isWritten) {
-            List<SupplementaryData1> sds = transactionDetails.getSupplementaryData();
+            List<SupplementaryData1> sds = entryTransaction10.getSupplementaryData();
             if (sds.isEmpty()) {
                 sds.add(new SupplementaryData1());
             }
@@ -504,21 +504,21 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
                 supplementaryData.setEnvelope(envelope);
             }
 
-            doRefillOtherId(debtorInternalAccountId, creditorInternalAccountId, transactionDetails, envelope);
+            doRefillOtherId(debtorInternalAccountId, creditorInternalAccountId, entryTransaction10, envelope);
         }
     }
 
     @SuppressWarnings("unchecked")
     private void doRefillOtherId(String debtorInternalAccountId, String creditorInternalAccountId,
-                                 EntryTransaction10 transactionDetails, SupplementaryDataEnvelope1 envelope) {
+                                 EntryTransaction10 entryTransaction10, SupplementaryDataEnvelope1 envelope) {
         LinkedHashMap<String, Object> otherIdentification = (LinkedHashMap<String, Object>) envelope.getAdditionalProperties().getOrDefault("OtherIdentification", new LinkedHashMap<>());
         envelope.setAdditionalProperty("OtherIdentification", otherIdentification);
 
-        GenericAccountIdentification1 debtorAccountIdOther = (GenericAccountIdentification1) transactionDetails.getRelatedParties().getDebtorAccount().getIdentification().getAdditionalProperties().getOrDefault("Other", GenericAccountIdentification1.builder().build());
+        GenericAccountIdentification1 debtorAccountIdOther = (GenericAccountIdentification1) entryTransaction10.getRelatedParties().getDebtorAccount().getIdentification().getAdditionalProperties().getOrDefault("Other", GenericAccountIdentification1.builder().build());
         debtorAccountIdOther.setId(debtorInternalAccountId);
         debtorAccountIdOther.setSchemeName(AccountSchemeName1Choice.builder().code("IAID").build());
 
-        GenericAccountIdentification1 creditorAccountIdOther = (GenericAccountIdentification1) transactionDetails.getRelatedParties().getCreditorAccount().getIdentification().getAdditionalProperties().getOrDefault("Other", GenericAccountIdentification1.builder().build());
+        GenericAccountIdentification1 creditorAccountIdOther = (GenericAccountIdentification1) entryTransaction10.getRelatedParties().getCreditorAccount().getIdentification().getAdditionalProperties().getOrDefault("Other", GenericAccountIdentification1.builder().build());
         creditorAccountIdOther.setId(creditorInternalAccountId);
         creditorAccountIdOther.setSchemeName(AccountSchemeName1Choice.builder().code("IAID").build());
 

@@ -146,7 +146,7 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
             Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001 = painMapper.readValue(originalPain001, Pain00100110CustomerCreditTransferInitiationV10MessageSchema.class);
             BankToCustomerStatementV08 convertedStatement = camt053Mapper.toCamt053Entry(pain001.getDocument());
             ReportEntry10 convertedCamt053Entry = convertedStatement.getStatement().get(0).getEntry().get(0);
-            EntryTransaction10 transactionDetails = convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0);
+            EntryTransaction10 entryTransaction10 = convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0);
             CreditTransferTransaction40 creditTransferTransaction = pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0);
             String transactionCreationChannel = batchItemBuilder.findTransactionCreationChannel(creditTransferTransaction.getSupplementaryData());
             String unstructured = Optional.ofNullable(creditTransferTransaction.getRemittanceInformation()).map(RemittanceInformation16::getUnstructured).map(List::toString).orElse("");
@@ -171,10 +171,11 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
             } // CURRENT account sends a single call only at the details step
 
             // STEP 1b - batch: withdraw amount details
-            transactionDetails.setCreditDebitIndicator(CreditDebitCode.DBIT);
+            entryTransaction10.setCreditDebitIndicator(CreditDebitCode.DBIT);
             convertedCamt053Entry.setCreditDebitIndicator(CreditDebitCode.DBIT);
             convertedCamt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "BOOKED"));
-            transactionDetails.setAdditionalTransactionInformation(withdrawAmountPaymentTypeCode);
+            entryTransaction10.setAdditionalTransactionInformation(withdrawAmountPaymentTypeCode);
+            batchItemBuilder.setAmount(entryTransaction10, amount, currency);
             String withdrawDetailsCamt053Entry = serializationHelper.writeCamt053AsString(accountProductType, convertedCamt053Entry);
             String withdrawDetailsCamt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
 
@@ -213,16 +214,17 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
                 String withdrawFeeConfigOperationKey = String.format("%s.%s", paymentScheme, withdrawFeeOperation);
                 String withdrawFeePaymentTypeId = tenantConfigs.findPaymentTypeId(tenantIdentifier, withdrawFeeConfigOperationKey);
                 String withdrawFeePaymentTypeCode = tenantConfigs.findResourceCode(tenantIdentifier, withdrawFeeConfigOperationKey);
-                transactionDetails.setAdditionalTransactionInformation(withdrawFeePaymentTypeCode);
-                transactionDetails.setSupplementaryData(new ArrayList<>());
-                camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001.getDocument(), transactionDetails, transactionFeeCategoryPurposeCode);
-                camt053Mapper.refillOtherIdentification(pain001.getDocument(), transactionDetails);
+                entryTransaction10.setAdditionalTransactionInformation(withdrawFeePaymentTypeCode);
+                entryTransaction10.setSupplementaryData(new ArrayList<>());
+                camt053Mapper.fillAdditionalPropertiesByPurposeCode(pain001.getDocument(), entryTransaction10, transactionFeeCategoryPurposeCode);
+                camt053Mapper.refillOtherIdentification(pain001.getDocument(), entryTransaction10);
 
                 if (accountProductType.equalsIgnoreCase("SAVINGS")) {
                     String withdrawFeeBodyItem = painMapper.writeValueAsString(new TransactionBody(transactionDate, transactionFeeAmount, withdrawFeePaymentTypeId, "", FORMAT, locale));
                     batchItemBuilder.add(tenantIdentifier, items, currentAccountWithdrawalRelativeUrl, withdrawFeeBodyItem, false);
                 }
 
+                batchItemBuilder.setAmount(entryTransaction10, amount, currency);
                 String withdrawFeeCamt053Entry = serializationHelper.writeCamt053AsString(accountProductType, convertedCamt053Entry);
 
                 if (accountProductType.equalsIgnoreCase("SAVINGS")) {
@@ -375,9 +377,9 @@ public class BookOnConversionAccountInAmsWorker extends AbstractMoneyInOutWorker
                 camt053Entry.getValueDate().setAdditionalProperty("Date", date);
             }
 
-            EntryTransaction10 transactionDetails = camt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0);
-            transactionDetails.setAdditionalTransactionInformation(paymentTypeCode);
-
+            EntryTransaction10 entryTransaction10 = camt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0);
+            entryTransaction10.setAdditionalTransactionInformation(paymentTypeCode);
+            batchItemBuilder.setAmount(entryTransaction10, amount, currency);
             String camt053 = serializationHelper.writeCamt053AsString(accountProductType, camt053Entry);
 
             if (accountProductType.equalsIgnoreCase("SAVINGS")) {

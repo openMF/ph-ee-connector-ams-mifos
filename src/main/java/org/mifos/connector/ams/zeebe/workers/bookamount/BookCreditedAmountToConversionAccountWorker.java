@@ -147,10 +147,13 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
 
             // STEP 2 - batch: add transaction details
             ReportEntry10 convertedCamt053Entry = pacs008Camt053Mapper.toCamt053Entry(pacs008).getStatement().get(0).getEntry().get(0);
-            convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setCreditDebitIndicator(CreditDebitCode.CRDT);
+            EntryTransaction10 entryTransaction10 = convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0);
+            batchItemBuilder.setAmount(entryTransaction10, amount, currency);
+            entryTransaction10.setCreditDebitIndicator(CreditDebitCode.CRDT);
             convertedCamt053Entry.setCreditDebitIndicator(CreditDebitCode.CRDT);
             convertedCamt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "BOOKED"));
-            convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0).setAdditionalTransactionInformation(paymentTypeCode);
+            entryTransaction10.setAdditionalTransactionInformation(paymentTypeCode);
+
             String camt053Entry = serializationHelper.writeCamt053AsString(accountProductType, convertedCamt053Entry);
 
             if (accountProductType.equalsIgnoreCase("SAVINGS")) {
@@ -258,12 +261,13 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
 
             BankToCustomerStatementV08 intermediateCamt053Entry = pacs008Camt053Mapper.toCamt053Entry(pacs008);
             ReportEntry10 convertedCamt053Entry = pacs004Camt053Mapper.convert(pacs004, intermediateCamt053Entry).getStatement().get(0).getEntry().get(0);
-            EntryTransaction10 transactionDetails = convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0);
-            transactionDetails.setAdditionalTransactionInformation(paymentTypeCode);
+            EntryTransaction10 entryTransaction10 = convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0);
+            batchItemBuilder.setAmount(entryTransaction10, amount, currency);
+            entryTransaction10.setAdditionalTransactionInformation(paymentTypeCode);
             if (convertedCamt053Entry.getValueDate().getAdditionalProperties().get("Date") == null) {
                 convertedCamt053Entry.getValueDate().setAdditionalProperty("Date", transactionDate);
             }
-            transactionDetails.setCreditDebitIndicator(CreditDebitCode.CRDT);
+            entryTransaction10.setCreditDebitIndicator(CreditDebitCode.CRDT);
             convertedCamt053Entry.setCreditDebitIndicator(CreditDebitCode.CRDT);
             convertedCamt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "BOOKED"));
             String camt053Entry = serializationHelper.writeCamt053AsString(accountProductType, convertedCamt053Entry);
@@ -394,9 +398,10 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
                                             .withEntryDetails(List.of(new EntryDetails9()
                                                     .withTransactionDetails(List.of(new EntryTransaction10())))))))));
             ReportEntry10 convertedCamt053Entry = camt053.getStatement().get(0).getEntry().get(0);
-            EntryTransaction10 transactionDetails = convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0);
-            transactionDetails.setAdditionalTransactionInformation(paymentTypeCode);
-            transactionDetails.setCreditDebitIndicator(CreditDebitCode.CRDT);
+            EntryTransaction10 entryTransaction10 = convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0);
+            batchItemBuilder.setAmount(entryTransaction10, amount, currency);
+            entryTransaction10.setAdditionalTransactionInformation(paymentTypeCode);
+            entryTransaction10.setCreditDebitIndicator(CreditDebitCode.CRDT);
             convertedCamt053Entry.setCreditDebitIndicator(CreditDebitCode.CRDT);
             convertedCamt053Entry.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "BOOKED"));
             String camt053Entry = serializationHelper.writeCamt053AsString(accountProductType, convertedCamt053Entry);
