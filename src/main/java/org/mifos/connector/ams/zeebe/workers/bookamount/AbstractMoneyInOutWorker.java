@@ -7,10 +7,10 @@ import java.util.Map;
 
 import org.apache.fineract.client.models.BatchResponse;
 import org.apache.fineract.client.models.CommandProcessingResult;
+import org.mifos.connector.ams.common.exception.FineractOptimisticLockingException;
 import org.mifos.connector.ams.log.EventLogUtil;
 import org.mifos.connector.ams.log.IOTxLogger;
 import org.mifos.connector.ams.zeebe.workers.utils.AuthTokenHelper;
-import org.mifos.connector.ams.zeebe.workers.utils.HoldAmountBody;
 import org.mifos.connector.ams.zeebe.workers.utils.TransactionItem;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -20,6 +20,9 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
+import org.springframework.retry.support.RetrySynchronizationManager;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClientException;
@@ -265,7 +268,7 @@ public abstract class AbstractMoneyInOutWorker {
         httpHeaders.set("Authorization", authTokenHelper.generateAuthToken());
         httpHeaders.set("Fineract-Platform-TenantId", tenantId);
         httpHeaders.set("X-Correlation-ID", transactionGroupId);
-        int idempotencyPostfix = 0;
+
         var entity = new HttpEntity<>(items, httpHeaders);
 
         var urlTemplate = UriComponentsBuilder.fromHttpUrl(fineractApiUrl)
@@ -275,117 +278,115 @@ public abstract class AbstractMoneyInOutWorker {
                 .toUriString();
 
         log.debug(">> Sending {} to {} with headers {} and idempotency {}", items, urlTemplate, httpHeaders, internalCorrelationId);
+        return retryAbleBatchRequest(httpHeaders, entity, urlTemplate, internalCorrelationId, from, "X-Idempotency-Key", items).toString();
 
-        int retryCount = idempotencyRetryCount;
+    }
 
-        retry:
-        while (retryCount > 0) {
-            httpHeaders.remove(idempotencyKeyHeaderName);
-            String idempotencyKey = String.format("%s_%d", internalCorrelationId, idempotencyPostfix);
-            httpHeaders.set(idempotencyKeyHeaderName, idempotencyKey);
-            wireLogger.sending(items.toString());
+
+    @Retryable(retryFor = FineractOptimisticLockingException.class, maxAttemptsExpression = "${retry.max.attempts:3}" , backoff = @Backoff(delayExpression = "${retry.delay:10}"))
+    private Object retryAbleBatchRequest(HttpHeaders httpHeaders, HttpEntity entity, String urlTemplate, String internalCorrelationId, String from, String idempotencyKeyHeaderName, Object items) {
+        httpHeaders.remove(idempotencyKeyHeaderName);
+        int retryCount = RetrySynchronizationManager.getContext().getRetryCount();
+        String idempotencyKey = String.format("%s_%d", internalCorrelationId, retryCount);
+        httpHeaders.set(idempotencyKeyHeaderName, idempotencyKey);
+        wireLogger.sending(items.toString());
+        eventService.sendEvent(builder -> builder
+                .setSourceModule("ams_connector")
+                .setEventLogLevel(EventLogLevel.INFO)
+                .setEvent(from + " - doBatchInternal")
+                .setEventType(EventType.audit)
+                .setCorrelationIds(Map.of("idempotencyKey", idempotencyKey))
+                .setPayload(entity.toString()));
+        ResponseEntity<String> response = null;
+        try {
+            response = restTemplate.exchange(urlTemplate, HttpMethod.POST, entity, String.class);
+            ResponseEntity<String> finalResponse = response;
             eventService.sendEvent(builder -> builder
                     .setSourceModule("ams_connector")
                     .setEventLogLevel(EventLogLevel.INFO)
                     .setEvent(from + " - doBatchInternal")
                     .setEventType(EventType.audit)
                     .setCorrelationIds(Map.of("idempotencyKey", idempotencyKey))
-                    .setPayload(entity.toString()));
-            ResponseEntity<String> response;
-            try {
-                response = restTemplate.exchange(urlTemplate, HttpMethod.POST, entity, String.class);
-                eventService.sendEvent(builder -> builder
-                        .setSourceModule("ams_connector")
-                        .setEventLogLevel(EventLogLevel.INFO)
-                        .setEvent(from + " - doBatchInternal")
-                        .setEventType(EventType.audit)
-                        .setCorrelationIds(Map.of("idempotencyKey", idempotencyKey))
-                        .setPayload(response.toString()));
-                wireLogger.receiving(response.toString());
-            } catch (ResourceAccessException e) {
-                if (e.getCause() instanceof SocketTimeoutException || e.getCause() instanceof ConnectException) {
-                    log.warn("Communication with Fineract timed out for request [{}]", idempotencyKey);
-                    retryCount--;
-                    if (retryCount > 0) {
-                        log.warn("Retrying request [{}], {} more times", internalCorrelationId, retryCount);
-                    }
-                } else {
-                    log.error(e.getMessage(), e);
-                    throw e;
+                    .setPayload(finalResponse.toString()));
+            wireLogger.receiving(response.toString());
+        } catch (ResourceAccessException e) {
+            if (e.getCause() instanceof SocketTimeoutException || e.getCause() instanceof ConnectException) {
+                log.warn("Communication with Fineract timed out for request [{}]", idempotencyKey);
+                retryCount--;
+                if (retryCount > 0) {
+                    log.warn("Retrying request [{}], {} more times", internalCorrelationId, retryCount);
                 }
-                continue;
-            } catch (RestClientException e) {
-                // Some other exception occurred, one not related to timeout
+            } else {
                 log.error(e.getMessage(), e);
                 throw e;
-            } catch (Throwable t) {
-                log.error(t.getMessage(), t);
-                throw new RuntimeException(t);
             }
-
-            String responseBody = response.getBody();
-
-            List<BatchResponse> batchResponseList;
-            try {
-                JsonNode rootNode = painMapper.readTree(responseBody);
-                if (rootNode.isTextual()) {
-                    throw new RuntimeException(responseBody);
-                }
-
-                batchResponseList = painMapper.readValue(responseBody, new TypeReference<List<BatchResponse>>() {
-                });
-                if (batchResponseList == null) {
-                    return null;
-                }
-            } catch (JsonProcessingException j) {
-                log.error(j.getMessage(), j);
-                throw new RuntimeException(j);
-            }
-            for (BatchResponse responseItem : batchResponseList) {
-                log.debug("Investigating response item {} for request [{}]", responseItem, idempotencyKey);
-                int statusCode = responseItem.getStatusCode();
-                log.debug("Got status code {} for request [{}]", statusCode, idempotencyKey);
-                if (statusCode == SC_OK) {
-                    continue;
-                }
-                log.debug("Got error {}, response item '{}' for request [{}]", statusCode, responseItem, idempotencyKey);
-                switch (statusCode) {
-                    case SC_CONFLICT -> {
-                        log.warn("Transaction request [{}] is already executing, has not completed yet", idempotencyKey);
-                        return null;
-                    }
-                    case SC_LOCKED -> {
-                        log.info("Locking exception detected, retrying request [{}]", idempotencyKey);
-                        idempotencyPostfix++;
-                        retryCount--;
-                        continue retry;
-                    }
-                    case SC_FORBIDDEN -> {
-                        String body = responseItem.getBody();
-                        if (body != null && (body.contains("error.msg.current.insufficient.funds"))) {
-                            log.error("insufficient funds for request [{}]", idempotencyKey);
-                            throw new ZeebeBpmnError("Error_InsufficientFunds", "Insufficient funds");
-                        }
-                        throw new ZeebeBpmnError("Error_CaughtException", "Forbidden");
-                    }
-                    default -> throw new RuntimeException("An unexpected error occurred for request " + idempotencyKey + ": " + statusCode);
-                }
-            }
-            BatchResponse lastResponseItem = batchResponseList.get(Math.min(4, batchResponseList.size()) - 1);
-
-            String lastResponseBody = lastResponseItem.getBody();
-            try {
-                CommandProcessingResult cpResult = painMapper.readValue(lastResponseBody, CommandProcessingResult.class);
-                return cpResult.getTransactionId();
-            } catch (JsonProcessingException j) {
-                log.error(j.getMessage(), j);
-                throw new RuntimeException(j);
-            } finally {
-                log.info("Request [{}] successful", idempotencyKey);
-            }
+            return null;
+        } catch (RestClientException e) {
+            // Some other exception occurred, one not related to timeout
+            log.error(e.getMessage(), e);
+            throw e;
+        } catch (Throwable t) {
+            log.error(t.getMessage(), t);
+            throw new RuntimeException(t);
         }
 
-        log.error("Failed to execute transaction request [{}] in {} tries.", internalCorrelationId, idempotencyRetryCount - retryCount + 1);
-        throw new RuntimeException("Failed to execute transaction " + internalCorrelationId);
+        String responseBody = response.getBody();
+
+        List<BatchResponse> batchResponseList;
+        try {
+            JsonNode rootNode = painMapper.readTree(responseBody);
+            if (rootNode.isTextual()) {
+                throw new RuntimeException(responseBody);
+            }
+
+            batchResponseList = painMapper.readValue(responseBody, new TypeReference<List<BatchResponse>>() {
+            });
+            if (batchResponseList == null) {
+                return null;
+            }
+        } catch (JsonProcessingException j) {
+            log.error(j.getMessage(), j);
+            throw new RuntimeException(j);
+        }
+        for (BatchResponse responseItem : batchResponseList) {
+            log.debug("Investigating response item {} for request [{}]", responseItem, idempotencyKey);
+            int statusCode = responseItem.getStatusCode();
+            log.debug("Got status code {} for request [{}]", statusCode, idempotencyKey);
+            if (statusCode == SC_OK) {
+                continue;
+            }
+            log.debug("Got error {}, response item '{}' for request [{}]", statusCode, responseItem, idempotencyKey);
+            switch (statusCode) {
+                case SC_CONFLICT -> {
+                    log.warn("Transaction request [{}] is already executing, has not completed yet", idempotencyKey);
+                }
+                case SC_LOCKED -> {
+                    log.info("Locking exception detected, retrying request [{}]", idempotencyKey);
+                    throw new FineractOptimisticLockingException("Locking exception detected retry transaction");
+                }
+                case SC_FORBIDDEN -> {
+                    String body = responseItem.getBody();
+                    if (body != null && (body.contains("error.msg.current.insufficient.funds"))) {
+                        log.error("insufficient funds for request [{}]", idempotencyKey);
+                        throw new ZeebeBpmnError("Error_InsufficientFunds", "Insufficient funds");
+                    }
+                    throw new ZeebeBpmnError("Error_CaughtException", "Forbidden");
+                }
+                default -> throw new RuntimeException("An unexpected error occurred for request " + idempotencyKey + ": " + statusCode);
+            }
+        }
+        BatchResponse lastResponseItem = batchResponseList.get(Math.min(4, batchResponseList.size()) - 1);
+
+        String lastResponseBody = lastResponseItem.getBody();
+        try {
+            CommandProcessingResult cpResult = painMapper.readValue(lastResponseBody, CommandProcessingResult.class);
+            return cpResult.getTransactionId();
+        } catch (JsonProcessingException j) {
+            log.error(j.getMessage(), j);
+            throw new RuntimeException(j);
+        } finally {
+            log.info("Request [{}] successful", idempotencyKey);
+        }
+
     }
 }
