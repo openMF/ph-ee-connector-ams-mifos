@@ -19,7 +19,7 @@ public class SerializationHelper {
 
     @Autowired
     @Qualifier("painMapper")
-    private ObjectMapper painMapper;
+    public ObjectMapper painMapper;
 
 
     public String writeCamt053AsString(String accountProductType, ReportEntry10 camt053) {
@@ -40,7 +40,6 @@ public class SerializationHelper {
     }
 
     EntryTransaction10 removeFieldsFromCurrentAccount(EntryTransaction10 transactionDetail) {
-        transactionDetail.setAmountDetails(null);
         transactionDetail.setAdditionalTransactionInformation(null);
         transactionDetail.getSupplementaryData().forEach(data -> {
             try {
