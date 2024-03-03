@@ -1,10 +1,13 @@
 package org.mifos.connector.ams.zeebe.workers.bookamount;
 
-import java.net.ConnectException;
-import java.net.SocketTimeoutException;
-import java.util.List;
-import java.util.Map;
-
+import com.baasflow.commons.events.EventLogLevel;
+import com.baasflow.commons.events.EventService;
+import com.baasflow.commons.events.EventType;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.camunda.zeebe.spring.client.exception.ZeebeBpmnError;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.client.models.BatchResponse;
 import org.apache.fineract.client.models.CommandProcessingResult;
 import org.mifos.connector.ams.common.exception.FineractOptimisticLockingException;
@@ -29,18 +32,15 @@ import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import com.baasflow.commons.events.EventLogLevel;
-import com.baasflow.commons.events.EventService;
-import com.baasflow.commons.events.EventType;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.net.ConnectException;
+import java.net.SocketTimeoutException;
+import java.util.List;
+import java.util.Map;
 
-import io.camunda.zeebe.spring.client.exception.ZeebeBpmnError;
-import lombok.extern.slf4j.Slf4j;
-
-import static org.apache.hc.core5.http.HttpStatus.*;
+import static org.apache.hc.core5.http.HttpStatus.SC_CONFLICT;
+import static org.apache.hc.core5.http.HttpStatus.SC_FORBIDDEN;
+import static org.apache.hc.core5.http.HttpStatus.SC_LOCKED;
+import static org.apache.hc.core5.http.HttpStatus.SC_OK;
 
 @Component
 @Slf4j
@@ -150,7 +150,7 @@ public abstract class AbstractMoneyInOutWorker {
         return retryAbleHoldBatchInternal(httpHeaders, entity, urlTemplate, internalCorrelationId, from, idempotencyKeyHeaderName, items);
     }
 
-    @Retryable(retryFor = FineractOptimisticLockingException.class, maxAttemptsExpression = "${fineract.idempotency.count:3}" , backoff = @Backoff(delayExpression = "${fineract.idempotency.interval:10}"))
+    @Retryable(retryFor = FineractOptimisticLockingException.class, maxAttemptsExpression = "${fineract.idempotency.count:3}", backoff = @Backoff(delayExpression = "${fineract.idempotency.interval:10}"))
     private Long retryAbleHoldBatchInternal(HttpHeaders httpHeaders, HttpEntity entity, String urlTemplate, String internalCorrelationId, String from, String idempotencyKeyHeaderName, Object items) {
         int retryCount = RetrySynchronizationManager.getContext().getRetryCount();
         httpHeaders.remove(idempotencyKeyHeaderName);
@@ -236,8 +236,7 @@ public abstract class AbstractMoneyInOutWorker {
     }
 
 
-
-    @Retryable(retryFor = FineractOptimisticLockingException.class, maxAttemptsExpression = "${fineract.idempotency.count:3}" , backoff = @Backoff(delayExpression = "${fineract.idempotency.interval:10}"))
+    @Retryable(retryFor = FineractOptimisticLockingException.class, maxAttemptsExpression = "${fineract.idempotency.count:3}", backoff = @Backoff(delayExpression = "${fineract.idempotency.interval:10}"))
     private Object retryAbleBatchRequest(HttpHeaders httpHeaders, HttpEntity entity, String urlTemplate, String internalCorrelationId, String from, String idempotencyKeyHeaderName, Object items) {
         httpHeaders.remove(idempotencyKeyHeaderName);
         int retryCount = RetrySynchronizationManager.getContext().getRetryCount();
@@ -328,7 +327,6 @@ public abstract class AbstractMoneyInOutWorker {
             default -> throw new RuntimeException("An unexpected error occurred for request " + idempotencyKey + ": " + statusCode);
         }
     }
-
 
     private HttpHeaders createHeaders(String tenantId, String transactionGroupId) {
         HttpHeaders httpHeaders = new HttpHeaders();
