@@ -6,6 +6,7 @@ import com.baasflow.commons.events.EventType;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.Iterables;
 import io.camunda.zeebe.spring.client.exception.ZeebeBpmnError;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.client.models.BatchResponse;
@@ -134,7 +135,7 @@ public abstract class AbstractMoneyInOutWorker {
     }
 
     private Long holdBatchInternal(String transactionGroupId, List<TransactionItem> items, String tenantId, String internalCorrelationId, String from) {
-        HttpHeaders httpHeaders = createHeaders(tenantId, internalCorrelationId);
+        HttpHeaders httpHeaders = createHeaders(tenantId, transactionGroupId);
         HttpEntity<List<TransactionItem>> entity = new HttpEntity<>(items, httpHeaders);
 
         String urlTemplate = UriComponentsBuilder.fromHttpUrl(fineractApiUrl)
@@ -279,17 +280,12 @@ public abstract class AbstractMoneyInOutWorker {
 
         List<BatchResponse> batchResponseList = response.getBody();
 
-        for (BatchResponse responseItem : batchResponseList) {
-            log.debug("Investigating response item {} for request [{}]", responseItem, idempotencyKey);
-            int statusCode = responseItem.getStatusCode();
-            log.debug("Got status code {} for request [{}]", statusCode, idempotencyKey);
-            if (statusCode == SC_OK) {
-                continue;
-            }
+        batchResponseList.stream().filter(element -> element.getStatusCode() != SC_OK).forEach(element -> {
+            log.debug("Got status code {} for request [{}]", element.getStatusCode(), idempotencyKey);
+            handleResponseElementError(element, element.getStatusCode(), idempotencyKey);
+        });
 
-            handleResponseElementError(responseItem, statusCode, idempotencyKey);
-        }
-        BatchResponse lastResponseItem = batchResponseList.get(Math.min(4, batchResponseList.size()) - 1);
+        BatchResponse lastResponseItem = Iterables.getLast(batchResponseList);
 
         String lastResponseBody = lastResponseItem.getBody();
         try {
