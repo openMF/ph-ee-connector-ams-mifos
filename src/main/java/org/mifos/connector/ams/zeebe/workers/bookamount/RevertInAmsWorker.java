@@ -671,8 +671,8 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                                                 @Variable String transactionGroupId,
                                                 @Variable String paymentScheme,
                                                 @Variable String transactionCategoryPurposeCode,
-                                                @Variable String generatedPacs004,
-                                                @Variable String pacs002,
+                                                @Variable String originalPacs004,
+                                                @Variable String originalPacs002,
                                                 @Variable String internalCorrelationId,
                                                 @Variable String accountProductType,
                                                 @Variable String valueDated
@@ -691,8 +691,8 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                         transactionGroupId,
                         paymentScheme,
                         transactionCategoryPurposeCode,
-                        generatedPacs004,
-                        pacs002,
+                        originalPacs004,
+                        originalPacs002,
                         internalCorrelationId,
                         accountProductType,
                         Boolean.parseBoolean(Optional.ofNullable(valueDated).orElse("false"))
