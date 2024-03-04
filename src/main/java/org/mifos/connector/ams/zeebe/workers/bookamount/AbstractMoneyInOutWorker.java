@@ -85,7 +85,7 @@ public abstract class AbstractMoneyInOutWorker {
     protected static final String FORMAT = "yyyyMMdd";
 
     @Retryable(retryFor = FineractOptimisticLockingException.class, maxAttemptsExpression = "${fineract.idempotency.count:3}", backoff = @Backoff(delayExpression = "${fineract.idempotency.interval:10}"))
-    protected Long holdBatch(List<TransactionItem> items,
+    public Long holdBatch(List<TransactionItem> items,
                              String tenantId,
                              String transactionGroupId,
                              String disposalAccountId,
@@ -103,7 +103,7 @@ public abstract class AbstractMoneyInOutWorker {
     }
 
     @Retryable(retryFor = FineractOptimisticLockingException.class, maxAttemptsExpression = "${fineract.idempotency.count:3}", backoff = @Backoff(delayExpression = "${fineract.idempotency.interval:10}"))
-    protected String doBatch(List<TransactionItem> items,
+    public String doBatch(List<TransactionItem> items,
                              String tenantId,
                              String transactionGroupId,
                              String disposalAccountId,
@@ -121,7 +121,7 @@ public abstract class AbstractMoneyInOutWorker {
     }
 
     @Retryable(retryFor = FineractOptimisticLockingException.class, maxAttemptsExpression = "${fineract.idempotency.count:3}", backoff = @Backoff(delayExpression = "${fineract.idempotency.interval:10}"))
-    protected void doBatchOnUs(List<TransactionItem> items,
+    public void doBatchOnUs(List<TransactionItem> items,
                                String tenantId,
                                String transactionGroupId,
                                String debtorDisposalAccountAmsId,
