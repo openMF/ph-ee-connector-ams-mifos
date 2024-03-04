@@ -86,12 +86,13 @@ public abstract class AbstractMoneyInOutWorker {
 
     @Retryable(retryFor = FineractOptimisticLockingException.class, maxAttemptsExpression = "${fineract.idempotency.count:3}", backoff = @Backoff(delayExpression = "${fineract.idempotency.interval:10}"))
     public Long holdBatch(List<TransactionItem> items,
-                             String tenantId,
-                             String transactionGroupId,
-                             String disposalAccountId,
-                             String conversionAccountId,
-                             String internalCorrelationId,
-                             String calledFrom) {
+                          String tenantId,
+                          String transactionGroupId,
+                          String disposalAccountId,
+                          String conversionAccountId,
+                          String internalCorrelationId,
+                          String calledFrom) {
+        log.debug(">> retry context{}", RetrySynchronizationManager.getContext());
         return eventService.auditedEvent(
                 eventBuilder -> EventLogUtil.initFineractBatchCall(calledFrom,
                         items,
@@ -104,12 +105,13 @@ public abstract class AbstractMoneyInOutWorker {
 
     @Retryable(retryFor = FineractOptimisticLockingException.class, maxAttemptsExpression = "${fineract.idempotency.count:3}", backoff = @Backoff(delayExpression = "${fineract.idempotency.interval:10}"))
     public String doBatch(List<TransactionItem> items,
-                             String tenantId,
-                             String transactionGroupId,
-                             String disposalAccountId,
-                             String conversionAccountId,
-                             String internalCorrelationId,
-                             String calledFrom) {
+                          String tenantId,
+                          String transactionGroupId,
+                          String disposalAccountId,
+                          String conversionAccountId,
+                          String internalCorrelationId,
+                          String calledFrom) {
+        log.debug(">> retry context{}", RetrySynchronizationManager.getContext());
         return eventService.auditedEvent(
                 eventBuilder -> EventLogUtil.initFineractBatchCall(calledFrom,
                         items,
@@ -122,12 +124,13 @@ public abstract class AbstractMoneyInOutWorker {
 
     @Retryable(retryFor = FineractOptimisticLockingException.class, maxAttemptsExpression = "${fineract.idempotency.count:3}", backoff = @Backoff(delayExpression = "${fineract.idempotency.interval:10}"))
     public void doBatchOnUs(List<TransactionItem> items,
-                               String tenantId,
-                               String transactionGroupId,
-                               String debtorDisposalAccountAmsId,
-                               String debtorConversionAccountAmsId,
-                               String creditorDisposalAccountAmsId,
-                               String internalCorrelationId) {
+                            String tenantId,
+                            String transactionGroupId,
+                            String debtorDisposalAccountAmsId,
+                            String debtorConversionAccountAmsId,
+                            String creditorDisposalAccountAmsId,
+                            String internalCorrelationId) {
+        log.debug(">> retry context{}", RetrySynchronizationManager.getContext());
         eventService.auditedEvent(
                 eventBuilder -> EventLogUtil.initFineractBatchCallOnUs("transferTheAmountBetweenDisposalAccounts",
                         items,
