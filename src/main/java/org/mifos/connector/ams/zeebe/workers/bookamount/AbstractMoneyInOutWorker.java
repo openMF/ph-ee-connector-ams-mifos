@@ -38,6 +38,7 @@ import java.net.ConnectException;
 import java.net.SocketTimeoutException;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import static org.apache.hc.core5.http.HttpStatus.SC_CONFLICT;
 import static org.apache.hc.core5.http.HttpStatus.SC_FORBIDDEN;
@@ -156,7 +157,11 @@ public abstract class AbstractMoneyInOutWorker {
     }
 
     private Long retryAbleHoldBatchInternal(HttpHeaders httpHeaders, HttpEntity entity, String urlTemplate, String internalCorrelationId, String from, String idempotencyKeyHeaderName, Object items) {
-        int retryCount = RetrySynchronizationManager.getContext().getRetryCount();
+        int retryCount = 0;
+        if (Objects.nonNull(RetrySynchronizationManager.getContext())) {
+            retryCount = RetrySynchronizationManager.getContext().getRetryCount();
+        }
+
         httpHeaders.remove(idempotencyKeyHeaderName);
         String idempotencyKey = String.format("%s_%d", internalCorrelationId, retryCount);
         httpHeaders.set(idempotencyKeyHeaderName, idempotencyKey);
@@ -241,7 +246,10 @@ public abstract class AbstractMoneyInOutWorker {
 
     private String retryAbleBatchRequest(HttpHeaders httpHeaders, HttpEntity entity, String urlTemplate, String internalCorrelationId, String from, String idempotencyKeyHeaderName, Object items) {
         httpHeaders.remove(idempotencyKeyHeaderName);
-        int retryCount = RetrySynchronizationManager.getContext().getRetryCount();
+        int retryCount = 0;
+        if (Objects.nonNull(RetrySynchronizationManager.getContext())) {
+            retryCount = RetrySynchronizationManager.getContext().getRetryCount();
+        }
         String idempotencyKey = String.format("%s_%d", internalCorrelationId, retryCount);
         httpHeaders.set(idempotencyKeyHeaderName, idempotencyKey);
         wireLogger.sending(items.toString());
