@@ -26,6 +26,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.EnableRetry;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.retry.support.RetrySynchronizationManager;
 import org.springframework.stereotype.Component;
@@ -44,6 +45,7 @@ import static org.apache.hc.core5.http.HttpStatus.SC_LOCKED;
 import static org.apache.hc.core5.http.HttpStatus.SC_OK;
 
 @Component
+@EnableRetry
 @Slf4j
 public abstract class AbstractMoneyInOutWorker {
 
