@@ -83,7 +83,7 @@ public abstract class AbstractMoneyInOutWorker {
 
     protected static final String FORMAT = "yyyyMMdd";
 
-
+    @Retryable(retryFor = FineractOptimisticLockingException.class, maxAttemptsExpression = "${fineract.idempotency.count:3}", backoff = @Backoff(delayExpression = "${fineract.idempotency.interval:10}"))
     protected Long holdBatch(List<TransactionItem> items,
                              String tenantId,
                              String transactionGroupId,
@@ -101,6 +101,7 @@ public abstract class AbstractMoneyInOutWorker {
                 eventBuilder -> holdBatchInternal(transactionGroupId, items, tenantId, internalCorrelationId, calledFrom));
     }
 
+    @Retryable(retryFor = FineractOptimisticLockingException.class, maxAttemptsExpression = "${fineract.idempotency.count:3}", backoff = @Backoff(delayExpression = "${fineract.idempotency.interval:10}"))
     protected String doBatch(List<TransactionItem> items,
                              String tenantId,
                              String transactionGroupId,
@@ -118,6 +119,7 @@ public abstract class AbstractMoneyInOutWorker {
                 eventBuilder -> doBatchInternal(items, tenantId, transactionGroupId, internalCorrelationId, calledFrom));
     }
 
+    @Retryable(retryFor = FineractOptimisticLockingException.class, maxAttemptsExpression = "${fineract.idempotency.count:3}", backoff = @Backoff(delayExpression = "${fineract.idempotency.interval:10}"))
     protected void doBatchOnUs(List<TransactionItem> items,
                                String tenantId,
                                String transactionGroupId,
@@ -153,7 +155,6 @@ public abstract class AbstractMoneyInOutWorker {
         return retryAbleHoldBatchInternal(httpHeaders, entity, urlTemplate, internalCorrelationId, from, idempotencyKeyHeaderName, items);
     }
 
-    @Retryable(retryFor = FineractOptimisticLockingException.class, maxAttemptsExpression = "${fineract.idempotency.count:3}", backoff = @Backoff(delayExpression = "${fineract.idempotency.interval:10}"))
     private Long retryAbleHoldBatchInternal(HttpHeaders httpHeaders, HttpEntity entity, String urlTemplate, String internalCorrelationId, String from, String idempotencyKeyHeaderName, Object items) {
         int retryCount = RetrySynchronizationManager.getContext().getRetryCount();
         httpHeaders.remove(idempotencyKeyHeaderName);
@@ -238,8 +239,6 @@ public abstract class AbstractMoneyInOutWorker {
 
     }
 
-
-    @Retryable(retryFor = FineractOptimisticLockingException.class, maxAttemptsExpression = "${fineract.idempotency.count:3}", backoff = @Backoff(delayExpression = "${fineract.idempotency.interval:10}"))
     private String retryAbleBatchRequest(HttpHeaders httpHeaders, HttpEntity entity, String urlTemplate, String internalCorrelationId, String from, String idempotencyKeyHeaderName, Object items) {
         httpHeaders.remove(idempotencyKeyHeaderName);
         int retryCount = RetrySynchronizationManager.getContext().getRetryCount();
