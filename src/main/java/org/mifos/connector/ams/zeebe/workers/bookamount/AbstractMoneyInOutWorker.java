@@ -232,13 +232,13 @@ public abstract class AbstractMoneyInOutWorker {
                 .toUriString();
 
         log.debug(">> Sending {} to {} with headers {} and idempotency {}", items, urlTemplate, httpHeaders, internalCorrelationId);
-        return retryAbleBatchRequest(httpHeaders, entity, urlTemplate, internalCorrelationId, from, "X-Idempotency-Key", items).toString();
+        return retryAbleBatchRequest(httpHeaders, entity, urlTemplate, internalCorrelationId, from, "X-Idempotency-Key", items);
 
     }
 
 
     @Retryable(retryFor = FineractOptimisticLockingException.class, maxAttemptsExpression = "${fineract.idempotency.count:3}", backoff = @Backoff(delayExpression = "${fineract.idempotency.interval:10}"))
-    private Object retryAbleBatchRequest(HttpHeaders httpHeaders, HttpEntity entity, String urlTemplate, String internalCorrelationId, String from, String idempotencyKeyHeaderName, Object items) {
+    private String retryAbleBatchRequest(HttpHeaders httpHeaders, HttpEntity entity, String urlTemplate, String internalCorrelationId, String from, String idempotencyKeyHeaderName, Object items) {
         httpHeaders.remove(idempotencyKeyHeaderName);
         int retryCount = RetrySynchronizationManager.getContext().getRetryCount();
         String idempotencyKey = String.format("%s_%d", internalCorrelationId, retryCount);
