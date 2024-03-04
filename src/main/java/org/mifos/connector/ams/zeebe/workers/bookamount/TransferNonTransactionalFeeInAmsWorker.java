@@ -1,33 +1,8 @@
 package org.mifos.connector.ams.zeebe.workers.bookamount;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-
-import org.mifos.connector.ams.fineract.TenantConfigs;
-import org.mifos.connector.ams.log.EventLogUtil;
-import org.mifos.connector.ams.log.LogInternalCorrelationId;
-import org.mifos.connector.ams.log.TraceZeebeArguments;
-import org.mifos.connector.ams.mapstruct.Pain001Camt053Mapper;
-import org.mifos.connector.ams.zeebe.workers.utils.BatchItemBuilder;
-import org.mifos.connector.ams.zeebe.workers.utils.ContactDetailsUtil;
-import org.mifos.connector.ams.zeebe.workers.utils.DtSavingsTransactionDetails;
-import org.mifos.connector.ams.zeebe.workers.utils.TransactionBody;
-import org.mifos.connector.ams.zeebe.workers.utils.TransactionItem;
-import org.slf4j.MDC;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
-
 import com.baasflow.commons.events.Event;
 import com.baasflow.commons.events.EventService;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import io.camunda.zeebe.client.api.response.ActivatedJob;
 import io.camunda.zeebe.client.api.worker.JobClient;
 import io.camunda.zeebe.spring.client.annotation.JobWorker;
@@ -38,6 +13,25 @@ import iso.std.iso._20022.tech.json.camt_053_001.EntryStatus1Choice;
 import iso.std.iso._20022.tech.json.camt_053_001.ReportEntry10;
 import iso.std.iso._20022.tech.json.pain_001_001.Pain00100110CustomerCreditTransferInitiationV10MessageSchema;
 import lombok.extern.slf4j.Slf4j;
+import org.mifos.connector.ams.fineract.TenantConfigs;
+import org.mifos.connector.ams.log.EventLogUtil;
+import org.mifos.connector.ams.log.LogInternalCorrelationId;
+import org.mifos.connector.ams.log.TraceZeebeArguments;
+import org.mifos.connector.ams.mapstruct.Pain001Camt053Mapper;
+import org.mifos.connector.ams.zeebe.workers.utils.*;
+import org.slf4j.MDC;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 @Component
 @Slf4j
@@ -48,6 +42,9 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 
     @Value("${fineract.incoming-money-api}")
     protected String incomingMoneyApi;
+
+    @Value("${fineract.current-account-api}")
+    protected String currentAccountApi;
 
     @Autowired
     private TenantConfigs tenantConfigs;
@@ -72,6 +69,7 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
     @TraceZeebeArguments
     public Map<String, Object> transferNonTransactionalFeeInAms(JobClient jobClient,
                                                                 ActivatedJob activatedJob,
+                                                                @Variable String accountProductType,
                                                                 @Variable String conversionAccountAmsId,
                                                                 @Variable String disposalAccountAmsId,
                                                                 @Variable String tenantIdentifier,
@@ -86,6 +84,7 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
         return eventService.auditedEvent(
                 eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "bookCreditedAmountToTechnicalAccount", internalCorrelationId, transactionGroupId, eventBuilder),
                 eventBuilder -> transferNonTransactionalFeeInAms(
+                        accountProductType,
                         conversionAccountAmsId,
                         disposalAccountAmsId,
                         tenantIdentifier,
@@ -99,7 +98,8 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
                         eventBuilder));
     }
 
-    private Map<String, Object> transferNonTransactionalFeeInAms(String conversionAccountAmsId,
+    private Map<String, Object> transferNonTransactionalFeeInAms(String accountProductType,
+                                                                 String conversionAccountAmsId,
                                                                  String disposalAccountAmsId,
                                                                  String tenantIdentifier,
                                                                  String paymentScheme,
@@ -110,7 +110,8 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
                                                                  String originalPain001,
                                                                  String debtorIban,
                                                                  Event.Builder eventBuilder) {
-        String disposalAccountWithdrawRelativeUrl = String.format("%s%s/transactions?command=%s", incomingMoneyApi.substring(1), disposalAccountAmsId, "withdrawal");
+        String apiPath = accountProductType.equalsIgnoreCase("SAVINGS") ? incomingMoneyApi.substring(1) : currentAccountApi.substring(1);
+        String disposalAccountWithdrawRelativeUrl = String.format("%s%s/transactions?command=%s", apiPath, disposalAccountAmsId, "withdrawal");
         log.debug("Got payment scheme {}", paymentScheme);
         String transactionDate = LocalDate.now().format(PATTERN);
         log.debug("Got category purpose code {}", categoryPurpose);
@@ -191,7 +192,7 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 
             bodyItem = painMapper.writeValueAsString(body);
 
-            String conversionAccountDepositRelativeUrl = String.format("%s%s/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "deposit");
+            String conversionAccountDepositRelativeUrl = String.format("%s%s/transactions?command=%s", apiPath, conversionAccountAmsId, "deposit");
 
             batchItemBuilder.add(tenantIdentifier, items, conversionAccountDepositRelativeUrl, bodyItem, false);
 
@@ -238,7 +239,7 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 
             bodyItem = painMapper.writeValueAsString(body);
 
-            String conversionAccountWithdrawRelativeUrl = String.format("%s%s/transactions?command=%s", incomingMoneyApi.substring(1), conversionAccountAmsId, "withdrawal");
+            String conversionAccountWithdrawRelativeUrl = String.format("%s%s/transactions?command=%s", apiPath, conversionAccountAmsId, "withdrawal");
 
             batchItemBuilder.add(tenantIdentifier, items, conversionAccountWithdrawRelativeUrl, bodyItem, false);
 

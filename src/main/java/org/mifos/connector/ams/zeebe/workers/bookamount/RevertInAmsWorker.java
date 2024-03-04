@@ -359,7 +359,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
 
             log.debug("querying running balance for account {}", disposalAccountAmsId);
             BigDecimal runningBalanceDerived = accountProductType.equalsIgnoreCase("SAVINGS") ?
-                    queryRunningBalance(internalCorrelationId, disposalAccountAmsId, tenantIdentifier, lastTransactionId)
+                    queryRunningBalance(internalCorrelationId, disposalAccountAmsId, tenantIdentifier, lastTransactionId, apiPath)
                     : queryCurrentAccountBalance(apiPath, internalCorrelationId, disposalAccountAmsId, tenantIdentifier);
 
             return Map.of("availableBalance", runningBalanceDerived.toString());
@@ -394,7 +394,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
     }
 
     @NotNull
-    private BigDecimal queryRunningBalance(String internalCorrelationId, String disposalAccountAmsId, String tenantIdentifier, String lastTransactionId) {
+    private BigDecimal queryRunningBalance(String internalCorrelationId, String disposalAccountAmsId, String tenantIdentifier, String lastTransactionId, String apiPath) {
         TransactionQueryBody tqBody = TransactionQueryBody.builder()
                 .request(TransactionQueryRequest.builder()
                         .baseQuery(TransactionQueryBaseQuery.builder()
@@ -428,7 +428,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                 .setPayload(tqEntity.toString())
                 .setCorrelationIds(Map.of("CorrelationId", internalCorrelationId)));
         TransactionQueryPayload tqResponse = restTemplate.exchange(
-                        String.format("%s/%s%s/transactions/query", fineractApiUrl, incomingMoneyApi.substring(1), disposalAccountAmsId),
+                        String.format("%s/%s%s/transactions/query", fineractApiUrl, apiPath, disposalAccountAmsId),
                         HttpMethod.POST,
                         tqEntity,
                         TransactionQueryPayload.class)
