@@ -38,6 +38,7 @@ import org.springframework.http.*;
 import org.springframework.stereotype.Component;
 
 import javax.xml.datatype.DatatypeFactory;
+import javax.xml.datatype.XMLGregorianCalendar;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
@@ -741,10 +742,13 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                                     .withEntryDetails(List.of(new EntryDetails9()
                                             .withTransactionDetails(List.of(new EntryTransaction10())))))))));
             ReportEntry10 camt053Entry = camt053Object.getStatement().get(0).getEntry().get(0);
-            ZoneId zi = TimeZone.getTimeZone("Europe/Budapest").toZoneId();
-            ZonedDateTime zdt = pacs002.getFIToFIPmtStsRpt().getTxInfAndSts().get(0).getAccptncDtTm().toGregorianCalendar().toZonedDateTime().withZoneSameInstant(zi);
-            var copy = DatatypeFactory.newDefaultInstance().newXMLGregorianCalendar(GregorianCalendar.from(zdt));
-            camt053Entry.getValueDate().setAdditionalProperty("Date", copy);
+            XMLGregorianCalendar accptncDtTm = pacs002.getFIToFIPmtStsRpt().getTxInfAndSts().get(0).getAccptncDtTm();
+            if (accptncDtTm != null) {
+                ZoneId zoneId = TimeZone.getTimeZone("Europe/Budapest").toZoneId();
+                ZonedDateTime zonedDateTime = accptncDtTm.toGregorianCalendar().toZonedDateTime().withZoneSameInstant(zoneId);
+                var acceptanceDateWithZone = DatatypeFactory.newDefaultInstance().newXMLGregorianCalendar(GregorianCalendar.from(zonedDateTime));
+                camt053Entry.getValueDate().setAdditionalProperty("Date", acceptanceDateWithZone);
+            }
             EntryTransaction10 entryTransaction10 = camt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0);
             batchItemBuilder.setAmount(entryTransaction10, amount, currency);
 
