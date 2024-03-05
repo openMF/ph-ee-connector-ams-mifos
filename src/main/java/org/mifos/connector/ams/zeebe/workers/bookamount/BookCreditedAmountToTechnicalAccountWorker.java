@@ -37,7 +37,7 @@ import java.util.Optional;
 
 @Component
 @Slf4j
-public class BookCreditedAmountToTechnicalAccountWorker extends AbstractMoneyInOutWorker {
+public class BookCreditedAmountToTechnicalAccountWorker {
 
     @Value("${fineract.incoming-money-api}")
     private String incomingMoneyApi;
@@ -74,6 +74,9 @@ public class BookCreditedAmountToTechnicalAccountWorker extends AbstractMoneyInO
     @Autowired
     @Qualifier("painMapper")
     private ObjectMapper painMapper;
+
+    @Autowired
+    private MoneyInOutWorker moneyInOutWorker;
 
     private static final String FORMAT = "yyyyMMdd";
 
@@ -197,7 +200,7 @@ public class BookCreditedAmountToTechnicalAccountWorker extends AbstractMoneyInO
                 batchItemBuilder.add(tenantIdentifier, items, conversionAccountWithdrawalRelativeUrl, camt053Body, false);
             }
 
-            doBatch(items, tenantIdentifier, transactionGroupId, "-1", "-1", internalCorrelationId, "bookCreditedAmountToTechnicalAccount");
+            moneyInOutWorker.doBatch(items, tenantIdentifier, transactionGroupId, "-1", "-1", internalCorrelationId, "bookCreditedAmountToTechnicalAccount");
         } catch (Exception e) {
             log.error("Worker to book incoming money in AMS has failed, dispatching user task to handle conversion account deposit", e);
             throw new ZeebeBpmnError("Error_BookToConversionToBeHandledManually", e.getMessage());

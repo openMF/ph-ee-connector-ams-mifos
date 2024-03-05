@@ -37,7 +37,7 @@ import java.util.*;
 
 @Component
 @Slf4j
-public class BookCreditedAmountFromTechnicalAccountWorker extends AbstractMoneyInOutWorker {
+public class BookCreditedAmountFromTechnicalAccountWorker {
 
     @Value("${fineract.incoming-money-api}")
     private String incomingMoneyApi;
@@ -74,6 +74,9 @@ public class BookCreditedAmountFromTechnicalAccountWorker extends AbstractMoneyI
     @Autowired
     @Qualifier("painMapper")
     private ObjectMapper painMapper;
+
+    @Autowired
+    private MoneyInOutWorker moneyInOutWorker;
 
     private static final String FORMAT = "yyyyMMdd";
 
@@ -209,7 +212,7 @@ public class BookCreditedAmountFromTechnicalAccountWorker extends AbstractMoneyI
                 batchItemBuilder.add(tenantIdentifier, items, technicalAccountWithdrawalRelativeUrl, bodyItem, false);
             }
 
-            doBatch(items, tenantIdentifier, transactionGroupId, "-1", "-1", internalCorrelationId, "bookCreditedAmountFromTechnicalAccount");
+            moneyInOutWorker.doBatch(items, tenantIdentifier, transactionGroupId, "-1", "-1", internalCorrelationId, "bookCreditedAmountFromTechnicalAccount");
 
         } catch (JsonProcessingException | JAXBException e) {
             log.error("Worker to book incoming money in AMS has failed, dispatching user task to handle conversion account deposit", e);

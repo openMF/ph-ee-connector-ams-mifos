@@ -26,6 +26,7 @@ import org.springframework.web.client.RestTemplate;
 import java.util.concurrent.TimeUnit;
 
 @SpringBootApplication
+@EnableRetry
 public class AmsConnectorApplication {
 
     public static void main(String[] args) {

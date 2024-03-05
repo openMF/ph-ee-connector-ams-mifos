@@ -32,9 +32,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import static org.mifos.connector.ams.zeebe.workers.bookamount.MoneyInOutWorker.FORMAT;
+
 @Component
 @Slf4j
-public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyInOutWorker {
+public class BookCreditedAmountToConversionAccountWorker {
 
     @Autowired
     private Pacs008Camt053Mapper pacs008Camt053Mapper;
@@ -68,6 +70,9 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
     @Autowired
     @Qualifier("painMapper")
     private ObjectMapper painMapper;
+
+    @Autowired
+    private MoneyInOutWorker moneyInOutWorker;
 
     @JobWorker
     @LogInternalCorrelationId
@@ -141,7 +146,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
 
             // STEP 1 - batch: add transaction
             if (accountProductType.equalsIgnoreCase("SAVINGS")) {
-                String withdrawAmountBodyItem = painMapper.writeValueAsString(new TransactionBody(transactionDate, amount, paymentTypeId, "", FORMAT, locale));
+                String withdrawAmountBodyItem = painMapper.writeValueAsString(new TransactionBody(transactionDate, amount, paymentTypeId, "", FORMAT, moneyInOutWorker.getLocale()));
                 batchItemBuilder.add(tenantIdentifier, items, conversionAccountWithdrawalRelativeUrl, withdrawAmountBodyItem, false);
             } // CURRENT account sends a single call only at the details step
 
@@ -160,7 +165,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
                 String camt053Body = painMapper.writeValueAsString(new DtSavingsTransactionDetails(internalCorrelationId, camt053Entry, creditorIban, paymentTypeCode, transactionGroupId, debtorName, debtorIban, null, debtorContactDetails, unstructured, transactionCategoryPurposeCode, paymentScheme, null, conversionAccountAmsId, endToEndId));
                 batchItemBuilder.add(tenantIdentifier, items, "datatables/dt_savings_transaction_details/$.resourceId", camt053Body, true);
             } else {
-                String camt053Body = painMapper.writeValueAsString(new CurrentAccountTransactionBody(amount, FORMAT, locale, paymentTypeId, currency, List.of(
+                String camt053Body = painMapper.writeValueAsString(new CurrentAccountTransactionBody(amount, FORMAT, moneyInOutWorker.getLocale(), paymentTypeId, currency, List.of(
                         new CurrentAccountTransactionBody.DataTable(List.of(new CurrentAccountTransactionBody.Entry(
                                 creditorIban,
                                 camt053Entry,
@@ -183,7 +188,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
                 batchItemBuilder.add(tenantIdentifier, items, conversionAccountWithdrawalRelativeUrl, camt053Body, false);
             }
 
-            doBatch(items, tenantIdentifier, transactionGroupId, "-1", conversionAccountAmsId, internalCorrelationId, "bookCreditedAmountToConversionAccount");
+            moneyInOutWorker.doBatch(items, tenantIdentifier, transactionGroupId, "-1", conversionAccountAmsId, internalCorrelationId, "bookCreditedAmountToConversionAccount");
         } catch (Exception e) {
             log.error("Worker to book incoming money in AMS has failed, dispatching user task to handle conversion account deposit", e);
             throw new ZeebeBpmnError("Error_BookToConversionToBeHandledManually", e.getMessage());
@@ -255,7 +260,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
             List<TransactionItem> items = new ArrayList<>();
 
             if (accountProductType.equalsIgnoreCase("SAVINGS")) {
-                String bodyItem = painMapper.writeValueAsString(new TransactionBody(transactionDate, amount, paymentTypeId, "", FORMAT, locale));
+                String bodyItem = painMapper.writeValueAsString(new TransactionBody(transactionDate, amount, paymentTypeId, "", FORMAT, moneyInOutWorker.getLocale()));
                 batchItemBuilder.add(tenantIdentifier, items, conversionAccountWithdrawalRelativeUrl, bodyItem, false);
             }
 
@@ -284,7 +289,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
                 String camt053Body = painMapper.writeValueAsString(new DtSavingsTransactionDetails(internalCorrelationId, camt053Entry, debtorIban, paymentTypeCode, transactionGroupId, creditorName, creditorIban, null, debtorContactDetails, unstructured, transactionCategoryPurposeCode, paymentScheme, null, conversionAccountAmsId, endToEndId));
                 batchItemBuilder.add(tenantIdentifier, items, "datatables/dt_savings_transaction_details/$.resourceId", camt053Body, true);
             } else {
-                String camt053Body = painMapper.writeValueAsString(new CurrentAccountTransactionBody(amount, FORMAT, locale, paymentTypeId, currency, List.of(new CurrentAccountTransactionBody.DataTable(List.of(new CurrentAccountTransactionBody.Entry(
+                String camt053Body = painMapper.writeValueAsString(new CurrentAccountTransactionBody(amount, FORMAT, moneyInOutWorker.getLocale(), paymentTypeId, currency, List.of(new CurrentAccountTransactionBody.DataTable(List.of(new CurrentAccountTransactionBody.Entry(
                         debtorIban,
                         camt053Entry,
                         internalCorrelationId,
@@ -306,7 +311,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
                 batchItemBuilder.add(tenantIdentifier, items, conversionAccountWithdrawalRelativeUrl, camt053Body, false);
             }
 
-            doBatch(items, tenantIdentifier, transactionGroupId, "-1", conversionAccountAmsId, internalCorrelationId, "bookCreditedAmountToConversionAccountInRecall");
+            moneyInOutWorker.doBatch(items, tenantIdentifier, transactionGroupId, "-1", conversionAccountAmsId, internalCorrelationId, "bookCreditedAmountToConversionAccountInRecall");
 
         } catch (Exception e) {
             log.error("Worker to book incoming money in AMS has failed, dispatching user task to handle conversion account deposit", e);
@@ -385,7 +390,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
 
             // STEP 1 - book transaction
             if (accountProductType.equalsIgnoreCase("SAVINGS")) {
-                TransactionBody body = new TransactionBody(transactionDate, amount, paymentTypeId, "", FORMAT, locale);
+                TransactionBody body = new TransactionBody(transactionDate, amount, paymentTypeId, "", FORMAT, moneyInOutWorker.getLocale());
                 String bodyItem = painMapper.writeValueAsString(body);
                 batchItemBuilder.add(tenantIdentifier, items, conversionAccountWithdrawalRelativeUrl, bodyItem, false);
             }
@@ -411,7 +416,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
                 String camt053Body = painMapper.writeValueAsString(new DtSavingsTransactionDetails(internalCorrelationId, camt053Entry, debtorIban, paymentTypeCode, transactionGroupId, creditorName, creditorIban, null, creditorContactDetails, unstructured, transactionCategoryPurposeCode, paymentScheme, null, conversionAccountAmsId, endToEndId));
                 batchItemBuilder.add(tenantIdentifier, items, camt053RelativeUrl, camt053Body, true);
             } else {
-                String bodyItem = painMapper.writeValueAsString(new CurrentAccountTransactionBody(amount, FORMAT, locale, paymentTypeId, currency, List.of(new CurrentAccountTransactionBody.DataTable(List.of(new CurrentAccountTransactionBody.Entry(
+                String bodyItem = painMapper.writeValueAsString(new CurrentAccountTransactionBody(amount, FORMAT, moneyInOutWorker.getLocale(), paymentTypeId, currency, List.of(new CurrentAccountTransactionBody.DataTable(List.of(new CurrentAccountTransactionBody.Entry(
                         debtorIban,
                         camt053Entry,
                         internalCorrelationId,
@@ -433,7 +438,7 @@ public class BookCreditedAmountToConversionAccountWorker extends AbstractMoneyIn
                 batchItemBuilder.add(tenantIdentifier, items, conversionAccountWithdrawalRelativeUrl, bodyItem, false);
             }
 
-            doBatch(items, tenantIdentifier, transactionGroupId, "-1", conversionAccountAmsId, internalCorrelationId, "bookCreditedAmountToConversionAccountInReturn");
+            moneyInOutWorker.doBatch(items, tenantIdentifier, transactionGroupId, "-1", conversionAccountAmsId, internalCorrelationId, "bookCreditedAmountToConversionAccountInReturn");
         } catch (Exception e) {
             log.error("Worker to book incoming money in AMS has failed, dispatching user task to handle conversion account deposit", e);
             throw new RuntimeException(e);
