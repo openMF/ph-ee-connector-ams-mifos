@@ -57,10 +57,10 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
     private Pacs004ToCamt053Converter pacs004Camt053Mapper = new Pacs004ToCamt053Converter();
 
     @Value("${fineract.incoming-money-api}")
-    protected String incomingMoneyApi;
+    String incomingMoneyApi;
 
     @Value("${fineract.current-account-api}")
-    protected String currentAccountApi;
+    String currentAccountApi;
 
     @Autowired
     TenantConfigs tenantConfigs;
@@ -78,14 +78,14 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
     AuthTokenHelper authTokenHelper;
 
     @Autowired
-    private SerializationHelper serializationHelper;
+    SerializationHelper serializationHelper;
 
     @Autowired
     EventService eventService;
 
     @Autowired
     @Qualifier("painMapper")
-    private ObjectMapper painMapper;
+    ObjectMapper painMapper;
 
     @JobWorker
     @LogInternalCorrelationId
@@ -100,6 +100,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                                            @Variable String transactionDate,
                                            @Variable String paymentScheme,
                                            @Variable String transactionGroupId,
+                                           @Variable String transactionId,
                                            @Variable String transactionCategoryPurposeCode,
                                            @Variable BigDecimal amount,
                                            @Variable String currency,
@@ -119,6 +120,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                         transactionDate,
                         paymentScheme,
                         transactionGroupId,
+                        transactionId,
                         transactionCategoryPurposeCode,
                         amount,
                         currency,
@@ -138,6 +140,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                                     String hyphenatedTransactionDate,
                                     String paymentScheme,
                                     String transactionGroupId,
+                                    String transactionId,
                                     String transactionCategoryPurposeCode,
                                     BigDecimal amount,
                                     String currency,
@@ -205,6 +208,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                                 creditorName,
                                 creditorIban,
                                 transactionGroupId,
+                                transactionId,
                                 endToEndId,
                                 transactionCategoryPurposeCode,
                                 paymentScheme,
@@ -247,6 +251,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                                     creditorName,
                                     creditorIban,
                                     transactionGroupId,
+                                    transactionId,
                                     endToEndId,
                                     transactionFeeCategoryPurposeCode,
                                     paymentScheme,
@@ -293,6 +298,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                                 creditorName,
                                 creditorIban,
                                 transactionGroupId,
+                                transactionId,
                                 endToEndId,
                                 transactionCategoryPurposeCode,
                                 paymentScheme,
@@ -338,6 +344,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                                     creditorName,
                                     creditorIban,
                                     transactionGroupId,
+                                    transactionId,
                                     endToEndId,
                                     transactionFeeCategoryPurposeCode,
                                     paymentScheme,
@@ -371,7 +378,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
         }
     }
 
-    private BigDecimal queryCurrentAccountBalance(String apiPath, String internalCorrelationId, String disposalAccountAmsId, String tenantIdentifier) {
+    protected BigDecimal queryCurrentAccountBalance(String apiPath, String internalCorrelationId, String disposalAccountAmsId, String tenantIdentifier) {
         HttpHeaders headers = new HttpHeaders();
         headers.set("Authorization", authTokenHelper.generateAuthToken());
         headers.set("Fineract-Platform-TenantId", tenantIdentifier);
@@ -460,6 +467,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                                       @Variable String disposalAccountAmsId,
                                       @Variable String paymentScheme,
                                       @Variable String transactionGroupId,
+                                      @Variable String transactionId,
                                       @Variable String transactionCategoryPurposeCode,
                                       @Variable BigDecimal amount,
                                       @Variable String currency,
@@ -478,6 +486,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                         disposalAccountAmsId,
                         paymentScheme,
                         transactionGroupId,
+                        transactionId,
                         transactionCategoryPurposeCode,
                         amount,
                         currency,
@@ -495,6 +504,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                                        String disposalAccountAmsId,
                                        String paymentScheme,
                                        String transactionGroupId,
+                                       String transactionId,
                                        String transactionCategoryPurposeCode,
                                        BigDecimal amount,
                                        String currency,
@@ -549,7 +559,24 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                 var camt053Body = painMapper.writeValueAsString(new DtSavingsTransactionDetails(internalCorrelationId, depositCamt053, debtorIban, depositPaymentTypeCode, transactionGroupId, creditorName, creditorIban, null, creditorContactDetails, unstructured, transactionCategoryPurposeCode, paymentScheme, conversionAccountAmsId, disposalAccountAmsId, endToEndId));
                 batchItemBuilder.add(tenantIdentifier, items, "datatables/dt_savings_transaction_details/$.resourceId", camt053Body, true);
             } else {
-                var camt053Body = painMapper.writeValueAsString(new CurrentAccountTransactionBody(amount, FORMAT, locale, depositPaymentTypeId, currency, List.of(new CurrentAccountTransactionBody.DataTable(List.of(new CurrentAccountTransactionBody.Entry(debtorIban, depositCamt053, internalCorrelationId, creditorName, creditorIban, transactionGroupId, endToEndId, transactionCategoryPurposeCode, paymentScheme, unstructured, conversionAccountAmsId, disposalAccountAmsId, null, partnerAccountSecondaryIdentifier, null, valueDated, direction)), "dt_current_transaction_details"))));
+                var camt053Body = painMapper.writeValueAsString(new CurrentAccountTransactionBody(amount, FORMAT, locale, depositPaymentTypeId, currency, List.of(new CurrentAccountTransactionBody.DataTable(List.of(new CurrentAccountTransactionBody.Entry(debtorIban,
+                        depositCamt053,
+                        internalCorrelationId,
+                        creditorName,
+                        creditorIban,
+                        transactionGroupId,
+                        transactionId,
+                        endToEndId,
+                        transactionCategoryPurposeCode,
+                        paymentScheme,
+                        unstructured,
+                        conversionAccountAmsId,
+                        disposalAccountAmsId,
+                        null,
+                        partnerAccountSecondaryIdentifier,
+                        null,
+                        valueDated,
+                        direction)), "dt_current_transaction_details"))));
                 batchItemBuilder.add(tenantIdentifier, items, disposalAccountDepositRelativeUrl, camt053Body, false);
             }
 
@@ -576,6 +603,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                         creditorName,
                         creditorIban,
                         transactionGroupId,
+                        transactionId,
                         endToEndId,
                         transactionCategoryPurposeCode,
                         paymentScheme,
@@ -620,6 +648,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                                     creditorName,
                                     creditorIban,
                                     transactionGroupId,
+                                    transactionId,
                                     endToEndId,
                                     transactionFeeCategoryPurposeCode,
                                     paymentScheme,
@@ -669,6 +698,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                                                 @Variable String disposalAccountAmsId,
                                                 @Variable String tenantIdentifier,
                                                 @Variable String transactionGroupId,
+                                                @Variable String transactionId,
                                                 @Variable String paymentScheme,
                                                 @Variable String transactionCategoryPurposeCode,
                                                 @Variable String originalPacs004,
@@ -689,6 +719,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                         disposalAccountAmsId,
                         tenantIdentifier,
                         transactionGroupId,
+                        transactionId,
                         paymentScheme,
                         transactionCategoryPurposeCode,
                         originalPacs004,
@@ -705,6 +736,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                                                  String disposalAccountAmsId,
                                                  String tenantIdentifier,
                                                  String transactionGroupId,
+                                                 String transactionId,
                                                  String paymentScheme,
                                                  String transactionCategoryPurposeCode,
                                                  String originalPacs004,
@@ -783,6 +815,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                         debtorName,
                         debtorIban,
                         transactionGroupId,
+                        transactionId,
                         endToEndId,
                         transactionCategoryPurposeCode,
                         paymentScheme,
@@ -818,6 +851,7 @@ public class RevertInAmsWorker extends AbstractMoneyInOutWorker {
                         debtorName,
                         debtorIban,
                         transactionGroupId,
+                        transactionId,
                         endToEndId,
                         transactionCategoryPurposeCode,
                         paymentScheme,

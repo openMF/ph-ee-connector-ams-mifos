@@ -1,8 +1,10 @@
 package org.mifos.connector.ams.zeebe.workers.bookamount;
 
 import com.baasflow.commons.events.EventService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
+import org.mifos.connector.ams.common.SerializationHelper;
 import org.mifos.connector.ams.fineract.TenantConfigs;
 import org.mifos.connector.ams.fineract.savingsaccounttransaction.response.TransactionQueryPayload;
 import org.mifos.connector.ams.mapstruct.Pain001Camt053Mapper;
@@ -34,7 +36,7 @@ class TestRevertInAmsWorker {
     public void testCurrentAccount() throws Exception {
         Consumer<TransactionItem> itemValidator = item -> {
             String json = item.toString();
-            assertFalse(json.contains("AmountDetails"));
+            assertTrue(json.contains("AmountDetails"));
             assertFalse(json.contains("AdditionalTransactionInformation"));
             assertFalse(json.contains("Batch"));
             assertFalse(json.contains("TransactionCreationChannel"));
@@ -52,6 +54,7 @@ class TestRevertInAmsWorker {
                 "2024-01-31,",
                 "HCT_INST",
                 "transactionGroupId",
+                "transactionId",
                 "transactionCategoryPurposeCode",
                 BigDecimal.TEN,
                 "HUF",
@@ -89,6 +92,7 @@ class TestRevertInAmsWorker {
                 "2024-01-31,",
                 "HCT_INST",
                 "transactionGroupId",
+                "transactionId",
                 "transactionCategoryPurposeCode",
                 BigDecimal.TEN,
                 "HUF",
@@ -115,13 +119,22 @@ class TestRevertInAmsWorker {
 
                 return null;
             }
+
+            @Override
+            protected BigDecimal queryCurrentAccountBalance(String apiPath, String internalCorrelationId, String disposalAccountAmsId, String tenantIdentifier) {
+                return BigDecimal.TEN;
+            }
         };
         worker.eventService = mock(EventService.class);
         worker.incomingMoneyApi = "/savingsaccounts/";
+        worker.currentAccountApi = "/ca";
         worker.tenantConfigs = mock(TenantConfigs.class);
         when(worker.tenantConfigs.findPaymentTypeId(any(), any())).thenReturn("some code");
         when(worker.tenantConfigs.findResourceCode(any(), any())).thenReturn("some other code");
 
+        worker.painMapper = new ObjectMapper();
+        worker.serializationHelper = new SerializationHelper();
+        worker.serializationHelper.painMapper = worker.painMapper;
         worker.batchItemBuilder = new BatchItemBuilder();
 
         AuthTokenHelper mockAuthTokenHelper = mock(AuthTokenHelper.class);

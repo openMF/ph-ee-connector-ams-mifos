@@ -90,6 +90,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
     public void transferToConversionAccountInAms(JobClient jobClient,
                                                  ActivatedJob activatedJob,
                                                  @Variable String transactionGroupId,
+                                                 @Variable String transactionId,
                                                  @Variable String transactionCategoryPurposeCode,
                                                  @Variable String transactionFeeCategoryPurposeCode,
                                                  @Variable String originalPain001,
@@ -107,7 +108,9 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
     ) {
         eventService.auditedEvent(
                 eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "transferToConversionAccountInAms", internalCorrelationId, transactionGroupId, eventBuilder),
-                eventBuilder -> transferToConversionAccountInAms(transactionGroupId,
+                eventBuilder -> transferToConversionAccountInAms(
+                        transactionGroupId,
+                        transactionId,
                         transactionCategoryPurposeCode,
                         transactionFeeCategoryPurposeCode,
                         originalPain001,
@@ -125,7 +128,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
                 ));
     }
 
-    private void holdAndReleaseForSavingsAccount(String transactionGroupId, String transactionCategoryPurposeCode, String internalCorrelationId, String paymentScheme, String disposalAccountAmsId, String conversionAccountAmsId, String tenantIdentifier, String iban, String accountProductType, String transactionDate, BigDecimal totalAmountWithFee, List<TransactionItem> items, EntryTransaction10 transactionDetails, CustomerCreditTransferInitiationV10 pain0011, ReportEntry10 convertedCamt053Entry, String partnerName, String partnerAccountIban, String partnerAccountSecondaryIdentifier, String unstructured, String endToEndId, Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001, CreditTransferTransaction40 pain001Transaction) throws JsonProcessingException {
+    private void holdAndReleaseForSavingsAccount(String transactionGroupId, String transactionId, String transactionCategoryPurposeCode, String internalCorrelationId, String paymentScheme, String disposalAccountAmsId, String conversionAccountAmsId, String tenantIdentifier, String iban, String accountProductType, String transactionDate, BigDecimal totalAmountWithFee, List<TransactionItem> items, EntryTransaction10 transactionDetails, CustomerCreditTransferInitiationV10 pain0011, ReportEntry10 convertedCamt053Entry, String partnerName, String partnerAccountIban, String partnerAccountSecondaryIdentifier, String unstructured, String endToEndId, Pain00100110CustomerCreditTransferInitiationV10MessageSchema pain001, CreditTransferTransaction40 pain001Transaction) throws JsonProcessingException {
         log.info("Adding hold item to disposal account {}", disposalAccountAmsId);
         String apiPath = accountProductType.equalsIgnoreCase("SAVINGS") ? incomingMoneyApi.substring(1) : currentAccountApi.substring(1);
         String outHoldReasonId = tenantConfigs.findPaymentTypeId(tenantIdentifier, String.format("%s.%s", paymentScheme, "outHoldReasonId"));
@@ -194,6 +197,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
 
     @SuppressWarnings("unchecked")
     private Void transferToConversionAccountInAms(String transactionGroupId,
+                                                  String transactionId,
                                                   String transactionCategoryPurposeCode,
                                                   String transactionFeeCategoryPurposeCode,
                                                   String originalPain001,
@@ -246,7 +250,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
             // STEP 1 - batch: add hold and release items [only for savings account]
             List<TransactionItem> items = new ArrayList<>();
             if (accountProductType.equalsIgnoreCase("SAVINGS")) {
-                holdAndReleaseForSavingsAccount(transactionGroupId, transactionCategoryPurposeCode, internalCorrelationId, paymentScheme, disposalAccountAmsId, conversionAccountAmsId, tenantIdentifier, debtorIban, accountProductType, transactionDate, totalAmountWithFee, items, entryTransaction10, pain001Document, convertedCamt053Entry, partnerName, partnerAccountIban, partnerAccountSecondaryIdentifier, unstructured, endToEndId, pain001, creditTransferTransaction);
+                holdAndReleaseForSavingsAccount(transactionGroupId, transactionId, transactionCategoryPurposeCode, internalCorrelationId, paymentScheme, disposalAccountAmsId, conversionAccountAmsId, tenantIdentifier, debtorIban, accountProductType, transactionDate, totalAmountWithFee, items, entryTransaction10, pain001Document, convertedCamt053Entry, partnerName, partnerAccountIban, partnerAccountSecondaryIdentifier, unstructured, endToEndId, pain001, creditTransferTransaction);
             } else {
                 log.info("No hold and release because disposal account {} is not a savings account", disposalAccountAmsId);
             }
@@ -290,6 +294,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
                                 partnerName,
                                 partnerAccountIban,
                                 transactionGroupId,
+                                transactionId,
                                 endToEndId,
                                 transactionCategoryPurposeCode,
                                 paymentScheme,
@@ -348,6 +353,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
                                     partnerName,
                                     partnerAccountIban,
                                     transactionGroupId,
+                                    transactionId,
                                     endToEndId,
                                     transactionFeeCategoryPurposeCode,
                                     paymentScheme,
@@ -407,6 +413,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
                                 partnerName,
                                 partnerAccountIban,
                                 transactionGroupId,
+                                transactionId,
                                 endToEndId,
                                 transactionCategoryPurposeCode,
                                 paymentScheme,
@@ -465,6 +472,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
                                     partnerName,
                                     partnerAccountIban,
                                     transactionGroupId,
+                                    transactionId,
                                     endToEndId,
                                     transactionFeeCategoryPurposeCode,
                                     paymentScheme,
@@ -506,6 +514,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
                                                           @Variable String disposalAccountAmsId,
                                                           @Variable String tenantIdentifier,
                                                           @Variable String transactionGroupId,
+                                                          @Variable String transactionId,
                                                           @Variable String paymentScheme,
                                                           @Variable String transactionCategoryPurposeCode,
                                                           @Variable String camt056,
@@ -525,6 +534,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
                         disposalAccountAmsId,
                         tenantIdentifier,
                         transactionGroupId,
+                        transactionId,
                         paymentScheme,
                         transactionCategoryPurposeCode,
                         camt056,
@@ -542,6 +552,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
                                                            String disposalAccountAmsId,
                                                            String tenantIdentifier,
                                                            String transactionGroupId,
+                                                           String transactionId,
                                                            String paymentScheme,
                                                            String transactionCategoryPurposeCode,
                                                            String camt056,
@@ -653,6 +664,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
                         debtorName,
                         debtorIban,
                         transactionGroupId,
+                        transactionId,
                         endToEndId,
                         transactionCategoryPurposeCode,
                         paymentScheme,
@@ -694,6 +706,7 @@ public class TransferToConversionAccountInAmsWorker extends AbstractMoneyInOutWo
                         debtorName,
                         debtorIban,
                         transactionGroupId,
+                        transactionId,
                         endToEndId,
                         transactionCategoryPurposeCode,
                         paymentScheme,

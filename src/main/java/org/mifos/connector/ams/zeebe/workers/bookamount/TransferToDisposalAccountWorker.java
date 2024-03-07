@@ -82,6 +82,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
                                           @Variable String paymentScheme,
                                           @Variable String transactionDate,
                                           @Variable String transactionGroupId,
+                                          @Variable String transactionId,
                                           @Variable String transactionCategoryPurposeCode,
                                           @Variable BigDecimal amount,
                                           @Variable String currency,
@@ -100,6 +101,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
                         paymentScheme,
                         transactionDate,
                         transactionGroupId,
+                        transactionId,
                         transactionCategoryPurposeCode,
                         amount,
                         currency,
@@ -117,6 +119,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
                                            String paymentScheme,
                                            String transactionDate,
                                            String transactionGroupId,
+                                           String transactionId,
                                            String transactionCategoryPurposeCode,
                                            BigDecimal amount,
                                            String currency,
@@ -169,7 +172,24 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
                 String camt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
                 batchItemBuilder.add(tenantIdentifier, items, camt053RelativeUrl, camt053Body, true);
             } else {
-                var camt053Body = painMapper.writeValueAsString(new CurrentAccountTransactionBody(amount, FORMAT, locale, paymentTypeId, currency, List.of(new CurrentAccountTransactionBody.DataTable(List.of(new CurrentAccountTransactionBody.Entry(creditorIban, camt053Entry, internalCorrelationId, debtorName, debtorIban, transactionGroupId, endToEndId, transactionCategoryPurposeCode, paymentScheme, unstructured, conversionAccountAmsId, disposalAccountAmsId, null, partnerAccountSecondaryIdentifier, null, valueDated, direction)), "dt_current_transaction_details"))));
+                var camt053Body = painMapper.writeValueAsString(new CurrentAccountTransactionBody(amount, FORMAT, locale, paymentTypeId, currency, List.of(new CurrentAccountTransactionBody.DataTable(List.of(new CurrentAccountTransactionBody.Entry(creditorIban,
+                        camt053Entry,
+                        internalCorrelationId,
+                        debtorName,
+                        debtorIban,
+                        transactionGroupId,
+                        transactionId,
+                        endToEndId,
+                        transactionCategoryPurposeCode,
+                        paymentScheme,
+                        unstructured,
+                        conversionAccountAmsId,
+                        disposalAccountAmsId,
+                        null,
+                        partnerAccountSecondaryIdentifier,
+                        null,
+                        valueDated,
+                        direction)), "dt_current_transaction_details"))));
                 batchItemBuilder.add(tenantIdentifier, items, disposalAccountDepositRelativeUrl, camt053Body, false);
             }
 
@@ -200,6 +220,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
                                 debtorName,
                                 debtorIban,
                                 transactionGroupId,
+                                transactionId,
                                 endToEndId,
                                 transactionCategoryPurposeCode,
                                 paymentScheme,
@@ -240,6 +261,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
                                                   @Variable String paymentScheme,
                                                   @Variable String transactionDate,
                                                   @Variable String transactionGroupId,
+                                                  @Variable String transactionId,
                                                   @Variable String transactionCategoryPurposeCode,
                                                   @Variable BigDecimal amount,
                                                   @Variable String currency,
@@ -259,6 +281,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
                         paymentScheme,
                         transactionDate,
                         transactionGroupId,
+                        transactionId,
                         transactionCategoryPurposeCode,
                         amount,
                         currency,
@@ -276,6 +299,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
                                                    String paymentScheme,
                                                    String transactionDate,
                                                    String transactionGroupId,
+                                                   String transactionId,
                                                    String transactionCategoryPurposeCode,
                                                    BigDecimal amount,
                                                    String currency,
@@ -338,6 +362,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
                         creditorName,
                         creditorIban,
                         transactionGroupId,
+                        transactionId,
                         endToEndId,
                         transactionCategoryPurposeCode,
                         paymentScheme,
@@ -378,6 +403,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
                         creditorName,
                         creditorIban,
                         transactionGroupId,
+                        transactionId,
                         endToEndId,
                         transactionCategoryPurposeCode,
                         paymentScheme,
@@ -415,6 +441,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
                                                   @Variable String paymentScheme,
                                                   @Variable String transactionDate,
                                                   @Variable String transactionGroupId,
+                                                  @Variable String transactionId,
                                                   @Variable String transactionCategoryPurposeCode,
                                                   @Variable BigDecimal amount,
                                                   @Variable String currency,
@@ -433,6 +460,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
                         paymentScheme,
                         transactionDate,
                         transactionGroupId,
+                        transactionId,
                         transactionCategoryPurposeCode,
                         amount,
                         currency,
@@ -450,6 +478,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
                                                    String paymentScheme,
                                                    String transactionDate,
                                                    String transactionGroupId,
+                                                   String transactionId,
                                                    String transactionCategoryPurposeCode,
                                                    BigDecimal amount,
                                                    String currency,
@@ -508,7 +537,24 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
                 var camt053Body = painMapper.writeValueAsString(new DtSavingsTransactionDetails(internalCorrelationId, camt053Entry, debtorIban, paymentTypeCode, transactionGroupId, creditorName, creditorIban, null, creditorContactDetails, unstructured, transactionCategoryPurposeCode, paymentScheme, conversionAccountAmsId, disposalAccountAmsId, endToEndId));
                 batchItemBuilder.add(tenantIdentifier, items, "datatables/dt_savings_transaction_details/$.resourceId", camt053Body, true);
             } else {
-                var camt053Body = painMapper.writeValueAsString(new CurrentAccountTransactionBody(amount, FORMAT, locale, paymentTypeId, currency, List.of(new CurrentAccountTransactionBody.DataTable(List.of(new CurrentAccountTransactionBody.Entry(debtorIban, camt053Entry, internalCorrelationId, creditorName, creditorIban, transactionGroupId, endToEndId, transactionCategoryPurposeCode, paymentScheme, unstructured, conversionAccountAmsId, disposalAccountAmsId, null, creditorContactDetails, null, valueDated, direction)), "dt_current_transaction_details"))));
+                var camt053Body = painMapper.writeValueAsString(new CurrentAccountTransactionBody(amount, FORMAT, locale, paymentTypeId, currency, List.of(new CurrentAccountTransactionBody.DataTable(List.of(new CurrentAccountTransactionBody.Entry(debtorIban,
+                        camt053Entry,
+                        internalCorrelationId,
+                        creditorName,
+                        creditorIban,
+                        transactionGroupId,
+                        transactionId,
+                        endToEndId,
+                        transactionCategoryPurposeCode,
+                        paymentScheme,
+                        unstructured,
+                        conversionAccountAmsId,
+                        disposalAccountAmsId,
+                        null,
+                        creditorContactDetails,
+                        null,
+                        valueDated,
+                        direction)), "dt_current_transaction_details"))));
                 batchItemBuilder.add(tenantIdentifier, items, disposalAccountDepositRelativeUrl, camt053Body, false);
             }
 
@@ -537,6 +583,7 @@ public class TransferToDisposalAccountWorker extends AbstractMoneyInOutWorker {
                         creditorName,
                         creditorIban,
                         transactionGroupId,
+                        transactionId,
                         endToEndId,
                         transactionCategoryPurposeCode,
                         paymentScheme,
