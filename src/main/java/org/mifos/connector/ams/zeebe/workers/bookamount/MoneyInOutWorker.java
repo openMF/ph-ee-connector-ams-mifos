@@ -167,7 +167,7 @@ public class MoneyInOutWorker {
 
     private Long retryAbleHoldBatchInternal(HttpHeaders httpHeaders, HttpEntity entity, String urlTemplate, String internalCorrelationId, String from, String idempotencyKeyHeaderName, Object items) {
         int retryCount = RetrySynchronizationManager.getContext().getRetryCount();
-
+        log.debug("setting retry count to {} for internal correlation id {}", retryCount, internalCorrelationId);
         httpHeaders.remove(idempotencyKeyHeaderName);
         String idempotencyKey = String.format("%s_%d", internalCorrelationId, retryCount);
         httpHeaders.set(idempotencyKeyHeaderName, idempotencyKey);
@@ -255,7 +255,7 @@ public class MoneyInOutWorker {
     private String retryAbleBatchRequest(HttpHeaders httpHeaders, HttpEntity entity, String urlTemplate, String internalCorrelationId, String from, String idempotencyKeyHeaderName, Object items) {
         httpHeaders.remove(idempotencyKeyHeaderName);
         int retryCount = RetrySynchronizationManager.getContext().getRetryCount();
-
+        log.debug("setting retry count to {} for internal correlation id {}", retryCount, internalCorrelationId);
 
         String idempotencyKey = String.format("%s_%d", internalCorrelationId, retryCount);
         httpHeaders.set(idempotencyKeyHeaderName, idempotencyKey);
