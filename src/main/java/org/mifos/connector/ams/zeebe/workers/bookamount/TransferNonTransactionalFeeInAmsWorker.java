@@ -33,9 +33,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import static org.mifos.connector.ams.zeebe.workers.bookamount.MoneyInOutWorker.FORMAT;
+
 @Component
 @Slf4j
-public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWorker {
+public class TransferNonTransactionalFeeInAmsWorker {
 
     @Autowired
     private Pain001Camt053Mapper camt053Mapper;
@@ -61,6 +63,9 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
     @Autowired
     @Qualifier("painMapper")
     private ObjectMapper painMapper;
+
+    @Autowired
+    private MoneyInOutWorker moneyInOutWorker;
 
     private static final DateTimeFormatter PATTERN = DateTimeFormatter.ofPattern(FORMAT);
 
@@ -131,7 +136,7 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
                     paymentTypeId,
                     "",
                     FORMAT,
-                    locale);
+                    moneyInOutWorker.getLocale());
 
             String bodyItem = painMapper.writeValueAsString(body);
 
@@ -188,7 +193,7 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
                     paymentTypeId,
                     "",
                     FORMAT,
-                    locale);
+                    moneyInOutWorker.getLocale());
 
             bodyItem = painMapper.writeValueAsString(body);
 
@@ -235,7 +240,7 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
                     paymentTypeId,
                     "",
                     FORMAT,
-                    locale);
+                    moneyInOutWorker.getLocale());
 
             bodyItem = painMapper.writeValueAsString(body);
 
@@ -267,7 +272,7 @@ public class TransferNonTransactionalFeeInAmsWorker extends AbstractMoneyInOutWo
 
             log.debug("Attempting to send {}", painMapper.writeValueAsString(items));
 
-            doBatch(items,
+            moneyInOutWorker.doBatch(items,
                     tenantIdentifier,
                     transactionGroupId,
                     disposalAccountAmsId,
