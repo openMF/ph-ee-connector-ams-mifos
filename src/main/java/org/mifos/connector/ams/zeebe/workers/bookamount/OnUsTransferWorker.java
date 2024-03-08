@@ -98,6 +98,7 @@ public class OnUsTransferWorker {
                                                                         @Variable BigDecimal transactionFeeAmount,
                                                                         @Variable String tenantIdentifier,
                                                                         @Variable String transactionGroupId,
+                                                                        @Variable String transactionId,
                                                                         @Variable String transactionCategoryPurposeCode,
                                                                         @Variable String transactionFeeCategoryPurposeCode,
                                                                         @Variable String transactionFeeInternalCorrelationId,
@@ -122,6 +123,7 @@ public class OnUsTransferWorker {
                         transactionFeeAmount,
                         tenantIdentifier,
                         transactionGroupId,
+                        transactionId,
                         transactionCategoryPurposeCode,
                         transactionFeeCategoryPurposeCode,
                         transactionFeeInternalCorrelationId,
@@ -146,6 +148,7 @@ public class OnUsTransferWorker {
                                                                          BigDecimal transactionFeeAmount,
                                                                          String tenantIdentifier,
                                                                          String transactionGroupId,
+                                                                         String transactionId,
                                                                          String transactionCategoryPurposeCode,
                                                                          String transactionFeeCategoryPurposeCode,
                                                                          String transactionFeeInternalCorrelationId,
@@ -177,6 +180,13 @@ public class OnUsTransferWorker {
                     .map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(List::toString).orElse("");
             CustomerCreditTransferInitiationV10 pain0011 = pain001.getDocument();
             String endToEndId = pain0011.getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getPaymentIdentification().getEndToEndIdentification();
+            String depositAmountOperation = "transferTheAmountBetweenDisposalAccounts.Creditor.DisposalAccount.DepositTransactionAmount";
+            String depositAmountConfigOperationKey = String.format("%s.%s", paymentScheme, depositAmountOperation);
+            String debtorDisposalWithdrawalRelativeUrl = String.format("%s%s/transactions?command=%s", apiPath, debtorDisposalAccountAmsId, "withdrawal");
+            String withdrawAmountOperation = "transferTheAmountBetweenDisposalAccounts.Debtor.DisposalAccount.WithdrawTransactionAmount";
+            String withdrawAmountConfigOperationKey = String.format("%s.%s", paymentScheme, withdrawAmountOperation);
+            String withdrawPaymentTypeId = tenantConfigs.findPaymentTypeId(tenantIdentifier, withdrawAmountConfigOperationKey);
+            String withdrawPaymentTypeCode = tenantConfigs.findResourceCode(tenantIdentifier, withdrawAmountConfigOperationKey);
 
             entryTransaction10.withAmountDetails(new AmountAndCurrencyExchange3().withTransactionAmount(withAmountAndCurrency));
             entryTransaction10.getSupplementaryData().clear();
@@ -234,11 +244,6 @@ public class OnUsTransferWorker {
 
             // STEP 4 - withdraw amount
             log.debug("transferTheAmountBetweenDisposalAccounts - Withdraw amount");
-            String debtorDisposalWithdrawalRelativeUrl = String.format("%s%s/transactions?command=%s", apiPath, debtorDisposalAccountAmsId, "withdrawal");
-            String withdrawAmountOperation = "transferTheAmountBetweenDisposalAccounts.Debtor.DisposalAccount.WithdrawTransactionAmount";
-            String withdrawAmountConfigOperationKey = String.format("%s.%s", paymentScheme, withdrawAmountOperation);
-            String withdrawPaymentTypeId = tenantConfigs.findPaymentTypeId(tenantIdentifier, withdrawAmountConfigOperationKey);
-            String withdrawPaymentTypeCode = tenantConfigs.findResourceCode(tenantIdentifier, withdrawAmountConfigOperationKey);
             String direction = tenantConfigs.findDirection(tenantIdentifier, withdrawAmountConfigOperationKey);
 
             if (accountProductType.equalsIgnoreCase("SAVINGS")) {
@@ -269,6 +274,7 @@ public class OnUsTransferWorker {
                         creditorName,
                         creditorIban,
                         transactionGroupId,
+                        transactionId,
                         endToEndId,
                         transactionCategoryPurposeCode,
                         paymentScheme,
@@ -315,6 +321,7 @@ public class OnUsTransferWorker {
                             creditorName,
                             creditorIban,
                             transactionGroupId,
+                            transactionId,
                             endToEndId,
                             transactionFeeCategoryPurposeCode,
                             paymentScheme,
@@ -333,6 +340,7 @@ public class OnUsTransferWorker {
                 // STEP 6 - deposit fee
                 String depositFeeOperation = "transferTheAmountBetweenDisposalAccounts.Debtor.ConversionAccount.DepositTransactionFee";
                 String depositFeeConfigOperationKey = String.format("%s.%s", paymentScheme, depositFeeOperation);
+                direction = tenantConfigs.findDirection(tenantIdentifier, depositFeeConfigOperationKey);
                 var depositPaymentTypeId = tenantConfigs.findPaymentTypeId(tenantIdentifier, depositFeeConfigOperationKey);
                 var depositPaymentTypeCode = tenantConfigs.findResourceCode(tenantIdentifier, depositFeeConfigOperationKey);
                 entryTransaction10.setAdditionalTransactionInformation(depositPaymentTypeCode);
@@ -359,6 +367,7 @@ public class OnUsTransferWorker {
                             creditorName,
                             creditorIban,
                             transactionGroupId,
+                            transactionId,
                             endToEndId,
                             transactionFeeCategoryPurposeCode,
                             paymentScheme,
@@ -375,8 +384,7 @@ public class OnUsTransferWorker {
                 }
             }
 
-            String depositAmountOperation = "transferTheAmountBetweenDisposalAccounts.Creditor.DisposalAccount.DepositTransactionAmount";
-            String depositAmountConfigOperationKey = String.format("%s.%s", paymentScheme, depositAmountOperation);
+            direction = tenantConfigs.findDirection(tenantIdentifier, depositAmountConfigOperationKey);
             var depositPaymentTypeId = tenantConfigs.findPaymentTypeId(tenantIdentifier, depositAmountConfigOperationKey);
             var depositPaymentTypeCode = tenantConfigs.findResourceCode(tenantIdentifier, depositAmountConfigOperationKey);
             entryTransaction10.setAdditionalTransactionInformation(depositPaymentTypeCode);
@@ -408,6 +416,7 @@ public class OnUsTransferWorker {
                         debtorName,
                         debtorIban,
                         transactionGroupId,
+                        transactionId,
                         endToEndId,
                         transactionCategoryPurposeCode,
                         paymentScheme,
@@ -460,6 +469,7 @@ public class OnUsTransferWorker {
                             creditorName,
                             creditorIban,
                             transactionGroupId,
+                            transactionId,
                             endToEndId,
                             transactionFeeCategoryPurposeCode,
                             paymentScheme,

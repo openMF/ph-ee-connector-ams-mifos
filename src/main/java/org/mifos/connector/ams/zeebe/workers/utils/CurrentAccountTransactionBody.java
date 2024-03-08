@@ -36,6 +36,7 @@ public class CurrentAccountTransactionBody {
         private String partner_name;
         private String partner_account_iban;
         private String transaction_group_id;
+        private String transaction_id;
         private String end_to_end_id;
         private String category_purpose_code;
         private String payment_scheme;
