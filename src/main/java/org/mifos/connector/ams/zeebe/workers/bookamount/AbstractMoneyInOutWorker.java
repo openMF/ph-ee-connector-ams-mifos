@@ -25,9 +25,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.EnableRetry;
-import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
@@ -68,9 +66,6 @@ public abstract class AbstractMoneyInOutWorker {
 
     @Value("${fineract.idempotency.interval}")
     private int idempotencyRetryInterval;
-
-    @Value("${fineract.idempotency.key-header-name}")
-    private String idempotencyKeyHeaderName;
 
     @Autowired
     private AuthTokenHelper authTokenHelper;
@@ -124,7 +119,8 @@ public abstract class AbstractMoneyInOutWorker {
                             String debtorDisposalAccountAmsId,
                             String debtorConversionAccountAmsId,
                             String creditorDisposalAccountAmsId,
-                            String internalCorrelationId) {
+                            String internalCorrelationId,
+                               String calledFrom) {
         eventService.auditedEvent(
                 eventBuilder -> EventLogUtil.initFineractBatchCallOnUs("transferTheAmountBetweenDisposalAccounts",
                         items,
@@ -133,10 +129,10 @@ public abstract class AbstractMoneyInOutWorker {
                         creditorDisposalAccountAmsId,
                         internalCorrelationId,
                         eventBuilder),
-                eventBuilder -> doBatchInternal(items, tenantId, transactionGroupId, internalCorrelationId, "transferTheAmountBetweenDisposalAccounts"));
+                eventBuilder -> doBatchInternal(items, tenantId, transactionGroupId, internalCorrelationId, calledFrom));
     }
 
-    private Long holdBatchInternal(String transactionGroupId, List<TransactionItem> items, String tenantId, String internalCorrelationId, String from) {
+    private Long holdBatchInternal(String transactionGroupId, List<TransactionItem> items, String tenantId, String internalCorrelationId, String calledFrom) {
         HttpHeaders httpHeaders = createHeaders(tenantId, transactionGroupId);
         HttpEntity<List<TransactionItem>> entity = new HttpEntity<>(items, httpHeaders);
 
@@ -148,23 +144,22 @@ public abstract class AbstractMoneyInOutWorker {
 
         log.debug(">> Sending {} to {} with headers {} and idempotency {}", items, urlTemplate, httpHeaders, internalCorrelationId);
 
-        return retryAbleHoldBatchInternal(httpHeaders, entity, urlTemplate, internalCorrelationId, from, idempotencyKeyHeaderName, items);
+        return retryAbleHoldBatchInternal(httpHeaders, entity, urlTemplate, internalCorrelationId, calledFrom, items);
     }
 
-    private Long retryAbleHoldBatchInternal(HttpHeaders httpHeaders, HttpEntity entity, String urlTemplate, String internalCorrelationId, String from, String idempotencyKeyHeaderName, Object items) {
+    private Long retryAbleHoldBatchInternal(HttpHeaders httpHeaders, HttpEntity entity, String urlTemplate, String internalCorrelationId, String calledFrom, Object items) {
         int retryCount = 0;
         while (retryCount < idempotencyRetryCount) {
             try {
-                httpHeaders.remove(idempotencyKeyHeaderName);
-                String idempotencyKey = String.format("%s_%d", internalCorrelationId, retryCount);
-                httpHeaders.set(idempotencyKeyHeaderName, idempotencyKey);
+                String idempotencyKey = String.format("%s_%s_%d", internalCorrelationId, calledFrom, retryCount);
+                httpHeaders.set("Idempotency-Key", idempotencyKey);
                 wireLogger.sending(items.toString());
                 eventService.sendEvent(builder -> builder
                         .setSourceModule("ams_connector")
                         .setEventLogLevel(EventLogLevel.INFO)
-                        .setEvent(from + " - holdBatchInternal")
+                        .setEvent(calledFrom + " - holdBatchInternal")
                         .setEventType(EventType.audit)
-                        .setCorrelationIds(Map.of("idempotencyKey", idempotencyKey))
+                        .setCorrelationIds(Map.of("Idempotency-Key", idempotencyKey))
                         .setPayload(entity.toString()));
                 ResponseEntity<List<BatchResponse>> response;
                 try {
@@ -173,14 +168,15 @@ public abstract class AbstractMoneyInOutWorker {
                     eventService.sendEvent(builder -> builder
                             .setSourceModule("ams_connector")
                             .setEventLogLevel(EventLogLevel.INFO)
-                            .setEvent(from + " - holdBatchInternal")
+                            .setEvent(calledFrom + " - holdBatchInternal")
                             .setEventType(EventType.audit)
-                            .setCorrelationIds(Map.of("idempotencyKey", idempotencyKey))
+                            .setCorrelationIds(Map.of("Idempotency-Key", idempotencyKey))
                             .setPayload(response.toString()));
                     wireLogger.receiving(response.toString());
                 } catch (ResourceAccessException e) {
-                    if (e.getCause() instanceof SocketTimeoutException || e.getCause() instanceof ConnectException) {
-                        throw new FineractOptimisticLockingException(e.getMessage(), e.getCause());
+                    Throwable cause = e.getCause();
+                    if (cause instanceof SocketTimeoutException || cause instanceof ConnectException) {
+                        throw new FineractOptimisticLockingException(e.getMessage(), cause);
                     } else {
                         log.error(e.getMessage(), e);
                         throw e;
@@ -191,7 +187,6 @@ public abstract class AbstractMoneyInOutWorker {
                 }
 
                 List<BatchResponse> batchResponseList = response.getBody();
-
                 if (batchResponseList.size() != 2) {
                     if (batchResponseList.get(0).getBody().contains("validation.msg.savingsaccount.insufficient.balance")) {
                         throw new ZeebeBpmnError("Error_InsufficientFunds", "Insufficient balance error");
@@ -237,9 +232,8 @@ public abstract class AbstractMoneyInOutWorker {
         throw new RuntimeException();
     }
 
-    private String doBatchInternal(List<TransactionItem> items, String tenantId, String transactionGroupId, String internalCorrelationId, String from) {
+    private String doBatchInternal(List<TransactionItem> items, String tenantId, String transactionGroupId, String internalCorrelationId, String calledFrom) {
         HttpHeaders httpHeaders = createHeaders(tenantId, transactionGroupId);
-
         HttpEntity<List<TransactionItem>> entity = new HttpEntity<>(items, httpHeaders);
 
         String urlTemplate = UriComponentsBuilder.fromHttpUrl(fineractApiUrl)
@@ -249,38 +243,35 @@ public abstract class AbstractMoneyInOutWorker {
                 .toUriString();
 
         log.debug(">> Sending {} to {} with headers {} and idempotency {}", items, urlTemplate, httpHeaders, internalCorrelationId);
-        return retryAbleBatchRequest(httpHeaders, entity, urlTemplate, internalCorrelationId, from, "X-Idempotency-Key", items);
-
+        return retryAbleBatchRequest(entity, urlTemplate, internalCorrelationId, calledFrom, items);
     }
 
-    private String retryAbleBatchRequest(HttpHeaders httpHeaders, HttpEntity entity, String urlTemplate, String internalCorrelationId, String from, String idempotencyKeyHeaderName, Object items) {
-        httpHeaders.remove(idempotencyKeyHeaderName);
+    private String retryAbleBatchRequest(HttpEntity<List<TransactionItem>> entity, String urlTemplate, String internalCorrelationId, String calledFrom, List<TransactionItem> items) {
         int retryCount = 0;
 
         while (retryCount < idempotencyRetryCount) {
             try {
                 String idempotencyKey = String.format("%s_%d", internalCorrelationId, retryCount);
-                httpHeaders.set(idempotencyKeyHeaderName, idempotencyKey);
                 wireLogger.sending(items.toString());
                 eventService.sendEvent(builder -> builder
                         .setSourceModule("ams_connector")
                         .setEventLogLevel(EventLogLevel.INFO)
-                        .setEvent(from + " - doBatchInternal")
+                        .setEvent(calledFrom + " - doBatchInternal")
                         .setEventType(EventType.audit)
-                        .setCorrelationIds(Map.of("idempotencyKey", idempotencyKey))
+                        .setCorrelationIds(Map.of("Idempotency-Key", idempotencyKey))
                         .setPayload(entity.toString()));
-                ResponseEntity<List<BatchResponse>> response = null;
+                ResponseEntity<List<BatchResponse>> response;
 
                 try {
-                    response = restTemplate.exchange(urlTemplate, HttpMethod.POST, entity, new ParameterizedTypeReference<List<BatchResponse>>() {
+                    response = restTemplate.exchange(urlTemplate, HttpMethod.POST, entity, new ParameterizedTypeReference<>() {
                     });
                     ResponseEntity<List<BatchResponse>> finalResponse = response;
                     eventService.sendEvent(builder -> builder
                             .setSourceModule("ams_connector")
                             .setEventLogLevel(EventLogLevel.INFO)
-                            .setEvent(from + " - doBatchInternal")
+                            .setEvent(calledFrom + " - doBatchInternal")
                             .setEventType(EventType.audit)
-                            .setCorrelationIds(Map.of("idempotencyKey", idempotencyKey))
+                            .setCorrelationIds(Map.of("Idempotency-Key", idempotencyKey))
                             .setPayload(finalResponse.toString()));
                     wireLogger.receiving(response.toString());
                 } catch (ResourceAccessException e) {
@@ -297,23 +288,19 @@ public abstract class AbstractMoneyInOutWorker {
                 }
 
                 List<BatchResponse> batchResponseList = response.getBody();
-
                 batchResponseList.stream().filter(element -> element.getStatusCode() != SC_OK).forEach(element -> {
                     log.debug("Got status code {} for request [{}]", element.getStatusCode(), idempotencyKey);
                     handleResponseElementError(element, element.getStatusCode(), idempotencyKey);
                 });
 
-                BatchResponse lastResponseItem = Iterables.getLast(batchResponseList);
-
-                String lastResponseBody = lastResponseItem.getBody();
+                String lastResponseBody = Iterables.getLast(batchResponseList).getBody();
                 try {
                     CommandProcessingResult cpResult = objectMapper.readValue(lastResponseBody, CommandProcessingResult.class);
+                    log.info("Request [{}] successful", idempotencyKey);
                     return cpResult.getTransactionId();
                 } catch (JsonProcessingException j) {
                     log.error(j.getMessage(), j);
                     throw new RuntimeException(j);
-                } finally {
-                    log.info("Request [{}] successful", idempotencyKey);
                 }
 
             } catch (FineractOptimisticLockingException e) {

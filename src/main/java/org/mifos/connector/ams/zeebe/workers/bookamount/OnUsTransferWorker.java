@@ -481,7 +481,7 @@ public class OnUsTransferWorker extends AbstractMoneyInOutWorker {
                 }
             }
 
-            doBatchOnUs(items, tenantIdentifier, transactionGroupId, debtorDisposalAccountAmsId, debtorConversionAccountAmsId, creditorDisposalAccountAmsId, internalCorrelationId);
+            doBatchOnUs(items, tenantIdentifier, transactionGroupId, debtorDisposalAccountAmsId, debtorConversionAccountAmsId, creditorDisposalAccountAmsId, internalCorrelationId, "transferTheAmountBetweenDisposalAccounts");
             notificationHelper.send("transferTheAmountBetweenDisposalAccounts", amount, currency, debtorName, paymentScheme, creditorIban);
 
             return Map.of("transactionDate", interbankSettlementDate);

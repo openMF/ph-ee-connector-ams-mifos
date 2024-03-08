@@ -38,7 +38,6 @@ fineract:
   idempotency:
     count: 10
     interval: 200
-    key-header-name: "Idempotency-Key"
 
 zeebe:
   client:

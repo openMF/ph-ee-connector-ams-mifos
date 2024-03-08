@@ -28,7 +28,7 @@ public class BatchItemBuilder {
         items.add(createTransactionItem(items.size() + 1, url, tenantId, body, isDetails ? items.size() : null));
     }
 
-    private TransactionItem createTransactionItem(Integer requestId, String relativeUrl, String tenantId, String bodyItem, Integer reference) throws JsonProcessingException {
+    private TransactionItem createTransactionItem(Integer requestId, String relativeUrl, String tenantId, String bodyItem, Integer reference) {
         List<Header> headers = headers(tenantId);
         return new TransactionItem(requestId, relativeUrl, "POST", reference, headers, bodyItem);
     }
