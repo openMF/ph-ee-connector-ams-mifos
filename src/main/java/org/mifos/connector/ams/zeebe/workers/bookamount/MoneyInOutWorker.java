@@ -254,7 +254,7 @@ public class MoneyInOutWorker {
 
     private String retryAbleBatchRequest(HttpHeaders httpHeaders, HttpEntity entity, String urlTemplate, String internalCorrelationId, String from, String idempotencyKeyHeaderName, Object items) {
         httpHeaders.remove(idempotencyKeyHeaderName);
-        int retryCount = 0;
+        int retryCount = RetrySynchronizationManager.getContext().getRetryCount();
 
 
         String idempotencyKey = String.format("%s_%d", internalCorrelationId, retryCount);
