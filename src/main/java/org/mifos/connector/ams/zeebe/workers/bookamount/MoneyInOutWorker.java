@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Iterables;
 import io.camunda.zeebe.spring.client.exception.ZeebeBpmnError;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.client.models.BatchResponse;
 import org.apache.fineract.client.models.CommandProcessingResult;
@@ -47,29 +48,23 @@ import static org.apache.hc.core5.http.HttpStatus.SC_OK;
 @Slf4j
 public class MoneyInOutWorker {
 
+    @Getter
     @Autowired
     protected RestTemplate restTemplate;
 
     @Autowired
     private IOTxLogger wireLogger;
 
+    @Getter
     @Value("${fineract.api-url}")
     protected String fineractApiUrl;
 
     @Value("${fineract.incoming-money-api}")
     protected String incomingMoneyApi;
 
+    @Getter
     @Value("${fineract.locale}")
     protected String locale;
-
-    @Value("${fineract.idempotency.count}")
-    private int idempotencyRetryCount;
-
-    @Value("${fineract.idempotency.interval}")
-    private int idempotencyRetryInterval;
-
-    @Value("${fineract.idempotency.key-header-name}")
-    private String idempotencyKeyHeaderName;
 
     @Autowired
     private AuthTokenHelper authTokenHelper;
@@ -82,18 +77,6 @@ public class MoneyInOutWorker {
     private EventService eventService;
 
     public static final String FORMAT = "yyyyMMdd";
-
-    public String getLocale() {
-        return locale;
-    }
-
-    public RestTemplate getRestTemplate() {
-        return restTemplate;
-    }
-
-    public String getFineractApiUrl() {
-        return fineractApiUrl;
-    }
 
     @Retryable(retryFor = FineractOptimisticLockingException.class, maxAttemptsExpression = "${fineract.idempotency.count:3}", backoff = @Backoff(delayExpression = "${fineract.idempotency.interval:10}"))
     protected Long holdBatch(List<TransactionItem> items,
@@ -162,22 +145,18 @@ public class MoneyInOutWorker {
 
         log.debug(">> Sending {} to {} with headers {} and idempotency {}", items, urlTemplate, httpHeaders, internalCorrelationId);
 
-        return retryAbleHoldBatchInternal(httpHeaders, entity, urlTemplate, internalCorrelationId, from, idempotencyKeyHeaderName, items);
+        return retryAbleHoldBatchInternal(entity, urlTemplate, internalCorrelationId, from, items);
     }
 
-    private Long retryAbleHoldBatchInternal(HttpHeaders httpHeaders, HttpEntity entity, String urlTemplate, String internalCorrelationId, String from, String idempotencyKeyHeaderName, Object items) {
+    private Long retryAbleHoldBatchInternal(HttpEntity entity, String urlTemplate, String internalCorrelationId, String from, Object items) {
         int retryCount = RetrySynchronizationManager.getContext().getRetryCount();
         log.debug("setting retry count to {} for internal correlation id {}", retryCount, internalCorrelationId);
-        httpHeaders.remove(idempotencyKeyHeaderName);
-        String idempotencyKey = String.format("%s_%d", internalCorrelationId, retryCount);
-        httpHeaders.set(idempotencyKeyHeaderName, idempotencyKey);
         wireLogger.sending(items.toString());
         eventService.sendEvent(builder -> builder
                 .setSourceModule("ams_connector")
                 .setEventLogLevel(EventLogLevel.INFO)
                 .setEvent(from + " - holdBatchInternal")
                 .setEventType(EventType.audit)
-                .setCorrelationIds(Map.of("idempotencyKey", idempotencyKey))
                 .setPayload(entity.toString()));
         ResponseEntity<List<BatchResponse>> response;
         try {
@@ -188,7 +167,6 @@ public class MoneyInOutWorker {
                     .setEventLogLevel(EventLogLevel.INFO)
                     .setEvent(from + " - holdBatchInternal")
                     .setEventType(EventType.audit)
-                    .setCorrelationIds(Map.of("idempotencyKey", idempotencyKey))
                     .setPayload(response.toString()));
             wireLogger.receiving(response.toString());
         } catch (ResourceAccessException e) {
@@ -209,12 +187,12 @@ public class MoneyInOutWorker {
             if (batchResponseList.get(0).getBody().contains("validation.msg.savingsaccount.insufficient.balance")) {
                 throw new ZeebeBpmnError("Error_InsufficientFunds", "Insufficient balance error");
             }
-            throw new RuntimeException("An unexpected error occurred for hold request " + idempotencyKey);
+            throw new RuntimeException("An unexpected error occurred for hold request");
         }
         BatchResponse responseItem = batchResponseList.get(0);
-        log.debug("Investigating response item {} for request [{}]", responseItem, idempotencyKey);
+        log.debug("Investigating response item {} for request", responseItem);
         int statusCode = responseItem.getStatusCode();
-        log.debug("Got status code {} for request [{}]", statusCode, idempotencyKey);
+        log.debug("Got status code {} for request", statusCode);
         if (statusCode == SC_OK) {
             String responseItemBody = responseItem.getBody();
             JsonNode rootNode = null;
@@ -227,11 +205,11 @@ public class MoneyInOutWorker {
                 CommandProcessingResult commandProcessingResult = objectMapper.readValue(responseItemBody, CommandProcessingResult.class);
                 return commandProcessingResult.getResourceId();
             } catch (JsonProcessingException j) {
-                throw new RuntimeException("An unexpected error occurred for hold request " + idempotencyKey + ": " + rootNode);
+                throw new RuntimeException("An unexpected error occurred for hold request: " + rootNode);
             }
         }
 
-        return handleResponseElementError(responseItem, statusCode, idempotencyKey);
+        return handleResponseElementError(responseItem, statusCode);
 
 
     }
@@ -298,7 +276,7 @@ public class MoneyInOutWorker {
 
         batchResponseList.stream().filter(element -> element.getStatusCode() != SC_OK).forEach(element -> {
             log.debug("Got status code {} for request [{}]", element.getStatusCode(), idempotencyKey);
-            handleResponseElementError(element, element.getStatusCode(), idempotencyKey);
+            handleResponseElementError(element, element.getStatusCode());
         });
 
         BatchResponse lastResponseItem = Iterables.getLast(batchResponseList);
@@ -317,26 +295,26 @@ public class MoneyInOutWorker {
     }
 
 
-    private Long handleResponseElementError(BatchResponse responseItem, int statusCode, String idempotencyKey) {
-        log.debug("Got error {}, response item '{}' for request [{}]", statusCode, responseItem, idempotencyKey);
+    private Long handleResponseElementError(BatchResponse responseItem, int statusCode) {
+        log.debug("Got error {}, response item '{}' for request", statusCode, responseItem);
         switch (statusCode) {
             case SC_CONFLICT -> {
-                log.warn("Transaction request [{}] is already executing, has not completed yet", idempotencyKey);
+                log.warn("Transaction request is already executing, has not completed yet");
                 return null;
             }
             case SC_LOCKED -> {
-                log.info("Locking exception detected, retrying request [{}]", idempotencyKey);
+                log.info("Locking exception detected, retrying request");
                 throw new FineractOptimisticLockingException("Locking exception detected, retry transaction");
             }
             case SC_FORBIDDEN -> {
                 String body = responseItem.getBody();
                 if (body != null && (body.contains("error.msg.current.insufficient.funds"))) {
-                    log.error("insufficient funds for request [{}]", idempotencyKey);
+                    log.error("insufficient funds for request");
                     throw new ZeebeBpmnError("Error_InsufficientFunds", "Insufficient funds");
                 }
                 throw new ZeebeBpmnError("Error_CaughtException", "Forbidden");
             }
-            default -> throw new RuntimeException("An unexpected error occurred for request " + idempotencyKey + ": " + statusCode);
+            default -> throw new RuntimeException("An unexpected error occurred for request: " + statusCode);
         }
     }
 
