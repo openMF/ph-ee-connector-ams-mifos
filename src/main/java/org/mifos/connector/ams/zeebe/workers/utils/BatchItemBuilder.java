@@ -25,7 +25,7 @@ public class BatchItemBuilder {
     public AuthTokenHelper authTokenHelper;
 
     public void add(String tenantId, String internalCorrelationId, List<TransactionItem> items, String url, String body, boolean isDetails) throws JsonProcessingException {
-        String caller = Thread.currentThread().getStackTrace()[1].getMethodName();
+        String caller = Thread.currentThread().getStackTrace()[2].getMethodName();
         int stepNumber = items.size() + 1;
 
         items.add(createTransactionItem(caller, internalCorrelationId, stepNumber, url, tenantId, body, isDetails ? items.size() : null));
