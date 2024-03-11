@@ -165,7 +165,7 @@ public class BookCreditedAmountToTechnicalAccountWorker {
             // STEP 1 - batch: withdraw amount
             if (accountProductType.equalsIgnoreCase("SAVINGS")) {
                 String bodyItem = painMapper.writeValueAsString(new TransactionBody(transactionDate, amount, paymentTypeId, "", FORMAT, locale));
-                batchItemBuilder.add(tenantIdentifier, items, conversionAccountWithdrawalRelativeUrl, bodyItem, false);
+                batchItemBuilder.add(tenantIdentifier, internalCorrelationId, items, conversionAccountWithdrawalRelativeUrl, bodyItem, false);
             } // CURRENT account sends a single call only at the details step
 
             // STEP 2 - batch: withdraw details
@@ -179,7 +179,7 @@ public class BookCreditedAmountToTechnicalAccountWorker {
             if (accountProductType.equalsIgnoreCase("SAVINGS")) {
                 String camt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
                 String camt053Body = painMapper.writeValueAsString(new DtSavingsTransactionDetails(internalCorrelationId, camt053Entry, creditorIban, paymentTypeCode, transactionGroupId, debtorName, debtorIban, null, debtorContactDetails, unstructured, transactionCategoryPurposeCode, paymentScheme, null, null, endToEndId));
-                batchItemBuilder.add(tenantIdentifier, items, camt053RelativeUrl, camt053Body, true);
+                batchItemBuilder.add(tenantIdentifier, internalCorrelationId, items, camt053RelativeUrl, camt053Body, true);
             } else {
                 String camt053Body = painMapper.writeValueAsString(new CurrentAccountTransactionBody(amount, FORMAT, locale, paymentTypeId, currency, List.of(new CurrentAccountTransactionBody.DataTable(List.of(new CurrentAccountTransactionBody.Entry(
                         creditorIban,
@@ -201,7 +201,7 @@ public class BookCreditedAmountToTechnicalAccountWorker {
                         valueDated,
                         direction
                 )), "dt_current_transaction_details"))));
-                batchItemBuilder.add(tenantIdentifier, items, conversionAccountWithdrawalRelativeUrl, camt053Body, false);
+                batchItemBuilder.add(tenantIdentifier, internalCorrelationId, items, conversionAccountWithdrawalRelativeUrl, camt053Body, false);
             }
 
             moneyInOutWorker.doBatch(items, tenantIdentifier, transactionGroupId, "-1", "-1", internalCorrelationId, "bookCreditedAmountToTechnicalAccount");

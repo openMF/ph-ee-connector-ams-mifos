@@ -142,7 +142,7 @@ public class TransferNonTransactionalFeeInAmsWorker {
 
             List<TransactionItem> items = new ArrayList<>();
 
-            batchItemBuilder.add(tenantIdentifier, items, disposalAccountWithdrawRelativeUrl, bodyItem, false);
+            batchItemBuilder.add(tenantIdentifier, internalCorrelationId, items, disposalAccountWithdrawRelativeUrl, bodyItem, false);
 
             BankToCustomerStatementV08 convertedStatement = camt053Mapper.toCamt053Entry(pain001.getDocument());
             ReportEntry10 convertedcamt053 = convertedStatement.getStatement().get(0).getEntry().get(0);
@@ -174,7 +174,7 @@ public class TransferNonTransactionalFeeInAmsWorker {
 
             String camt053Body = painMapper.writeValueAsString(td);
 
-            batchItemBuilder.add(tenantIdentifier, items, camt053RelativeUrl, camt053Body, true);
+            batchItemBuilder.add(tenantIdentifier, internalCorrelationId, items, camt053RelativeUrl, camt053Body, true);
 
 
             String depositNonTxFeeOperation = "transferToConversionAccountInAms.ConversionAccount.DepositNonTransactionalFee";
@@ -199,7 +199,7 @@ public class TransferNonTransactionalFeeInAmsWorker {
 
             String conversionAccountDepositRelativeUrl = String.format("%s%s/transactions?command=%s", apiPath, conversionAccountAmsId, "deposit");
 
-            batchItemBuilder.add(tenantIdentifier, items, conversionAccountDepositRelativeUrl, bodyItem, false);
+            batchItemBuilder.add(tenantIdentifier, internalCorrelationId, items, conversionAccountDepositRelativeUrl, bodyItem, false);
 
             td = new DtSavingsTransactionDetails(
                     internalCorrelationId,
@@ -221,7 +221,7 @@ public class TransferNonTransactionalFeeInAmsWorker {
 
             camt053Body = painMapper.writeValueAsString(td);
 
-            batchItemBuilder.add(tenantIdentifier, items, camt053RelativeUrl, camt053Body, true);
+            batchItemBuilder.add(tenantIdentifier, internalCorrelationId, items, camt053RelativeUrl, camt053Body, true);
 
 
             String withdrawNonTxFeeConversionOperation = "transferToConversionAccountInAms.ConversionAccount.WithdrawNonTransactionalFee";
@@ -246,7 +246,7 @@ public class TransferNonTransactionalFeeInAmsWorker {
 
             String conversionAccountWithdrawRelativeUrl = String.format("%s%s/transactions?command=%s", apiPath, conversionAccountAmsId, "withdrawal");
 
-            batchItemBuilder.add(tenantIdentifier, items, conversionAccountWithdrawRelativeUrl, bodyItem, false);
+            batchItemBuilder.add(tenantIdentifier, internalCorrelationId, items, conversionAccountWithdrawRelativeUrl, bodyItem, false);
 
             td = new DtSavingsTransactionDetails(
                     internalCorrelationId,
@@ -268,7 +268,7 @@ public class TransferNonTransactionalFeeInAmsWorker {
 
             camt053Body = painMapper.writeValueAsString(td);
 
-            batchItemBuilder.add(tenantIdentifier, items, camt053RelativeUrl, camt053Body, true);
+            batchItemBuilder.add(tenantIdentifier, internalCorrelationId, items, camt053RelativeUrl, camt053Body, true);
 
             log.debug("Attempting to send {}", painMapper.writeValueAsString(items));
 

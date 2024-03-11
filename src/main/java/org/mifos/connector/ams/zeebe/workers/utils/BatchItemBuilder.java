@@ -24,22 +24,22 @@ public class BatchItemBuilder {
     @Autowired
     public AuthTokenHelper authTokenHelper;
 
-    public void add(String tenantId, List<TransactionItem> items, String url, String body, boolean isDetails) throws JsonProcessingException {
-        items.add(createTransactionItem(items.size() + 1, url, tenantId, body, isDetails ? items.size() : null));
+    public void add(String tenantId, String internalCorrelationId, List<TransactionItem> items, String url, String body, boolean isDetails) throws JsonProcessingException {
+        String caller = Thread.currentThread().getStackTrace()[1].getMethodName();
+        int stepNumber = items.size() + 1;
+
+        items.add(createTransactionItem(caller, internalCorrelationId, stepNumber, url, tenantId, body, isDetails ? items.size() : null));
     }
 
-    private TransactionItem createTransactionItem(Integer requestId, String relativeUrl, String tenantId, String bodyItem, Integer reference) throws JsonProcessingException {
-        List<Header> headers = headers(tenantId);
-        return new TransactionItem(requestId, relativeUrl, "POST", reference, headers, bodyItem);
-    }
-
-    private List<Header> headers(String tenantId) {
+    private TransactionItem createTransactionItem(String caller, String internalCorrelationId, Integer stepNumber, String relativeUrl, String tenantId, String bodyItem, Integer reference) throws JsonProcessingException {
+        String idempotencyKey = String.format("%s-%s-%d", internalCorrelationId, caller, stepNumber);
+        logger.debug("creating transaction item with idempotencyKey: {}", idempotencyKey);
         List<Header> headers = new ArrayList<>();
-        headers.add(new Header("Idempotency-Key", UUID.randomUUID().toString()));
+        headers.add(new Header("Idempotency-Key", idempotencyKey));
         headers.add(new Header("Content-Type", "application/json"));
         headers.add(new Header("Fineract-Platform-TenantId", tenantId));
         headers.add(new Header("Authorization", authTokenHelper.generateAuthToken()));
-        return headers;
+        return new TransactionItem(stepNumber, relativeUrl, "POST", reference, headers, bodyItem);
     }
 
     public String findTransactionCreationChannel(List<SupplementaryData1> supplementaryData) {

@@ -90,7 +90,7 @@ public class RevertInAmsWorker {
     ObjectMapper painMapper;
 
     @Autowired
-    private MoneyInOutWorker moneyInOutWorker;
+    MoneyInOutWorker moneyInOutWorker;
 
     @JobWorker
     @LogInternalCorrelationId
@@ -193,7 +193,7 @@ public class RevertInAmsWorker {
 
             if (accountProductType.equalsIgnoreCase("SAVINGS")) {
                 String depositAmountCamt053 = painMapper.writeValueAsString(new TransactionBody(transactionDate, amount, depositAmountPaymentTypeId, "", FORMAT, moneyInOutWorker.getLocale()));
-                batchItemBuilder.add(tenantIdentifier, items, disposalAccountDepositRelativeUrl, depositAmountCamt053, false);
+                batchItemBuilder.add(tenantIdentifier, internalCorrelationId, items, disposalAccountDepositRelativeUrl, depositAmountCamt053, false);
             } // // CURRENT account executes deposit and details in one step
 
             entryTransaction10.setAdditionalTransactionInformation(depositAmountPaymentTypeCode);
@@ -203,7 +203,7 @@ public class RevertInAmsWorker {
 
             if (accountProductType.equalsIgnoreCase("SAVINGS")) {
                 String depositAmountTransactionBody = painMapper.writeValueAsString(new DtSavingsTransactionDetails(internalCorrelationId, camt053, debtorIban, depositAmountPaymentTypeCode, transactionGroupId, creditorName, creditorIban, null, creditorId, unstructured, transactionCategoryPurposeCode, paymentScheme, conversionAccountAmsId, disposalAccountAmsId, endToEndId));
-                batchItemBuilder.add(tenantIdentifier, items, "datatables/dt_savings_transaction_details/$.resourceId", depositAmountTransactionBody, true);
+                batchItemBuilder.add(tenantIdentifier, internalCorrelationId, items, "datatables/dt_savings_transaction_details/$.resourceId", depositAmountTransactionBody, true);
             } else {
                 String depositAmountTransactionBody = painMapper.writeValueAsString(new CurrentAccountTransactionBody(amount, FORMAT, moneyInOutWorker.getLocale(), depositAmountPaymentTypeId, currency, List.of(
                         new CurrentAccountTransactionBody.DataTable(List.of(new CurrentAccountTransactionBody.Entry(
@@ -226,7 +226,7 @@ public class RevertInAmsWorker {
                                 valueDated,
                                 direction
                         )), "dt_current_transaction_details"))));
-                batchItemBuilder.add(tenantIdentifier, items, disposalAccountDepositRelativeUrl, depositAmountTransactionBody, false);
+                batchItemBuilder.add(tenantIdentifier, internalCorrelationId, items, disposalAccountDepositRelativeUrl, depositAmountTransactionBody, false);
             }
             // STEP 1b - re-deposit fee in disposal account
             if (!BigDecimal.ZERO.equals(transactionFeeAmount)) {
@@ -243,10 +243,10 @@ public class RevertInAmsWorker {
 
                 if (accountProductType.equalsIgnoreCase("SAVINGS")) {
                     String depositFeeBodyItem = painMapper.writeValueAsString(new TransactionBody(transactionDate, transactionFeeAmount, depositFeePaymentTypeId, "", FORMAT, moneyInOutWorker.getLocale()));
-                    batchItemBuilder.add(tenantIdentifier, items, disposalAccountDepositRelativeUrl, depositFeeBodyItem, false);
+                    batchItemBuilder.add(tenantIdentifier, internalCorrelationId, items, disposalAccountDepositRelativeUrl, depositFeeBodyItem, false);
 
                     String depositFeeDetailsBody = painMapper.writeValueAsString(new DtSavingsTransactionDetails(transactionFeeInternalCorrelationId, camt053, debtorIban, depositFeePaymentTypeCode, transactionGroupId, creditorName, creditorIban, null, creditorId, unstructured, transactionFeeCategoryPurposeCode, paymentScheme, conversionAccountAmsId, disposalAccountAmsId, endToEndId));
-                    batchItemBuilder.add(tenantIdentifier, items, "datatables/dt_savings_transaction_details/$.resourceId", depositFeeDetailsBody, true);
+                    batchItemBuilder.add(tenantIdentifier, internalCorrelationId, items, "datatables/dt_savings_transaction_details/$.resourceId", depositFeeDetailsBody, true);
                 } else {  // CURRENT account executes withdrawal and details in one step
                     String depositFeeTransactionBody = painMapper.writeValueAsString(new CurrentAccountTransactionBody(transactionFeeAmount, FORMAT, moneyInOutWorker.getLocale(), depositFeePaymentTypeId, currency, List.of(
                             new CurrentAccountTransactionBody.DataTable(List.of(new CurrentAccountTransactionBody.Entry(
@@ -270,7 +270,7 @@ public class RevertInAmsWorker {
                                     direction
                             )), "dt_current_transaction_details")))
                     );
-                    batchItemBuilder.add(tenantIdentifier, items, disposalAccountDepositRelativeUrl, depositFeeTransactionBody, false);
+                    batchItemBuilder.add(tenantIdentifier, internalCorrelationId, items, disposalAccountDepositRelativeUrl, depositFeeTransactionBody, false);
                 }
             }
 
@@ -291,9 +291,9 @@ public class RevertInAmsWorker {
 
             if (accountProductType.equalsIgnoreCase("SAVINGS")) {
                 String withdrawAmountBodyItem = painMapper.writeValueAsString(new TransactionBody(transactionDate, amount, withdrawAmountPaymentTypeId, "", FORMAT, moneyInOutWorker.getLocale()));
-                batchItemBuilder.add(tenantIdentifier, items, conversionAccountWithdrawRelativeUrl, withdrawAmountBodyItem, false);
+                batchItemBuilder.add(tenantIdentifier, internalCorrelationId, items, conversionAccountWithdrawRelativeUrl, withdrawAmountBodyItem, false);
                 String withdrawAmountDetailsBody = painMapper.writeValueAsString(new DtSavingsTransactionDetails(internalCorrelationId, camt053, debtorIban, withdrawAmountPaymentTypeCode, transactionGroupId, creditorName, creditorIban, null, creditorId, unstructured, transactionCategoryPurposeCode, paymentScheme, conversionAccountAmsId, disposalAccountAmsId, endToEndId));
-                batchItemBuilder.add(tenantIdentifier, items, "datatables/dt_savings_transaction_details/$.resourceId", withdrawAmountDetailsBody, true);
+                batchItemBuilder.add(tenantIdentifier, internalCorrelationId, items, "datatables/dt_savings_transaction_details/$.resourceId", withdrawAmountDetailsBody, true);
             } else { // CURRENT account executes withdrawal and details in one step
                 String withdrawAmountTransactionBody = painMapper.writeValueAsString(new CurrentAccountTransactionBody(amount, FORMAT, moneyInOutWorker.getLocale(), withdrawAmountPaymentTypeId, currency, List.of(
                         new CurrentAccountTransactionBody.DataTable(List.of(new CurrentAccountTransactionBody.Entry(
@@ -317,7 +317,7 @@ public class RevertInAmsWorker {
                                 direction
                         )), "dt_current_transaction_details")))
                 );
-                batchItemBuilder.add(tenantIdentifier, items, conversionAccountWithdrawRelativeUrl, withdrawAmountTransactionBody, false);
+                batchItemBuilder.add(tenantIdentifier, internalCorrelationId, items, conversionAccountWithdrawRelativeUrl, withdrawAmountTransactionBody, false);
             }
 
             // STEP 2b - withdraw fee from conversion account
@@ -336,10 +336,10 @@ public class RevertInAmsWorker {
 
                 if (accountProductType.equalsIgnoreCase("SAVINGS")) {
                     String withdrawFeeBodyItem = painMapper.writeValueAsString(new TransactionBody(transactionDate, transactionFeeAmount, withdrawFeePaymentTypeId, "", FORMAT, moneyInOutWorker.getLocale()));
-                    batchItemBuilder.add(tenantIdentifier, items, conversionAccountWithdrawRelativeUrl, withdrawFeeBodyItem, false);
+                    batchItemBuilder.add(tenantIdentifier, internalCorrelationId, items, conversionAccountWithdrawRelativeUrl, withdrawFeeBodyItem, false);
 
                     String withdrawAmountDetailsBody = painMapper.writeValueAsString(new DtSavingsTransactionDetails(transactionFeeInternalCorrelationId, camt053, debtorIban, withdrawFeePaymentTypeCode, transactionGroupId, creditorName, creditorIban, null, creditorId, unstructured, transactionFeeCategoryPurposeCode, paymentScheme, conversionAccountAmsId, disposalAccountAmsId, endToEndId));
-                    batchItemBuilder.add(tenantIdentifier, items, "datatables/dt_savings_transaction_details/$.resourceId", withdrawAmountDetailsBody, true);
+                    batchItemBuilder.add(tenantIdentifier, internalCorrelationId, items, "datatables/dt_savings_transaction_details/$.resourceId", withdrawAmountDetailsBody, true);
                 } else {  // CURRENT account executes withdrawal and details in one step
                     String withdrawFeeTransactionBody = painMapper.writeValueAsString(new CurrentAccountTransactionBody(transactionFeeAmount, FORMAT, moneyInOutWorker.getLocale(), withdrawFeePaymentTypeId, currency, List.of(
                             new CurrentAccountTransactionBody.DataTable(List.of(new CurrentAccountTransactionBody.Entry(
@@ -363,7 +363,7 @@ public class RevertInAmsWorker {
                                     direction
                             )), "dt_current_transaction_details")))
                     );
-                    batchItemBuilder.add(tenantIdentifier, items, conversionAccountWithdrawRelativeUrl, withdrawFeeTransactionBody, false);
+                    batchItemBuilder.add(tenantIdentifier, internalCorrelationId, items, conversionAccountWithdrawRelativeUrl, withdrawFeeTransactionBody, false);
                 }
             }
 
@@ -406,7 +406,7 @@ public class RevertInAmsWorker {
     }
 
     @NotNull
-    private BigDecimal queryRunningBalance(String internalCorrelationId, String disposalAccountAmsId, String tenantIdentifier, String lastTransactionId, String apiPath) {
+    BigDecimal queryRunningBalance(String internalCorrelationId, String disposalAccountAmsId, String tenantIdentifier, String lastTransactionId, String apiPath) {
         TransactionQueryBody tqBody = TransactionQueryBody.builder()
                 .request(TransactionQueryRequest.builder()
                         .baseQuery(TransactionQueryBaseQuery.builder()
@@ -546,7 +546,7 @@ public class RevertInAmsWorker {
             // STEP 1 - batch: deposit amount
             if (accountProductType.equalsIgnoreCase("SAVINGS")) {
                 var bodyItem = painMapper.writeValueAsString(new TransactionBody(transactionDate, amount, depositPaymentTypeId, "", FORMAT, moneyInOutWorker.getLocale()));
-                batchItemBuilder.add(tenantIdentifier, items, disposalAccountDepositRelativeUrl, bodyItem, false);
+                batchItemBuilder.add(tenantIdentifier, internalCorrelationId, items, disposalAccountDepositRelativeUrl, bodyItem, false);
             } // CURRENT account sends a single call only at the details step
 
             // STEP 2 - batch: deposit details
@@ -562,7 +562,7 @@ public class RevertInAmsWorker {
 
             if (accountProductType.equalsIgnoreCase("SAVINGS")) {
                 var camt053Body = painMapper.writeValueAsString(new DtSavingsTransactionDetails(internalCorrelationId, depositCamt053, debtorIban, depositPaymentTypeCode, transactionGroupId, creditorName, creditorIban, null, creditorContactDetails, unstructured, transactionCategoryPurposeCode, paymentScheme, conversionAccountAmsId, disposalAccountAmsId, endToEndId));
-                batchItemBuilder.add(tenantIdentifier, items, "datatables/dt_savings_transaction_details/$.resourceId", camt053Body, true);
+                batchItemBuilder.add(tenantIdentifier, internalCorrelationId, items, "datatables/dt_savings_transaction_details/$.resourceId", camt053Body, true);
             } else {
                 var camt053Body = painMapper.writeValueAsString(new CurrentAccountTransactionBody(amount, FORMAT, moneyInOutWorker.getLocale(), depositPaymentTypeId, currency, List.of(new CurrentAccountTransactionBody.DataTable(List.of(new CurrentAccountTransactionBody.Entry(debtorIban,
                         depositCamt053,
@@ -582,7 +582,7 @@ public class RevertInAmsWorker {
                         null,
                         valueDated,
                         direction)), "dt_current_transaction_details"))));
-                batchItemBuilder.add(tenantIdentifier, items, disposalAccountDepositRelativeUrl, camt053Body, false);
+                batchItemBuilder.add(tenantIdentifier, internalCorrelationId, items, disposalAccountDepositRelativeUrl, camt053Body, false);
             }
 
             // STEP 3 - batch: withdraw
@@ -596,10 +596,10 @@ public class RevertInAmsWorker {
 
             if (accountProductType.equalsIgnoreCase("SAVINGS")) {
                 String bodyItem = painMapper.writeValueAsString(new TransactionBody(transactionDate, amount, withdrawPaymentTypeId, "", FORMAT, moneyInOutWorker.getLocale()));
-                batchItemBuilder.add(tenantIdentifier, items, conversionAccountWithdrawRelativeUrl, bodyItem, false);
+                batchItemBuilder.add(tenantIdentifier, internalCorrelationId, items, conversionAccountWithdrawRelativeUrl, bodyItem, false);
 
                 var camt053Body = painMapper.writeValueAsString(new DtSavingsTransactionDetails(internalCorrelationId, withdrawCamt053, debtorIban, withdrawPaymentTypeCode, transactionGroupId, creditorName, creditorIban, null, creditorContactDetails, unstructured, transactionCategoryPurposeCode, paymentScheme, conversionAccountAmsId, disposalAccountAmsId, endToEndId));
-                batchItemBuilder.add(tenantIdentifier, items, "datatables/dt_savings_transaction_details/$.resourceId", camt053Body, true);
+                batchItemBuilder.add(tenantIdentifier, internalCorrelationId, items, "datatables/dt_savings_transaction_details/$.resourceId", camt053Body, true);
             } else {
                 var camt03Body = painMapper.writeValueAsString(new CurrentAccountTransactionBody(amount, FORMAT, moneyInOutWorker.getLocale(), withdrawPaymentTypeId, currency, List.of(new CurrentAccountTransactionBody.DataTable(List.of(new CurrentAccountTransactionBody.Entry(
                         debtorIban,
@@ -621,7 +621,7 @@ public class RevertInAmsWorker {
                         valueDated,
                         direction
                 )), "dt_current_transaction_details"))));
-                batchItemBuilder.add(tenantIdentifier, items, conversionAccountWithdrawRelativeUrl, camt03Body, false);
+                batchItemBuilder.add(tenantIdentifier, internalCorrelationId, items, conversionAccountWithdrawRelativeUrl, camt03Body, false);
             }
 
             // STEP 4 - batch: withdraw fee
@@ -640,10 +640,10 @@ public class RevertInAmsWorker {
 
                 if (accountProductType.equalsIgnoreCase("SAVINGS")) {
                     var bodyItem = painMapper.writeValueAsString(new TransactionBody(transactionDate, transactionFeeAmount, withdrawPaymentTypeId, "", FORMAT, moneyInOutWorker.getLocale()));
-                    batchItemBuilder.add(tenantIdentifier, items, conversionAccountWithdrawRelativeUrl, bodyItem, false);
+                    batchItemBuilder.add(tenantIdentifier, internalCorrelationId, items, conversionAccountWithdrawRelativeUrl, bodyItem, false);
 
                     var camt053Body = painMapper.writeValueAsString(new DtSavingsTransactionDetails(internalCorrelationId, withdrawFeeCamt053, debtorIban, withdrawPaymentTypeCode, transactionGroupId, creditorName, creditorIban, null, creditorContactDetails, unstructured, transactionFeeCategoryPurposeCode, paymentScheme, conversionAccountAmsId, disposalAccountAmsId, endToEndId));
-                    batchItemBuilder.add(tenantIdentifier, items, "datatables/dt_savings_transaction_details/$.resourceId", camt053Body, true);
+                    batchItemBuilder.add(tenantIdentifier, internalCorrelationId, items, "datatables/dt_savings_transaction_details/$.resourceId", camt053Body, true);
                 } else {
                     var body = painMapper.writeValueAsString(new CurrentAccountTransactionBody(transactionFeeAmount, FORMAT, moneyInOutWorker.getLocale(), withdrawPaymentTypeId, currency, List.of(
                             new CurrentAccountTransactionBody.DataTable(List.of(new CurrentAccountTransactionBody.Entry(
@@ -667,7 +667,7 @@ public class RevertInAmsWorker {
                                     direction
                             )), "dt_current_transaction_details")
                     )));
-                    batchItemBuilder.add(tenantIdentifier, items, conversionAccountWithdrawRelativeUrl, body, false);
+                    batchItemBuilder.add(tenantIdentifier, internalCorrelationId, items, conversionAccountWithdrawRelativeUrl, body, false);
                 }
             }
 
@@ -791,7 +791,7 @@ public class RevertInAmsWorker {
 
             if (accountProductType.equalsIgnoreCase("SAVINGS")) {
                 var bodyItem = painMapper.writeValueAsString(new TransactionBody(transactionDate, amount, depositPaymentTypeId, "", FORMAT, moneyInOutWorker.getLocale()));
-                batchItemBuilder.add(tenantIdentifier, items, disposalAccountDepositRelativeUrl, bodyItem, false);
+                batchItemBuilder.add(tenantIdentifier, internalCorrelationId, items, disposalAccountDepositRelativeUrl, bodyItem, false);
 
                 entryTransaction10.setAdditionalTransactionInformation(depositPaymentTypeCode);
             }
@@ -809,7 +809,7 @@ public class RevertInAmsWorker {
             // STEP 2 - deposit details
             if (accountProductType.equalsIgnoreCase("SAVINGS")) {
                 var camt053Body = painMapper.writeValueAsString(new DtSavingsTransactionDetails(internalCorrelationId, camt053, creditorIban, depositPaymentTypeCode, internalCorrelationId, debtorName, debtorIban, null, debtorContactDetails, unstructured, transactionCategoryPurposeCode, paymentScheme, null, disposalAccountAmsId, endToEndId));
-                batchItemBuilder.add(tenantIdentifier, items, "datatables/dt_savings_transaction_details/$.resourceId", camt053Body, true);
+                batchItemBuilder.add(tenantIdentifier, internalCorrelationId, items, "datatables/dt_savings_transaction_details/$.resourceId", camt053Body, true);
 
                 entryTransaction10.setAdditionalTransactionInformation(withdrawPaymentTypeCode);
             } else {
@@ -833,7 +833,7 @@ public class RevertInAmsWorker {
                         valueDated,
                         direction
                 )), "dt_current_transaction_details"))));
-                batchItemBuilder.add(tenantIdentifier, items, disposalAccountDepositRelativeUrl, camt053Body, false);
+                batchItemBuilder.add(tenantIdentifier, internalCorrelationId, items, disposalAccountDepositRelativeUrl, camt053Body, false);
             }
 
             entryTransaction10.setCreditDebitIndicator(CreditDebitCode.DBIT);
@@ -844,10 +844,10 @@ public class RevertInAmsWorker {
             // STEP 3 - withdraw amount and details
             if (accountProductType.equalsIgnoreCase("SAVINGS")) {
                 var bodyItem = painMapper.writeValueAsString(new TransactionBody(transactionDate, amount, withdrawPaymentTypeId, "", FORMAT, moneyInOutWorker.getLocale()));
-                batchItemBuilder.add(tenantIdentifier, items, withdrawRelativeUrl, bodyItem, false);
+                batchItemBuilder.add(tenantIdentifier, internalCorrelationId, items, withdrawRelativeUrl, bodyItem, false);
 
                 var camt053Body = painMapper.writeValueAsString(new DtSavingsTransactionDetails(internalCorrelationId, camt053, creditorIban, withdrawPaymentTypeCode, internalCorrelationId, debtorName, debtorIban, null, debtorContactDetails, unstructured, transactionCategoryPurposeCode, paymentScheme, null, disposalAccountAmsId, endToEndId));
-                batchItemBuilder.add(tenantIdentifier, items, "datatables/dt_savings_transaction_details/$.resourceId", camt053Body, true);
+                batchItemBuilder.add(tenantIdentifier, internalCorrelationId, items, "datatables/dt_savings_transaction_details/$.resourceId", camt053Body, true);
             } else {
                 var camt053Body = painMapper.writeValueAsString(new CurrentAccountTransactionBody(amount, FORMAT, moneyInOutWorker.getLocale(), withdrawPaymentTypeId, currency, List.of(new CurrentAccountTransactionBody.DataTable(List.of(new CurrentAccountTransactionBody.Entry(
                         creditorIban,
@@ -869,7 +869,7 @@ public class RevertInAmsWorker {
                         valueDated,
                         direction
                 )), "dt_current_transaction_details"))));
-                batchItemBuilder.add(tenantIdentifier, items, withdrawRelativeUrl, camt053Body, false);
+                batchItemBuilder.add(tenantIdentifier, internalCorrelationId, items, withdrawRelativeUrl, camt053Body, false);
             }
 
             moneyInOutWorker.doBatch(items, tenantIdentifier, transactionGroupId, disposalAccountAmsId, conversionAccountAmsId, internalCorrelationId, "depositTheAmountOnDisposalInAms");

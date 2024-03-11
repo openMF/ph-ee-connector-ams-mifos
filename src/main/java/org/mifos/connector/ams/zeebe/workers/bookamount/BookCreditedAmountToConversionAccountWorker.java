@@ -150,7 +150,7 @@ public class BookCreditedAmountToConversionAccountWorker {
             // STEP 1 - batch: add transaction
             if (accountProductType.equalsIgnoreCase("SAVINGS")) {
                 String withdrawAmountBodyItem = painMapper.writeValueAsString(new TransactionBody(transactionDate, amount, paymentTypeId, "", FORMAT, moneyInOutWorker.getLocale()));
-                batchItemBuilder.add(tenantIdentifier, items, conversionAccountWithdrawalRelativeUrl, withdrawAmountBodyItem, false);
+                batchItemBuilder.add(tenantIdentifier, internalCorrelationId, items, conversionAccountWithdrawalRelativeUrl, withdrawAmountBodyItem, false);
             } // CURRENT account sends a single call only at the details step
 
             // STEP 2 - batch: add transaction details
@@ -166,7 +166,7 @@ public class BookCreditedAmountToConversionAccountWorker {
 
             if (accountProductType.equalsIgnoreCase("SAVINGS")) {
                 String camt053Body = painMapper.writeValueAsString(new DtSavingsTransactionDetails(internalCorrelationId, camt053Entry, creditorIban, paymentTypeCode, transactionGroupId, debtorName, debtorIban, null, debtorContactDetails, unstructured, transactionCategoryPurposeCode, paymentScheme, null, conversionAccountAmsId, endToEndId));
-                batchItemBuilder.add(tenantIdentifier, items, "datatables/dt_savings_transaction_details/$.resourceId", camt053Body, true);
+                batchItemBuilder.add(tenantIdentifier, internalCorrelationId, items, "datatables/dt_savings_transaction_details/$.resourceId", camt053Body, true);
             } else {
                 String camt053Body = painMapper.writeValueAsString(new CurrentAccountTransactionBody(amount, FORMAT, moneyInOutWorker.getLocale(), paymentTypeId, currency, List.of(
                         new CurrentAccountTransactionBody.DataTable(List.of(new CurrentAccountTransactionBody.Entry(
@@ -189,7 +189,7 @@ public class BookCreditedAmountToConversionAccountWorker {
                                 valueDated,
                                 direction)
                         ), "dt_current_transaction_details"))));
-                batchItemBuilder.add(tenantIdentifier, items, conversionAccountWithdrawalRelativeUrl, camt053Body, false);
+                batchItemBuilder.add(tenantIdentifier, internalCorrelationId, items, conversionAccountWithdrawalRelativeUrl, camt053Body, false);
             }
 
             moneyInOutWorker.doBatch(items, tenantIdentifier, transactionGroupId, "-1", conversionAccountAmsId, internalCorrelationId, "bookCreditedAmountToConversionAccount");
@@ -268,7 +268,7 @@ public class BookCreditedAmountToConversionAccountWorker {
 
             if (accountProductType.equalsIgnoreCase("SAVINGS")) {
                 String bodyItem = painMapper.writeValueAsString(new TransactionBody(transactionDate, amount, paymentTypeId, "", FORMAT, moneyInOutWorker.getLocale()));
-                batchItemBuilder.add(tenantIdentifier, items, conversionAccountWithdrawalRelativeUrl, bodyItem, false);
+                batchItemBuilder.add(tenantIdentifier, internalCorrelationId, items, conversionAccountWithdrawalRelativeUrl, bodyItem, false);
             }
 
             BankToCustomerStatementV08 intermediateCamt053Entry = pacs008Camt053Mapper.toCamt053Entry(pacs008);
@@ -294,7 +294,7 @@ public class BookCreditedAmountToConversionAccountWorker {
 
             if (accountProductType.equalsIgnoreCase("SAVINGS")) {
                 String camt053Body = painMapper.writeValueAsString(new DtSavingsTransactionDetails(internalCorrelationId, camt053Entry, debtorIban, paymentTypeCode, transactionGroupId, creditorName, creditorIban, null, debtorContactDetails, unstructured, transactionCategoryPurposeCode, paymentScheme, null, conversionAccountAmsId, endToEndId));
-                batchItemBuilder.add(tenantIdentifier, items, "datatables/dt_savings_transaction_details/$.resourceId", camt053Body, true);
+                batchItemBuilder.add(tenantIdentifier, internalCorrelationId, items, "datatables/dt_savings_transaction_details/$.resourceId", camt053Body, true);
             } else {
                 String camt053Body = painMapper.writeValueAsString(new CurrentAccountTransactionBody(amount, FORMAT, moneyInOutWorker.getLocale(), paymentTypeId, currency, List.of(new CurrentAccountTransactionBody.DataTable(List.of(new CurrentAccountTransactionBody.Entry(
                         debtorIban,
@@ -316,7 +316,7 @@ public class BookCreditedAmountToConversionAccountWorker {
                         valueDated,
                         direction
                 )), "dt_current_transaction_details"))));
-                batchItemBuilder.add(tenantIdentifier, items, conversionAccountWithdrawalRelativeUrl, camt053Body, false);
+                batchItemBuilder.add(tenantIdentifier, internalCorrelationId, items, conversionAccountWithdrawalRelativeUrl, camt053Body, false);
             }
 
             moneyInOutWorker.doBatch(items, tenantIdentifier, transactionGroupId, "-1", conversionAccountAmsId, internalCorrelationId, "bookCreditedAmountToConversionAccountInRecall");
@@ -403,7 +403,7 @@ public class BookCreditedAmountToConversionAccountWorker {
             if (accountProductType.equalsIgnoreCase("SAVINGS")) {
                 TransactionBody body = new TransactionBody(transactionDate, amount, paymentTypeId, "", FORMAT, moneyInOutWorker.getLocale());
                 String bodyItem = painMapper.writeValueAsString(body);
-                batchItemBuilder.add(tenantIdentifier, items, conversionAccountWithdrawalRelativeUrl, bodyItem, false);
+                batchItemBuilder.add(tenantIdentifier, internalCorrelationId, items, conversionAccountWithdrawalRelativeUrl, bodyItem, false);
             }
 
             // STEP 2 - transaction details
@@ -425,7 +425,7 @@ public class BookCreditedAmountToConversionAccountWorker {
 
             if (accountProductType.equalsIgnoreCase("SAVINGS")) {
                 String camt053Body = painMapper.writeValueAsString(new DtSavingsTransactionDetails(internalCorrelationId, camt053Entry, debtorIban, paymentTypeCode, transactionGroupId, creditorName, creditorIban, null, creditorContactDetails, unstructured, transactionCategoryPurposeCode, paymentScheme, null, conversionAccountAmsId, endToEndId));
-                batchItemBuilder.add(tenantIdentifier, items, camt053RelativeUrl, camt053Body, true);
+                batchItemBuilder.add(tenantIdentifier, internalCorrelationId, items, camt053RelativeUrl, camt053Body, true);
             } else {
                 String bodyItem = painMapper.writeValueAsString(new CurrentAccountTransactionBody(amount, FORMAT, moneyInOutWorker.getLocale(), paymentTypeId, currency, List.of(new CurrentAccountTransactionBody.DataTable(List.of(new CurrentAccountTransactionBody.Entry(
                         debtorIban,
@@ -447,7 +447,7 @@ public class BookCreditedAmountToConversionAccountWorker {
                         valueDated,
                         direction
                 )), "dt_current_transaction_details"))));
-                batchItemBuilder.add(tenantIdentifier, items, conversionAccountWithdrawalRelativeUrl, bodyItem, false);
+                batchItemBuilder.add(tenantIdentifier, internalCorrelationId, items, conversionAccountWithdrawalRelativeUrl, bodyItem, false);
             }
 
             moneyInOutWorker.doBatch(items, tenantIdentifier, transactionGroupId, "-1", conversionAccountAmsId, internalCorrelationId, "bookCreditedAmountToConversionAccountInReturn");

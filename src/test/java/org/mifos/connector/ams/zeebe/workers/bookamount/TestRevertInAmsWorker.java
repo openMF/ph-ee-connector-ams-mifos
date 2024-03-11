@@ -109,22 +109,18 @@ class TestRevertInAmsWorker {
     @NotNull
     private RevertInAmsWorker setupWorker(Consumer<TransactionItem> validator) {
         RevertInAmsWorker worker = new RevertInAmsWorker() {
+            @NotNull
             @Override
-            protected String doBatch(List<TransactionItem> items, String tenantId, String transactionGroupId, String disposalAccountId, String conversionAccountId, String internalCorrelationId, String calledFrom) {
-                logger.debug("executing batch of {} items:", items.size());
-                items.forEach(item -> {
-                    logger.info("- {}", item);
-                    validator.accept(item);
-                });
-
-                return null;
+            BigDecimal queryRunningBalance(String internalCorrelationId, String disposalAccountAmsId, String tenantIdentifier, String lastTransactionId, String apiPath) {
+                return BigDecimal.TEN;
             }
-
             @Override
             protected BigDecimal queryCurrentAccountBalance(String apiPath, String internalCorrelationId, String disposalAccountAmsId, String tenantIdentifier) {
                 return BigDecimal.TEN;
             }
+
         };
+        worker.moneyInOutWorker = mock(MoneyInOutWorker.class);
         worker.eventService = mock(EventService.class);
         worker.incomingMoneyApi = "/savingsaccounts/";
         worker.currentAccountApi = "/ca";
@@ -143,9 +139,7 @@ class TestRevertInAmsWorker {
         worker.authTokenHelper = mockAuthTokenHelper;
         worker.pain001Camt053Mapper = Pain001Camt053Mapper.MAPPER;
         worker.contactDetailsUtil = new ContactDetailsUtil();
-        worker.restTemplate = mock(org.springframework.web.client.RestTemplate.class);
         ResponseEntity mockResponse = mock(ResponseEntity.class);
-        when(worker.restTemplate.exchange((String) any(), any(), any(), (Class) any())).thenReturn(mockResponse);
         when(mockResponse.getBody()).thenReturn(mock(TransactionQueryPayload.class));
         return worker;
     }
