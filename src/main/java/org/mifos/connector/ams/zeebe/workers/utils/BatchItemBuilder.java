@@ -9,6 +9,7 @@ import iso.std.iso._20022.tech.json.pain_001_001.SupplementaryData1;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -23,6 +24,10 @@ public class BatchItemBuilder {
 
     @Autowired
     public AuthTokenHelper authTokenHelper;
+
+    @Value("${fineract.idempotency.key-max-length}")
+    public int maxLength = 50;
+
 
     public void add(String tenantId, String internalCorrelationId, List<TransactionItem> items, String url, String body, boolean isDetails) throws JsonProcessingException {
         String caller = Thread.currentThread().getStackTrace()[2].getMethodName();
@@ -42,8 +47,7 @@ public class BatchItemBuilder {
         return new TransactionItem(stepNumber, relativeUrl, "POST", reference, headers, bodyItem);
     }
 
-    public static String createIdempotencyKey(String caller, String internalCorrelationId, Integer stepNumber) {
-        int maxLength = 50;
+    public String createIdempotencyKey(String caller, String internalCorrelationId, Integer stepNumber) {
         String key = String.format("%s-%s-%d", internalCorrelationId, caller, stepNumber);
         if (key.length() > maxLength) {
             key = key.substring(key.length() - maxLength);

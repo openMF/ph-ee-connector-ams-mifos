@@ -57,6 +57,9 @@ fineract:
     internal-id-column: "internal_account_id"
     incoming-money-api: "/savingsaccounts/"
     locale: "en"
+    idempotency:
+        key-max-length: 50
+
 
 zeebe:
     client:

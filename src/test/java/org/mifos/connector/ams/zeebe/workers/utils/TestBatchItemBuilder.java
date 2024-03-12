@@ -31,7 +31,9 @@ class TestBatchItemBuilder {
 
     @Test
     public void testIdempotencyKeyLength() {
-        String idempotencyKey = BatchItemBuilder.createIdempotencyKey("12345678901234567890", "123456789012345678901234567890", 3);
+        BatchItemBuilder batchItemBuilder = new BatchItemBuilder();
+        batchItemBuilder.maxLength = 50;
+        String idempotencyKey = batchItemBuilder.createIdempotencyKey("12345678901234567890", "123456789012345678901234567890", 3);
         assertTrue(idempotencyKey.length() <= 50);
         System.out.println(idempotencyKey);
         System.out.println(idempotencyKey.length());
