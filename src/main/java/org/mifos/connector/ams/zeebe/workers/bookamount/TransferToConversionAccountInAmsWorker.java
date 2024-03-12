@@ -247,7 +247,7 @@ public class TransferToConversionAccountInAmsWorker {
             String partnerAccountIban = creditTransferTransaction.getCreditorAccount().getIdentification().getIban();
             String partnerAccountSecondaryIdentifier = contactDetailsUtil.getId(creditTransferTransaction.getCreditor().getContactDetails());
             String unstructured = Optional.ofNullable(creditTransferTransaction.getRemittanceInformation())
-                    .map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(List::toString)
+                    .map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(it -> String.join(",", it))
                     .orElse("");
             String endToEndId = creditTransferTransaction.getPaymentIdentification().getEndToEndIdentification();
             String debtorIban = pain001PaymentInstruction.getDebtorAccount().getIdentification().getIban();
@@ -593,7 +593,7 @@ public class TransferToConversionAccountInAmsWorker {
             String debtorName = originalTransactionReference.getDbtr().getNm();
             String debtorIban = originalTransactionReference.getDbtrAcct().getId().getIBAN();
             String partnerAccountSecondaryIdentifier = contactDetailsUtil.getId(originalTransactionReference.getCdtr().getCtctDtls());
-            String unstructured = Optional.ofNullable(originalTransactionReference.getRmtInf()).map(RemittanceInformation5::getUstrd).map(List::toString).orElse("");
+            String unstructured = Optional.ofNullable(originalTransactionReference.getRmtInf()).map(RemittanceInformation5::getUstrd).map(it -> String.join(",", it)).orElse("");
             String endToEndId = document.getFIToFIPmtCxlReq().getUndrlyg().get(0).getTxInf().get(0).getOrgnlEndToEndId();
             EntryTransaction10 entryTransaction10 = convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0);
             batchItemBuilder.setAmount(entryTransaction10, amount, currency);

@@ -165,7 +165,7 @@ public class TransferToDisposalAccountWorker {
             CreditTransferTransactionInformation11 creditTransferTransaction = pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0);
             String debtorName = creditTransferTransaction.getDbtr().getNm();
             String debtorIban = creditTransferTransaction.getDbtrAcct().getId().getIBAN();
-            String unstructured = Optional.ofNullable(creditTransferTransaction.getRmtInf()).map(RemittanceInformation5::getUstrd).map(List::toString).orElse("");
+            String unstructured = Optional.ofNullable(creditTransferTransaction.getRmtInf()).map(RemittanceInformation5::getUstrd).map(it -> String.join(",", it)).orElse("");
             String debtorContactDetails = contactDetailsUtil.getId(creditTransferTransaction.getDbtr().getCtctDtls());
             String endToEndId = creditTransferTransaction.getPmtId().getEndToEndId();
             String partnerAccountSecondaryIdentifier = contactDetailsUtil.getId(creditTransferTransaction.getDbtr().getCtctDtls());
@@ -364,7 +364,7 @@ public class TransferToDisposalAccountWorker {
             String debtorIban = debtorAccount.getId().getIBAN();
             String creditorName = pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getCdtr().getNm();
             String debtorContactDetails = contactDetailsUtil.getId(pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getDbtr().getCtctDtls());
-            String unstructured = Optional.ofNullable(pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getRmtInf()).map(RemittanceInformation5::getUstrd).map(List::toString).orElse("");
+            String unstructured = Optional.ofNullable(pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getRmtInf()).map(RemittanceInformation5::getUstrd).map(it -> String.join(",", it)).orElse("");
             String endToEndId = pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0).getPmtId().getEndToEndId();
 
             // STEP 2 - deposit details
@@ -547,7 +547,7 @@ public class TransferToDisposalAccountWorker {
             String debtorIban = pacs_004.getPmtRtr().getTxInf().get(0).getOrgnlTxRef().getDbtrAcct().getId().getIBAN();
             String creditorContactDetails = contactDetailsUtil.getId(pacs_004.getPmtRtr().getTxInf().get(0).getOrgnlTxRef().getCdtr().getCtctDtls());
             String unstructured = Optional.ofNullable(pacs_004.getPmtRtr().getTxInf().get(0).getOrgnlTxRef().getRmtInf())
-                    .map(iso.std.iso._20022.tech.xsd.pacs_004_001.RemittanceInformation5::getUstrd).map(List::toString).orElse("");
+                    .map(iso.std.iso._20022.tech.xsd.pacs_004_001.RemittanceInformation5::getUstrd).map(it -> String.join(",", it)).orElse("");
             String endToEndId = pacs_004.getPmtRtr().getTxInf().get(0).getOrgnlEndToEndId();
 
             if (accountProductType.equals("SAVINGS")) {

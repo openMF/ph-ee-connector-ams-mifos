@@ -165,7 +165,7 @@ public class TransferNonTransactionalFeeInAmsWorker {
                     null,
                     contactDetailsUtil.getId(pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditor().getContactDetails()),
                     Optional.ofNullable(pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getRemittanceInformation())
-                            .map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(List::toString).orElse(""),
+                            .map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(it -> String.join(",", it)).orElse(""),
                     categoryPurpose,
                     paymentScheme,
                     disposalAccountAmsId,
@@ -212,7 +212,7 @@ public class TransferNonTransactionalFeeInAmsWorker {
                     null,
                     contactDetailsUtil.getId(pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditor().getContactDetails()),
                     Optional.ofNullable(pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getRemittanceInformation())
-                            .map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(List::toString).orElse(""),
+                            .map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(it -> String.join(",", it)).orElse(""),
                     categoryPurpose,
                     paymentScheme,
                     disposalAccountAmsId,
@@ -259,7 +259,7 @@ public class TransferNonTransactionalFeeInAmsWorker {
                     null,
                     contactDetailsUtil.getId(pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditor().getContactDetails()),
                     Optional.ofNullable(pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getRemittanceInformation())
-                            .map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(List::toString).orElse(""),
+                            .map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(it -> String.join(",", it)).orElse(""),
                     categoryPurpose,
                     paymentScheme,
                     disposalAccountAmsId,

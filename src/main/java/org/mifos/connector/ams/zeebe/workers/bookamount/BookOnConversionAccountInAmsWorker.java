@@ -157,7 +157,7 @@ public class BookOnConversionAccountInAmsWorker {
             EntryTransaction10 entryTransaction10 = convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0);
             CreditTransferTransaction40 creditTransferTransaction = pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0);
             String transactionCreationChannel = batchItemBuilder.findTransactionCreationChannel(creditTransferTransaction.getSupplementaryData());
-            String unstructured = Optional.ofNullable(creditTransferTransaction.getRemittanceInformation()).map(RemittanceInformation16::getUnstructured).map(List::toString).orElse("");
+            String unstructured = Optional.ofNullable(creditTransferTransaction.getRemittanceInformation()).map(RemittanceInformation16::getUnstructured).map(it -> String.join(",", it)).orElse("");
             PartyIdentification135 creditor = creditTransferTransaction.getCreditor();
             String endToEndId = creditTransferTransaction.getPaymentIdentification().getEndToEndIdentification();
             String creditorId = contactDetailsUtil.getId(creditor.getContactDetails());
@@ -355,7 +355,7 @@ public class BookOnConversionAccountInAmsWorker {
             String paymentTypeCode = tenantConfigs.findResourceCode(tenantIdentifier, configOperationKey);
             String direction = tenantConfigs.findDirection(tenantIdentifier, configOperationKey);
             PaymentTransactionInformation27 paymentTransactionInformation = pacs004.getPmtRtr().getTxInf().get(0);
-            String unstructured = Optional.ofNullable(paymentTransactionInformation.getOrgnlTxRef().getRmtInf()).map(RemittanceInformation5::getUstrd).map(List::toString).orElse("");
+            String unstructured = Optional.ofNullable(paymentTransactionInformation.getOrgnlTxRef().getRmtInf()).map(RemittanceInformation5::getUstrd).map(it -> String.join(",", it)).orElse("");
             String creditorIban = paymentTransactionInformation.getOrgnlTxRef().getCdtrAcct().getId().getIBAN();
             String debtorName = paymentTransactionInformation.getOrgnlTxRef().getDbtr().getNm();
             String debtorContactDetails = contactDetailsUtil.getId(paymentTransactionInformation.getOrgnlTxRef().getDbtr().getCtctDtls());

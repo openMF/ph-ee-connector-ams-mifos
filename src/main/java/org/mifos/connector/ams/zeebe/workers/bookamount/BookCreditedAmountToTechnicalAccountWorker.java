@@ -156,7 +156,7 @@ public class BookCreditedAmountToTechnicalAccountWorker {
             String creditorIban = creditTransferTransactionInformation11.getCdtrAcct().getId().getIBAN();
             String debtorIban = creditTransferTransactionInformation11.getDbtrAcct().getId().getIBAN();
             String debtorContactDetails = contactDetailsUtil.getId(creditTransferTransactionInformation11.getDbtr().getCtctDtls());
-            String unstructured = Optional.ofNullable(creditTransferTransactionInformation11.getRmtInf()).map(RemittanceInformation5::getUstrd).map(List::toString).orElse("");
+            String unstructured = Optional.ofNullable(creditTransferTransactionInformation11.getRmtInf()).map(RemittanceInformation5::getUstrd).map(it -> String.join(",", it)).orElse("");
             String endToEndId = creditTransferTransactionInformation11.getPmtId().getEndToEndId();
             String debtorName = creditTransferTransactionInformation11.getDbtr().getNm();
             String partnerAccountSecondaryIdentifier = contactDetailsUtil.getId(creditTransferTransactionInformation11.getCdtr().getCtctDtls());

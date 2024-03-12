@@ -177,7 +177,7 @@ public class OnUsTransferWorker {
             String creditorContactDetails = contactDetailsUtil.getId(creditTransfer.getCreditor().getContactDetails());
             String debtorContactDetails = contactDetailsUtil.getId(pain001.getDocument().getPaymentInformation().get(0).getDebtor().getContactDetails());
             String unstructured = Optional.ofNullable(creditTransfer.getRemittanceInformation())
-                    .map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(List::toString).orElse("");
+                    .map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(it -> String.join(",", it)).orElse("");
             CustomerCreditTransferInitiationV10 pain0011 = pain001.getDocument();
             String endToEndId = pain0011.getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getPaymentIdentification().getEndToEndIdentification();
             String depositAmountOperation = "transferTheAmountBetweenDisposalAccounts.Creditor.DisposalAccount.DepositTransactionAmount";

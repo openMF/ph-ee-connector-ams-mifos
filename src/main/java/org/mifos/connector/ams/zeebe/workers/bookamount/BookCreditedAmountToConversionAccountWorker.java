@@ -138,7 +138,7 @@ public class BookCreditedAmountToConversionAccountWorker {
             String direction = tenantConfigs.findDirection(tenantIdentifier, configOperationKey);
             iso.std.iso._20022.tech.xsd.pacs_008_001.Document pacs008 = jaxbUtils.unmarshalPacs008(originalPacs008);
             CreditTransferTransactionInformation11 creditTransferTransaction = pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0);
-            String unstructured = Optional.ofNullable(creditTransferTransaction.getRmtInf()).map(RemittanceInformation5::getUstrd).map(List::toString).orElse("");
+            String unstructured = Optional.ofNullable(creditTransferTransaction.getRmtInf()).map(RemittanceInformation5::getUstrd).map(it -> String.join(",", it)).orElse("");
             String debtorContactDetails = contactDetailsUtil.getId(creditTransferTransaction.getDbtr().getCtctDtls());
             String creditorIban = creditTransferTransaction.getCdtrAcct().getId().getIBAN();
             String debtorIban = creditTransferTransaction.getDbtrAcct().getId().getIBAN();
@@ -289,7 +289,7 @@ public class BookCreditedAmountToConversionAccountWorker {
             String creditorName = creditTransferTransaction.getCdtr().getNm();
             String creditorIban = creditTransferTransaction.getCdtrAcct().getId().getIBAN();
             String debtorContactDetails = contactDetailsUtil.getId(creditTransferTransaction.getDbtr().getCtctDtls());
-            String unstructured = Optional.ofNullable(creditTransferTransaction.getRmtInf()).map(RemittanceInformation5::getUstrd).map(List::toString).orElse("");
+            String unstructured = Optional.ofNullable(creditTransferTransaction.getRmtInf()).map(RemittanceInformation5::getUstrd).map(it -> String.join(",", it)).orElse("");
             String endToEndId = pacs004.getPmtRtr().getTxInf().get(0).getOrgnlEndToEndId();
 
             if (accountProductType.equalsIgnoreCase("SAVINGS")) {
@@ -394,7 +394,7 @@ public class BookCreditedAmountToConversionAccountWorker {
             String debtorIban = transactionReference.getDbtrAcct().getId().getIBAN();
             String creditorIban = transactionReference.getCdtrAcct().getId().getIBAN();
             String creditorName = transactionReference.getCdtr().getNm();
-            String unstructured = Optional.ofNullable(transactionReference.getRmtInf()).map(iso.std.iso._20022.tech.xsd.pacs_004_001.RemittanceInformation5::getUstrd).map(List::toString).orElse("");
+            String unstructured = Optional.ofNullable(transactionReference.getRmtInf()).map(iso.std.iso._20022.tech.xsd.pacs_004_001.RemittanceInformation5::getUstrd).map(it -> String.join(",", it)).orElse("");
             String creditorContactDetails = contactDetailsUtil.getId(transactionReference.getCdtr().getCtctDtls());
             String endToEndId = pacs_004.getPmtRtr().getTxInf().get(0).getOrgnlEndToEndId();
             List<TransactionItem> items = new ArrayList<>();

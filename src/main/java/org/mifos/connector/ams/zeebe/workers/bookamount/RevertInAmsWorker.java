@@ -174,7 +174,7 @@ public class RevertInAmsWorker {
             batchItemBuilder.setAmount(entryTransaction10, amount, currency);
             String debtorIban = paymentInstruction.getDebtorAccount().getIdentification().getIban();
             String unstructured = Optional.ofNullable(creditTransferTransaction.getRemittanceInformation())
-                    .map(RemittanceInformation16::getUnstructured).map(List::toString).orElse("");
+                    .map(RemittanceInformation16::getUnstructured).map(it -> String.join(",", it)).orElse("");
             String creditorId = contactDetailsUtil.getId(creditTransferTransaction.getCreditor().getContactDetails());
             String creditorName = creditTransferTransaction.getCreditor().getName();
             String creditorIban = creditTransferTransaction.getCreditorAccount().getIdentification().getIban();
@@ -538,7 +538,7 @@ public class RevertInAmsWorker {
             String creditorName = creditTransferTransaction.getCreditor().getName();
             String creditorIban = creditTransferTransaction.getCreditorAccount().getIdentification().getIban();
             String creditorContactDetails = contactDetailsUtil.getId(creditTransferTransaction.getCreditor().getContactDetails());
-            String unstructured = Optional.ofNullable(creditTransferTransaction.getRemittanceInformation()).map(RemittanceInformation16::getUnstructured).map(List::toString).orElse("");
+            String unstructured = Optional.ofNullable(creditTransferTransaction.getRemittanceInformation()).map(RemittanceInformation16::getUnstructured).map(it -> String.join(",", it)).orElse("");
             String endToEndId = creditTransferTransaction.getPaymentIdentification().getEndToEndIdentification();
             String partnerAccountSecondaryIdentifier = contactDetailsUtil.getId(creditTransferTransaction.getCreditor().getContactDetails());
             List<TransactionItem> items = new ArrayList<>();
@@ -769,7 +769,7 @@ public class RevertInAmsWorker {
             iso.std.iso._20022.tech.xsd.pacs_002_001.Document pacs002 = jaxbUtils.unmarshalPacs002(originalPacs002);
             PaymentTransactionInformation27 paymentTransactionInformation = pacs004.getPmtRtr().getTxInf().get(0);
             String unstructured = Optional.ofNullable(paymentTransactionInformation.getOrgnlTxRef().getRmtInf())
-                    .map(RemittanceInformation5::getUstrd).map(List::toString).orElse("");
+                    .map(RemittanceInformation5::getUstrd).map(it -> String.join(",", it)).orElse("");
             List<TransactionItem> items = new ArrayList<>();
 
             // STEP 1 - deposit amount
