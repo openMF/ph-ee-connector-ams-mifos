@@ -32,7 +32,7 @@ public class BatchItemBuilder {
     }
 
     private TransactionItem createTransactionItem(String caller, String internalCorrelationId, Integer stepNumber, String relativeUrl, String tenantId, String bodyItem, Integer reference) throws JsonProcessingException {
-        String idempotencyKey = String.format("%s-%s-%d", internalCorrelationId, caller, stepNumber);
+        String idempotencyKey = createIdempotencyKey(caller, internalCorrelationId, stepNumber);
         logger.debug("creating transaction item with idempotencyKey: {}", idempotencyKey);
         List<Header> headers = new ArrayList<>();
         headers.add(new Header("Idempotency-Key", idempotencyKey));
@@ -40,6 +40,15 @@ public class BatchItemBuilder {
         headers.add(new Header("Fineract-Platform-TenantId", tenantId));
         headers.add(new Header("Authorization", authTokenHelper.generateAuthToken()));
         return new TransactionItem(stepNumber, relativeUrl, "POST", reference, headers, bodyItem);
+    }
+
+    public static String createIdempotencyKey(String caller, String internalCorrelationId, Integer stepNumber) {
+        int maxLength = 50;
+        String key = String.format("%s-%s-%d", internalCorrelationId, caller, stepNumber);
+        if (key.length() > maxLength) {
+            key = key.substring(key.length() - maxLength);
+        }
+        return key;
     }
 
     public String findTransactionCreationChannel(List<SupplementaryData1> supplementaryData) {

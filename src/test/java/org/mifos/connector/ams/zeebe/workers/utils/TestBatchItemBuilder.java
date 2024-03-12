@@ -14,12 +14,10 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class TestBatchItemBuilder {
 
-    private BatchItemBuilder batchItemBuilder;
-
     @Test
     public void test() throws Exception {
         EntryTransaction10 tx = new EntryTransaction10();
-        batchItemBuilder = new BatchItemBuilder();
+        BatchItemBuilder batchItemBuilder = new BatchItemBuilder();
         batchItemBuilder.setAmount(tx, BigDecimal.TEN, "USD");
 
 
@@ -31,4 +29,11 @@ class TestBatchItemBuilder {
         System.out.println(tx.toString());
     }
 
+    @Test
+    public void testIdempotencyKeyLength() {
+        String idempotencyKey = BatchItemBuilder.createIdempotencyKey("12345678901234567890", "123456789012345678901234567890", 3);
+        assertTrue(idempotencyKey.length() <= 50);
+        System.out.println(idempotencyKey);
+        System.out.println(idempotencyKey.length());
+    }
 }
