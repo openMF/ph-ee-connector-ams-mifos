@@ -80,8 +80,8 @@ class TestRevertInAmsWorker {
             }
         };
 
-        RevertInAmsWorker worker = setupWorker(itemValidator);
         String pain001 = Files.readString(Path.of(getClass().getResource("/pain001.json").toURI()));
+        RevertInAmsWorker worker = setupWorker(itemValidator);
 
         Map<String, Object> output = worker.revertInAms(
                 "internalCorrelationId",
