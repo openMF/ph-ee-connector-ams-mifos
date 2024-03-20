@@ -147,7 +147,7 @@ public class GetAccountDetailsFromAmsWorker extends AbstractAmsWorker {
                     .stream().map(FineractResponse::getFlagCode).toList();
 
             for (String flagCode : flagCodes) {
-                if (flagCode.equals("blockedPublic") && direction.equals("IN") && paymentSchemePrefix.equals("HCT_INST")) {
+                if (flagCode != null && flagCode.equals("blockedPublic") && direction.equals("IN") && paymentSchemePrefix.equals("HCT_INST")) {
                     reasonCode = "AC06";
                     break;
                 }
