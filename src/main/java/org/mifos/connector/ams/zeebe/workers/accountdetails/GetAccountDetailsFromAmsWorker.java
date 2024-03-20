@@ -145,7 +145,15 @@ public class GetAccountDetailsFromAmsWorker extends AbstractAmsWorker {
 
             List<String> flagCodes = disposalAccountData.get()
                     .stream().map(FineractResponse::getFlagCode).toList();
-            if (Objects.nonNull(flagCodes)) outputVariables.put("disposalAccountFlags", flagCodes);
+
+            for (String flagCode : flagCodes) {
+                if (flagCode.equals("blockedPublic") && direction.equals("IN") && paymentSchemePrefix.equals("HCT_INST")) {
+                    reasonCode = "AC06";
+                    break;
+                }
+            }
+
+            outputVariables.put("disposalAccountFlags", flagCodes);
 
             String disposalAccountStatusType = disposalAccountData.get(element(0)).get(FineractResponse::getStatusType).get();
             if (Objects.nonNull(conversionAccountId))
