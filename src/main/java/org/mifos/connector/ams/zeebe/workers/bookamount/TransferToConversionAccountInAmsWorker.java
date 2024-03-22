@@ -15,6 +15,7 @@ import iso.std.iso._20022.tech.json.pain_001_001.CreditTransferTransaction40;
 import iso.std.iso._20022.tech.json.pain_001_001.CustomerCreditTransferInitiationV10;
 import iso.std.iso._20022.tech.json.pain_001_001.Pain00100110CustomerCreditTransferInitiationV10MessageSchema;
 import iso.std.iso._20022.tech.json.pain_001_001.PaymentInstruction34;
+import iso.std.iso._20022.tech.xsd.camt_056_001.ContactDetails2;
 import iso.std.iso._20022.tech.xsd.camt_056_001.OriginalTransactionReference13;
 import iso.std.iso._20022.tech.xsd.camt_056_001.RemittanceInformation5;
 import jakarta.xml.bind.JAXBException;
@@ -245,7 +246,8 @@ public class TransferToConversionAccountInAmsWorker {
             entryTransaction10.getAmountDetails().getTransactionAmount().getAmount().setAmount(totalAmountWithFee);
             String partnerName = creditTransferTransaction.getCreditor().getName();
             String partnerAccountIban = creditTransferTransaction.getCreditorAccount().getIdentification().getIban();
-            String partnerAccountSecondaryIdentifier = contactDetailsUtil.getId(creditTransferTransaction.getCreditor().getContactDetails());
+            iso.std.iso._20022.tech.json.pain_001_001.Contact4 contactDetails = creditTransferTransaction.getCreditor().getContactDetails();
+            String partnerAccountSecondaryIdentifier = contactDetailsUtil.getId(contactDetails);
             String unstructured = Optional.ofNullable(creditTransferTransaction.getRemittanceInformation())
                     .map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(it -> String.join(",", it))
                     .orElse("");
@@ -307,7 +309,10 @@ public class TransferToConversionAccountInAmsWorker {
                                 disposalAccountAmsId,
                                 conversionAccountAmsId,
                                 transactionCreationChannel,
-                                partnerAccountSecondaryIdentifier,
+                                contactDetails.getMobileNumber(),
+                                contactDetails.getEmailAddress(),
+                                contactDetailsUtil.getTaxId(contactDetails),
+                                contactDetailsUtil.getTaxNumber(contactDetails),
                                 null,
                                 valueDated,
                                 direction
@@ -366,7 +371,10 @@ public class TransferToConversionAccountInAmsWorker {
                                     disposalAccountAmsId,
                                     conversionAccountAmsId,
                                     transactionCreationChannel,
-                                    partnerAccountSecondaryIdentifier,
+                                    contactDetails.getMobileNumber(),
+                                    contactDetails.getEmailAddress(),
+                                    contactDetailsUtil.getTaxId(contactDetails),
+                                    contactDetailsUtil.getTaxNumber(contactDetails),
                                     null,
                                     valueDated,
                                     direction
@@ -426,7 +434,10 @@ public class TransferToConversionAccountInAmsWorker {
                                 disposalAccountAmsId,
                                 conversionAccountAmsId,
                                 transactionCreationChannel,
-                                partnerAccountSecondaryIdentifier,
+                                contactDetails.getMobileNumber(),
+                                contactDetails.getEmailAddress(),
+                                contactDetailsUtil.getTaxId(contactDetails),
+                                contactDetailsUtil.getTaxNumber(contactDetails),
                                 null,
                                 valueDated,
                                 direction
@@ -485,7 +496,10 @@ public class TransferToConversionAccountInAmsWorker {
                                     disposalAccountAmsId,
                                     conversionAccountAmsId,
                                     transactionCreationChannel,
-                                    partnerAccountSecondaryIdentifier,
+                                    contactDetails.getMobileNumber(),
+                                    contactDetails.getEmailAddress(),
+                                    contactDetailsUtil.getTaxId(contactDetails),
+                                    contactDetailsUtil.getTaxNumber(contactDetails),
                                     null,
                                     valueDated,
                                     direction
@@ -598,7 +612,8 @@ public class TransferToConversionAccountInAmsWorker {
             EntryTransaction10 entryTransaction10 = convertedCamt053Entry.getEntryDetails().get(0).getTransactionDetails().get(0);
             batchItemBuilder.setAmount(entryTransaction10, amount, currency);
             String creditorIban = originalTransactionReference.getCdtrAcct().getId().getIBAN();
-            String debtorContactDetails = contactDetailsUtil.getId(originalTransactionReference.getDbtr().getCtctDtls());
+            ContactDetails2 debtorContactDetails = originalTransactionReference.getDbtr().getCtctDtls();
+            String debtorContactDetailsId = contactDetailsUtil.getId(debtorContactDetails);
 
             String holdAmountOperation = "withdrawTheAmountFromDisposalAccountInAMS.DisposalAccount.HoldTransactionAmount";
             String configOperationKey = String.format("%s.%s", paymentScheme, holdAmountOperation);
@@ -659,7 +674,7 @@ public class TransferToConversionAccountInAmsWorker {
 
             // STEP 5 - withdraw details
             if (accountProductType.equalsIgnoreCase("SAVINGS")) {
-                String camt053Body = painMapper.writeValueAsString(new DtSavingsTransactionDetails(internalCorrelationId, camt053, creditorIban, withdrawPaymentTypeCode, internalCorrelationId, debtorName, debtorIban, null, debtorContactDetails, unstructured, transactionCategoryPurposeCode, paymentScheme, disposalAccountAmsId, conversionAccountAmsId, endToEndId));
+                String camt053Body = painMapper.writeValueAsString(new DtSavingsTransactionDetails(internalCorrelationId, camt053, creditorIban, withdrawPaymentTypeCode, internalCorrelationId, debtorName, debtorIban, null, debtorContactDetailsId, unstructured, transactionCategoryPurposeCode, paymentScheme, disposalAccountAmsId, conversionAccountAmsId, endToEndId));
                 batchItemBuilder.add(tenantIdentifier, internalCorrelationId, items, "datatables/dt_savings_transaction_details/$.resourceId", camt053Body, true);
             } else {
                 String camt053Body = painMapper.writeValueAsString(new CurrentAccountTransactionBody(amount, FORMAT, moneyInOutWorker.getLocale(), withdrawPaymentTypeId, currency, List.of(new CurrentAccountTransactionBody.DataTable(List.of(new CurrentAccountTransactionBody.Entry(
@@ -677,7 +692,10 @@ public class TransferToConversionAccountInAmsWorker {
                         disposalAccountAmsId,
                         conversionAccountAmsId,
                         null,
-                        debtorContactDetails,
+                        debtorContactDetails.getMobNb(),
+                        debtorContactDetails.getEmailAdr(),
+                        contactDetailsUtil.getTaxId(debtorContactDetails),
+                        contactDetailsUtil.getTaxNumber(debtorContactDetails),
                         null,
                         valueDated,
                         direction
@@ -701,7 +719,7 @@ public class TransferToConversionAccountInAmsWorker {
 
             // STEP 7 - deposit details
             if (accountProductType.equalsIgnoreCase("SAVINGS")) {
-                var camt053Body = painMapper.writeValueAsString(new DtSavingsTransactionDetails(internalCorrelationId, camt053, creditorIban, depositPaymentTypeCode, internalCorrelationId, debtorName, debtorIban, null, debtorContactDetails, unstructured, transactionCategoryPurposeCode, paymentScheme, disposalAccountAmsId, conversionAccountAmsId, endToEndId));
+                var camt053Body = painMapper.writeValueAsString(new DtSavingsTransactionDetails(internalCorrelationId, camt053, creditorIban, depositPaymentTypeCode, internalCorrelationId, debtorName, debtorIban, null, debtorContactDetailsId, unstructured, transactionCategoryPurposeCode, paymentScheme, disposalAccountAmsId, conversionAccountAmsId, endToEndId));
                 batchItemBuilder.add(tenantIdentifier, internalCorrelationId, items, "datatables/dt_savings_transaction_details/$.resourceId", camt053Body, true);
             } else {
                 var camt053Body = painMapper.writeValueAsString(new CurrentAccountTransactionBody(amount, FORMAT, moneyInOutWorker.getLocale(), depositPaymentTypeId, currency, List.of(new CurrentAccountTransactionBody.DataTable(List.of(new CurrentAccountTransactionBody.Entry(
@@ -719,7 +737,10 @@ public class TransferToConversionAccountInAmsWorker {
                         disposalAccountAmsId,
                         conversionAccountAmsId,
                         null,
-                        debtorContactDetails,
+                        debtorContactDetails.getMobNb(),
+                        debtorContactDetails.getEmailAdr(),
+                        contactDetailsUtil.getTaxId(debtorContactDetails),
+                        contactDetailsUtil.getTaxNumber(debtorContactDetails),
                         null,
                         valueDated,
                         direction

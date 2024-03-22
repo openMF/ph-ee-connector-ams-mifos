@@ -174,8 +174,10 @@ public class OnUsTransferWorker {
             CreditTransferTransaction40 creditTransfer = pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0);
             String creditorName = creditTransfer.getCreditor().getName();
             String transactionCreationChannel = batchItemBuilder.findTransactionCreationChannel(creditTransfer.getSupplementaryData());
-            String creditorContactDetails = contactDetailsUtil.getId(creditTransfer.getCreditor().getContactDetails());
-            String debtorContactDetails = contactDetailsUtil.getId(pain001.getDocument().getPaymentInformation().get(0).getDebtor().getContactDetails());
+            iso.std.iso._20022.tech.json.pain_001_001.Contact4 creditorContactDetails = creditTransfer.getCreditor().getContactDetails();
+            String creditorContactDetailsId = contactDetailsUtil.getId(creditorContactDetails);
+            iso.std.iso._20022.tech.json.pain_001_001.Contact4 debtorContactDetails = pain001.getDocument().getPaymentInformation().get(0).getDebtor().getContactDetails();
+            String debtorContactDetailsId = contactDetailsUtil.getId(debtorContactDetails);
             String unstructured = Optional.ofNullable(creditTransfer.getRemittanceInformation())
                     .map(iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16::getUnstructured).map(it -> String.join(",", it)).orElse("");
             CustomerCreditTransferInitiationV10 pain0011 = pain001.getDocument();
@@ -208,7 +210,7 @@ public class OnUsTransferWorker {
                 entryTransaction10.setAdditionalTransactionInformation(paymentTypeCode1);
                 String camt053 = serializationHelper.writeCamt053AsString(accountProductType, convertedcamt053Entry);
 
-                String holdCamt053Body1 = painMapper.writeValueAsString(new DtSavingsTransactionDetails(internalCorrelationId, camt053, debtorIban, paymentTypeCode1, internalCorrelationId, creditorName, creditorIban, creditorInternalAccountId, creditorContactDetails, unstructured, transactionCategoryPurposeCode, paymentScheme, null, null, endToEndId));
+                String holdCamt053Body1 = painMapper.writeValueAsString(new DtSavingsTransactionDetails(internalCorrelationId, camt053, debtorIban, paymentTypeCode1, internalCorrelationId, creditorName, creditorIban, creditorInternalAccountId, creditorContactDetailsId, unstructured, transactionCategoryPurposeCode, paymentScheme, null, null, endToEndId));
                 batchItemBuilder.add(tenantIdentifier, internalCorrelationId, items, savingsCamt053RelativeUrl, holdCamt053Body1, true);
                 Long lastHoldTransactionId = moneyInOutWorker.holdBatch(items, tenantIdentifier, transactionGroupId, debtorDisposalAccountAmsId, creditorDisposalAccountAmsId, internalCorrelationId, "transferToConversionAccountInAms");
 
@@ -238,7 +240,7 @@ public class OnUsTransferWorker {
                 entryTransaction10.setAdditionalTransactionInformation(paymentTypeCode2);
                 String camt0531 = serializationHelper.writeCamt053AsString(accountProductType, convertedcamt053Entry);
 
-                String camt053Body1 = painMapper.writeValueAsString(new DtSavingsTransactionDetails(internalCorrelationId, camt0531, debtorIban, paymentTypeCode2, internalCorrelationId, creditorName, creditorIban, creditorInternalAccountId, creditorContactDetails, unstructured, transactionCategoryPurposeCode, paymentScheme, null, null, endToEndId));
+                String camt053Body1 = painMapper.writeValueAsString(new DtSavingsTransactionDetails(internalCorrelationId, camt0531, debtorIban, paymentTypeCode2, internalCorrelationId, creditorName, creditorIban, creditorInternalAccountId, creditorContactDetailsId, unstructured, transactionCategoryPurposeCode, paymentScheme, null, null, endToEndId));
                 batchItemBuilder.add(tenantIdentifier, internalCorrelationId, items, savingsCamt053RelativeUrl, camt053Body1, true);
             }
 
@@ -264,7 +266,7 @@ public class OnUsTransferWorker {
             String debtorName = pain001.getDocument().getPaymentInformation().get(0).getDebtor().getName();
 
             if (accountProductType.equalsIgnoreCase("SAVINGS")) {
-                String camt053Body = painMapper.writeValueAsString(new DtSavingsTransactionDetails(internalCorrelationId, camt053Entry, debtorIban, withdrawPaymentTypeCode, transactionGroupId, creditorName, creditorIban, creditorInternalAccountId, creditorContactDetails, unstructured, transactionCategoryPurposeCode, paymentScheme, debtorDisposalAccountAmsId, creditorDisposalAccountAmsId, endToEndId));
+                String camt053Body = painMapper.writeValueAsString(new DtSavingsTransactionDetails(internalCorrelationId, camt053Entry, debtorIban, withdrawPaymentTypeCode, transactionGroupId, creditorName, creditorIban, creditorInternalAccountId, creditorContactDetailsId, unstructured, transactionCategoryPurposeCode, paymentScheme, debtorDisposalAccountAmsId, creditorDisposalAccountAmsId, endToEndId));
                 batchItemBuilder.add(tenantIdentifier, internalCorrelationId, items, "datatables/dt_savings_transaction_details/$.resourceId", camt053Body, true);
             } else {
                 String bodyItem = painMapper.writeValueAsString(new CurrentAccountTransactionBody(amount, FORMAT, moneyInOutWorker.getLocale(), withdrawPaymentTypeId, currency, List.of(new CurrentAccountTransactionBody.DataTable(List.of(new CurrentAccountTransactionBody.Entry(
@@ -282,7 +284,10 @@ public class OnUsTransferWorker {
                         debtorDisposalAccountAmsId,
                         creditorDisposalAccountAmsId,
                         transactionCreationChannel,
-                        creditorContactDetails,
+                        creditorContactDetails.getMobileNumber(),
+                        creditorContactDetails.getEmailAddress(),
+                        contactDetailsUtil.getTaxId(creditorContactDetails),
+                        contactDetailsUtil.getTaxNumber(creditorContactDetails),
                         creditorInternalAccountId,
                         valueDated,
                         direction
@@ -311,7 +316,7 @@ public class OnUsTransferWorker {
                 camt053Entry = serializationHelper.writeCamt053AsString(accountProductType, convertedcamt053Entry);
 
                 if (accountProductType.equalsIgnoreCase("SAVINGS")) {
-                    var camt053Body = painMapper.writeValueAsString(new DtSavingsTransactionDetails(transactionFeeInternalCorrelationId, camt053Entry, debtorIban, withdrawPaymentTypeCode, transactionGroupId, creditorName, creditorIban, creditorIban.substring(creditorIban.length() - 8), creditorContactDetails, unstructured, transactionFeeCategoryPurposeCode, paymentScheme, debtorDisposalAccountAmsId, debtorConversionAccountAmsId, creditTransfer.getPaymentIdentification().getEndToEndIdentification()));
+                    var camt053Body = painMapper.writeValueAsString(new DtSavingsTransactionDetails(transactionFeeInternalCorrelationId, camt053Entry, debtorIban, withdrawPaymentTypeCode, transactionGroupId, creditorName, creditorIban, creditorIban.substring(creditorIban.length() - 8), creditorContactDetailsId, unstructured, transactionFeeCategoryPurposeCode, paymentScheme, debtorDisposalAccountAmsId, debtorConversionAccountAmsId, creditTransfer.getPaymentIdentification().getEndToEndIdentification()));
                     batchItemBuilder.add(tenantIdentifier, internalCorrelationId, items, savingsCamt053RelativeUrl, camt053Body, true);
                 } else {
                     var camt053Body = painMapper.writeValueAsString(new CurrentAccountTransactionBody(transactionFeeAmount, FORMAT, moneyInOutWorker.getLocale(), withdrawPaymentTypeId, currency, List.of(new CurrentAccountTransactionBody.DataTable(List.of(new CurrentAccountTransactionBody.Entry(
@@ -329,7 +334,10 @@ public class OnUsTransferWorker {
                             debtorDisposalAccountAmsId,
                             debtorConversionAccountAmsId,
                             transactionCreationChannel,
-                            creditorContactDetails,
+                            creditorContactDetails.getMobileNumber(),
+                            creditorContactDetails.getEmailAddress(),
+                            contactDetailsUtil.getTaxId(creditorContactDetails),
+                            contactDetailsUtil.getTaxNumber(creditorContactDetails),
                             creditorInternalAccountId,
                             valueDated,
                             direction
@@ -357,7 +365,7 @@ public class OnUsTransferWorker {
                     var bodyItem = painMapper.writeValueAsString(new TransactionBody(interbankSettlementDate, transactionFeeAmount, depositPaymentTypeId, "", FORMAT, moneyInOutWorker.getLocale()));
                     batchItemBuilder.add(tenantIdentifier, internalCorrelationId, items, debtorConversionDepositRelativeUrl, bodyItem, false);
 
-                    var camt053Body = painMapper.writeValueAsString(new DtSavingsTransactionDetails(transactionFeeInternalCorrelationId, camt053Entry, debtorIban, depositPaymentTypeCode, transactionGroupId, creditorName, creditorIban, creditorInternalAccountId, creditorContactDetails, unstructured, transactionFeeCategoryPurposeCode, paymentScheme, debtorDisposalAccountAmsId, debtorConversionAccountAmsId, endToEndId));
+                    var camt053Body = painMapper.writeValueAsString(new DtSavingsTransactionDetails(transactionFeeInternalCorrelationId, camt053Entry, debtorIban, depositPaymentTypeCode, transactionGroupId, creditorName, creditorIban, creditorInternalAccountId, creditorContactDetailsId, unstructured, transactionFeeCategoryPurposeCode, paymentScheme, debtorDisposalAccountAmsId, debtorConversionAccountAmsId, endToEndId));
                     batchItemBuilder.add(tenantIdentifier, internalCorrelationId, items, savingsCamt053RelativeUrl, camt053Body, true);
                 } else {
                     var camt053Body = painMapper.writeValueAsString(new CurrentAccountTransactionBody(transactionFeeAmount, FORMAT, moneyInOutWorker.getLocale(), depositPaymentTypeId, currency, List.of(new CurrentAccountTransactionBody.DataTable(List.of(new CurrentAccountTransactionBody.Entry(
@@ -375,7 +383,10 @@ public class OnUsTransferWorker {
                             debtorDisposalAccountAmsId,
                             debtorConversionAccountAmsId,
                             transactionCreationChannel,
-                            creditorContactDetails,
+                            creditorContactDetails.getMobileNumber(),
+                            creditorContactDetails.getEmailAddress(),
+                            contactDetailsUtil.getTaxId(creditorContactDetails),
+                            contactDetailsUtil.getTaxNumber(creditorContactDetails),
                             creditorInternalAccountId,
                             valueDated,
                             direction
@@ -406,7 +417,7 @@ public class OnUsTransferWorker {
             camt053Entry = serializationHelper.writeCamt053AsString(accountProductType, convertedcamt053Entry);
 
             if (accountProductType.equalsIgnoreCase("SAVINGS")) {
-                var camt053Body = painMapper.writeValueAsString(new DtSavingsTransactionDetails(internalCorrelationId, camt053Entry, creditorIban, depositPaymentTypeCode, transactionGroupId, debtorName, debtorIban, debtorIban.substring(debtorIban.length() - 8), debtorContactDetails, unstructured, transactionCategoryPurposeCode, paymentScheme, debtorDisposalAccountAmsId, creditorDisposalAccountAmsId, endToEndId));
+                var camt053Body = painMapper.writeValueAsString(new DtSavingsTransactionDetails(internalCorrelationId, camt053Entry, creditorIban, depositPaymentTypeCode, transactionGroupId, debtorName, debtorIban, debtorIban.substring(debtorIban.length() - 8), debtorContactDetailsId, unstructured, transactionCategoryPurposeCode, paymentScheme, debtorDisposalAccountAmsId, creditorDisposalAccountAmsId, endToEndId));
                 batchItemBuilder.add(tenantIdentifier, internalCorrelationId, items, savingsCamt053RelativeUrl, camt053Body, true);
             } else {
                 var camt053Body = painMapper.writeValueAsString(new CurrentAccountTransactionBody(amount, FORMAT, moneyInOutWorker.getLocale(), depositPaymentTypeId, currency, List.of(new CurrentAccountTransactionBody.DataTable(List.of(new CurrentAccountTransactionBody.Entry(
@@ -424,7 +435,10 @@ public class OnUsTransferWorker {
                         debtorDisposalAccountAmsId,
                         creditorDisposalAccountAmsId,
                         transactionCreationChannel,
-                        creditorContactDetails,
+                        debtorContactDetails.getMobileNumber(),
+                        debtorContactDetails.getEmailAddress(),
+                        contactDetailsUtil.getTaxId(debtorContactDetails),
+                        contactDetailsUtil.getTaxNumber(debtorContactDetails),
                         debtorInternalAccountId,
                         valueDated,
                         direction
@@ -459,7 +473,7 @@ public class OnUsTransferWorker {
                 camt053Entry = serializationHelper.writeCamt053AsString(accountProductType, convertedcamt053Entry);
 
                 if (accountProductType.equalsIgnoreCase("SAVINGS")) {
-                    var camt053Body = painMapper.writeValueAsString(new DtSavingsTransactionDetails(transactionFeeInternalCorrelationId, camt053Entry, debtorIban, depositPaymentTypeCode, transactionGroupId, creditorName, creditorIban, null, creditorContactDetails, unstructured, transactionFeeCategoryPurposeCode, paymentScheme, debtorConversionAccountAmsId, null, endToEndId));
+                    var camt053Body = painMapper.writeValueAsString(new DtSavingsTransactionDetails(transactionFeeInternalCorrelationId, camt053Entry, debtorIban, depositPaymentTypeCode, transactionGroupId, creditorName, creditorIban, null, creditorContactDetailsId, unstructured, transactionFeeCategoryPurposeCode, paymentScheme, debtorConversionAccountAmsId, null, endToEndId));
                     batchItemBuilder.add(tenantIdentifier, internalCorrelationId, items, savingsCamt053RelativeUrl, camt053Body, true);
                 } else {
                     var camt053Body = painMapper.writeValueAsString(new CurrentAccountTransactionBody(transactionFeeAmount, FORMAT, moneyInOutWorker.getLocale(), depositPaymentTypeId, currency, List.of(new CurrentAccountTransactionBody.DataTable(List.of(new CurrentAccountTransactionBody.Entry(
@@ -477,7 +491,10 @@ public class OnUsTransferWorker {
                             debtorConversionAccountAmsId,
                             null,
                             transactionCreationChannel,
-                            creditorContactDetails,
+                            creditorContactDetails.getMobileNumber(),
+                            creditorContactDetails.getEmailAddress(),
+                            contactDetailsUtil.getTaxId(creditorContactDetails),
+                            contactDetailsUtil.getTaxNumber(creditorContactDetails),
                             creditorInternalAccountId,
                             valueDated,
                             direction

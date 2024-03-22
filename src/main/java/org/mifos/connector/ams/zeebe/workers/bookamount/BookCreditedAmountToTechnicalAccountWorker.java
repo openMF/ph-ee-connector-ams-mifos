@@ -13,6 +13,7 @@ import iso.std.iso._20022.tech.json.camt_053_001.BankToCustomerStatementV08;
 import iso.std.iso._20022.tech.json.camt_053_001.EntryStatus1Choice;
 import iso.std.iso._20022.tech.json.camt_053_001.EntryTransaction10;
 import iso.std.iso._20022.tech.json.camt_053_001.ReportEntry10;
+import iso.std.iso._20022.tech.xsd.pacs_008_001.ContactDetails2;
 import iso.std.iso._20022.tech.xsd.pacs_008_001.CreditTransferTransactionInformation11;
 import iso.std.iso._20022.tech.xsd.pacs_008_001.RemittanceInformation5;
 import jakarta.xml.bind.JAXBException;
@@ -159,7 +160,7 @@ public class BookCreditedAmountToTechnicalAccountWorker {
             String unstructured = Optional.ofNullable(creditTransferTransactionInformation11.getRmtInf()).map(RemittanceInformation5::getUstrd).map(it -> String.join(",", it)).orElse("");
             String endToEndId = creditTransferTransactionInformation11.getPmtId().getEndToEndId();
             String debtorName = creditTransferTransactionInformation11.getDbtr().getNm();
-            String partnerAccountSecondaryIdentifier = contactDetailsUtil.getId(creditTransferTransactionInformation11.getCdtr().getCtctDtls());
+            ContactDetails2 contactDetails = creditTransferTransactionInformation11.getCdtr().getCtctDtls();
             List<TransactionItem> items = new ArrayList<>();
 
             // STEP 1 - batch: withdraw amount
@@ -196,7 +197,10 @@ public class BookCreditedAmountToTechnicalAccountWorker {
                         null,
                         null,
                         null,
-                        partnerAccountSecondaryIdentifier,
+                        contactDetails.getMobNb(),
+                        contactDetails.getEmailAdr(),
+                        contactDetailsUtil.getTaxId(contactDetails),
+                        contactDetailsUtil.getTaxNumber(contactDetails),
                         null,
                         valueDated,
                         direction

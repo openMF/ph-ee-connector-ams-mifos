@@ -11,6 +11,7 @@ import io.camunda.zeebe.spring.client.annotation.Variable;
 import io.camunda.zeebe.spring.client.exception.ZeebeBpmnError;
 import iso.std.iso._20022.tech.json.camt_053_001.*;
 import iso.std.iso._20022.tech.json.camt_053_001.ActiveOrHistoricCurrencyAndAmountRange2.CreditDebitCode;
+import iso.std.iso._20022.tech.xsd.pacs_008_001.ContactDetails2;
 import iso.std.iso._20022.tech.xsd.pacs_008_001.CreditTransferTransactionInformation11;
 import iso.std.iso._20022.tech.xsd.pacs_008_001.RemittanceInformation5;
 import jakarta.xml.bind.JAXBException;
@@ -184,7 +185,8 @@ public class BookCreditedAmountFromTechnicalAccountWorker {
             String creditorIban = creditTransferTransactionInformation11.getCdtrAcct().getId().getIBAN();
             String debtorName = creditTransferTransactionInformation11.getDbtr().getNm();
             String debtorIban = creditTransferTransactionInformation11.getDbtrAcct().getId().getIBAN();
-            String debtorContactDetails = contactDetailsUtil.getId(creditTransferTransactionInformation11.getDbtr().getCtctDtls());
+            ContactDetails2 contactDetails = creditTransferTransactionInformation11.getDbtr().getCtctDtls();
+            String debtorContactDetails = contactDetailsUtil.getId(contactDetails);
             String unstructured = Optional.ofNullable(creditTransferTransactionInformation11.getRmtInf()).map(RemittanceInformation5::getUstrd).map(it -> String.join(",", it)).orElse("");
             String endToEndId = pacs004.getPmtRtr().getTxInf().get(0).getOrgnlEndToEndId();
 
@@ -207,7 +209,10 @@ public class BookCreditedAmountFromTechnicalAccountWorker {
                         null,
                         null,
                         null,
-                        debtorContactDetails,
+                        contactDetails.getMobNb(),
+                        contactDetails.getEmailAdr(),
+                        contactDetailsUtil.getTaxId(contactDetails),
+                        contactDetailsUtil.getTaxNumber(contactDetails),
                         null,
                         valueDated,
                         direction

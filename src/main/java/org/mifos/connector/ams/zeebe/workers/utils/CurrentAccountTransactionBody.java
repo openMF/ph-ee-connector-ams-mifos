@@ -8,7 +8,6 @@ import java.math.BigDecimal;
 import java.util.List;
 
 @Data
-@NoArgsConstructor
 @AllArgsConstructor
 public class CurrentAccountTransactionBody {
     private BigDecimal transactionAmount;
@@ -19,7 +18,6 @@ public class CurrentAccountTransactionBody {
     private List<DataTable> datatables;
 
     @Data
-    @NoArgsConstructor
     @AllArgsConstructor
     public static class DataTable {
         private List<Entry> entries;
@@ -27,7 +25,6 @@ public class CurrentAccountTransactionBody {
     }
 
     @Data
-    @NoArgsConstructor
     @AllArgsConstructor
     public static class Entry {
         private String account_iban;
@@ -44,7 +41,10 @@ public class CurrentAccountTransactionBody {
         private String source_ams_account_id;
         private String target_ams_account_id;
         private String transactionCreationChannel;
-        private String partner_secondary_identifier;  // secondary
+        private String partner_secondary_id_mobile;
+        private String partner_secondary_id_email;
+        private String partner_secondary_id_tax_id;
+        private String partner_secondary_id_tax_number;
         private String partner_account_internal_account_id; // onus / ig2
         private boolean value_dated; // onus / ig2
         private String direction;

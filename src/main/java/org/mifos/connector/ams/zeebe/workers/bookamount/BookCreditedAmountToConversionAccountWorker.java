@@ -11,6 +11,7 @@ import io.camunda.zeebe.spring.client.exception.ZeebeBpmnError;
 import iso.std.iso._20022.tech.json.camt_053_001.*;
 import iso.std.iso._20022.tech.json.camt_053_001.ActiveOrHistoricCurrencyAndAmountRange2.CreditDebitCode;
 import iso.std.iso._20022.tech.xsd.pacs_004_001.OriginalTransactionReference13;
+import iso.std.iso._20022.tech.xsd.pacs_008_001.ContactDetails2;
 import iso.std.iso._20022.tech.xsd.pacs_008_001.CreditTransferTransactionInformation11;
 import iso.std.iso._20022.tech.xsd.pacs_008_001.RemittanceInformation5;
 import lombok.extern.slf4j.Slf4j;
@@ -139,7 +140,8 @@ public class BookCreditedAmountToConversionAccountWorker {
             iso.std.iso._20022.tech.xsd.pacs_008_001.Document pacs008 = jaxbUtils.unmarshalPacs008(originalPacs008);
             CreditTransferTransactionInformation11 creditTransferTransaction = pacs008.getFIToFICstmrCdtTrf().getCdtTrfTxInf().get(0);
             String unstructured = Optional.ofNullable(creditTransferTransaction.getRmtInf()).map(RemittanceInformation5::getUstrd).map(it -> String.join(",", it)).orElse("");
-            String debtorContactDetails = contactDetailsUtil.getId(creditTransferTransaction.getDbtr().getCtctDtls());
+            ContactDetails2 debtorContactDetails = creditTransferTransaction.getDbtr().getCtctDtls();
+            String debtorContactDetailsId = contactDetailsUtil.getId(debtorContactDetails);
             String creditorIban = creditTransferTransaction.getCdtrAcct().getId().getIBAN();
             String debtorIban = creditTransferTransaction.getDbtrAcct().getId().getIBAN();
             String debtorName = creditTransferTransaction.getDbtr().getNm();
@@ -165,7 +167,7 @@ public class BookCreditedAmountToConversionAccountWorker {
             String camt053Entry = serializationHelper.writeCamt053AsString(accountProductType, convertedCamt053Entry);
 
             if (accountProductType.equalsIgnoreCase("SAVINGS")) {
-                String camt053Body = painMapper.writeValueAsString(new DtSavingsTransactionDetails(internalCorrelationId, camt053Entry, creditorIban, paymentTypeCode, transactionGroupId, debtorName, debtorIban, null, debtorContactDetails, unstructured, transactionCategoryPurposeCode, paymentScheme, null, conversionAccountAmsId, endToEndId));
+                String camt053Body = painMapper.writeValueAsString(new DtSavingsTransactionDetails(internalCorrelationId, camt053Entry, creditorIban, paymentTypeCode, transactionGroupId, debtorName, debtorIban, null, debtorContactDetailsId, unstructured, transactionCategoryPurposeCode, paymentScheme, null, conversionAccountAmsId, endToEndId));
                 batchItemBuilder.add(tenantIdentifier, internalCorrelationId, items, "datatables/dt_savings_transaction_details/$.resourceId", camt053Body, true);
             } else {
                 String camt053Body = painMapper.writeValueAsString(new CurrentAccountTransactionBody(amount, FORMAT, moneyInOutWorker.getLocale(), paymentTypeId, currency, List.of(
@@ -184,7 +186,10 @@ public class BookCreditedAmountToConversionAccountWorker {
                                 null,
                                 conversionAccountAmsId,
                                 null,
-                                partnerAccountSecondaryIdentifier,
+                                debtorContactDetails.getMobNb(),
+                                debtorContactDetails.getEmailAdr(),
+                                contactDetailsUtil.getTaxId(debtorContactDetails),
+                                contactDetailsUtil.getTaxNumber(debtorContactDetails),
                                 null,
                                 valueDated,
                                 direction)
@@ -288,12 +293,13 @@ public class BookCreditedAmountToConversionAccountWorker {
             String debtorIban = creditTransferTransaction.getDbtrAcct().getId().getIBAN();
             String creditorName = creditTransferTransaction.getCdtr().getNm();
             String creditorIban = creditTransferTransaction.getCdtrAcct().getId().getIBAN();
-            String debtorContactDetails = contactDetailsUtil.getId(creditTransferTransaction.getDbtr().getCtctDtls());
+            ContactDetails2 debtorContactDetails = creditTransferTransaction.getDbtr().getCtctDtls();
+            String debtorContactDetailsId = contactDetailsUtil.getId(debtorContactDetails);
             String unstructured = Optional.ofNullable(creditTransferTransaction.getRmtInf()).map(RemittanceInformation5::getUstrd).map(it -> String.join(",", it)).orElse("");
             String endToEndId = pacs004.getPmtRtr().getTxInf().get(0).getOrgnlEndToEndId();
 
             if (accountProductType.equalsIgnoreCase("SAVINGS")) {
-                String camt053Body = painMapper.writeValueAsString(new DtSavingsTransactionDetails(internalCorrelationId, camt053Entry, debtorIban, paymentTypeCode, transactionGroupId, creditorName, creditorIban, null, debtorContactDetails, unstructured, transactionCategoryPurposeCode, paymentScheme, null, conversionAccountAmsId, endToEndId));
+                String camt053Body = painMapper.writeValueAsString(new DtSavingsTransactionDetails(internalCorrelationId, camt053Entry, debtorIban, paymentTypeCode, transactionGroupId, creditorName, creditorIban, null, debtorContactDetailsId, unstructured, transactionCategoryPurposeCode, paymentScheme, null, conversionAccountAmsId, endToEndId));
                 batchItemBuilder.add(tenantIdentifier, internalCorrelationId, items, "datatables/dt_savings_transaction_details/$.resourceId", camt053Body, true);
             } else {
                 String camt053Body = painMapper.writeValueAsString(new CurrentAccountTransactionBody(amount, FORMAT, moneyInOutWorker.getLocale(), paymentTypeId, currency, List.of(new CurrentAccountTransactionBody.DataTable(List.of(new CurrentAccountTransactionBody.Entry(
@@ -311,7 +317,10 @@ public class BookCreditedAmountToConversionAccountWorker {
                         null,
                         conversionAccountAmsId,
                         null,
-                        debtorContactDetails,
+                        debtorContactDetails.getMobNb(),
+                        debtorContactDetails.getEmailAdr(),
+                        contactDetailsUtil.getTaxId(debtorContactDetails),
+                        contactDetailsUtil.getTaxNumber(debtorContactDetails),
                         null,
                         valueDated,
                         direction
@@ -395,7 +404,8 @@ public class BookCreditedAmountToConversionAccountWorker {
             String creditorIban = transactionReference.getCdtrAcct().getId().getIBAN();
             String creditorName = transactionReference.getCdtr().getNm();
             String unstructured = Optional.ofNullable(transactionReference.getRmtInf()).map(iso.std.iso._20022.tech.xsd.pacs_004_001.RemittanceInformation5::getUstrd).map(it -> String.join(",", it)).orElse("");
-            String creditorContactDetails = contactDetailsUtil.getId(transactionReference.getCdtr().getCtctDtls());
+            iso.std.iso._20022.tech.xsd.pacs_004_001.ContactDetails2 creditorContactDetails = transactionReference.getCdtr().getCtctDtls();
+            String creditorContactDetailsId = contactDetailsUtil.getId(creditorContactDetails);
             String endToEndId = pacs_004.getPmtRtr().getTxInf().get(0).getOrgnlEndToEndId();
             List<TransactionItem> items = new ArrayList<>();
 
@@ -424,7 +434,7 @@ public class BookCreditedAmountToConversionAccountWorker {
             String camt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
 
             if (accountProductType.equalsIgnoreCase("SAVINGS")) {
-                String camt053Body = painMapper.writeValueAsString(new DtSavingsTransactionDetails(internalCorrelationId, camt053Entry, debtorIban, paymentTypeCode, transactionGroupId, creditorName, creditorIban, null, creditorContactDetails, unstructured, transactionCategoryPurposeCode, paymentScheme, null, conversionAccountAmsId, endToEndId));
+                String camt053Body = painMapper.writeValueAsString(new DtSavingsTransactionDetails(internalCorrelationId, camt053Entry, debtorIban, paymentTypeCode, transactionGroupId, creditorName, creditorIban, null, creditorContactDetailsId, unstructured, transactionCategoryPurposeCode, paymentScheme, null, conversionAccountAmsId, endToEndId));
                 batchItemBuilder.add(tenantIdentifier, internalCorrelationId, items, camt053RelativeUrl, camt053Body, true);
             } else {
                 String bodyItem = painMapper.writeValueAsString(new CurrentAccountTransactionBody(amount, FORMAT, moneyInOutWorker.getLocale(), paymentTypeId, currency, List.of(new CurrentAccountTransactionBody.DataTable(List.of(new CurrentAccountTransactionBody.Entry(
@@ -442,7 +452,10 @@ public class BookCreditedAmountToConversionAccountWorker {
                         null,
                         conversionAccountAmsId,
                         null,
-                        creditorContactDetails,
+                        creditorContactDetails.getMobNb(),
+                        creditorContactDetails.getEmailAdr(),
+                        contactDetailsUtil.getTaxId(creditorContactDetails),
+                        contactDetailsUtil.getTaxNumber(creditorContactDetails),
                         null,
                         valueDated,
                         direction

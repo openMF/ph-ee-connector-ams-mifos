@@ -29,6 +29,8 @@
               "Debtor address1"
             ]
           },
+          "ContactDetails": {
+          },
           "Identification": {
             "OrganisationIdentification": {
               "Other": [

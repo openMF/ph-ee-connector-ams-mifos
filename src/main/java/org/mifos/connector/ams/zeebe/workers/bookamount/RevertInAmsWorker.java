@@ -12,8 +12,10 @@ import io.camunda.zeebe.spring.client.annotation.JobWorker;
 import io.camunda.zeebe.spring.client.annotation.Variable;
 import iso.std.iso._20022.tech.json.camt_053_001.*;
 import iso.std.iso._20022.tech.json.camt_053_001.ActiveOrHistoricCurrencyAndAmountRange2.CreditDebitCode;
+import iso.std.iso._20022.tech.json.pain_001_001.Contact4;
 import iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16;
 import iso.std.iso._20022.tech.json.pain_001_001.*;
+import iso.std.iso._20022.tech.xsd.pacs_004_001.ContactDetails2;
 import iso.std.iso._20022.tech.xsd.pacs_004_001.PaymentTransactionInformation27;
 import iso.std.iso._20022.tech.xsd.pacs_004_001.RemittanceInformation5;
 import jakarta.xml.bind.JAXBException;
@@ -179,7 +181,7 @@ public class RevertInAmsWorker {
             String creditorName = creditTransferTransaction.getCreditor().getName();
             String creditorIban = creditTransferTransaction.getCreditorAccount().getIdentification().getIban();
             String endToEndId = creditTransferTransaction.getPaymentIdentification().getEndToEndIdentification();
-            String partnerAccountSecondaryIdentifier = contactDetailsUtil.getId(pain001Document.getPaymentInformation().get(0).getDebtor().getContactDetails());
+            Contact4 contactDetails = pain001Document.getPaymentInformation().get(0).getDebtor().getContactDetails();
 
             List<TransactionItem> items = new ArrayList<>();
 
@@ -221,7 +223,10 @@ public class RevertInAmsWorker {
                                 conversionAccountAmsId,
                                 disposalAccountAmsId,
                                 transactionCreationChannel,
-                                partnerAccountSecondaryIdentifier,
+                                contactDetails.getMobileNumber(),
+                                contactDetails.getEmailAddress(),
+                                contactDetailsUtil.getTaxId(contactDetails),
+                                contactDetailsUtil.getTaxNumber(contactDetails),
                                 null,
                                 valueDated,
                                 direction
@@ -264,7 +269,10 @@ public class RevertInAmsWorker {
                                     disposalAccountAmsId,
                                     conversionAccountAmsId,
                                     transactionCreationChannel,
-                                    partnerAccountSecondaryIdentifier,
+                                    contactDetails.getMobileNumber(),
+                                    contactDetails.getEmailAddress(),
+                                    contactDetailsUtil.getTaxId(contactDetails),
+                                    contactDetailsUtil.getTaxNumber(contactDetails),
                                     null,
                                     valueDated,
                                     direction
@@ -311,7 +319,10 @@ public class RevertInAmsWorker {
                                 disposalAccountAmsId,
                                 conversionAccountAmsId,
                                 transactionCreationChannel,
-                                partnerAccountSecondaryIdentifier,
+                                contactDetails.getMobileNumber(),
+                                contactDetails.getEmailAddress(),
+                                contactDetailsUtil.getTaxId(contactDetails),
+                                contactDetailsUtil.getTaxNumber(contactDetails),
                                 null,
                                 valueDated,
                                 direction
@@ -357,7 +368,10 @@ public class RevertInAmsWorker {
                                     disposalAccountAmsId,
                                     conversionAccountAmsId,
                                     transactionCreationChannel,
-                                    partnerAccountSecondaryIdentifier,
+                                    contactDetails.getMobileNumber(),
+                                    contactDetails.getEmailAddress(),
+                                    contactDetailsUtil.getTaxId(contactDetails),
+                                    contactDetailsUtil.getTaxNumber(contactDetails),
                                     null,
                                     valueDated,
                                     direction
@@ -537,10 +551,10 @@ public class RevertInAmsWorker {
             String debtorIban = paymentInstruction.getDebtorAccount().getIdentification().getIban();
             String creditorName = creditTransferTransaction.getCreditor().getName();
             String creditorIban = creditTransferTransaction.getCreditorAccount().getIdentification().getIban();
-            String creditorContactDetails = contactDetailsUtil.getId(creditTransferTransaction.getCreditor().getContactDetails());
+            Contact4 contactDetails = creditTransferTransaction.getCreditor().getContactDetails();
+            String creditorContactDetails = contactDetailsUtil.getId(contactDetails);
             String unstructured = Optional.ofNullable(creditTransferTransaction.getRemittanceInformation()).map(RemittanceInformation16::getUnstructured).map(it -> String.join(",", it)).orElse("");
             String endToEndId = creditTransferTransaction.getPaymentIdentification().getEndToEndIdentification();
-            String partnerAccountSecondaryIdentifier = contactDetailsUtil.getId(creditTransferTransaction.getCreditor().getContactDetails());
             List<TransactionItem> items = new ArrayList<>();
 
             // STEP 1 - batch: deposit amount
@@ -578,7 +592,10 @@ public class RevertInAmsWorker {
                         conversionAccountAmsId,
                         disposalAccountAmsId,
                         null,
-                        partnerAccountSecondaryIdentifier,
+                        contactDetails.getMobileNumber(),
+                        contactDetails.getEmailAddress(),
+                        contactDetailsUtil.getTaxId(contactDetails),
+                        contactDetailsUtil.getTaxNumber(contactDetails),
                         null,
                         valueDated,
                         direction)), "dt_current_transaction_details"))));
@@ -616,7 +633,10 @@ public class RevertInAmsWorker {
                         conversionAccountAmsId,
                         disposalAccountAmsId,
                         null,
-                        partnerAccountSecondaryIdentifier,
+                        contactDetails.getMobileNumber(),
+                        contactDetails.getEmailAddress(),
+                        contactDetailsUtil.getTaxId(contactDetails),
+                        contactDetailsUtil.getTaxNumber(contactDetails),
                         null,
                         valueDated,
                         direction
@@ -661,7 +681,10 @@ public class RevertInAmsWorker {
                                     conversionAccountAmsId,
                                     disposalAccountAmsId,
                                     null,
-                                    partnerAccountSecondaryIdentifier,
+                                    contactDetails.getMobileNumber(),
+                                    contactDetails.getEmailAddress(),
+                                    contactDetailsUtil.getTaxId(contactDetails),
+                                    contactDetailsUtil.getTaxNumber(contactDetails),
                                     null,
                                     valueDated,
                                     direction
@@ -803,12 +826,12 @@ public class RevertInAmsWorker {
             String creditorIban = paymentTransactionInformation.getOrgnlTxRef().getCdtrAcct().getId().getIBAN();
             String debtorName = paymentTransactionInformation.getOrgnlTxRef().getDbtr().getNm();
             String debtorIban = paymentTransactionInformation.getOrgnlTxRef().getDbtrAcct().getId().getIBAN();
-            String debtorContactDetails = contactDetailsUtil.getId(paymentTransactionInformation.getOrgnlTxRef().getDbtr().getCtctDtls());
+            ContactDetails2 debtorContactDetails = paymentTransactionInformation.getOrgnlTxRef().getDbtr().getCtctDtls();
             String endToEndId = paymentTransactionInformation.getOrgnlEndToEndId();
 
             // STEP 2 - deposit details
             if (accountProductType.equalsIgnoreCase("SAVINGS")) {
-                var camt053Body = painMapper.writeValueAsString(new DtSavingsTransactionDetails(internalCorrelationId, camt053, creditorIban, depositPaymentTypeCode, internalCorrelationId, debtorName, debtorIban, null, debtorContactDetails, unstructured, transactionCategoryPurposeCode, paymentScheme, null, disposalAccountAmsId, endToEndId));
+                var camt053Body = painMapper.writeValueAsString(new DtSavingsTransactionDetails(internalCorrelationId, camt053, creditorIban, depositPaymentTypeCode, internalCorrelationId, debtorName, debtorIban, null, contactDetailsUtil.getId(debtorContactDetails), unstructured, transactionCategoryPurposeCode, paymentScheme, null, disposalAccountAmsId, endToEndId));
                 batchItemBuilder.add(tenantIdentifier, internalCorrelationId, items, "datatables/dt_savings_transaction_details/$.resourceId", camt053Body, true);
 
                 entryTransaction10.setAdditionalTransactionInformation(withdrawPaymentTypeCode);
@@ -828,7 +851,10 @@ public class RevertInAmsWorker {
                         null,
                         disposalAccountAmsId,
                         null,
-                        debtorContactDetails,
+                        debtorContactDetails.getMobNb(),
+                        debtorContactDetails.getEmailAdr(),
+                        contactDetailsUtil.getTaxId(debtorContactDetails),
+                        contactDetailsUtil.getTaxNumber(debtorContactDetails),
                         null,
                         valueDated,
                         direction
@@ -846,7 +872,7 @@ public class RevertInAmsWorker {
                 var bodyItem = painMapper.writeValueAsString(new TransactionBody(transactionDate, amount, withdrawPaymentTypeId, "", FORMAT, moneyInOutWorker.getLocale()));
                 batchItemBuilder.add(tenantIdentifier, internalCorrelationId, items, withdrawRelativeUrl, bodyItem, false);
 
-                var camt053Body = painMapper.writeValueAsString(new DtSavingsTransactionDetails(internalCorrelationId, camt053, creditorIban, withdrawPaymentTypeCode, internalCorrelationId, debtorName, debtorIban, null, debtorContactDetails, unstructured, transactionCategoryPurposeCode, paymentScheme, null, disposalAccountAmsId, endToEndId));
+                var camt053Body = painMapper.writeValueAsString(new DtSavingsTransactionDetails(internalCorrelationId, camt053, creditorIban, withdrawPaymentTypeCode, internalCorrelationId, debtorName, debtorIban, null, contactDetailsUtil.getId(debtorContactDetails), unstructured, transactionCategoryPurposeCode, paymentScheme, null, disposalAccountAmsId, endToEndId));
                 batchItemBuilder.add(tenantIdentifier, internalCorrelationId, items, "datatables/dt_savings_transaction_details/$.resourceId", camt053Body, true);
             } else {
                 var camt053Body = painMapper.writeValueAsString(new CurrentAccountTransactionBody(amount, FORMAT, moneyInOutWorker.getLocale(), withdrawPaymentTypeId, currency, List.of(new CurrentAccountTransactionBody.DataTable(List.of(new CurrentAccountTransactionBody.Entry(
@@ -864,7 +890,10 @@ public class RevertInAmsWorker {
                         null,
                         disposalAccountAmsId,
                         null,
-                        debtorContactDetails,
+                        debtorContactDetails.getMobNb(),
+                        debtorContactDetails.getEmailAdr(),
+                        contactDetailsUtil.getTaxId(debtorContactDetails),
+                        contactDetailsUtil.getTaxNumber(debtorContactDetails),
                         null,
                         valueDated,
                         direction

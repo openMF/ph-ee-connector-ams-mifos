@@ -10,10 +10,12 @@ import io.camunda.zeebe.spring.client.annotation.JobWorker;
 import io.camunda.zeebe.spring.client.annotation.Variable;
 import iso.std.iso._20022.tech.json.camt_053_001.*;
 import iso.std.iso._20022.tech.json.camt_053_001.ActiveOrHistoricCurrencyAndAmountRange2.CreditDebitCode;
+import iso.std.iso._20022.tech.json.pain_001_001.Contact4;
 import iso.std.iso._20022.tech.json.pain_001_001.CreditTransferTransaction40;
 import iso.std.iso._20022.tech.json.pain_001_001.Pain00100110CustomerCreditTransferInitiationV10MessageSchema;
 import iso.std.iso._20022.tech.json.pain_001_001.PartyIdentification135;
 import iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16;
+import iso.std.iso._20022.tech.xsd.pacs_004_001.ContactDetails2;
 import iso.std.iso._20022.tech.xsd.pacs_004_001.PaymentTransactionInformation27;
 import iso.std.iso._20022.tech.xsd.pacs_004_001.RemittanceInformation5;
 import jakarta.xml.bind.JAXBException;
@@ -164,7 +166,7 @@ public class BookOnConversionAccountInAmsWorker {
             String creditorIban = creditTransferTransaction.getCreditorAccount().getIdentification().getIban();
             String creditorName = creditor.getName();
             List<TransactionItem> items = new ArrayList<>();
-            String partnerAccountSecondaryIdentifier = contactDetailsUtil.getId(pain001.getDocument().getPaymentInformation().get(0).getDebtor().getContactDetails());
+            Contact4 partnerAccountContactDetails = pain001.getDocument().getPaymentInformation().get(0).getDebtor().getContactDetails();
 
             // STEP 1a - batch: withdraw amount
             String withdrawAmountOperation = "bookOnConversionAccountInAms.ConversionAccount.WithdrawTransactionAmount";
@@ -207,7 +209,10 @@ public class BookOnConversionAccountInAmsWorker {
                                 conversionAccountAmsId,
                                 null,
                                 transactionCreationChannel,
-                                partnerAccountSecondaryIdentifier,
+                                partnerAccountContactDetails.getMobileNumber(),
+                                partnerAccountContactDetails.getEmailAddress(),
+                                contactDetailsUtil.getTaxId(partnerAccountContactDetails),
+                                contactDetailsUtil.getTaxNumber(partnerAccountContactDetails),
                                 null,
                                 valueDated,
                                 direction
@@ -256,7 +261,10 @@ public class BookOnConversionAccountInAmsWorker {
                                     conversionAccountAmsId,
                                     null,
                                     transactionCreationChannel,
-                                    partnerAccountSecondaryIdentifier,
+                                    partnerAccountContactDetails.getMobileNumber(),
+                                    partnerAccountContactDetails.getEmailAddress(),
+                                    contactDetailsUtil.getTaxId(partnerAccountContactDetails),
+                                    contactDetailsUtil.getTaxNumber(partnerAccountContactDetails),
                                     null,
                                     valueDated,
                                     direction
@@ -358,7 +366,8 @@ public class BookOnConversionAccountInAmsWorker {
             String unstructured = Optional.ofNullable(paymentTransactionInformation.getOrgnlTxRef().getRmtInf()).map(RemittanceInformation5::getUstrd).map(it -> String.join(",", it)).orElse("");
             String creditorIban = paymentTransactionInformation.getOrgnlTxRef().getCdtrAcct().getId().getIBAN();
             String debtorName = paymentTransactionInformation.getOrgnlTxRef().getDbtr().getNm();
-            String debtorContactDetails = contactDetailsUtil.getId(paymentTransactionInformation.getOrgnlTxRef().getDbtr().getCtctDtls());
+            ContactDetails2 debtorContactDetails = paymentTransactionInformation.getOrgnlTxRef().getDbtr().getCtctDtls();
+            String debtorContactDetailsId = contactDetailsUtil.getId(debtorContactDetails);
             String endToEndId = paymentTransactionInformation.getOrgnlEndToEndId();
             List<TransactionItem> items = new ArrayList<>();
 
@@ -396,7 +405,7 @@ public class BookOnConversionAccountInAmsWorker {
             String camt053 = serializationHelper.writeCamt053AsString(accountProductType, camt053Entry);
 
             if (accountProductType.equalsIgnoreCase("SAVINGS")) {
-                String camt053Body = painMapper.writeValueAsString(new DtSavingsTransactionDetails(internalCorrelationId, camt053, creditorIban, paymentTypeCode, internalCorrelationId, debtorName, debtorIban, null, debtorContactDetails, unstructured, transactionCategoryPurposeCode, paymentScheme, conversionAccountAmsId, null, endToEndId));
+                String camt053Body = painMapper.writeValueAsString(new DtSavingsTransactionDetails(internalCorrelationId, camt053, creditorIban, paymentTypeCode, internalCorrelationId, debtorName, debtorIban, null, debtorContactDetailsId, unstructured, transactionCategoryPurposeCode, paymentScheme, conversionAccountAmsId, null, endToEndId));
                 batchItemBuilder.add(tenantIdentifier, internalCorrelationId, items, "datatables/dt_savings_transaction_details/$.resourceId", camt053Body, true);
             } else {
                 String camt053Body = painMapper.writeValueAsString(new CurrentAccountTransactionBody(amount, FORMAT, moneyInOutWorker.getLocale(), paymentTypeId, currency, List.of(new CurrentAccountTransactionBody.DataTable(List.of(new CurrentAccountTransactionBody.Entry(
@@ -414,7 +423,10 @@ public class BookOnConversionAccountInAmsWorker {
                         conversionAccountAmsId,
                         null,
                         null,
-                        debtorContactDetails,
+                        debtorContactDetails.getMobNb(),
+                        debtorContactDetails.getEmailAdr(),
+                        contactDetailsUtil.getTaxId(debtorContactDetails),
+                        contactDetailsUtil.getTaxNumber(debtorContactDetails),
                         null,
                         valueDated,
                         direction
