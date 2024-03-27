@@ -8,36 +8,6 @@ camel:
 
 dfspids: "DFSPID"
 
-fineract:
-  api-url: ${FINERACT_URL}
-  current-account-api: "/current-accounts/"
-  datatable-query-api: "/datatables/dt_client_account_mapping/query"
-  column-filter: "iban"
-  result-columns: "conversion_account_id,disposal_account_id,internal_account_id"
-  current-account-result-columns: status_type,account_no,external_id,id,product_id
-  incoming-money-api: "/savingsaccounts/"
-  current-products-api: "/current-products/"
-  transaction-details-api: "/datatables/dt_savings_transaction_details/"
-  datatable-name: "transaction_details"
-  flags-query-api: "/datatables/dt_savings_account_flags/query"
-  flags-column-filter: "savings_account_id"
-  flags-result-columns: "flag_code"
-  current-account-flags-result-columns: "flag_code"
-  locale: "en"
-  auth-user: ${FINERACT_AUTH_USER}
-  auth-password: ${FINERACT_AUTH_PASSWORD}
-  paymentType:
-    paymentTypeExchangeFiatCurrencyId: 5
-    paymentTypeIssuingECurrencyId: 7
-    paymentTypeExchangeECurrencyId: 8
-    paymentTypeExchangeToFiatCurrencyId: 6
-    paymentTypeFeeId: 1
-  generalLedger:
-    glLiabilityToCustomersInFiatCurrencyId: 10
-    glLiabilityAmountOnHoldId: 14
-  idempotency:
-    count: 10
-    interval: 200
 
 zeebe:
   client:
@@ -50,16 +20,10 @@ zeebe:
 ams:
   local:
     enabled: true
-    version: 1.2
     keystore-path: ${AMS_LOCAL_KEYSTORE_PATH}
     keystore-password: ${AMS_LOCAL_KEYSTORE_PASSWORD}
     interop:
-      host: https://localhost:8443
       base-url: /fineract-provider/api/v1
-      quotes-path: ${ams.local.interop.base-url}/interoperation/quotes
-      parties-path: ${ams.local.interop.base-url}/interoperation/parties/{idType}/{idValue}
-      transfers-path: ${ams.local.interop.base-url}/interoperation/transfers
-      accounts-path: ${ams.local.interop.base-url}/interoperation/accounts/{externalAccountId}
     customer:
       host: https://localhost:8443
       base-url: /fineract-provider/api/v1

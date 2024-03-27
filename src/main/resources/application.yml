@@ -54,14 +54,25 @@ fineract:
     datatable-query-api: "/datatables/dt_client_account_mapping/query"
     column-filter: "iban"
     result-columns: "conversion_account_id,disposal_account_id,internal_account_id"
+    current-account-result-columns: "status_type,account_no,external_id,id,product_id"
     internal-id-column: "internal_account_id"
     incoming-money-api: "/savingsaccounts/"
     locale: "en"
     idempotency:
         key-max-length: 50
-
+        count: 10
+        interval: 200
+    flags-query-api: "/datatables/dt_savings_account_flags/query"
+    flags-column-filter: "savings_account_id"
+    flags-result-columns: "account_flag_list_cd_flag_code"
+    current-account-flags-result-columns: "account_flag_list_cd_flag_code"
+    auth-user: ${FINERACT_AUTH_USER}
+    auth-password: ${FINERACT_AUTH_PASSWORD}
 
 zeebe:
+    gateway:
+        network:
+            host: "localhost"
     client:
         worker:
             max-jobs-active: 100

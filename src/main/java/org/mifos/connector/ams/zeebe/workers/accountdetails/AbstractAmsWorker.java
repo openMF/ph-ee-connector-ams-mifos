@@ -59,7 +59,7 @@ public abstract class AbstractAmsWorker {
     private String flagsResultColumns;
 
     @Value("${fineract.current-account-flags-result-columns}")
-    private String currentAccountFlagResult;
+    private String currentAccountFlagsResultColumns;
 
     @Autowired
     private RestTemplate restTemplate;
@@ -88,7 +88,7 @@ public abstract class AbstractAmsWorker {
                                 .datatableQueries(
                                         List.of(new DatatableQuery()
                                                 .table("dt_current_account_flags")
-                                                .query(new Query().resultColumns(Set.of(currentAccountFlagResult))))))
+                                                .query(new Query().resultColumns(Set.of(currentAccountFlagsResultColumns))))))
                 .page(0)
                 .size(20);
 
