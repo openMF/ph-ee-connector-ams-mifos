@@ -3,6 +3,7 @@ package org.mifos.connector.ams.zeebe.workers.accountdetails;
 import com.baasflow.commons.events.EventLogLevel;
 import com.baasflow.commons.events.EventService;
 import com.baasflow.commons.events.EventType;
+import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.mifos.connector.ams.fineract.currentaccount.request.*;
 import org.mifos.connector.ams.fineract.currentaccount.response.CAGetResponse;
@@ -13,6 +14,7 @@ import org.mifos.connector.ams.zeebe.workers.utils.AuthTokenHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
+import org.springframework.util.ObjectUtils;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -62,13 +64,15 @@ public abstract class AbstractAmsWorker {
     @Autowired
     private EventService eventService;
 
-    public AbstractAmsWorker() {
-    }
 
-    public AbstractAmsWorker(RestTemplate restTemplate) {
-        this.restTemplate = restTemplate;
-    }
+    @PostConstruct
+    public void setup() {
+        if (ObjectUtils.isEmpty(fineractApiUrl)) {
+            throw new IllegalStateException("FINERACT_API_URL is missing from environment variables");
+        }
 
+        log.info("using Fineract API URL: {}", fineractApiUrl);
+    }
 
     protected PageFineractResponse lookupCurrentAccountPostFlagsAndStatus(String iban, String accountSubValue, String tenantId) {
         FineractCurrentAccountRequest fineractCurrentAccountRequest = new FineractCurrentAccountRequest()

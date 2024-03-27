@@ -35,7 +35,7 @@ baasflow:
                 topic: "events"
 
 fineract:
-    api-url: ${FINERACT_URL}
+    api-url: 
     current-account-api: "/current-accounts/"
     datatable-query-api: "/datatables/dt_client_account_mapping/query"
     column-filter: "iban"
