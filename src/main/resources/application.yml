@@ -60,6 +60,9 @@ zeebe:
         network:
             host: "localhost"
     client:
+        connection-mode: ADDRESS
+        security:
+            plaintext: true
         worker:
             max-jobs-active: 100
             threads: 100

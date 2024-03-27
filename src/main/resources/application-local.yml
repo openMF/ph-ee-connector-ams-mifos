@@ -3,36 +3,8 @@ fineract:
 
 zeebe:
   client:
-    connection-mode: ADDRESS
-    security:
-      plaintext: true
-  broker:
-    contactpoint: "localhost:26500"
-
-ams:
-  local:
-    enabled: true
-    version: 1.2
-    keystore-path: keystore.jks
-    keystore-password: openmf
-    interop:
-      host: http://localhost:8080
-      base-url: /fineract-provider/api/v1
-      quotes-path: ${ams.local.interop.base-url}/interoperation/quotes
-      parties-path: ${ams.local.interop.base-url}/interoperation/parties/{idType}/{idValue}
-      transfers-path: ${ams.local.interop.base-url}/interoperation/transfers
-      accounts-path: ${ams.local.interop.base-url}/interoperation/accounts/{externalAccountId}
-    customer:
-      host: http://localhost:8080
-      base-url: /fineract-provider/api/v1
-      path: ${ams.local.customer.base-url}/clients/{clientId}
-      image: ${ams.local.customer.base-url}/clients/{clientId}/images
-    account:
-      host: http://localhost:8080
-      base-url: /fineract-provider/api/v1
-      savingsaccounts-path: ${ams.local.account.base-url}/savingsaccounts
-    auth:
-      host: http://localhost:8080
+    broker:
+      gateway-address: "localhost:26500"
 
 baasflow:
   events:
