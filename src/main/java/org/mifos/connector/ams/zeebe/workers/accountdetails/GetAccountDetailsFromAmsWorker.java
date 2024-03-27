@@ -10,11 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.client.models.GetSavingsAccountsAccountIdResponse;
 import org.mifos.connector.ams.common.SavingsAccountStatusType;
 import org.mifos.connector.ams.common.util.BeanWalker;
-import org.mifos.connector.ams.fineract.currentaccount.response.CAGetResponse;
-import org.mifos.connector.ams.fineract.currentaccount.response.FineractResponse;
-import org.mifos.connector.ams.fineract.currentaccount.response.Identifier;
-import org.mifos.connector.ams.fineract.currentaccount.response.IdentifiersResponse;
-import org.mifos.connector.ams.fineract.currentaccount.response.PageFineractResponse;
+import org.mifos.connector.ams.fineract.currentaccount.response.*;
 import org.mifos.connector.ams.log.EventLogUtil;
 import org.mifos.connector.ams.log.LogInternalCorrelationId;
 import org.mifos.connector.ams.log.TraceZeebeArguments;
@@ -24,12 +20,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 
 import static org.mifos.connector.ams.common.util.BeanWalker.element;
 

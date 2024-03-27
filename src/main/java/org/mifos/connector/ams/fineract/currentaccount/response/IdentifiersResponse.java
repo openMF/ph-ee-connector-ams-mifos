@@ -1,7 +1,6 @@
 package org.mifos.connector.ams.fineract.currentaccount.response;
 
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
 import java.util.List;

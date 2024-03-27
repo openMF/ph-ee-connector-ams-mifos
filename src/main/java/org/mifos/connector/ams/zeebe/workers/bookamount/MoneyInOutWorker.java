@@ -21,11 +21,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.retry.support.RetrySynchronizationManager;
@@ -39,10 +35,7 @@ import java.net.SocketTimeoutException;
 import java.util.List;
 import java.util.Map;
 
-import static org.apache.hc.core5.http.HttpStatus.SC_CONFLICT;
-import static org.apache.hc.core5.http.HttpStatus.SC_FORBIDDEN;
-import static org.apache.hc.core5.http.HttpStatus.SC_LOCKED;
-import static org.apache.hc.core5.http.HttpStatus.SC_OK;
+import static org.apache.hc.core5.http.HttpStatus.*;
 
 @Component
 @Slf4j

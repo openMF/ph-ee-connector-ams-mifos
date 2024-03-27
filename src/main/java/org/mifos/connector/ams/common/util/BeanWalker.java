@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-@Value(staticConstructor="of")
+@Value(staticConstructor = "of")
 public class BeanWalker<T> {
 
     private T data;

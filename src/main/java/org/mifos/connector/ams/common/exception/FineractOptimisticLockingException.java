@@ -1,6 +1,6 @@
 package org.mifos.connector.ams.common.exception;
 
-public class FineractOptimisticLockingException extends RuntimeException{
+public class FineractOptimisticLockingException extends RuntimeException {
     public FineractOptimisticLockingException() {
     }
 

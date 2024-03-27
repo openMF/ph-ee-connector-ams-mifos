@@ -186,7 +186,7 @@ public class BookCreditedAmountToConversionAccountWorker {
                                 null,
                                 conversionAccountAmsId,
                                 null,
-                                debtorContactDetails == null ?  null : debtorContactDetails.getMobNb(),
+                                debtorContactDetails == null ? null : debtorContactDetails.getMobNb(),
                                 debtorContactDetails == null ? null : debtorContactDetails.getEmailAdr(),
                                 contactDetailsUtil.getTaxId(debtorContactDetails),
                                 contactDetailsUtil.getTaxNumber(debtorContactDetails),

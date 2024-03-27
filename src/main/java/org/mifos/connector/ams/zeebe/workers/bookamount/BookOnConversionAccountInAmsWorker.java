@@ -11,10 +11,9 @@ import io.camunda.zeebe.spring.client.annotation.Variable;
 import iso.std.iso._20022.tech.json.camt_053_001.*;
 import iso.std.iso._20022.tech.json.camt_053_001.ActiveOrHistoricCurrencyAndAmountRange2.CreditDebitCode;
 import iso.std.iso._20022.tech.json.pain_001_001.Contact4;
-import iso.std.iso._20022.tech.json.pain_001_001.CreditTransferTransaction40;
-import iso.std.iso._20022.tech.json.pain_001_001.Pain00100110CustomerCreditTransferInitiationV10MessageSchema;
 import iso.std.iso._20022.tech.json.pain_001_001.PartyIdentification135;
 import iso.std.iso._20022.tech.json.pain_001_001.RemittanceInformation16;
+import iso.std.iso._20022.tech.json.pain_001_001.*;
 import iso.std.iso._20022.tech.xsd.pacs_004_001.ContactDetails2;
 import iso.std.iso._20022.tech.xsd.pacs_004_001.PaymentTransactionInformation27;
 import iso.std.iso._20022.tech.xsd.pacs_004_001.RemittanceInformation5;
@@ -306,7 +305,7 @@ public class BookOnConversionAccountInAmsWorker {
                                                             @Variable String internalCorrelationId,
                                                             @Variable String accountProductType,
                                                             @Variable String valueDated
-                                                            ) {
+    ) {
         log.info("withdrawTheAmountFromConversionAccountInAms");
         eventService.auditedEvent(
                 eventBuilder -> EventLogUtil.initZeebeJob(activatedJob,

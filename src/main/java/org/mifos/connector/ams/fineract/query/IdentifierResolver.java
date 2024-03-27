@@ -69,15 +69,15 @@ public class IdentifierResolver {
         try {
             return List.of(
                     Objects.requireNonNull(
-                            restTemplate.exchange(
-                            UriComponentsBuilder
-                                    .fromHttpUrl(fineractApiUrl)
-                                    .path(accountUrl)
-                                    .pathSegment(alias, internalAccountId, disposalSub, "identifiers")
-                                    .encode().toUriString(),
-                            HttpMethod.GET,
-                            new HttpEntity<>(httpHeaders),
-                            IdentifiersResponse.class).getBody()).getSecondaryIdentifiers().stream()
+                                    restTemplate.exchange(
+                                            UriComponentsBuilder
+                                                    .fromHttpUrl(fineractApiUrl)
+                                                    .path(accountUrl)
+                                                    .pathSegment(alias, internalAccountId, disposalSub, "identifiers")
+                                                    .encode().toUriString(),
+                                            HttpMethod.GET,
+                                            new HttpEntity<>(httpHeaders),
+                                            IdentifiersResponse.class).getBody()).getSecondaryIdentifiers().stream()
                             .collect(Collectors.toMap(Identifier::getIdType, Identifier::getValue)));
         } catch (HttpClientErrorException.NotFound e) {
             return restTemplate.exchange(

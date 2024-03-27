@@ -1,14 +1,3 @@
-camel:
-  server-port: 5000
-  springboot:
-    main-run-controller: true
-  dataformat:
-    json-jackson:
-      auto-discover-object-mapper: true
-
-dfspids: "DFSPID"
-
-
 zeebe:
   client:
     connection-mode: ADDRESS

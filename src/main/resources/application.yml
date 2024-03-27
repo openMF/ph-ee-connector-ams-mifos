@@ -5,16 +5,6 @@ spring:
     lifecycle:
         timeout-per-shutdown-phase: "20s"
 
-camel:
-    health:
-        enabled: true
-    server-port: 5000
-    springboot:
-        main-run-controller: true
-    dataformat:
-        json-jackson:
-            auto-discover-object-mapper: true
-
 management:
     endpoint:
         health:
@@ -22,11 +12,9 @@ management:
             group:
                 liveness:
                     include:
-                        - camelHealth
                         # zeebeClient will not get included in the liveness state
                 readiness:
                     include:
-                        - camelHealth
                         - zeebeClient
     endpoints:
         web:
@@ -45,8 +33,6 @@ baasflow:
                 topic: "auditlog"
             business:
                 topic: "events"
-
-dfspids: "DFSPID"
 
 fineract:
     api-url: ${FINERACT_URL}
