@@ -87,8 +87,6 @@ public class GetAccountDetailsFromAmsWorker extends AbstractAmsWorker {
         String paymentSchemePrefix = paymentScheme.split(":")[0];
 
         try {
-
-
             BeanWalker<List<FineractResponse>> disposalAccountData = BeanWalker.of(lookupCurrentAccountPostFlagsAndStatus(iban, disposalSub, tenantIdentifier)).get(PageFineractResponse::getContent);
 
             CAGetResponse disposalAccount = lookupCurrentAccountGet(iban, disposalSub, tenantIdentifier);
@@ -190,11 +188,11 @@ public class GetAccountDetailsFromAmsWorker extends AbstractAmsWorker {
 
             log.info("Retrieving conversion account data");
             GetSavingsAccountsAccountIdResponse conversion = retrieveCurrencyIdAndStatus(accountConversionId, tenantIdentifier);
-            log.trace("conversion account details: {}", conversion);
+            log.debug("conversion account details: {}", conversion);
             log.info("2/4: Conversion account data retrieval finished");
 
             GetSavingsAccountsAccountIdResponse disposal = retrieveCurrencyIdAndStatus(accountDisposalId, tenantIdentifier);
-            log.trace("disposal account details: {}", disposal);
+            log.debug("disposal account details: {}", disposal);
             log.info("3/4: Disposal account data retrieval finished");
 
             Integer disposalAccountAmsId = disposal.getId();

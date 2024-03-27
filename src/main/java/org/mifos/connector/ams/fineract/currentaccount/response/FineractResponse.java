@@ -10,7 +10,7 @@ import java.util.Map;
         "account_no",
         "external_id",
         "id",
-        "flag_code",
+        "account_flag_list_cd_flag_code",
         "product_id"
 })
 public class FineractResponse {
@@ -25,7 +25,7 @@ public class FineractResponse {
     private String externalId;
     @JsonProperty("id")
     private String id;
-    @JsonProperty("flag_code")
+    @JsonProperty("account_flag_list_cd_flag_code")
     private String flagCode;
     @JsonProperty("product_id")
     private String productId;
@@ -80,12 +80,12 @@ public class FineractResponse {
         this.id = id;
     }
 
-    @JsonProperty("flag_code")
+    @JsonProperty("account_flag_list_cd_flag_code")
     public String getFlagCode() {
         return flagCode;
     }
 
-    @JsonProperty("flag_code")
+    @JsonProperty("account_flag_list_cd_flag_code")
     public void setFlagCode(String flagCode) {
         this.flagCode = flagCode;
     }
