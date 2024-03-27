@@ -4,8 +4,6 @@ import lombok.Data;
 
 @Data
 public class CAGetResponse {
-
-
     private String id;
     private String accountNumber;
     private String externalId;

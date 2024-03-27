@@ -65,7 +65,6 @@ public class GetAccountDetailsFromAmsWorker extends AbstractAmsWorker {
                                                         @Variable String currency,
                                                         @Variable String paymentScheme,
                                                         @Variable String direction) {
-        log.info("getAccountDetailsFromAms");
         return eventService.auditedEvent(
                 eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "getAccountDetailsFromAms", internalCorrelationId, null, eventBuilder),
                 eventBuilder -> getAccountDetailsFromAms(internalCorrelationId, iban, tenantIdentifier, currency, paymentScheme, direction, eventBuilder));

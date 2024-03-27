@@ -23,12 +23,12 @@ public class SerializationHelper {
     public String writeCamt053AsString(String accountProductType, ReportEntry10 camt053) {
         try {
             if ("CURRENT".equalsIgnoreCase(accountProductType)) {
-                logger.debug("serializeCamt053 for Current account");
+                logger.trace("serializeCamt053 for Current account");
                 EntryTransaction10 transactionDetail = camt053.getEntryDetails().get(0).getTransactionDetails().get(0);
                 return painMapper.writeValueAsString(removeFieldsFromCurrentAccount(transactionDetail));
 
             } else {
-                logger.debug("serializeCamt053 for Savings account");
+                logger.trace("serializeCamt053 for Savings account");
                 return painMapper.writeValueAsString(camt053);
             }
 
