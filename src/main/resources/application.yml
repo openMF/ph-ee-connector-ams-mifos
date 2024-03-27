@@ -35,7 +35,7 @@ baasflow:
                 topic: "events"
 
 fineract:
-    api-url: 
+    api-url:
     current-account-api: "/current-accounts/"
     datatable-query-api: "/datatables/dt_client_account_mapping/query"
     column-filter: "iban"
@@ -50,8 +50,6 @@ fineract:
         interval: 200
     flags-query-api: "/datatables/dt_savings_account_flags/query"
     flags-column-filter: "savings_account_id"
-    flags-result-columns: "account_flag_list_cd_flag_code"
-    current-account-flags-result-columns: "account_flag_list_cd_flag_code"
     auth-user: ${FINERACT_AUTH_USER}
     auth-password: ${FINERACT_AUTH_PASSWORD}
 

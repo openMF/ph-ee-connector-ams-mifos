@@ -25,12 +25,15 @@ import java.util.stream.Collectors;
 
 @Slf4j
 public abstract class AbstractAmsWorker {
+    public static final String flagsResultColumns = "account_flag_list_cd_flag_code";
+    public static final String currentAccountFlagsResultColumns = "account_flag_list_cd_flag_code";
 
     @Value("${fineract.api-url}")
     protected String fineractApiUrl;
 
     @Value("${fineract.current-account-api}")
     private String accountUrl;
+
     @Value("${fineract.datatable-query-api}")
     private String datatableQueryApi;
 
@@ -48,12 +51,6 @@ public abstract class AbstractAmsWorker {
 
     @Value("${fineract.flags-column-filter}")
     private String flagsColumnFilter;
-
-    @Value("${fineract.flags-result-columns}")
-    private String flagsResultColumns;
-
-    @Value("${fineract.current-account-flags-result-columns}")
-    private String currentAccountFlagsResultColumns;
 
     @Autowired
     private RestTemplate restTemplate;
