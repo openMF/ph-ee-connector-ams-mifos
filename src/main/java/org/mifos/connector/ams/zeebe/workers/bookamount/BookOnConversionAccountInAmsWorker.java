@@ -165,7 +165,7 @@ public class BookOnConversionAccountInAmsWorker {
             String creditorIban = creditTransferTransaction.getCreditorAccount().getIdentification().getIban();
             String creditorName = creditor.getName();
             List<TransactionItem> items = new ArrayList<>();
-            Contact4 partnerAccountContactDetails = pain001.getDocument().getPaymentInformation().get(0).getDebtor().getContactDetails();
+            Contact4 partnerAccountContactDetails = pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditor().getContactDetails();
 
             // STEP 1a - batch: withdraw amount
             String withdrawAmountOperation = "bookOnConversionAccountInAms.ConversionAccount.WithdrawTransactionAmount";
