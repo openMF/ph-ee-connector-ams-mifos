@@ -155,7 +155,7 @@ public class TransferToDisposalAccountWorker {
             String debtorName = creditTransferTransaction.getDbtr().getNm();
             String debtorIban = creditTransferTransaction.getDbtrAcct().getId().getIBAN();
             String unstructured = Optional.ofNullable(creditTransferTransaction.getRmtInf()).map(RemittanceInformation5::getUstrd).map(it -> String.join(",", it)).orElse("");
-            ContactDetails2 contactDetails = creditTransferTransaction.getCdtr().getCtctDtls();
+            ContactDetails2 contactDetails = creditTransferTransaction.getDbtr().getCtctDtls();
             String debtorContactDetails = contactDetailsUtil.getId(contactDetails);
             String endToEndId = creditTransferTransaction.getPmtId().getEndToEndId();
             List<TransactionItem> items = new ArrayList<>();
