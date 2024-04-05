@@ -181,7 +181,7 @@ public class RevertInAmsWorker {
             String creditorName = creditTransferTransaction.getCreditor().getName();
             String creditorIban = creditTransferTransaction.getCreditorAccount().getIdentification().getIban();
             String endToEndId = creditTransferTransaction.getPaymentIdentification().getEndToEndIdentification();
-            Contact4 contactDetails = pain001Document.getPaymentInformation().get(0).getDebtor().getContactDetails();
+            Contact4 contactDetails = creditTransferTransaction.getCreditor().getContactDetails();
 
             List<TransactionItem> items = new ArrayList<>();
 
