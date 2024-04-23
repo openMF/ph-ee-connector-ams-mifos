@@ -193,7 +193,18 @@ public class GetAccountDetailsFromAmsWorker extends AbstractAmsWorker {
             GetSavingsAccountsAccountIdResponse disposal = retrieveCurrencyIdAndStatus(accountDisposalId, tenantIdentifier);
             log.debug("disposal account details: {}", disposal);
             log.info("3/4: Disposal account data retrieval finished");
+            if (Objects.isNull(disposal.getStatus().getClosed())
+                    || Objects.isNull(conversion.getStatus().getClosed())
+                    || disposal.getStatus().getClosed()
+                    || conversion.getStatus().getClosed()) {
+                log.info("Account is closed. Internal account id: {}", internalAccountId);
 
+                HashMap<String, Object> outputVariables = new HashMap<>();
+                outputVariables.put("accountAmsStatus", status);
+                outputVariables.put("accountProductType", "SAVINGS");
+                outputVariables.put("internalAccountId", internalAccountId);
+                return outputVariables;
+            }
             Integer disposalAccountAmsId = disposal.getId();
             Integer conversionAccountAmsId = conversion.getId();
 
