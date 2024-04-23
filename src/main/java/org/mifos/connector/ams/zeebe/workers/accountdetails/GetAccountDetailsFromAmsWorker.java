@@ -198,10 +198,10 @@ public class GetAccountDetailsFromAmsWorker extends AbstractAmsWorker {
                     || disposal.getStatus().getClosed()
                     || conversion.getStatus().getClosed()) {
                 log.info("Account is closed. Internal account id: {}", internalAccountId);
-
                 HashMap<String, Object> outputVariables = new HashMap<>();
                 outputVariables.put("accountAmsStatus", status);
                 outputVariables.put("accountProductType", "SAVINGS");
+                outputVariables.put("reasonCode", "AC07");
                 outputVariables.put("internalAccountId", internalAccountId);
                 return outputVariables;
             }
