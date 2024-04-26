@@ -292,7 +292,11 @@ public class MoneyInOutWorker {
         log.debug("Got error {}, response item '{}' for request", statusCode, responseItem);
         switch (statusCode) {
             case SC_CONFLICT -> {
-                log.warn("Transaction request is already executing, has not completed yet");
+                log.warn("Locking exception detected, retrying request");
+                throw new FineractOptimisticLockingException("Locking exception detected, retry transaction");
+            }
+            case SC_TOO_EARLY -> {
+                log.info("Request have been send to early");
                 throw new FineractOptimisticLockingException("Locking exception detected, retry transaction");
             }
             case SC_LOCKED -> {
