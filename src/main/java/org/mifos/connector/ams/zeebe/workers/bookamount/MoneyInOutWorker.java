@@ -293,7 +293,7 @@ public class MoneyInOutWorker {
         switch (statusCode) {
             case SC_CONFLICT -> {
                 log.warn("Transaction request is already executing, has not completed yet");
-                throw new ZeebeBpmnError("Error_CaughtException", "Fineract returned a conflict error");
+                throw new FineractOptimisticLockingException("Locking exception detected, retry transaction");
             }
             case SC_LOCKED -> {
                 log.info("Locking exception detected, retrying request");
