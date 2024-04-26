@@ -281,10 +281,7 @@ public class MoneyInOutWorker {
         } catch (JsonProcessingException j) {
             log.error(j.getMessage(), j);
             throw new RuntimeException(j);
-        } finally {
-            log.info("Request [{}] successful", idempotencyKey);
         }
-
     }
 
 
@@ -297,10 +294,6 @@ public class MoneyInOutWorker {
             }
             case SC_TOO_EARLY -> {
                 log.info("Request have been send to early");
-                throw new FineractOptimisticLockingException("Locking exception detected, retry transaction");
-            }
-            case SC_LOCKED -> {
-                log.info("Locking exception detected, retrying request");
                 throw new FineractOptimisticLockingException("Locking exception detected, retry transaction");
             }
             case SC_FORBIDDEN -> {
