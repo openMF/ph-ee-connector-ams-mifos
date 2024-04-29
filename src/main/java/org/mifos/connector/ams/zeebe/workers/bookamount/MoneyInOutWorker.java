@@ -128,9 +128,21 @@ public class MoneyInOutWorker {
     }
 
     @Recover
-    public String recover(Exception e) {
+    public long recoverHoldBatch(Exception e) {
         log.error(e.getMessage(), e);
-        throw new ZeebeBpmnError("Error_CaughtException", "Failed to handle batch request");
+        throw new ZeebeBpmnError("Error_CaughtException", "Failed to handle holdBatch request");
+    }
+
+    @Recover
+    public String recoverDoBatch(Exception e) {
+        log.error(e.getMessage(), e);
+        throw new ZeebeBpmnError("Error_CaughtException", "Failed to handle doBatch request");
+    }
+
+    @Recover
+    public void recoverDoBatchOnUs(Exception e) {
+        log.error(e.getMessage(), e);
+        throw new ZeebeBpmnError("Error_CaughtException", "Failed to handle batchOnUs request");
     }
 
     private Long holdBatchInternal(String transactionGroupId, List<TransactionItem> items, String tenantId, String internalCorrelationId, String from) {
