@@ -23,6 +23,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.*;
 import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Recover;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.retry.support.RetrySynchronizationManager;
 import org.springframework.stereotype.Component;
@@ -126,6 +127,24 @@ public class MoneyInOutWorker {
                 eventBuilder -> doBatchInternal(items, tenantId, transactionGroupId, internalCorrelationId, "transferTheAmountBetweenDisposalAccounts"));
     }
 
+    @Recover
+    public long recoverHoldBatch(Exception e) {
+        log.error(e.getMessage(), e);
+        throw new ZeebeBpmnError("Error_CaughtException", "Failed to handle holdBatch request");
+    }
+
+    @Recover
+    public String recoverDoBatch(Exception e) {
+        log.error(e.getMessage(), e);
+        throw new ZeebeBpmnError("Error_CaughtException", "Failed to handle doBatch request");
+    }
+
+    @Recover
+    public void recoverDoBatchOnUs(Exception e) {
+        log.error(e.getMessage(), e);
+        throw new ZeebeBpmnError("Error_CaughtException", "Failed to handle batchOnUs request");
+    }
+
     private Long holdBatchInternal(String transactionGroupId, List<TransactionItem> items, String tenantId, String internalCorrelationId, String from) {
         HttpHeaders httpHeaders = createHeaders(tenantId, transactionGroupId);
         HttpEntity<List<TransactionItem>> entity = new HttpEntity<>(items, httpHeaders);
@@ -202,7 +221,7 @@ public class MoneyInOutWorker {
             }
         }
 
-        return handleResponseElementError(responseItem, statusCode);
+        return handleResponseElementError(responseItem, statusCode, retryCount);
 
 
     }
@@ -269,7 +288,7 @@ public class MoneyInOutWorker {
 
         batchResponseList.stream().filter(element -> element.getStatusCode() != SC_OK).forEach(element -> {
             log.debug("Got status code {} for request [{}]", element.getStatusCode(), idempotencyKey);
-            handleResponseElementError(element, element.getStatusCode());
+            handleResponseElementError(element, element.getStatusCode(), retryCount);
         });
 
         BatchResponse lastResponseItem = Iterables.getLast(batchResponseList);
@@ -285,16 +304,16 @@ public class MoneyInOutWorker {
     }
 
 
-    private Long handleResponseElementError(BatchResponse responseItem, int statusCode) {
+    private Long handleResponseElementError(BatchResponse responseItem, int statusCode, int retryCount) {
         log.debug("Got error {}, response item '{}' for request", statusCode, responseItem);
         switch (statusCode) {
             case SC_CONFLICT -> {
-                log.warn("Locking exception detected, retrying request");
-                throw new FineractOptimisticLockingException("Locking exception detected, retry transaction");
+                log.warn("Locking exception detected will retry for {} times", retryCount);
+                throw new FineractOptimisticLockingException("Locking exception detected");
             }
             case SC_TOO_EARLY -> {
-                log.info("Request have been send to early");
-                throw new FineractOptimisticLockingException("Locking exception detected, retry transaction");
+                log.info("Request have been send to early will retry for {} times", retryCount);
+                throw new FineractOptimisticLockingException("Locking exception detected");
             }
             case SC_FORBIDDEN -> {
                 String body = responseItem.getBody();

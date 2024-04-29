@@ -6,6 +6,7 @@ import io.camunda.zeebe.client.api.response.ActivatedJob;
 import io.camunda.zeebe.client.api.worker.JobClient;
 import io.camunda.zeebe.spring.client.annotation.JobWorker;
 import io.camunda.zeebe.spring.client.annotation.Variable;
+import io.camunda.zeebe.spring.client.exception.ZeebeBpmnError;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.client.models.GetSavingsAccountsAccountIdResponse;
 import org.mifos.connector.ams.common.SavingsAccountStatusType;
@@ -252,6 +253,8 @@ public class GetAccountDetailsFromAmsWorker extends AbstractAmsWorker {
             outputVariables.put("reasonCode", reasonCode);
             return outputVariables;
 
+        } catch (Exception e) {
+            throw new ZeebeBpmnError("Error_CaughtException", "Failed to query account in fineract");
         }
 
     }
