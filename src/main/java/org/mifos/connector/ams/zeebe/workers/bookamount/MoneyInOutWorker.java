@@ -128,19 +128,19 @@ public class MoneyInOutWorker {
     }
 
     @Recover
-    public long recoverHoldBatch(Exception e) {
+    public long recoverHoldBatch(FineractOptimisticLockingException e) {
         log.error(e.getMessage(), e);
         throw new ZeebeBpmnError("Error_CaughtException", "Failed to handle holdBatch request");
     }
 
     @Recover
-    public String recoverDoBatch(Exception e) {
+    public String recoverDoBatch(FineractOptimisticLockingException e) {
         log.error(e.getMessage(), e);
         throw new ZeebeBpmnError("Error_CaughtException", "Failed to handle doBatch request");
     }
 
     @Recover
-    public void recoverDoBatchOnUs(Exception e) {
+    public void recoverDoBatchOnUs(FineractOptimisticLockingException e) {
         log.error(e.getMessage(), e);
         throw new ZeebeBpmnError("Error_CaughtException", "Failed to handle batchOnUs request");
     }
