@@ -145,6 +145,24 @@ public class MoneyInOutWorker {
         throw new ZeebeBpmnError("Error_CaughtException", "Failed to handle batchOnUs request");
     }
 
+    @Recover
+    public long recoverHoldBatch(ZeebeBpmnError e) {
+        log.error(e.getMessage(), e);
+        throw e;
+    }
+
+    @Recover
+    public String recoverDoBatch(ZeebeBpmnError e) {
+        log.error(e.getMessage(), e);
+        throw e;
+    }
+
+    @Recover
+    public void recoverDoBatchOnUs(ZeebeBpmnError e) {
+        log.error(e.getMessage(), e);
+        throw e;
+    }
+
     private Long holdBatchInternal(String transactionGroupId, List<TransactionItem> items, String tenantId, String internalCorrelationId, String from) {
         HttpHeaders httpHeaders = createHeaders(tenantId, transactionGroupId);
         HttpEntity<List<TransactionItem>> entity = new HttpEntity<>(items, httpHeaders);
