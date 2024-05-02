@@ -140,7 +140,7 @@ public class BookCreditedAmountToTechnicalAccountWorker {
             // STEP 0 - collect / extract information
             log.info("Incoming money, bookCreditedAmountToTechnicalAccount worker started with variables");
             MDC.put("internalCorrelationId", internalCorrelationId);
-            String apiPath = accountProductType.equalsIgnoreCase("SAVINGS") ? incomingMoneyApi.substring(1) : currentAccountApi.substring(1);
+            String apiPath = currentAccountApi.substring(1);
             String configOperationKey = String.format("%s.%s.%s", paymentScheme, "bookCreditedAmountToTechnicalAccount", caseIdentifier);
             TenantConfigs.PaymentTypeConfig paymentTypeConfig = tenantConfigs.getTenant(tenantIdentifier).findPaymentTypeByOperation(configOperationKey);
             String recallTechnicalAccountId = paymentTypeConfig.getAccountId();
