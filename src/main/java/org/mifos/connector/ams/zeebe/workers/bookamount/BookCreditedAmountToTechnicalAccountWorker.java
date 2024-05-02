@@ -137,6 +137,8 @@ public class BookCreditedAmountToTechnicalAccountWorker {
                                                       boolean valueDated
     ) {
         try {
+            // Temporal fix to have the right behavior in ams connector
+            String accountProductTypeCopy = "CURRENT";
             // STEP 0 - collect / extract information
             log.info("Incoming money, bookCreditedAmountToTechnicalAccount worker started with variables");
             MDC.put("internalCorrelationId", internalCorrelationId);
@@ -164,7 +166,7 @@ public class BookCreditedAmountToTechnicalAccountWorker {
             List<TransactionItem> items = new ArrayList<>();
 
             // STEP 1 - batch: withdraw amount
-            if (accountProductType.equalsIgnoreCase("SAVINGS")) {
+            if (accountProductTypeCopy.equalsIgnoreCase("SAVINGS")) {
                 String bodyItem = painMapper.writeValueAsString(new TransactionBody(transactionDate, amount, paymentTypeId, "", FORMAT, locale));
                 batchItemBuilder.add(tenantIdentifier, internalCorrelationId, items, conversionAccountWithdrawalRelativeUrl, bodyItem, false);
             } // CURRENT account sends a single call only at the details step
@@ -175,9 +177,9 @@ public class BookCreditedAmountToTechnicalAccountWorker {
             reportEntry10.setCreditDebitIndicator(CreditDebitCode.CRDT);
             reportEntry10.setStatus(new EntryStatus1Choice().withAdditionalProperty("Proprietary", "BOOKED"));
             ReportEntry10 camt053 = originalPacs004 == null ? reportEntry10 : enhanceFromPacs004(originalPacs004, paymentTypeCode, intermediateCamt053);
-            String camt053Entry = serializationHelper.writeCamt053AsString(accountProductType, camt053);
+            String camt053Entry = serializationHelper.writeCamt053AsString(accountProductTypeCopy, camt053);
 
-            if (accountProductType.equalsIgnoreCase("SAVINGS")) {
+            if (accountProductTypeCopy.equalsIgnoreCase("SAVINGS")) {
                 String camt053RelativeUrl = "datatables/dt_savings_transaction_details/$.resourceId";
                 String camt053Body = painMapper.writeValueAsString(new DtSavingsTransactionDetails(internalCorrelationId, camt053Entry, creditorIban, paymentTypeCode, transactionGroupId, debtorName, debtorIban, null, debtorContactDetails, unstructured, transactionCategoryPurposeCode, paymentScheme, null, null, endToEndId));
                 batchItemBuilder.add(tenantIdentifier, internalCorrelationId, items, camt053RelativeUrl, camt053Body, true);
