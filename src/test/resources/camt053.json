@@ -1,0 +1,181 @@
+{
+  "References": {
+    "InstructionIdentification": "DDCC36BC7E574342AE0DEC683168BFB1AAA",
+    "EndToEndIdentification": "B5CDE317AE334BA1BF7CF4AEBE5BC16CAAA",
+    "TransactionIdentification": "0603c9ffd8f7427898f536c674a2a2d6"
+  },
+  "CreditDebitIndicator": "DBIT",
+  "AmountDetails": {
+    "TransactionAmount": {
+      "Amount": {
+        "amount": 4600001,
+        "currency": "HUF"
+      }
+    }
+  },
+  "RelatedParties": {
+    "Debtor": {
+      "Party": {
+        "Name": "Current Company 2",
+        "Identification": {
+          "OrganisationIdentification": {
+            "Other": [
+              {
+                "Identification": "AAAAAA20",
+                "SchemeName": {
+                  "Code": "BANK"
+                },
+                "Issuer": "Debtor Issuer"
+              }
+            ]
+          }
+        },
+        "PostalAddress": {
+          "Country": "HU",
+          "AddressLine": [
+            "Debtor address1"
+          ]
+        }
+      }
+    },
+    "DebtorAccount": {
+      "Identification": {
+        "IBAN": "HU32304000010000000022538792"
+      }
+    },
+    "UltimateDebtor": {
+      "Party": {
+        "Name": "Current Company 2",
+        "Identification": {
+          "OrganisationIdentification": {
+            "Other": [
+              {
+                "Identification": "AAAAAA21",
+                "SchemeName": {
+                  "Code": "BANK"
+                },
+                "Issuer": "UltimateDebtor Issuer"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "Creditor": {
+      "Party": {
+        "Name": "Company TAK",
+        "Identification": {
+          "OrganisationIdentification": {
+            "Other": [
+              {
+                "Identification": "AAAAAA22",
+                "SchemeName": {
+                  "Code": "BANK"
+                },
+                "Issuer": "Creditor Issuer"
+              }
+            ]
+          }
+        },
+        "PostalAddress": {
+          "Country": "HU",
+          "AddressLine": [
+            "Addresss ofCompany TAK"
+          ]
+        },
+        "ContactDetails": {
+          "EmailAddress": "bz@arteries.hu"
+        }
+      }
+    },
+    "CreditorAccount": {
+      "Identification": {
+        "IBAN": "HU54117020050000000012345676"
+      }
+    },
+    "UltimateCreditor": {
+      "Party": {
+        "Identification": {
+          "OrganisationIdentification": {
+            "Other": [
+              {
+                "Identification": "AAAAAA23",
+                "SchemeName": {
+                  "Code": "BANK"
+                },
+                "Issuer": "UltimateCreditor Issuer"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  "RelatedAgents": {
+    "DebtorAgent": {
+      "FinancialInstitutionIdentification": {
+        "BICFI": "BBIXHUH0"
+      }
+    },
+    "CreditorAgent": {
+      "FinancialInstitutionIdentification": {
+        "BICFI": "OTPVHUH0"
+      }
+    }
+  },
+  "Purpose": {
+    "Code": "OTHR"
+  },
+  "RemittanceInformation": {
+    "Unstructured": [
+      "HCT_INST_Debtor_Positive_CA"
+    ]
+  },
+  "SupplementaryData": [
+    {
+      "Envelope": {
+        "any": {
+          "TransferFlag": "N",
+          "DebtorPartyIdentification": "HU32304000010000000022538792",
+          "DebtorPartyIdentificationType": "01",
+          "DebtorBranchCode": "30400001"
+        }
+      }
+    },
+    {
+      "PlaceAndName": "OrderManagerSupplementaryData",
+      "Envelope": {
+        "OrderManagerSupplementaryData": {
+          "internalCorrelationId": "BBIXHUH0_0603c9ffd8f7427898f536c674a2a2d6",
+          "transactionGroupId": "BBIXHUH0_0603c9ffd8f7427898f536c674a2a2d6",
+          "acceptanceDatetime": "2024-05-09T16:22:16+02:00",
+          "categoryPurpose": {
+            "Code": "MAIN"
+          }
+        },
+        "OtherIdentification": {
+          "DebtorAccount": {
+            "Identification": {
+              "Other": {
+                "Identification": "304000010000000022538792",
+                "SchemeName": {
+                  "Code": "BBAN"
+                }
+              }
+            }
+          },
+          "CreditorAccount": {
+            "Identification": {
+              "Other": {
+                "Identification": "117020050000000012345676",
+                "SchemeName": {
+                  "Code": "BBAN"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}
