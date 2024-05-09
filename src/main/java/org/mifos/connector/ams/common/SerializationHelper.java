@@ -1,9 +1,9 @@
 package org.mifos.connector.ams.common;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.netty.util.internal.ObjectUtil;
 import iso.std.iso._20022.tech.json.camt_053_001.EntryTransaction10;
 import iso.std.iso._20022.tech.json.camt_053_001.ReportEntry10;
+import iso.std.iso._20022.tech.json.camt_053_001.SupplementaryData1;
 import iso.std.iso._20022.tech.json.camt_053_001.TransactionParties6;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,7 +55,7 @@ public class SerializationHelper {
                         Object emailAddress = contactDetails.get("EmailAddress");
                         Object other = contactDetails.get("Other");
                         if (!ObjectUtils.isEmpty(mobileNumber) || !ObjectUtils.isEmpty(emailAddress) || !ObjectUtils.isEmpty(other)) {
-                            logger.debug("removing creditor Name/IBAN from camt053");
+                            logger.debug("removing creditor Name/IBAN/CreditorIdentification from camt053");
                             try {
                                 relatedParty.getCreditorAccount().getIdentification().setAdditionalProperty("IBAN", "");
                             } catch (Exception e) {
@@ -65,6 +65,18 @@ public class SerializationHelper {
                                 ((Map) relatedParty.getCreditor().getAdditionalProperties().get("Party")).put("Name", "");
                             } catch (Exception e) {
                                 logger.warn("failed to remove CreditorParty Name from camt053", e);
+                            }
+                            try {
+                                for (SupplementaryData1 supplementaryData : camt053.getEntryDetails().get(0).getTransactionDetails().get(0).getSupplementaryData()) {
+                                    Map otherIdentification = (Map) supplementaryData.getEnvelope().getAdditionalProperties().get("OtherIdentification");
+                                    if (otherIdentification != null) {
+                                        Map creditorAccount = (Map) otherIdentification.get("CreditorAccount");
+                                        Map identification = (Map) creditorAccount.get("Identification");
+                                        identification.clear();
+                                    }
+                                }
+                            } catch (Exception e) {
+                                logger.warn("failed to remove CreditorAccount Identification from camt053", e);
                             }
                         }
                     }
