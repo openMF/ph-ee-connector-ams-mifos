@@ -202,7 +202,7 @@ public class GetAccountDetailsFromAmsWorker extends AbstractAmsWorker {
                 HashMap<String, Object> outputVariables = new HashMap<>();
                 outputVariables.put("accountAmsStatus", status);
                 outputVariables.put("accountProductType", "SAVINGS");
-                outputVariables.put("reasonCode", "AC07");
+                outputVariables.put("reasonCode", accountClosedReasons.getOrDefault(paymentSchemePrefix + "-" + direction, "CLOSED_ACCOUNT"));
                 outputVariables.put("internalAccountId", internalAccountId);
                 return outputVariables;
             }
