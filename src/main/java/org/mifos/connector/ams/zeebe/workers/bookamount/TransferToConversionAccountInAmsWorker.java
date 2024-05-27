@@ -615,7 +615,7 @@ public class TransferToConversionAccountInAmsWorker {
             ContactDetails2 debtorContactDetails = originalTransactionReference.getDbtr().getCtctDtls();
             String debtorContactDetailsId = contactDetailsUtil.getId(debtorContactDetails);
 
-            String direction = tenantConfigs.findDirection(tenantIdentifier, depositPaymentTypeId);
+            String direction = tenantConfigs.findDirection(tenantIdentifier, withdrawConfigOperationKey);
 //            String holdAmountOperation = "withdrawTheAmountFromDisposalAccountInAMS.DisposalAccount.HoldTransactionAmount";
 //            String configOperationKey = String.format("%s.%s", paymentScheme, holdAmountOperation);
 //            String paymentTypeCode1 = tenantConfigs.findResourceCode(tenantIdentifier, configOperationKey);
