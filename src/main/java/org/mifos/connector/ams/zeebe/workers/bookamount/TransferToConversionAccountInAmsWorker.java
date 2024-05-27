@@ -615,11 +615,12 @@ public class TransferToConversionAccountInAmsWorker {
             ContactDetails2 debtorContactDetails = originalTransactionReference.getDbtr().getCtctDtls();
             String debtorContactDetailsId = contactDetailsUtil.getId(debtorContactDetails);
 
-            String holdAmountOperation = "withdrawTheAmountFromDisposalAccountInAMS.DisposalAccount.HoldTransactionAmount";
-            String configOperationKey = String.format("%s.%s", paymentScheme, holdAmountOperation);
-            String paymentTypeCode1 = tenantConfigs.findResourceCode(tenantIdentifier, configOperationKey);
-            String direction = tenantConfigs.findDirection(tenantIdentifier, configOperationKey);
-            entryTransaction10.setAdditionalTransactionInformation(paymentTypeCode1);
+            String direction = tenantConfigs.findDirection(tenantIdentifier, depositPaymentTypeId);
+//            String holdAmountOperation = "withdrawTheAmountFromDisposalAccountInAMS.DisposalAccount.HoldTransactionAmount";
+//            String configOperationKey = String.format("%s.%s", paymentScheme, holdAmountOperation);
+//            String paymentTypeCode1 = tenantConfigs.findResourceCode(tenantIdentifier, configOperationKey);
+//            String direction = tenantConfigs.findDirection(tenantIdentifier, configOperationKey);
+//            entryTransaction10.setAdditionalTransactionInformation(paymentTypeCode1);
             String camt0531 = serializationHelper.writeCamt053AsString(accountProductType, convertedCamt053Entry);
             List<TransactionItem> items = new ArrayList<>();
 
@@ -629,7 +630,7 @@ public class TransferToConversionAccountInAmsWorker {
                 String bodyItem = painMapper.writeValueAsString(new HoldAmountBody(transactionDate, amount, outHoldReasonId, moneyInOutWorker.getLocale(), FORMAT));
                 batchItemBuilder.add(tenantIdentifier, internalCorrelationId, items, holdTransactionUrl, bodyItem, false);
 
-                String camt053Body1 = painMapper.writeValueAsString(new DtSavingsTransactionDetails(internalCorrelationId, camt0531, iban, paymentTypeCode1, internalCorrelationId, debtorName, debtorIban, null, partnerAccountSecondaryIdentifier, unstructured, transactionCategoryPurposeCode, paymentScheme, disposalAccountAmsId, conversionAccountAmsId, endToEndId));
+                String camt053Body1 = painMapper.writeValueAsString(new DtSavingsTransactionDetails(internalCorrelationId, camt0531, iban, "", internalCorrelationId, debtorName, debtorIban, null, partnerAccountSecondaryIdentifier, unstructured, transactionCategoryPurposeCode, paymentScheme, disposalAccountAmsId, conversionAccountAmsId, endToEndId));
                 batchItemBuilder.add(tenantIdentifier, internalCorrelationId, items, "datatables/dt_savings_transaction_details/$.resourceId", camt053Body1, true);
                 Long lastHoldTransactionId = moneyInOutWorker.holdBatch(items, tenantIdentifier, transactionGroupId, disposalAccountAmsId, conversionAccountAmsId, internalCorrelationId, "transferToConversionAccountInAms");
 
