@@ -2,6 +2,8 @@ package org.mifos.connector.ams.fineract.currentaccount.response;
 
 import lombok.Data;
 
+import java.math.BigDecimal;
+
 @Data
 public class CAGetResponse {
     private String id;
@@ -14,10 +16,10 @@ public class CAGetResponse {
     private Currency currency;
     private boolean allowOverdraft;
     private boolean allowForceTransaction;
-    private double minimumRequiredBalance;
+    private BigDecimal minimumRequiredBalance;
     private BalanceCalculationType balanceCalculationType;
-    private int accountBalance;
-    private int holdAmount;
+    private BigDecimal accountBalance;
+    private BigDecimal holdAmount;
 
 
     @Data
