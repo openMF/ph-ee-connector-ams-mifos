@@ -2,6 +2,8 @@ package org.mifos.connector.ams.zeebe.workers.bookamount;
 
 import com.baasflow.commons.events.EventService;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.commons.lang3.tuple.Pair;
+import org.apache.fineract.client.models.BatchResponse;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import org.mifos.connector.ams.common.SerializationHelper;
@@ -141,6 +143,7 @@ class TestRevertInAmsWorker {
         worker.contactDetailsUtil = new ContactDetailsUtil();
         ResponseEntity mockResponse = mock(ResponseEntity.class);
         when(mockResponse.getBody()).thenReturn(mock(TransactionQueryPayload.class));
+        when(worker.moneyInOutWorker.doBatch(any(), any(), any(), any(), any(), any(), any())).thenReturn(Pair.of(null, List.of(mock(BatchResponse.class))));
         return worker;
     }
 }

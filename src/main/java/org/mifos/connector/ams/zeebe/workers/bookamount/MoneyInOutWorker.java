@@ -10,6 +10,7 @@ import com.google.common.collect.Iterables;
 import io.camunda.zeebe.spring.client.exception.ZeebeBpmnError;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.fineract.client.models.BatchResponse;
 import org.apache.fineract.client.models.CommandProcessingResult;
 import org.mifos.connector.ams.common.exception.FineractOptimisticLockingException;
@@ -91,13 +92,13 @@ public class MoneyInOutWorker {
     }
 
     @Retryable(retryFor = FineractOptimisticLockingException.class, maxAttemptsExpression = "${fineract.idempotency.count}", backoff = @Backoff(delayExpression = "${fineract.idempotency.interval}"))
-    protected String doBatch(List<TransactionItem> items,
-                             String tenantId,
-                             String transactionGroupId,
-                             String disposalAccountId,
-                             String conversionAccountId,
-                             String internalCorrelationId,
-                             String calledFrom) {
+    protected Pair<String, List<BatchResponse>> doBatch(List<TransactionItem> items,
+                                                        String tenantId,
+                                                        String transactionGroupId,
+                                                        String disposalAccountId,
+                                                        String conversionAccountId,
+                                                        String internalCorrelationId,
+                                                        String calledFrom) {
         return eventService.auditedEvent(
                 eventBuilder -> EventLogUtil.initFineractBatchCall(calledFrom,
                         items,
@@ -240,11 +241,9 @@ public class MoneyInOutWorker {
         }
 
         return handleResponseElementError(responseItem, statusCode, retryCount);
-
-
     }
 
-    private String doBatchInternal(List<TransactionItem> items, String tenantId, String transactionGroupId, String internalCorrelationId, String from) {
+    private Pair<String, List<BatchResponse>> doBatchInternal(List<TransactionItem> items, String tenantId, String transactionGroupId, String internalCorrelationId, String from) {
         HttpHeaders httpHeaders = createHeaders(tenantId, transactionGroupId);
 
         HttpEntity<List<TransactionItem>> entity = new HttpEntity<>(items, httpHeaders);
@@ -256,17 +255,11 @@ public class MoneyInOutWorker {
                 .toUriString();
 
         log.debug(">> Sending {} to {} with headers {} and idempotency {}", items, urlTemplate, httpHeaders, internalCorrelationId);
-        return retryAbleBatchRequest(httpHeaders, entity, urlTemplate, internalCorrelationId, from, "X-Idempotency-Key", items);
-
-    }
-
-    private String retryAbleBatchRequest(HttpHeaders httpHeaders, HttpEntity entity, String urlTemplate, String internalCorrelationId, String from, String idempotencyKeyHeaderName, Object items) {
-        httpHeaders.remove(idempotencyKeyHeaderName);
         int retryCount = RetrySynchronizationManager.getContext().getRetryCount();
         log.debug("setting retry count to {} for internal correlation id {}", retryCount, internalCorrelationId);
 
         String idempotencyKey = String.format("%s_%d", internalCorrelationId, retryCount);
-        httpHeaders.set(idempotencyKeyHeaderName, idempotencyKey);
+        httpHeaders.set("X-Idempotency-Key", idempotencyKey);
         wireLogger.sending(items.toString());
         eventService.sendEvent(builder -> builder
                 .setSourceModule("ams_connector")
@@ -275,10 +268,10 @@ public class MoneyInOutWorker {
                 .setEventType(EventType.audit)
                 .setCorrelationIds(Map.of("idempotencyKey", idempotencyKey))
                 .setPayload(entity.toString()));
-        ResponseEntity<List<BatchResponse>> response = null;
+        ResponseEntity<List<BatchResponse>> response;
 
         try {
-            response = restTemplate.exchange(urlTemplate, HttpMethod.POST, entity, new ParameterizedTypeReference<List<BatchResponse>>() {
+            response = restTemplate.exchange(urlTemplate, HttpMethod.POST, entity, new ParameterizedTypeReference<>() {
             });
             ResponseEntity<List<BatchResponse>> finalResponse = response;
             eventService.sendEvent(builder -> builder
@@ -296,7 +289,6 @@ public class MoneyInOutWorker {
                 log.error(e.getMessage(), e);
                 throw e;
             }
-
         } catch (Throwable t) {
             log.error(t.getMessage(), t);
             throw new RuntimeException(t);
@@ -310,11 +302,10 @@ public class MoneyInOutWorker {
         });
 
         BatchResponse lastResponseItem = Iterables.getLast(batchResponseList);
-
         String lastResponseBody = lastResponseItem.getBody();
         try {
             CommandProcessingResult cpResult = objectMapper.readValue(lastResponseBody, CommandProcessingResult.class);
-            return cpResult.getTransactionId();
+            return Pair.of(cpResult.getTransactionId(), batchResponseList);
         } catch (JsonProcessingException j) {
             log.error(j.getMessage(), j);
             throw new RuntimeException(j);

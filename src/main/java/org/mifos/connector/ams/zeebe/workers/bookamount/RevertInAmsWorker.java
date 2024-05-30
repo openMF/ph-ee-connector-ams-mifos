@@ -20,6 +20,8 @@ import iso.std.iso._20022.tech.xsd.pacs_004_001.PaymentTransactionInformation27;
 import iso.std.iso._20022.tech.xsd.pacs_004_001.RemittanceInformation5;
 import jakarta.xml.bind.JAXBException;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.Pair;
+import org.apache.fineract.client.models.BatchResponse;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 import org.mifos.connector.ams.common.SerializationHelper;
@@ -381,8 +383,8 @@ public class RevertInAmsWorker {
                 }
             }
 
-            String lastTransactionId = moneyInOutWorker.doBatch(items, tenantIdentifier, transactionGroupId, disposalAccountAmsId, conversionAccountAmsId, internalCorrelationId, "revertInAms");
-
+            Pair<String, List<BatchResponse>> response = moneyInOutWorker.doBatch(items, tenantIdentifier, transactionGroupId, disposalAccountAmsId, conversionAccountAmsId, internalCorrelationId, "revertInAms");
+            String lastTransactionId = response.getLeft();
             log.debug("querying running balance for account {}", disposalAccountAmsId);
             BigDecimal runningBalanceDerived = accountProductType.equalsIgnoreCase("SAVINGS") ?
                     queryRunningBalance(internalCorrelationId, disposalAccountAmsId, tenantIdentifier, lastTransactionId, apiPath)
