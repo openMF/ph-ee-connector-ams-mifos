@@ -58,6 +58,8 @@ zeebe:
         network:
             host: "localhost"
     client:
+        worker:
+            threads: 10
         connection-mode: ADDRESS
         security:
             plaintext: true
