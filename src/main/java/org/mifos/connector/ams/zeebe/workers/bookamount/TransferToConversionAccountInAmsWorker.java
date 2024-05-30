@@ -94,7 +94,7 @@ public class TransferToConversionAccountInAmsWorker {
     @JobWorker
     @LogInternalCorrelationId
     @TraceZeebeArguments
-    public Map<String, String> transferToConversionAccountInAms(JobClient jobClient,
+    public Map<String, Object> transferToConversionAccountInAms(JobClient jobClient,
                                                                 ActivatedJob activatedJob,
                                                                 @Variable String transactionGroupId,
                                                                 @Variable String transactionId,
@@ -203,7 +203,7 @@ public class TransferToConversionAccountInAmsWorker {
     }
 
     @SuppressWarnings("unchecked")
-    private Map<String, String> transferToConversionAccountInAms(String transactionGroupId,
+    private Map<String, Object> transferToConversionAccountInAms(String transactionGroupId,
                                                   String transactionId,
                                                   String transactionCategoryPurposeCode,
                                                   String transactionFeeCategoryPurposeCode,
@@ -513,7 +513,7 @@ public class TransferToConversionAccountInAmsWorker {
             Pair<String, List<BatchResponse>> out = moneyInOutWorker.doBatch(items, tenantIdentifier, transactionGroupId, disposalAccountAmsId, conversionAccountAmsId, internalCorrelationId, "transferToConversionAccountInAms");
             BatchResponse response = out.getRight().get(0);
             DocumentContext json = JsonPath.parse(response.getBody());
-            String availableBalance = json.read("$.changes.availableBalance", String.class);
+            BigDecimal availableBalance = json.read("$.changes.availableBalance", BigDecimal.class);
             log.info("returning availableBalance: {} from json response: {}", availableBalance, response.getBody());
             return Map.of("availableBalance", availableBalance);
 
