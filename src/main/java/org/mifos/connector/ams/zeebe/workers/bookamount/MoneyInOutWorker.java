@@ -135,7 +135,7 @@ public class MoneyInOutWorker {
     }
 
     @Recover
-    public String recoverDoBatch(FineractOptimisticLockingException e) {
+    public Pair<String, List<BatchResponse>> recoverDoBatch(FineractOptimisticLockingException e) {
         log.error(e.getMessage(), e);
         throw new ZeebeBpmnError("Error_CaughtException", "Failed to handle doBatch request");
     }
@@ -153,7 +153,7 @@ public class MoneyInOutWorker {
     }
 
     @Recover
-    public String recoverDoBatch(ZeebeBpmnError e) {
+    public Pair<String, List<BatchResponse>> recoverDoBatch(ZeebeBpmnError e) {
         log.error(e.getMessage(), e);
         throw e;
     }
