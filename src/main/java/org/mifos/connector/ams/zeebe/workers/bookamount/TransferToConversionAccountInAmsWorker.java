@@ -3,6 +3,8 @@ package org.mifos.connector.ams.zeebe.workers.bookamount;
 import com.baasflow.commons.events.EventService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.jayway.jsonpath.DocumentContext;
+import com.jayway.jsonpath.JsonPath;
 import hu.dpc.rt.utils.converter.Camt056ToCamt053Converter;
 import io.camunda.zeebe.client.api.response.ActivatedJob;
 import io.camunda.zeebe.client.api.worker.JobClient;
@@ -20,6 +22,8 @@ import iso.std.iso._20022.tech.xsd.camt_056_001.OriginalTransactionReference13;
 import iso.std.iso._20022.tech.xsd.camt_056_001.RemittanceInformation5;
 import jakarta.xml.bind.JAXBException;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.Pair;
+import org.apache.fineract.client.models.BatchResponse;
 import org.mifos.connector.ams.common.SerializationHelper;
 import org.mifos.connector.ams.fineract.TenantConfigs;
 import org.mifos.connector.ams.log.EventLogUtil;
@@ -40,10 +44,7 @@ import org.springframework.stereotype.Component;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 import static org.mifos.connector.ams.zeebe.workers.bookamount.MoneyInOutWorker.FORMAT;
 
@@ -93,26 +94,26 @@ public class TransferToConversionAccountInAmsWorker {
     @JobWorker
     @LogInternalCorrelationId
     @TraceZeebeArguments
-    public void transferToConversionAccountInAms(JobClient jobClient,
-                                                 ActivatedJob activatedJob,
-                                                 @Variable String transactionGroupId,
-                                                 @Variable String transactionId,
-                                                 @Variable String transactionCategoryPurposeCode,
-                                                 @Variable String transactionFeeCategoryPurposeCode,
-                                                 @Variable String originalPain001,
-                                                 @Variable String internalCorrelationId,
-                                                 @Variable BigDecimal amount,
-                                                 @Variable String currency,
-                                                 @Variable BigDecimal transactionFeeAmount,
-                                                 @Variable String paymentScheme,
-                                                 @Variable String disposalAccountAmsId,
-                                                 @Variable String conversionAccountAmsId,
-                                                 @Variable String tenantIdentifier,
-                                                 @Variable String transactionFeeInternalCorrelationId,
-                                                 @Variable String accountProductType,
-                                                 @Variable String valueDated
+    public Map<String, Object> transferToConversionAccountInAms(JobClient jobClient,
+                                                                ActivatedJob activatedJob,
+                                                                @Variable String transactionGroupId,
+                                                                @Variable String transactionId,
+                                                                @Variable String transactionCategoryPurposeCode,
+                                                                @Variable String transactionFeeCategoryPurposeCode,
+                                                                @Variable String originalPain001,
+                                                                @Variable String internalCorrelationId,
+                                                                @Variable BigDecimal amount,
+                                                                @Variable String currency,
+                                                                @Variable BigDecimal transactionFeeAmount,
+                                                                @Variable String paymentScheme,
+                                                                @Variable String disposalAccountAmsId,
+                                                                @Variable String conversionAccountAmsId,
+                                                                @Variable String tenantIdentifier,
+                                                                @Variable String transactionFeeInternalCorrelationId,
+                                                                @Variable String accountProductType,
+                                                                @Variable String valueDated
     ) {
-        eventService.auditedEvent(
+        return eventService.auditedEvent(
                 eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "transferToConversionAccountInAms", internalCorrelationId, transactionGroupId, eventBuilder),
                 eventBuilder -> transferToConversionAccountInAms(
                         transactionGroupId,
@@ -202,7 +203,7 @@ public class TransferToConversionAccountInAmsWorker {
     }
 
     @SuppressWarnings("unchecked")
-    private Void transferToConversionAccountInAms(String transactionGroupId,
+    private Map<String, Object> transferToConversionAccountInAms(String transactionGroupId,
                                                   String transactionId,
                                                   String transactionCategoryPurposeCode,
                                                   String transactionFeeCategoryPurposeCode,
@@ -509,7 +510,12 @@ public class TransferToConversionAccountInAmsWorker {
                 }
             }
 
-            moneyInOutWorker.doBatch(items, tenantIdentifier, transactionGroupId, disposalAccountAmsId, conversionAccountAmsId, internalCorrelationId, "transferToConversionAccountInAms");
+            Pair<String, List<BatchResponse>> out = moneyInOutWorker.doBatch(items, tenantIdentifier, transactionGroupId, disposalAccountAmsId, conversionAccountAmsId, internalCorrelationId, "transferToConversionAccountInAms");
+            BatchResponse response = out.getRight().get(0);
+            DocumentContext json = JsonPath.parse(response.getBody());
+            BigDecimal availableBalance = json.read("$.changes.availableBalance", BigDecimal.class);
+            log.info("returning availableBalance: {} from json response: {}", availableBalance, response.getBody());
+            return Map.of("availableBalance", availableBalance);
 
         } catch (ZeebeBpmnError z) {
             throw z;
@@ -519,7 +525,6 @@ public class TransferToConversionAccountInAmsWorker {
         } finally {
             MDC.remove("internalCorrelationId");
         }
-        return null;
     }
 
     @JobWorker
