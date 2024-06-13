@@ -9,3 +9,14 @@ zeebe:
 baasflow:
   events:
     disabled: true
+
+logging:
+  level:
+    root: trace
+    org.eclipse.jetty: info
+    io.camunda: info
+    sun: info
+    jdk: info
+    java: info
+    javax: info
+    org.mifos.connector: trace
