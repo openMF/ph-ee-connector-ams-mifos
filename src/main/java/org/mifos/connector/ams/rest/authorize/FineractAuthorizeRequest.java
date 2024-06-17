@@ -13,7 +13,6 @@ public class FineractAuthorizeRequest {
     BigDecimal transactionAmount;
     BigDecimal originalAmount;
     String sequenceDateTime;
-    String accId;
     final String locale = "en";
     final String dateFormat = "dd MMMM yyyy";
 }

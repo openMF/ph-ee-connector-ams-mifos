@@ -9,11 +9,13 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.math.BigDecimal;
 import java.util.Random;
@@ -35,11 +37,11 @@ public class AuthorizeEndpoint {
     public AuthorizeResponse authorize(@RequestBody AuthorizeRequest request) {
         logger.trace("authorize request: {}", request);
 
-        FineractAuthorizeRequest fineractRequest = new FineractAuthorizeRequest(request.transactionAmount, request.originalAmount, request.sequenceDateTime, request.accId);
+        FineractAuthorizeRequest fineractRequest = new FineractAuthorizeRequest(request.transactionAmount, request.originalAmount, request.sequenceDateTime);
         logger.trace("fineract request: {}", fineractRequest);
 
         try {
-            FineractAuthorizeResponse fineractResponse = call(fineractRequest);
+            FineractAuthorizeResponse fineractResponse = call(request.accId, fineractRequest);
             logger.trace("fineract response: {}", fineractResponse);
 
             AuthorizeResponse response = new AuthorizeResponse(fineractResponse);
@@ -56,6 +58,18 @@ public class AuthorizeEndpoint {
         }
     }
 
+    private FineractAuthorizeResponse call(String accountId, FineractAuthorizeRequest fineractRequest) {
+        RestTemplate restTemplate = new RestTemplate();
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpEntity<FineractAuthorizeRequest> requestEntity = new HttpEntity<>(fineractRequest, headers);
+
+        String url = UriComponentsBuilder.fromUriString(authorizeUrl).buildAndExpand(accountId).toUriString();
+        logger.trace("calling fineract url: {}", url);
+        ResponseEntity<FineractAuthorizeResponse> response = restTemplate.exchange(url, HttpMethod.POST, requestEntity, FineractAuthorizeResponse.class);
+        return response.getBody();
+    }
+
     private @NotNull AuthorizeResponse createStubResponse() {
         logger.warn("returning stub response because fineract stub response is enabled in the configuration");
         Random random = new Random();
@@ -65,15 +79,5 @@ public class AuthorizeEndpoint {
                 BigDecimal.valueOf(random.nextInt(10000)),
                 BigDecimal.valueOf(random.nextInt(10000))
         );
-    }
-
-    private FineractAuthorizeResponse call(FineractAuthorizeRequest fineractRequest) {
-        RestTemplate restTemplate = new RestTemplate();
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        HttpEntity<FineractAuthorizeRequest> requestEntity = new HttpEntity<>(fineractRequest, headers);
-
-        ResponseEntity<FineractAuthorizeResponse> response = restTemplate.exchange(authorizeUrl, HttpMethod.POST, requestEntity, FineractAuthorizeResponse.class);
-        return response.getBody();
     }
 }
