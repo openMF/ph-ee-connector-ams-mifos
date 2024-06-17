@@ -1,11 +1,22 @@
 package org.mifos.connector.ams.rest.authorize;
 
-import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.NoArgsConstructor;
+
+import java.math.BigDecimal;
 
 @Data
-@NoArgsConstructor
-@AllArgsConstructor
 public class FineractAuthorizeResponse {
+    String clientId;
+    String resourceIdentifier;
+    String entityExternalId;
+
+    Changes changes;
+
+    @Data
+    public static class Changes {
+        BigDecimal accountBalance;
+        BigDecimal holdAmount;
+        BigDecimal availableBalance;
+        BigDecimal externalHold;
+    }
 }

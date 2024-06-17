@@ -1,5 +1,7 @@
 fineract:
   api-url: "http://localhost:8080/fineract-provider/api/v1"
+  authorize-url: "http://localhost:8081/api/fineract/authorize"
+  authorize-stub-response: true
 
 zeebe:
   client:

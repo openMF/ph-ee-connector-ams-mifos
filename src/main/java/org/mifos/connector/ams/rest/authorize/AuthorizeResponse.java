@@ -10,7 +10,20 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AuthorizeResponse {
-    BigDecimal avlBalance;
-    BigDecimal curBalance;
+    BigDecimal accountBalance;
+    BigDecimal holdAmount;
+    BigDecimal availableBalance;
+    BigDecimal externalHold;
+
+    public AuthorizeResponse(FineractAuthorizeResponse fineractResponse) {
+        FineractAuthorizeResponse.Changes changes = fineractResponse.getChanges();
+        if (changes == null) {
+            throw new IllegalStateException("missing `changes` structure in fineract response");
+        }
+        this.accountBalance = changes.getAccountBalance();
+        this.holdAmount = changes.getHoldAmount();
+        this.availableBalance = changes.getAvailableBalance();
+        this.externalHold = changes.getExternalHold();
+    }
 }
 

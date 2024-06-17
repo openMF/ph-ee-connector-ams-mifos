@@ -9,4 +9,5 @@ public class AuthorizeRequest {
     BigDecimal transactionAmount;
     BigDecimal originalAmount;
     String sequenceDateTime;
+    String accId;
 }
