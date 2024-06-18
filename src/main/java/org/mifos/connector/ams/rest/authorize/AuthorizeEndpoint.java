@@ -1,8 +1,10 @@
 package org.mifos.connector.ams.rest.authorize;
 
 import org.jetbrains.annotations.NotNull;
+import org.mifos.connector.ams.zeebe.workers.utils.AuthTokenHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -32,6 +34,9 @@ public class AuthorizeEndpoint {
     @Value("${fineract.authorize-stub-response:false}")
     private boolean authorizeStubResponse;
 
+    @Autowired
+    private AuthTokenHelper authTokenHelper;
+
 
     @PostMapping("/authorize")
     public AuthorizeResponse authorize(@RequestBody AuthorizeRequest request) {
@@ -41,7 +46,7 @@ public class AuthorizeEndpoint {
         logger.trace("fineract request: {}", fineractRequest);
 
         try {
-            FineractAuthorizeResponse fineractResponse = call(request.accId, fineractRequest);
+            FineractAuthorizeResponse fineractResponse = call(request.tenantId, request.accId, fineractRequest);
             logger.trace("fineract response: {}", fineractResponse);
 
             AuthorizeResponse response = new AuthorizeResponse(fineractResponse);
@@ -58,10 +63,12 @@ public class AuthorizeEndpoint {
         }
     }
 
-    private FineractAuthorizeResponse call(String accountId, FineractAuthorizeRequest fineractRequest) {
+    private FineractAuthorizeResponse call(String tenantId, String accountId, FineractAuthorizeRequest fineractRequest) {
         RestTemplate restTemplate = new RestTemplate();
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set("Fineract-Platform-TenantId", tenantId);
+        headers.set("Authorization", authTokenHelper.generateAuthToken());
         HttpEntity<FineractAuthorizeRequest> requestEntity = new HttpEntity<>(fineractRequest, headers);
 
         String url = UriComponentsBuilder.fromUriString(authorizeUrl).buildAndExpand(accountId).toUriString();

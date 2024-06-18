@@ -10,4 +10,5 @@ public class AuthorizeRequest {
     BigDecimal originalAmount;
     String sequenceDateTime;
     String accId;
+    String tenantId;
 }
