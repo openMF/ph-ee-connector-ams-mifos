@@ -14,4 +14,5 @@ public class FineractAuthorizeRequest {
     BigDecimal originalAmount;
     String sequenceDateTime;
     final String locale = "en";
+    String dateTimeFormat = "yyyy-MM-dd HH:mm:ss.SSS";
 }
