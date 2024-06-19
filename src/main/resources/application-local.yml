@@ -1,6 +1,6 @@
 fineract:
   api-url: "http://localhost:8080/fineract-provider/api/v1"
-  authorize-url: "http://localhost:8080/fineract-provider/api/current-accounts/{id}/transactions?command=external-hold"
+  authorize-url: "http://localhost:8080/fineract-provider/api/v1/current-accounts/{id}/transactions?command=external-hold"
   authorize-stub-response: true
 
 zeebe:
