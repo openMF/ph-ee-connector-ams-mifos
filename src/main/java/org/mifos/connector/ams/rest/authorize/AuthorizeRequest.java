@@ -11,4 +11,5 @@ public class AuthorizeRequest {
     String sequenceDateTime;
     String accId;
     String tenantId;
+    String dateTimeFormat;
 }

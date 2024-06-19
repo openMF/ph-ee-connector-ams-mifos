@@ -42,7 +42,7 @@ public class AuthorizeEndpoint {
     public AuthorizeResponse authorize(@RequestBody AuthorizeRequest request) {
         logger.trace("authorize request: {}", request);
 
-        FineractAuthorizeRequest fineractRequest = new FineractAuthorizeRequest(request.transactionAmount, request.originalAmount, request.sequenceDateTime);
+        FineractAuthorizeRequest fineractRequest = new FineractAuthorizeRequest(request.transactionAmount, request.originalAmount, request.sequenceDateTime, request.dateTimeFormat);
         logger.trace("fineract request: {}", fineractRequest);
 
         try {
