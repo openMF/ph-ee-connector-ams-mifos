@@ -513,7 +513,7 @@ public class TransferToConversionAccountInAmsWorker {
             Pair<String, List<BatchResponse>> out = moneyInOutWorker.doBatch(items, tenantIdentifier, transactionGroupId, disposalAccountAmsId, conversionAccountAmsId, internalCorrelationId, "transferToConversionAccountInAms");
             BatchResponse response = out.getRight().get(0);
             DocumentContext json = JsonPath.parse(response.getBody());
-            BigDecimal availableBalance = json.read("$.changes.availableBalance", BigDecimal.class);
+            BigDecimal availableBalance = json.read("$.availableBalance", BigDecimal.class);
             log.info("returning availableBalance: {} from json response: {}", availableBalance, response.getBody());
             return Map.of("availableBalance", availableBalance);
 
