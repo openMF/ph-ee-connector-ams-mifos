@@ -17,6 +17,7 @@ public class FineractAuthorizeResponse {
         BigDecimal accountBalance;
         BigDecimal holdAmount;
         BigDecimal availableBalance;
-        BigDecimal externalHold;
+        BigDecimal externalHoldAmount;
+        boolean balanceChanged;
     }
 }

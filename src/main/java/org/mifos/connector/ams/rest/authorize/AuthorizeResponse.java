@@ -10,10 +10,11 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AuthorizeResponse {
+    boolean balanceChanged;
     BigDecimal accountBalance;
     BigDecimal holdAmount;
     BigDecimal availableBalance;
-    BigDecimal externalHold;
+    BigDecimal externalHoldAmount;
 
     public AuthorizeResponse(FineractAuthorizeResponse fineractResponse) {
         FineractAuthorizeResponse.Changes changes = fineractResponse.getChanges();
@@ -23,7 +24,8 @@ public class AuthorizeResponse {
         this.accountBalance = changes.getAccountBalance();
         this.holdAmount = changes.getHoldAmount();
         this.availableBalance = changes.getAvailableBalance();
-        this.externalHold = changes.getExternalHold();
+        this.externalHoldAmount = changes.getExternalHoldAmount();
+        this.balanceChanged = changes.isBalanceChanged();
     }
 }
 
