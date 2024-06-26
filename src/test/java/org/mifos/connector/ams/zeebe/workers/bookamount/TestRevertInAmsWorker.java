@@ -62,7 +62,7 @@ class TestRevertInAmsWorker {
                 "HUF",
                 "transactionFeeCategoryPurposeCode",
                 BigDecimal.ONE,
-                "binx",
+                "tenant1",
                 "CURRENT",
                 false
         );
@@ -100,7 +100,7 @@ class TestRevertInAmsWorker {
                 "HUF",
                 "transactionFeeCategoryPurposeCode",
                 BigDecimal.ONE,
-                "binx",
+                "tenant1",
                 "SAVINGS",
                 false
         );

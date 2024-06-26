@@ -1,7 +1,7 @@
 fineract:
   api-url: "http://localhost:8080/fineract-provider/api/v1"
   authorize-url: "http://localhost:8080/fineract-provider/api/v1/current-accounts/cardAccountId/{id}/R/transactions?command=external-hold"
-  authorize-stub-response: true
+  authorize-stub-response: false
 
 zeebe:
   client:
@@ -11,6 +11,11 @@ zeebe:
 baasflow:
   events:
     disabled: true
+
+ams:
+  tenants-config:
+    s3-bucket: "local-dev-bucket"
+    s3-key: fineract/tenant_config_info.json
 
 logging:
   level:
