@@ -28,10 +28,4 @@ class TestSerializationHelper {
 
         new SerializationHelper().removeFieldsFromCurrentAccount(entryTransaction10);
     }
-    // {internalCorrelationId=BBIXHUH0_88646a16e4fc4a88b03deff34e59f05a,
-    // transactionGroupId=BBIXHUH0_88646a16e4fc4a88b03deff34e59f05a,
-    // acceptanceDatetime=2024-02-14T16:51:10.865613467Z,
-    // categoryPurpose={Code=MAIN},
-    // transactionCreationChannel=simulator}
-
 }

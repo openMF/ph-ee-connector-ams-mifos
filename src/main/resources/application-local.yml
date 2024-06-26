@@ -9,3 +9,8 @@ zeebe:
 baasflow:
   events:
     disabled: true
+
+ams:
+  tenants-config:
+    s3-bucket: "local-dev-bucket"
+    s3-key: fineract/tenant_config_info.json

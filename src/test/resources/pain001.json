@@ -54,7 +54,7 @@
         },
         "DebtorAgent": {
           "FinancialInstitutionIdentification": {
-            "BICFI": "BBIXHUH0"
+            "BICFI": "GIRAHUH0"
           }
         },
         "UltimateDebtor": {
@@ -106,7 +106,7 @@
             },
             "CreditorAgent": {
               "FinancialInstitutionIdentification": {
-                "BICFI": "BBIXHUH0"
+                "BICFI": "GIRAHUH0"
               }
             },
             "Creditor": {
@@ -182,8 +182,8 @@
                 "PlaceAndName": "OrderManagerSupplementaryData",
                 "Envelope": {
                   "OrderManagerSupplementaryData": {
-                    "internalCorrelationId": "BBIXHUH0_2e69fe500f6141789cca0da1c6b0ac62",
-                    "transactionGroupId": "BBIXHUH0_2e69fe500f6141789cca0da1c6b0ac62",
+                    "internalCorrelationId": "GIRAHUH0_2e69fe500f6141789cca0da1c6b0ac62",
+                    "transactionGroupId": "GIRAHUH0_2e69fe500f6141789cca0da1c6b0ac62",
                     "acceptanceDatetime": "2023-11-21T13:42:31.747259295Z",
                     "categoryPurpose": {
                       "Code": "MAIN"
@@ -212,8 +212,8 @@
               {
                 "Envelope": {
                   "OrderManagerSupplementaryData": {
-                    "internalCorrelationId": "BBIXHUH0_dffbf3828ff049e09fe990d5863c66a0",
-                    "transactionGroupId": "BBIXHUH0_2e69fe500f6141789cca0da1c6b0ac62",
+                    "internalCorrelationId": "GIRAHUH0_dffbf3828ff049e09fe990d5863c66a0",
+                    "transactionGroupId": "GIRAHUH0_2e69fe500f6141789cca0da1c6b0ac62",
                     "categoryPurpose": {
                       "Code": "FCIN"
                     }
