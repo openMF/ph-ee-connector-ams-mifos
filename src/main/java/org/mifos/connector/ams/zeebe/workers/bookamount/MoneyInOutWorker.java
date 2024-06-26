@@ -153,7 +153,7 @@ public class MoneyInOutWorker {
     }
 
     @Recover
-    public String recoverDoBatch(ZeebeBpmnError e) {
+    public Pair<String, List<BatchResponse>> recoverDoBatch(ZeebeBpmnError e) {
         log.error(e.getMessage(), e);
         throw e;
     }
