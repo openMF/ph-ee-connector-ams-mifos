@@ -80,7 +80,7 @@ public class AuthorizeEndpoint {
     private @NotNull AuthorizeResponse createStubResponse() {
         logger.warn("returning stub response because fineract stub response is enabled in the configuration");
         Random random = new Random();
-        return new AuthorizeResponse(
+        return new AuthorizeResponse(false,
                 BigDecimal.valueOf(random.nextInt(10000)),
                 BigDecimal.valueOf(random.nextInt(10000)),
                 BigDecimal.valueOf(random.nextInt(10000)),
