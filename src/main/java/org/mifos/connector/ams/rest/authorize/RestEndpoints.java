@@ -25,7 +25,7 @@ public class RestEndpoints {
     public AuthorizeResponse authorize(@RequestBody AuthorizeRequest request) {
         logger.trace("Authorize request: {}", request);
 
-        FineractAuthorizeRequest fineractRequest = new FineractAuthorizeRequest(request.transactionAmount, request.originalAmount, request.sequenceDateTime);
+        FineractAuthorizeRequest fineractRequest = new FineractAuthorizeRequest(request.transactionAmount, request.originalAmount, request.sequenceDateTime, request.dateTimeFormat);
         logger.trace("fineract request: {}", fineractRequest);
 
         FineractAuthorizeResponse fineractResponse = call(fineractRequest);
