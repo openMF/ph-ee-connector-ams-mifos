@@ -545,7 +545,7 @@ public class RevertInAmsWorker {
             String depositAmountConfigOperationKey = String.format("%s.%s", paymentScheme, depositAmountOperation);
             String depositPaymentTypeId = tenantConfigs.findPaymentTypeId(tenantIdentifier, depositAmountConfigOperationKey);
             String depositPaymentTypeCode = tenantConfigs.findResourceCode(tenantIdentifier, depositAmountConfigOperationKey);
-            String direction = tenantConfigs.findResourceCode(tenantIdentifier, depositAmountConfigOperationKey);
+            String direction = tenantConfigs.findDirection(tenantIdentifier, depositAmountConfigOperationKey);
             PaymentInstruction34 paymentInstruction = pain001.getDocument().getPaymentInformation().get(0);
             CreditTransferTransaction40 creditTransferTransaction = paymentInstruction.getCreditTransferTransactionInformation().get(0);
             String debtorIban = paymentInstruction.getDebtorAccount().getIdentification().getIban();
