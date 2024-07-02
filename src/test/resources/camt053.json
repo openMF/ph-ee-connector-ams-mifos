@@ -114,7 +114,7 @@
   "RelatedAgents": {
     "DebtorAgent": {
       "FinancialInstitutionIdentification": {
-        "BICFI": "BBIXHUH0"
+        "BICFI": "GIRAHUH0"
       }
     },
     "CreditorAgent": {
@@ -146,8 +146,8 @@
       "PlaceAndName": "OrderManagerSupplementaryData",
       "Envelope": {
         "OrderManagerSupplementaryData": {
-          "internalCorrelationId": "BBIXHUH0_0603c9ffd8f7427898f536c674a2a2d6",
-          "transactionGroupId": "BBIXHUH0_0603c9ffd8f7427898f536c674a2a2d6",
+          "internalCorrelationId": "GIRAHUH0_0603c9ffd8f7427898f536c674a2a2d6",
+          "transactionGroupId": "GIRAHUH0_0603c9ffd8f7427898f536c674a2a2d6",
           "acceptanceDatetime": "2024-05-09T16:22:16+02:00",
           "categoryPurpose": {
             "Code": "MAIN"

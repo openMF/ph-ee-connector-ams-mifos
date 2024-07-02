@@ -69,10 +69,4 @@ ams:
     account-type-key:
         conversion: ${AMS_CONVERSION_ACCOUNT_TYPE_KEY:C}
         disposal: ${AMS_DISPOSAL_ACCOUNT_TYPE_KEY:D}
-    local:
-        server-cert-check: false
-        enabled: false
-    tenants-config:
-        s3-bucket: binx-reference-data-dev2
-        s3-key: fineract/tenant_config_info.json
 
