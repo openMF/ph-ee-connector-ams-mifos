@@ -5,7 +5,11 @@ import com.baasflow.commons.events.EventService;
 import com.baasflow.commons.events.EventType;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
-import org.mifos.connector.ams.fineract.currentaccount.request.*;
+import org.mifos.connector.ams.fineract.currentaccount.request.BaseQuery;
+import org.mifos.connector.ams.fineract.currentaccount.request.DatatableQuery;
+import org.mifos.connector.ams.fineract.currentaccount.request.FineractCurrentAccountRequest;
+import org.mifos.connector.ams.fineract.currentaccount.request.Query;
+import org.mifos.connector.ams.fineract.currentaccount.request.Request;
 import org.mifos.connector.ams.fineract.currentaccount.response.CAGetResponse;
 import org.mifos.connector.ams.fineract.currentaccount.response.IdentifiersResponse;
 import org.mifos.connector.ams.fineract.currentaccount.response.PageFineractResponse;
@@ -13,7 +17,11 @@ import org.mifos.connector.ams.log.EventLogUtil;
 import org.mifos.connector.ams.zeebe.workers.utils.AuthTokenHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.*;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.util.ObjectUtils;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -71,7 +79,7 @@ public abstract class AbstractAmsWorker {
         log.info("using Fineract API URL: {}", fineractApiUrl);
     }
 
-    protected PageFineractResponse lookupCurrentAccountPostFlagsAndStatus(String iban, String accountSubValue, String tenantId) {
+    protected PageFineractResponse lookupCurrentAccountWithFlags(String iban, String accountSubValue, String tenantId) {
         FineractCurrentAccountRequest fineractCurrentAccountRequest = new FineractCurrentAccountRequest()
                 .request(
                         new Request()
@@ -85,8 +93,7 @@ public abstract class AbstractAmsWorker {
                 .page(0)
                 .size(20);
 
-
-        return exchangeCurrentFlagsStatus(UriComponentsBuilder
+        return httpPost(UriComponentsBuilder
                         .fromHttpUrl(fineractApiUrl)
                         .path(accountUrl)
                         .pathSegment("iban", iban, accountSubValue, "query")
@@ -94,37 +101,45 @@ public abstract class AbstractAmsWorker {
                 PageFineractResponse.class,
                 tenantId,
                 fineractCurrentAccountRequest,
-                "ams_connector",
                 "lookupAccount");
     }
 
-    protected CAGetResponse lookupCurrentAccountGet(String iban, String accountSubValue, String tenantId) {
-        return lookupExchange(UriComponentsBuilder
+    protected CAGetResponse lookupCurrentAccountByIban(String iban, String accountSubValue, String tenantId) {
+        return httpGet(UriComponentsBuilder
                         .fromHttpUrl(fineractApiUrl)
                         .path(accountUrl)
                         .pathSegment("iban", iban, accountSubValue)
                         .encode().toUriString(),
                 CAGetResponse.class,
                 tenantId,
-                "ams_connector",
+                "lookupAccount");
+    }
+
+    protected CAGetResponse lookupCurrentAccountByCardId(String cardAccountId, String accountSubValue, String tenantId) {
+        return httpGet(UriComponentsBuilder
+                        .fromHttpUrl(fineractApiUrl)
+                        .path(accountUrl)
+                        .pathSegment("cardAccountId", cardAccountId, accountSubValue)
+                        .encode().toUriString(),
+                CAGetResponse.class,
+                tenantId,
                 "lookupAccount");
     }
 
     protected IdentifiersResponse lookupIdentifiersGet(String iban, String accountSubValue, String tenantId) {
-        return lookupExchange(UriComponentsBuilder
+        return httpGet(UriComponentsBuilder
                         .fromHttpUrl(fineractApiUrl)
                         .path(accountUrl)
                         .pathSegment("iban", iban, accountSubValue, "identifiers")
                         .encode().toUriString(),
                 IdentifiersResponse.class,
                 tenantId,
-                "ams_connector",
                 "lookupAccount");
     }
 
 
     protected AmsDataTableQueryResponse[] lookupSavingsAccount(String iban, String tenantId) {
-        return lookupExchange(UriComponentsBuilder
+        return httpGet(UriComponentsBuilder
                         .fromHttpUrl(fineractApiUrl)
                         .path(datatableQueryApi)
                         .queryParam("columnFilter", columnFilter)
@@ -133,13 +148,12 @@ public abstract class AbstractAmsWorker {
                         .encode().toUriString(),
                 AmsDataTableQueryResponse[].class,
                 tenantId,
-                "ams_connector",
                 "lookupAccount");
     }
 
     @SuppressWarnings("unchecked")
     protected List<Object> lookupFlags(Long accountId, String tenantId) {
-        List<LinkedHashMap<String, Object>> flags = lookupExchange(UriComponentsBuilder
+        List<LinkedHashMap<String, Object>> flags = httpGet(UriComponentsBuilder
                         .fromHttpUrl(fineractApiUrl)
                         .path(flagsQueryApi)
                         .queryParam("columnFilter", flagsColumnFilter)
@@ -148,34 +162,42 @@ public abstract class AbstractAmsWorker {
                         .encode().toUriString(),
                 List.class,
                 tenantId,
-                "ams_connector",
                 "lookupFlags");
         return flags.stream().map(flagResult -> flagResult.get(flagsResultColumns)).collect(Collectors.toList());
     }
 
-    protected <T> T lookupExchange(String urlTemplate, Class<T> responseType, String tenantId, String calledFrom, String eventName) {
+    protected <T> T httpGet(String url, Class<T> responseType, String tenantId, String eventName) {
+        return httpRequest(tenantId, url, responseType, eventName, HttpMethod.GET, null);
+    }
+
+    protected <T> T httpPost(String url, Class<T> responseType, String tenantId, FineractCurrentAccountRequest requestBody, String eventName) {
+        return httpRequest(tenantId, url, responseType, eventName, HttpMethod.POST, requestBody);
+    }
+
+    private <T, Y> T httpRequest(String tenantId, String url, Class<T> responseType, String eventName, HttpMethod method, Y requestBody) {
         HttpHeaders httpHeaders = new HttpHeaders();
         httpHeaders.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
-        httpHeaders.set("Authorization", authTokenHelper.generateAuthToken());
+        httpHeaders.set(HttpHeaders.AUTHORIZATION, authTokenHelper.generateAuthToken());
         httpHeaders.set("Fineract-Platform-TenantId", tenantId);
-        log.trace("calling {} with HttpHeaders {}", urlTemplate, httpHeaders);
+        HttpEntity<Y> entity = new HttpEntity<>(requestBody, httpHeaders);
+
+        log.trace("calling {} {} with HttpHeaders {}", method, url, httpHeaders);
         return eventService.auditedEvent(
-                eventBuilder -> EventLogUtil.initFineractCall(calledFrom, "-1", "-1", null, eventBuilder),
+                eventBuilder -> EventLogUtil.initFineractCall("ams_connector", "-1", "-1", null, eventBuilder),
                 eventBuilder -> {
-                    var entity = new HttpEntity<>(httpHeaders);
                     eventService.sendEvent(builder -> builder
-                            .setSourceModule(calledFrom)
+                            .setSourceModule("ams_connector")
                             .setEventLogLevel(EventLogLevel.INFO)
                             .setEvent(eventName)
                             .setEventType(EventType.audit)
-                            .setPayload(urlTemplate));
+                            .setPayload(url));
                     ResponseEntity<T> response = restTemplate.exchange(
-                            urlTemplate,
-                            HttpMethod.GET,
+                            url,
+                            method,
                             entity,
                             responseType);
                     eventService.sendEvent(builder -> builder
-                            .setSourceModule(calledFrom)
+                            .setSourceModule("ams_connector")
                             .setEventLogLevel(EventLogLevel.INFO)
                             .setEvent(eventName)
                             .setEventType(EventType.audit)
@@ -183,38 +205,4 @@ public abstract class AbstractAmsWorker {
                     return response.getBody();
                 });
     }
-
-    protected <T> T exchangeCurrentFlagsStatus(String urlTemplate, Class responseType, String tenantId, FineractCurrentAccountRequest requestBody, String calledFrom, String eventName) {
-        HttpHeaders httpHeaders = new HttpHeaders();
-        httpHeaders.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
-        httpHeaders.set("Authorization", authTokenHelper.generateAuthToken());
-        httpHeaders.set("Fineract-Platform-TenantId", tenantId);
-        log.trace("calling {} with HttpHeaders {}", urlTemplate, httpHeaders);
-
-        return eventService.auditedEvent(
-                eventBuilder -> EventLogUtil.initFineractCall(calledFrom, "-1", "-1", null, eventBuilder),
-                eventBuilder -> {
-                    var entity = new HttpEntity<>(requestBody, httpHeaders);
-                    eventService.sendEvent(builder -> builder
-                            .setSourceModule(calledFrom)
-                            .setEventLogLevel(EventLogLevel.INFO)
-                            .setEvent(eventName)
-                            .setEventType(EventType.audit)
-                            .setPayload(urlTemplate));
-                    ResponseEntity<T> response = restTemplate.exchange(
-                            urlTemplate,
-                            HttpMethod.POST,
-                            entity,
-                            responseType);
-                    eventService.sendEvent(builder -> builder
-                            .setSourceModule(calledFrom)
-                            .setEventLogLevel(EventLogLevel.INFO)
-                            .setEvent(eventName)
-                            .setEventType(EventType.audit)
-                            .setPayload(response.toString()));
-                    return response.getBody();
-                });
-    }
-
-
 }

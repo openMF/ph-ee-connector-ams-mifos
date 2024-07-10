@@ -32,8 +32,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
-import static org.mifos.connector.ams.common.util.BeanWalker.element;
-
 @Component
 @Slf4j
 public class GetAccountDetailsFromAmsWorker extends AbstractAmsWorker {
@@ -70,6 +68,7 @@ public class GetAccountDetailsFromAmsWorker extends AbstractAmsWorker {
     public Map<String, Object> getAccountDetailsFromAms(JobClient jobClient,
                                                         ActivatedJob activatedJob,
                                                         @Variable String internalCorrelationId,
+                                                        @Variable String cardAccountId
                                                         @Variable String iban,
                                                         @Variable String tenantIdentifier,
                                                         @Variable String currency,
@@ -77,13 +76,13 @@ public class GetAccountDetailsFromAmsWorker extends AbstractAmsWorker {
                                                         @Variable String direction) {
         return eventService.auditedEvent(
                 eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "getAccountDetailsFromAms", internalCorrelationId, null, eventBuilder),
-                eventBuilder -> getAccountDetailsFromAms(internalCorrelationId, iban, tenantIdentifier, currency, paymentScheme, direction, eventBuilder));
+                eventBuilder -> getAccountDetailsFromAms(cardAccountId, iban, tenantIdentifier, currency, paymentScheme, direction, eventBuilder));
     }
 
     // TODO add getSavingsAccountDetailsFromAms
 
 
-    private Map<String, Object> getAccountDetailsFromAms(String internalCorrelationId,
+    private Map<String, Object> getAccountDetailsFromAms(String cardAccountId,
                                                          String iban,
                                                          String tenantIdentifier,
                                                          String currency,
@@ -93,9 +92,16 @@ public class GetAccountDetailsFromAmsWorker extends AbstractAmsWorker {
         String paymentSchemePrefix = paymentScheme.split(":")[0];
 
         try {
-            BeanWalker<List<FineractResponse>> disposalAccountData = BeanWalker.of(lookupCurrentAccountPostFlagsAndStatus(iban, disposalSub, tenantIdentifier)).get(PageFineractResponse::getContent);
-            CAGetResponse disposalAccount = lookupCurrentAccountGet(iban, disposalSub, tenantIdentifier);
-            CAGetResponse conversionAccount = lookupCurrentAccountGet(iban, conversionSub, tenantIdentifier);
+            CAGetResponse disposalAccount;
+            CAGetResponse conversionAccount;
+
+            if ("CARD_CLEARING".equals(paymentSchemePrefix)) {
+                disposalAccount = lookupCurrentAccountByCardId(cardAccountId, disposalSub, tenantIdentifier);
+                conversionAccount = lookupCurrentAccountByCardId(cardAccountId, conversionSub, tenantIdentifier);
+            } else {
+                disposalAccount = lookupCurrentAccountByIban(iban, disposalSub, tenantIdentifier);
+                conversionAccount = lookupCurrentAccountByIban(iban, conversionSub, tenantIdentifier);
+            }
             IdentifiersResponse disposalAccountIdentifiers = lookupIdentifiersGet(iban, disposalSub, tenantIdentifier);
 
             String disposalAccountStatus = BeanWalker.of(disposalAccount).get(CAGetResponse::getStatus).get(CAGetResponse.Status::getId).get();
@@ -139,15 +145,13 @@ public class GetAccountDetailsFromAmsWorker extends AbstractAmsWorker {
                 outputVariables.put("disposalAccountAmsId", disposalAccountId);
             }
 
+            PageFineractResponse flagsResponse = lookupCurrentAccountWithFlags(iban, disposalSub, tenantIdentifier);
+            BeanWalker<List<FineractResponse>> disposalAccountData = BeanWalker.of(flagsResponse).get(PageFineractResponse::getContent);
             List<String> flagCodes = disposalAccountData.get().stream().map(FineractResponse::getFlagCode).toList();
             outputVariables.put("disposalAccountFlags", flagCodes);
             if (direction.equals("IN") && paymentSchemePrefix.equals("HCT_INST") && flagCodes.contains("blockedPublic")) {
                 reasonCode = "AC06";
             }
-
-            String disposalAccountStatusType = disposalAccountData.get(element(0)).get(FineractResponse::getStatusType).get();
-            if (Objects.nonNull(conversionAccountId))
-                outputVariables.put("disposalAccountAmsStatusType", disposalAccountStatusType);
 
             String internalAccountId = Optional.ofNullable(BeanWalker.of(disposalAccountIdentifiers).get(IdentifiersResponse::getSecondaryIdentifiers).get()).orElse(List.of())
                     .stream().filter(x -> Objects.equals(x.getIdType(), "alias")).map(Identifier::getValue).findFirst().orElse("NOT_PROVIDED");
@@ -262,14 +266,13 @@ public class GetAccountDetailsFromAmsWorker extends AbstractAmsWorker {
     }
 
     private GetSavingsAccountsAccountIdResponse retrieveCurrencyIdAndStatus(Long accountCurrencyId, String tenantId) {
-        return lookupExchange(UriComponentsBuilder
+        return httpGet(UriComponentsBuilder
                         .fromHttpUrl(fineractApiUrl)
                         .path(incomingMoneyApi)
                         .path(String.format("%d", accountCurrencyId))
                         .encode().toUriString(),
                 GetSavingsAccountsAccountIdResponse.class,
                 tenantId,
-                "ams_connector",
                 "getAccountDetailsFromAms - retrieveCurrencyIdAndStatus");
     }
 }
