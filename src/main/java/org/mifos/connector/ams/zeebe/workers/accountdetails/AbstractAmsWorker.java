@@ -126,11 +126,22 @@ public abstract class AbstractAmsWorker {
                 "lookupAccount");
     }
 
-    protected IdentifiersResponse lookupIdentifiersGet(String iban, String accountSubValue, String tenantId) {
+    protected IdentifiersResponse lookupIdentifiers(String iban, String accountSubValue, String tenantId) {
         return httpGet(UriComponentsBuilder
                         .fromHttpUrl(fineractApiUrl)
                         .path(accountUrl)
                         .pathSegment("iban", iban, accountSubValue, "identifiers")
+                        .encode().toUriString(),
+                IdentifiersResponse.class,
+                tenantId,
+                "lookupAccount");
+    }
+
+    protected IdentifiersResponse lookupIdentifiersByCardId(String cardAccountId, String accountSubValue, String tenantId) {
+        return httpGet(UriComponentsBuilder
+                        .fromHttpUrl(fineractApiUrl)
+                        .path(accountUrl)
+                        .pathSegment("cardAccountId", cardAccountId, accountSubValue, "identifiers")
                         .encode().toUriString(),
                 IdentifiersResponse.class,
                 tenantId,
