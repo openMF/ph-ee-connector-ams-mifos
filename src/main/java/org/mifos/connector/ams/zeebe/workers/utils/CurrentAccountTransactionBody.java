@@ -32,6 +32,20 @@ public class CurrentAccountTransactionBody {
     @Data
     @NoArgsConstructor
     @Accessors(chain = true)
+    public static class HoldEntry {
+        private String end_to_end_id;
+        private String transaction_id;
+        private String internal_correlation_id;
+        private String partner_name;
+        private String payment_scheme;
+        private String partner_account_iban;
+        private String direction;
+        private String account_iban;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @Accessors(chain = true)
     public static class CardEntry {
         private String instruction_identification;
         private String message_id;

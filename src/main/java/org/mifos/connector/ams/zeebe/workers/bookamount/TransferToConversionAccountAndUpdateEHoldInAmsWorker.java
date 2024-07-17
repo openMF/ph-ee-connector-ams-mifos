@@ -88,7 +88,8 @@ public class TransferToConversionAccountAndUpdateEHoldInAmsWorker {
             @Variable String processCode,
             @Variable String merchantCategoryCode,
             @Variable String isEcommerce,
-            @Variable String paymentTokenWallet
+            @Variable String paymentTokenWallet,
+            @Variable String transactionReference
     ) {
         return eventService.auditedEvent(
                 eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "transferToConversionAccountAndUpdateEHoldInAmsWorker", internalCorrelationId, transactionGroupId, eventBuilder),
@@ -97,8 +98,9 @@ public class TransferToConversionAccountAndUpdateEHoldInAmsWorker {
                     List<TransactionItem> items = new ArrayList<>();
 
                     String apiPath = currentAccountApi.substring(1);
-                    String disposalAccountWithdrawRelativeUrl = String.format("%s%s/transactions?command=%s&force-type=hold", apiPath, disposalAccountAmsId, "withdrawal");
-                    String conversionAccountDepositRelativeUrl = String.format("%s%s/transactions?command=%s", apiPath, conversionAccountAmsId, "deposit");
+                    String withdrawalUrl = String.format("%s/cardAccountId/%s/R/transactions?command=withdrawal&force-type=hold", apiPath, disposalAccountAmsId);
+                    String depositUrl = String.format("%s/cardAccountId/%s/K/transactions?command=deposit", apiPath, conversionAccountAmsId);
+                    String holdUrl = String.format("%s/cardAccountId/%s/R/transactions?command=external-hold", apiPath, disposalAccountAmsId);
 
                     try {
                         // STEP 1 - add fee
@@ -106,7 +108,7 @@ public class TransferToConversionAccountAndUpdateEHoldInAmsWorker {
                         String depositFeeOperation = "transferToConversionAccountInAms.ConversionAccount.DepositTransactionFee";
                         String depositFeePaymentTypeId = tenantConfigs.findPaymentTypeId(tenantIdentifier, String.format("%s.%s", paymentScheme, depositFeeOperation));
                         String depositFeePaymentTypeCode = Optional.ofNullable(tenantConfigs.findResourceCode(tenantIdentifier, String.format("%s.%s", paymentScheme, depositFeeOperation))).orElse("");
-                        String transactionBody = painMapper.writeValueAsString(new CurrentAccountTransactionBody(transactionFeeAmount, FORMAT, locale, depositFeePaymentTypeId, currency, List.of(
+                        String cardTransactionBody = painMapper.writeValueAsString(new CurrentAccountTransactionBody(transactionFeeAmount, FORMAT, locale, depositFeePaymentTypeId, currency, List.of(
                                 new CurrentAccountTransactionBody.DataTable(List.of(
                                         new CurrentAccountTransactionBody.Entry()
                                                 .setAccount_iban(conversionAccountAmsId)
@@ -133,9 +135,23 @@ public class TransferToConversionAccountAndUpdateEHoldInAmsWorker {
                                                 .setPayment_token_wallet(paymentTokenWallet)
                                 ), "dt_current_transaction_details")
                         )));
-                        batchItemBuilder.add(tenantIdentifier, internalCorrelationId, items, disposalAccountWithdrawRelativeUrl, transactionBody, false);
-                        batchItemBuilder.add(tenantIdentifier, internalCorrelationId, items, conversionAccountDepositRelativeUrl, transactionBody, false);
+                        String holdBody = painMapper.writeValueAsString(new CurrentAccountTransactionBody(transactionFeeAmount, FORMAT, locale, depositFeePaymentTypeId, currency, List.of(
+                                new CurrentAccountTransactionBody.DataTable(List.of(
+                                        new CurrentAccountTransactionBody.HoldEntry()
+                                                .setEnd_to_end_id("TODO")
+                                                .setTransaction_id(transactionReference)
+                                                .setInternal_correlation_id(internalCorrelationId)
+                                                .setPartner_name(merchName)
+                                                .setPayment_scheme(paymentScheme)
+                                                .setPartner_account_iban("TODO")
+                                                .setDirection("OUT")
+                                                .setAccount_iban("TODO")
+                                ), "dt_current_transaction_details")
+                        )));
 
+                        batchItemBuilder.add(tenantIdentifier, internalCorrelationId, items, withdrawalUrl, cardTransactionBody, false);
+                        batchItemBuilder.add(tenantIdentifier, internalCorrelationId, items, depositUrl, cardTransactionBody, false);
+                        batchItemBuilder.add(tenantIdentifier, internalCorrelationId, items, holdUrl, holdBody, false);
 
                         // execute batch
                         Pair<String, List<BatchResponse>> out = moneyInOutWorker.doBatch(items, tenantIdentifier, transactionGroupId, disposalAccountAmsId, conversionAccountAmsId, internalCorrelationId, "transferToConversionAccountAndUpdateEHoldInAmsWorker");
