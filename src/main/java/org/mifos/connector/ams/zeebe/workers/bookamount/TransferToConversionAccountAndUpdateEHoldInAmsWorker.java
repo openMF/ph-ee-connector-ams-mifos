@@ -89,7 +89,7 @@ public class TransferToConversionAccountAndUpdateEHoldInAmsWorker {
             @Variable String merchantCategoryCode,
             @Variable String isEcommerce,
             @Variable String paymentTokenWallet
-            ) {
+    ) {
         return eventService.auditedEvent(
                 eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "transferToConversionAccountAndUpdateEHoldInAmsWorker", internalCorrelationId, transactionGroupId, eventBuilder),
                 eventBuilder -> {
@@ -97,7 +97,7 @@ public class TransferToConversionAccountAndUpdateEHoldInAmsWorker {
                     List<TransactionItem> items = new ArrayList<>();
 
                     String apiPath = currentAccountApi.substring(1);
-                    String disposalAccountWithdrawRelativeUrl = String.format("%s%s/transactions?command=%s", apiPath, disposalAccountAmsId, "withdrawal");
+                    String disposalAccountWithdrawRelativeUrl = String.format("%s%s/transactions?command=%s&force-type=hold", apiPath, disposalAccountAmsId, "withdrawal");
                     String conversionAccountDepositRelativeUrl = String.format("%s%s/transactions?command=%s", apiPath, conversionAccountAmsId, "deposit");
 
                     try {
@@ -106,7 +106,7 @@ public class TransferToConversionAccountAndUpdateEHoldInAmsWorker {
                         String depositFeeOperation = "transferToConversionAccountInAms.ConversionAccount.DepositTransactionFee";
                         String depositFeePaymentTypeId = tenantConfigs.findPaymentTypeId(tenantIdentifier, String.format("%s.%s", paymentScheme, depositFeeOperation));
                         String depositFeePaymentTypeCode = Optional.ofNullable(tenantConfigs.findResourceCode(tenantIdentifier, String.format("%s.%s", paymentScheme, depositFeeOperation))).orElse("");
-                        String depositFeeTransactionBody = painMapper.writeValueAsString(new CurrentAccountTransactionBody(transactionFeeAmount, FORMAT, locale, depositFeePaymentTypeId, currency, List.of(
+                        String transactionBody = painMapper.writeValueAsString(new CurrentAccountTransactionBody(transactionFeeAmount, FORMAT, locale, depositFeePaymentTypeId, currency, List.of(
                                 new CurrentAccountTransactionBody.DataTable(List.of(
                                         new CurrentAccountTransactionBody.Entry()
                                                 .setAccount_iban(conversionAccountAmsId)
@@ -133,7 +133,8 @@ public class TransferToConversionAccountAndUpdateEHoldInAmsWorker {
                                                 .setPayment_token_wallet(paymentTokenWallet)
                                 ), "dt_current_transaction_details")
                         )));
-                        batchItemBuilder.add(tenantIdentifier, internalCorrelationId, items, conversionAccountDepositRelativeUrl, depositFeeTransactionBody, false);
+                        batchItemBuilder.add(tenantIdentifier, internalCorrelationId, items, disposalAccountWithdrawRelativeUrl, transactionBody, false);
+                        batchItemBuilder.add(tenantIdentifier, internalCorrelationId, items, conversionAccountDepositRelativeUrl, transactionBody, false);
 
 
                         // execute batch
