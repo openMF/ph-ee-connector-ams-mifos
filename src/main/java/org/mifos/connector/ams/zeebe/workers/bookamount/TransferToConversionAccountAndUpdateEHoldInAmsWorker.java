@@ -69,6 +69,7 @@ public class TransferToConversionAccountAndUpdateEHoldInAmsWorker {
             ActivatedJob activatedJob,
             @Variable BigDecimal externalHoldAmount,
             @Variable BigDecimal transactionFeeAmount,
+            @Variable String cardAccountId,
             @Variable String cardHolderName,
             @Variable String cardToken,
             @Variable String conversionAccountAmsId,
@@ -99,9 +100,9 @@ public class TransferToConversionAccountAndUpdateEHoldInAmsWorker {
                     List<TransactionItem> items = new ArrayList<>();
 
                     String apiPath = currentAccountApi.substring(1);
-                    String withdrawalUrl = String.format("%s/cardAccountId/%s/R/transactions?command=withdrawal&force-type=hold", apiPath, disposalAccountAmsId);
-                    String depositUrl = String.format("%s/cardAccountId/%s/K/transactions?command=deposit", apiPath, conversionAccountAmsId);
-                    String holdUrl = String.format("%s/cardAccountId/%s/R/transactions?command=external-hold", apiPath, disposalAccountAmsId);
+                    String withdrawalUrl = String.format("%s/%s/transactions?command=withdrawal&force-type=hold", apiPath, disposalAccountAmsId);
+                    String depositUrl = String.format("%s/%s/transactions?command=deposit", apiPath, conversionAccountAmsId);
+                    String holdUrl = String.format("%s/%s/transactions?command=external-hold", apiPath, disposalAccountAmsId);
 
                     try {
                         // STEP 1 - add fee
