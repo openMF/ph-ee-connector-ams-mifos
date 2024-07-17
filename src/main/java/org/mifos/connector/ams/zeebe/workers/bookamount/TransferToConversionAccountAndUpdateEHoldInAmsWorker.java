@@ -67,28 +67,29 @@ public class TransferToConversionAccountAndUpdateEHoldInAmsWorker {
     public Map<String, Object> transferToConversionAccountAndUpdateEHoldInAmsWorker(
             JobClient jobClient,
             ActivatedJob activatedJob,
-            @Variable String internalCorrelationId,
-            @Variable String transactionGroupId,
-            @Variable String tenantIdentifier,
-            @Variable String paymentScheme,
-            @Variable String disposalAccountAmsId,
-            @Variable String conversionAccountAmsId,
-            @Variable String merchName,
             @Variable BigDecimal transactionFeeAmount,
-            @Variable String currency,
-            @Variable String requestId,
-            @Variable String messageId,
-            @Variable String cardToken,
-            @Variable String maskedPan,
             @Variable String cardHolderName,
-            @Variable String partnerCity,
-            @Variable String partnerCountry,
+            @Variable String cardToken,
+            @Variable String conversionAccountAmsId,
+            @Variable String currency,
+            @Variable String disposalAccountAmsId,
+            @Variable String externalHoldAmount,
             @Variable String instructedAmount,
             @Variable String instructedCurrency,
-            @Variable String processCode,
-            @Variable String merchantCategoryCode,
+            @Variable String internalCorrelationId,
             @Variable String isEcommerce,
+            @Variable String maskedPan,
+            @Variable String merchName,
+            @Variable String merchantCategoryCode,
+            @Variable String messageId,
+            @Variable String partnerCity,
+            @Variable String partnerCountry,
+            @Variable String paymentScheme,
             @Variable String paymentTokenWallet,
+            @Variable String processCode,
+            @Variable String requestId,
+            @Variable String tenantIdentifier,
+            @Variable String transactionGroupId,
             @Variable String transactionReference
     ) {
         return eventService.auditedEvent(
@@ -135,7 +136,7 @@ public class TransferToConversionAccountAndUpdateEHoldInAmsWorker {
                                                 .setPayment_token_wallet(paymentTokenWallet)
                                 ), "dt_current_transaction_details")
                         )));
-                        String holdBody = painMapper.writeValueAsString(new CurrentAccountTransactionBody(transactionFeeAmount, FORMAT, locale, depositFeePaymentTypeId, currency, List.of(
+                        String holdBody = painMapper.writeValueAsString(new CurrentAccountTransactionBody(externalHoldAmount, FORMAT, locale, depositFeePaymentTypeId, currency, List.of(
                                 new CurrentAccountTransactionBody.DataTable(List.of(
                                         new CurrentAccountTransactionBody.HoldEntry()
                                                 .setEnd_to_end_id("TODO")
