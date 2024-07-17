@@ -2,6 +2,8 @@ package org.mifos.connector.ams.zeebe.workers.utils;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.experimental.Accessors;
 import org.springframework.util.ObjectUtils;
 
 import java.math.BigDecimal;
@@ -9,22 +11,46 @@ import java.util.List;
 
 @Data
 @AllArgsConstructor
+@NoArgsConstructor
+@Accessors(chain = true)
 public class CurrentAccountTransactionBody {
     private BigDecimal transactionAmount;
     private String dateFormat;
     private String locale;
     private String paymentTypeId;
     private String currencyCode;
-    private List<DataTable> datatables;
+    private List<DataTable<?>> datatables;
 
     @Data
     @AllArgsConstructor
-    public static class DataTable {
-        private List<Entry> entries;
+    @NoArgsConstructor
+    public static class DataTable<T> {
+        private List<T> entries;
         private String name;
     }
 
     @Data
+    @NoArgsConstructor
+    @Accessors(chain = true)
+    public static class CardEntry {
+        private String instruction_identification;
+        private String message_id;
+        private String card_token;
+        private String masked_pan;
+        private String card_holder_name;
+        private String partner_city;
+        private String partner_country;
+        private String instructed_amount;
+        private String instructed_currency;
+        private String process_code;
+        private String merchant_category_code;
+        private String is_ecommerce;
+        private String payment_token_wallet;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @Accessors(chain = true)
     public static class Entry {
         private String account_iban;
         private String structured_transaction_details;

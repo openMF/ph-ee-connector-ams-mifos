@@ -1,0 +1,275 @@
+[
+  {
+    "requestId": 1,
+    "relativeUrl": "current-accounts/{{companyCA1DisposalId}}/transactions?command=withdrawal",
+    "method": "POST",
+    "headers": [
+      {
+        "name": "Idempotency-Key",
+        "value": "{{temp_idempotencyKey1}}"
+      },
+      {
+        "name": "Content-Type",
+        "value": "application/json"
+      },
+      {
+        "name": "Fineract-Platform-TenantId",
+        "value": "{{tenantId}}"
+      },
+      {
+        "name": "Authorization",
+        "value": "Basic bWlmb3M6cGFzc3dvcmQ="
+      }
+    ],
+    "body": "{
+    \
+    "transactionAmount\": 1000,
+    \
+    "dateFormat\": \"dd MMMM yyyy\",
+    \
+    "locale\": \"en\",
+    \
+    "paymentTypeId\": \"{{paymentTypeAFR203Id}}\",
+    \
+    "currencyCode\": \"HUF\",
+    \
+    "datatables\": [
+  {
+    \
+  "entries\": [
+  {
+    \
+  "account_iban\": \"HU19304000010000000029253269\",
+  \
+  "structured_transaction_details\": '{\"valami\":\"amount\"}',
+  \
+  "internal_correlation_id\": \"amountId\",
+  \
+  "transaction_group_id\": \"transactionGroupIdAmount\",
+  \
+  "partner_name\": \"Company 1\",
+  \
+  "partner_account_iban\": \"HU19304000010000000029253261\"
+  }
+],
+\"name\": \"dt_current_transaction_details\"
+},
+{
+\"entries\": [
+{
+\"instruction_identification\": \"111111111\",
+\"message_id\": \"2222222222\",
+\"card_token\": \"3333333333\",
+\"masked_pan\": \"************1234\",
+\"card_holder_name\": \"Antonio Coimbra\",
+\"partner_city\": \"Rio de Janeiro\",
+\"partner_country\": \"HUN\",
+\"instructed_amount\": \"1000\",
+\"instructed_currency\": \"HUF\",
+\"process_code\": \"01\",
+\"merchant_category_code\": \"6010\",
+\"is_ecommerce\": \"false\",
+\"payment_token_wallet\": \"false\"
+}
+],
+\"name\": \"dt_current_card_transaction_details\"
+}
+]
+}"
+},
+{
+"requestId": 2,
+"relativeUrl": "current-accounts/{{companyCA1DisposalId}}/transactions?command=withdrawal",
+"method": "POST",
+"headers": [
+{
+"name": "Idempotency-Key",
+"value": "{{temp_idempotencyKey2}}"
+},
+{
+"name": "Content-Type",
+"value": "application/json"
+},
+{
+"name": "Fineract-Platform-TenantId",
+"value": "{{tenantId}}"
+},
+{
+"name": "Authorization",
+"value": "Basic bWlmb3M6cGFzc3dvcmQ="
+}
+],
+"body": "{
+\"transactionAmount\": 1000,
+\"dateFormat\": \"dd MMMM yyyy\",
+\"locale\": \"en\",
+\"paymentTypeId\": \"{{paymentTypeAFR203Id}}\",
+\"currencyCode\": \"HUF\",
+\"datatables\": [
+{
+\"entries\": [
+{
+\"account_iban\": \"HU19304000010000000029253269\",
+\"structured_transaction_details\": '{\"valami\":\"amount\"}',
+\"internal_correlation_id\": \"amountId\",
+\"transaction_group_id\": \"transactionGroupIdAmount\",
+\"partner_name\": \"Company 1\",
+\"partner_account_iban\": \"HU19304000010000000029253261\"
+}
+],
+\"name\": \"dt_current_transaction_details\"
+},
+{
+\"entries\": [
+{
+\"instruction_identification\": \"111111111\",
+\"message_id\": \"2222222222\",
+\"card_token\": \"3333333333\",
+\"masked_pan\": \"************1234\",
+\"card_holder_name\": \"Antonio Coimbra\",
+\"partner_city\": \"Rio de Janeiro\",
+\"partner_country\": \"HUN\",
+\"instructed_amount\": \"1000\",
+\"instructed_currency\": \"HUF\",
+\"process_code\": \"01\",
+\"merchant_category_code\": \"6010\",
+\"is_ecommerce\": \"false\",
+\"payment_token_wallet\": \"false\"
+}
+],
+\"name\": \"dt_current_card_transaction_details\"
+}
+]
+}"
+},
+{
+"requestId": 3,
+"relativeUrl": "current-accounts/{{companyCA1ConversionId}}/transactions?command=deposit",
+"method": "POST",
+"headers": [
+{
+"name": "Idempotency-Key",
+"value": "{{temp_idempotencyKey3}}"
+},
+{
+"name": "Content-Type",
+"value": "application/json"
+},
+{
+"name": "Fineract-Platform-TenantId",
+"value": "{{tenantId}}"
+},
+{
+"name": "Authorization",
+"value": "Basic bWlmb3M6cGFzc3dvcmQ="
+}
+],
+"body": "{
+\"transactionAmount\": 1000,
+\"dateFormat\": \"dd MMMM yyyy\",
+\"locale\": \"en\",
+\"paymentTypeId\": \"{{paymentTypeAFR203Id}}\",
+\"currencyCode\": \"HUF\",
+\"datatables\": [
+{
+\"entries\": [
+{
+\"account_iban\": \"HU19304000010000000029253269\",
+\"structured_transaction_details\": '{\"valami\":\"amount\"}',
+\"internal_correlation_id\": \"amountId\",
+\"transaction_group_id\": \"transactionGroupIdAmount\",
+\"partner_name\": \"Company 1\",
+\"partner_account_iban\": \"HU19304000010000000029253261\"
+}
+],
+\"name\": \"dt_current_transaction_details\"
+},
+{
+\"entries\": [
+{
+\"instruction_identification\": \"111111111\",
+\"message_id\": \"2222222222\",
+\"card_token\": \"3333333333\",
+\"masked_pan\": \"************1234\",
+\"card_holder_name\": \"Antonio Coimbra\",
+\"partner_city\": \"Rio de Janeiro\",
+\"partner_country\": \"HUN\",
+\"instructed_amount\": \"1000\",
+\"instructed_currency\": \"HUF\",
+\"process_code\": \"01\",
+\"merchant_category_code\": \"6010\",
+\"is_ecommerce\": \"false\",
+\"payment_token_wallet\": \"false\"
+}
+],
+\"name\": \"dt_current_card_transaction_details\"
+}
+]
+}"
+},
+{
+"requestId": 4,
+"relativeUrl": "current-accounts/{{companyCA1ConversionId}}/transactions?command=deposit",
+"method": "POST",
+"headers": [
+{
+"name": "Idempotency-Key",
+"value": "{{temp_idempotencyKey4}}"
+},
+{
+"name": "Content-Type",
+"value": "application/json"
+},
+{
+"name": "Fineract-Platform-TenantId",
+"value": "{{tenantId}}"
+},
+{
+"name": "Authorization",
+"value": "Basic bWlmb3M6cGFzc3dvcmQ="
+}
+],
+"body": "{
+\"transactionAmount\": 1000,
+\"dateFormat\": \"dd MMMM yyyy\",
+\"locale\": \"en\",
+\"paymentTypeId\": \"{{paymentTypeAFR203Id}}\",
+\"currencyCode\": \"HUF\",
+\"datatables\": [
+{
+\"entries\": [
+{
+\"account_iban\": \"HU19304000010000000029253269\",
+\"structured_transaction_details\": '{\"valami\":\"amount\"}',
+\"internal_correlation_id\": \"amountId\",
+\"transaction_group_id\": \"transactionGroupIdAmount\",
+\"partner_name\": \"Company 1\",
+\"partner_account_iban\": \"HU19304000010000000029253261\"
+}
+],
+\"name\": \"dt_current_transaction_details\"
+},
+{
+\"entries\": [
+{
+\"instruction_identification\": \"111111111\",
+\"message_id\": \"2222222222\",
+\"card_token\": \"3333333333\",
+\"masked_pan\": \"************1234\",
+\"card_holder_name\": \"Antonio Coimbra\",
+\"partner_city\": \"Rio de Janeiro\",
+\"partner_country\": \"HUN\",
+\"instructed_amount\": \"1000\",
+\"instructed_currency\": \"HUF\",
+\"process_code\": \"01\",
+\"merchant_category_code\": \"6010\",
+\"is_ecommerce\": \"false\",
+\"payment_token_wallet\": \"false\"
+}
+],
+\"name\": \"dt_current_card_transaction_details\"
+}
+]
+}"
+}
+]
