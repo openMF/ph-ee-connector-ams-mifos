@@ -64,7 +64,7 @@ public class TransferToConversionAccountAndUpdateEHoldInAmsWorker {
     @JobWorker
     @LogInternalCorrelationId
     @TraceZeebeArguments
-    public Map<String, Object> transferToConversionAccountAndUpdateEHoldInAmsWorker(
+    public Map<String, Object> transferToConversionAccountAndUpdateEHoldInAms(
             JobClient jobClient,
             ActivatedJob activatedJob,
             @Variable BigDecimal externalHoldAmount,
