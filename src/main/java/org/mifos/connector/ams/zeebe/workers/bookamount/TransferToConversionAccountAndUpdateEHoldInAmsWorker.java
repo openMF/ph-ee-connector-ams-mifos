@@ -100,7 +100,7 @@ public class TransferToConversionAccountAndUpdateEHoldInAmsWorker {
                     List<TransactionItem> items = new ArrayList<>();
 
                     String apiPath = currentAccountApi.substring(1);
-                    String withdrawalUrl = String.format("%s/%s/transactions?command=withdrawal&force-type=hold", apiPath, disposalAccountAmsId);
+                    String withdrawalUrl = String.format("%s/%s/transactions?command=withdrawal", apiPath, disposalAccountAmsId);  // &force-type=hold
                     String depositUrl = String.format("%s/%s/transactions?command=deposit", apiPath, conversionAccountAmsId);
                     String holdUrl = String.format("%s/%s/transactions?command=external-hold", apiPath, disposalAccountAmsId);
 
