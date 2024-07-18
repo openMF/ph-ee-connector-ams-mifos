@@ -106,54 +106,58 @@ public class TransferToConversionAccountAndUpdateEHoldInAmsWorker {
 
                     try {
                         // STEP 1 - add fee
-                        logger.debug("Depositing fee {} to conversion account {}", transactionFeeAmount, conversionAccountAmsId);
-                        String depositFeeOperation = "transferToConversionAccountInAms.ConversionAccount.DepositTransactionFee";
-                        String depositFeePaymentTypeId = tenantConfigs.findPaymentTypeId(tenantIdentifier, String.format("%s.%s", paymentScheme, depositFeeOperation));
-                        String depositFeePaymentTypeCode = Optional.ofNullable(tenantConfigs.findResourceCode(tenantIdentifier, String.format("%s.%s", paymentScheme, depositFeeOperation))).orElse("");
-                        String cardTransactionBody = painMapper.writeValueAsString(new CurrentAccountTransactionBody(transactionFeeAmount, FORMAT, locale, depositFeePaymentTypeId, currency, List.of(
-                                new CurrentAccountTransactionBody.DataTable(List.of(
-                                        new CurrentAccountTransactionBody.Entry()
-                                                .setAccount_iban(conversionAccountAmsId)
-                                                .setStructured_transaction_details("TODO")
-                                                .setInternal_correlation_id(internalCorrelationId)
-                                                .setTransaction_group_id(transactionGroupId)
-                                                .setPartner_name(merchName)
-                                                .setPartner_account_iban("")
-                                ), "dt_current_transaction_details"),
-                                new CurrentAccountTransactionBody.DataTable(List.of(
-                                        new CurrentAccountTransactionBody.CardEntry()
-                                                .setInstruction_identification(requestId)
-                                                .setMessage_id(messageId)
-                                                .setCard_token(cardToken)
-                                                .setMasked_pan(maskedPan)
-                                                .setCard_holder_name(cardHolderName)
-                                                .setPartner_city(partnerCity)
-                                                .setPartner_country(partnerCountry)
-                                                .setInstructed_amount(instructedAmount)
-                                                .setInstructed_currency(instructedCurrency)
-                                                .setProcess_code(processCode)
-                                                .setMerchant_category_code(merchantCategoryCode)
-                                                .setIs_ecommerce(isEcommerce)
-                                                .setPayment_token_wallet(paymentTokenWallet)
-                                ), "dt_current_transaction_details")
-                        )));
-                        String holdBody = painMapper.writeValueAsString(new CurrentAccountTransactionBody(externalHoldAmount, FORMAT, locale, depositFeePaymentTypeId, currency, List.of(
-                                new CurrentAccountTransactionBody.DataTable(List.of(
-                                        new CurrentAccountTransactionBody.HoldEntry()
-                                                .setEnd_to_end_id("TODO")
-                                                .setTransaction_id(transactionReference)
-                                                .setInternal_correlation_id(internalCorrelationId)
-                                                .setPartner_name(merchName)
-                                                .setPayment_scheme(paymentScheme)
-                                                .setPartner_account_iban("TODO")
-                                                .setDirection("OUT")
-                                                .setAccount_iban("TODO")
-                                ), "dt_current_transaction_details")
-                        )));
+                        if (transactionFeeAmount.equals(BigDecimal.ZERO)) {
+                            logger.info("Transaction fee is zero, skipping fee handling");
+                        } else {
+                            logger.debug("Depositing fee {} to conversion account {}", transactionFeeAmount, conversionAccountAmsId);
+                            String depositFeeOperation = "transferToConversionAccountInAms.ConversionAccount.DepositTransactionFee";
+                            String depositFeePaymentTypeId = tenantConfigs.findPaymentTypeId(tenantIdentifier, String.format("%s.%s", paymentScheme, depositFeeOperation));
+                            String depositFeePaymentTypeCode = Optional.ofNullable(tenantConfigs.findResourceCode(tenantIdentifier, String.format("%s.%s", paymentScheme, depositFeeOperation))).orElse("");
+                            String cardTransactionBody = painMapper.writeValueAsString(new CurrentAccountTransactionBody(transactionFeeAmount, FORMAT, locale, depositFeePaymentTypeId, currency, List.of(
+                                    new CurrentAccountTransactionBody.DataTable(List.of(
+                                            new CurrentAccountTransactionBody.Entry()
+                                                    .setAccount_iban(conversionAccountAmsId)
+                                                    .setStructured_transaction_details("TODO")
+                                                    .setInternal_correlation_id(internalCorrelationId)
+                                                    .setTransaction_group_id(transactionGroupId)
+                                                    .setPartner_name(merchName)
+                                                    .setPartner_account_iban("")
+                                    ), "dt_current_transaction_details"),
+                                    new CurrentAccountTransactionBody.DataTable(List.of(
+                                            new CurrentAccountTransactionBody.CardEntry()
+                                                    .setInstruction_identification(requestId)
+                                                    .setMessage_id(messageId)
+                                                    .setCard_token(cardToken)
+                                                    .setMasked_pan(maskedPan)
+                                                    .setCard_holder_name(cardHolderName)
+                                                    .setPartner_city(partnerCity)
+                                                    .setPartner_country(partnerCountry)
+                                                    .setInstructed_amount(instructedAmount)
+                                                    .setInstructed_currency(instructedCurrency)
+                                                    .setProcess_code(processCode)
+                                                    .setMerchant_category_code(merchantCategoryCode)
+                                                    .setIs_ecommerce(isEcommerce)
+                                                    .setPayment_token_wallet(paymentTokenWallet)
+                                    ), "dt_current_transaction_details")
+                            )));
+                            String holdBody = painMapper.writeValueAsString(new CurrentAccountTransactionBody(externalHoldAmount, FORMAT, locale, depositFeePaymentTypeId, currency, List.of(
+                                    new CurrentAccountTransactionBody.DataTable(List.of(
+                                            new CurrentAccountTransactionBody.HoldEntry()
+                                                    .setEnd_to_end_id("TODO")
+                                                    .setTransaction_id(transactionReference)
+                                                    .setInternal_correlation_id(internalCorrelationId)
+                                                    .setPartner_name(merchName)
+                                                    .setPayment_scheme(paymentScheme)
+                                                    .setPartner_account_iban("TODO")
+                                                    .setDirection("OUT")
+                                                    .setAccount_iban("TODO")
+                                    ), "dt_current_transaction_details")
+                            )));
 
-                        batchItemBuilder.add(tenantIdentifier, internalCorrelationId, items, withdrawalUrl, cardTransactionBody, false);
-                        batchItemBuilder.add(tenantIdentifier, internalCorrelationId, items, depositUrl, cardTransactionBody, false);
-                        batchItemBuilder.add(tenantIdentifier, internalCorrelationId, items, holdUrl, holdBody, false);
+                            batchItemBuilder.add(tenantIdentifier, internalCorrelationId, items, withdrawalUrl, cardTransactionBody, false);
+                            batchItemBuilder.add(tenantIdentifier, internalCorrelationId, items, depositUrl, cardTransactionBody, false);
+                            batchItemBuilder.add(tenantIdentifier, internalCorrelationId, items, holdUrl, holdBody, false);
+                        }
 
                         // execute batch
                         Pair<String, List<BatchResponse>> out = moneyInOutWorker.doBatch(items, tenantIdentifier, transactionGroupId, disposalAccountAmsId, conversionAccountAmsId, internalCorrelationId, "transferToConversionAccountAndUpdateEHoldInAmsWorker");
