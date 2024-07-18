@@ -140,7 +140,7 @@ public class TransferNonTransactionalFeeInAmsWorker {
 
             String bodyItem = painMapper.writeValueAsString(body);
 
-            List<TransactionItem> items = new ArrayList<>();
+            List<BatchItem> items = new ArrayList<>();
 
             batchItemBuilder.add(tenantIdentifier, internalCorrelationId, items, disposalAccountWithdrawRelativeUrl, bodyItem, false);
 

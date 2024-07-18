@@ -17,6 +17,7 @@ import org.mifos.connector.ams.common.exception.FineractOptimisticLockingExcepti
 import org.mifos.connector.ams.log.EventLogUtil;
 import org.mifos.connector.ams.log.IOTxLogger;
 import org.mifos.connector.ams.zeebe.workers.utils.AuthTokenHelper;
+import org.mifos.connector.ams.zeebe.workers.utils.BatchItem;
 import org.mifos.connector.ams.zeebe.workers.utils.TransactionItem;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -74,7 +75,7 @@ public class MoneyInOutWorker {
     public static final String FORMAT = "yyyyMMdd";
 
     @Retryable(retryFor = FineractOptimisticLockingException.class, maxAttemptsExpression = "${fineract.idempotency.count}", backoff = @Backoff(delayExpression = "${fineract.idempotency.interval}"))
-    protected Long holdBatch(List<TransactionItem> items,
+    protected Long holdBatch(List<BatchItem> items,
                              String tenantId,
                              String transactionGroupId,
                              String disposalAccountId,
@@ -110,7 +111,7 @@ public class MoneyInOutWorker {
     }
 
     @Retryable(retryFor = FineractOptimisticLockingException.class, maxAttemptsExpression = "${fineract.idempotency.count}", backoff = @Backoff(delayExpression = "${fineract.idempotency.interval}"))
-    protected void doBatchOnUs(List<TransactionItem> items,
+    protected void doBatchOnUs(List<BatchItem> items,
                                String tenantId,
                                String transactionGroupId,
                                String debtorDisposalAccountAmsId,
@@ -164,9 +165,9 @@ public class MoneyInOutWorker {
         throw e;
     }
 
-    private Long holdBatchInternal(String transactionGroupId, List<TransactionItem> items, String tenantId, String internalCorrelationId, String from) {
+    private Long holdBatchInternal(String transactionGroupId, List<BatchItem> items, String tenantId, String internalCorrelationId, String from) {
         HttpHeaders httpHeaders = createHeaders(tenantId, transactionGroupId);
-        HttpEntity<List<TransactionItem>> entity = new HttpEntity<>(items, httpHeaders);
+        HttpEntity<List<BatchItem>> entity = new HttpEntity<>(items, httpHeaders);
 
         String urlTemplate = UriComponentsBuilder.fromHttpUrl(fineractApiUrl)
                 .path("/batches")

@@ -147,7 +147,7 @@ public class BookCreditedAmountToConversionAccountWorker {
             String debtorName = creditTransferTransaction.getDbtr().getNm();
             String endToEndId = creditTransferTransaction.getPmtId().getEndToEndId();
             String partnerAccountSecondaryIdentifier = contactDetailsUtil.getId(creditTransferTransaction.getCdtr().getCtctDtls());
-            List<TransactionItem> items = new ArrayList<>();
+            List<BatchItem> items = new ArrayList<>();
 
             // STEP 1 - batch: add transaction
             if (accountProductType.equalsIgnoreCase("SAVINGS")) {
@@ -269,7 +269,7 @@ public class BookCreditedAmountToConversionAccountWorker {
             String paymentTypeId = tenantConfigs.findPaymentTypeId(tenantIdentifier, configOperationKey);
             String paymentTypeCode = tenantConfigs.findResourceCode(tenantIdentifier, configOperationKey);
             String direction = tenantConfigs.findDirection(tenantIdentifier, configOperationKey);
-            List<TransactionItem> items = new ArrayList<>();
+            List<BatchItem> items = new ArrayList<>();
 
             if (accountProductType.equalsIgnoreCase("SAVINGS")) {
                 String bodyItem = painMapper.writeValueAsString(new TransactionBody(transactionDate, amount, paymentTypeId, "", FORMAT, moneyInOutWorker.getLocale()));
@@ -407,7 +407,7 @@ public class BookCreditedAmountToConversionAccountWorker {
             iso.std.iso._20022.tech.xsd.pacs_004_001.ContactDetails2 creditorContactDetails = transactionReference.getCdtr().getCtctDtls();
             String creditorContactDetailsId = contactDetailsUtil.getId(creditorContactDetails);
             String endToEndId = pacs_004.getPmtRtr().getTxInf().get(0).getOrgnlEndToEndId();
-            List<TransactionItem> items = new ArrayList<>();
+            List<BatchItem> items = new ArrayList<>();
 
             // STEP 1 - book transaction
             if (accountProductType.equalsIgnoreCase("SAVINGS")) {

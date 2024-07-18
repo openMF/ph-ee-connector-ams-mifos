@@ -12,7 +12,7 @@ import java.util.List;
 @Accessors(chain = true)
 @NoArgsConstructor
 @AllArgsConstructor
-public class ExternalHoldItem {
+public class ExternalHoldItem implements BatchItem {
     BigDecimal originalAmount;
     BigDecimal transactionAmount;
     Integer requestId;

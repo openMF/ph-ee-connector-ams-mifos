@@ -164,7 +164,7 @@ public class BookOnConversionAccountInAmsWorker {
             String creditorId = contactDetailsUtil.getId(creditor.getContactDetails());
             String creditorIban = creditTransferTransaction.getCreditorAccount().getIdentification().getIban();
             String creditorName = creditor.getName();
-            List<TransactionItem> items = new ArrayList<>();
+            List<BatchItem> items = new ArrayList<>();
             Contact4 partnerAccountContactDetails = pain001.getDocument().getPaymentInformation().get(0).getCreditTransferTransactionInformation().get(0).getCreditor().getContactDetails();
 
             // STEP 1a - batch: withdraw amount
@@ -368,7 +368,7 @@ public class BookOnConversionAccountInAmsWorker {
             ContactDetails2 debtorContactDetails = paymentTransactionInformation.getOrgnlTxRef().getDbtr().getCtctDtls();
             String debtorContactDetailsId = contactDetailsUtil.getId(debtorContactDetails);
             String endToEndId = paymentTransactionInformation.getOrgnlEndToEndId();
-            List<TransactionItem> items = new ArrayList<>();
+            List<BatchItem> items = new ArrayList<>();
 
             // STEP 1 - withdraw amount
             if (accountProductType.equalsIgnoreCase("SAVINGS")) {
