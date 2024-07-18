@@ -15,6 +15,7 @@ import org.mifos.connector.ams.fineract.TenantConfigs;
 import org.mifos.connector.ams.log.EventLogUtil;
 import org.mifos.connector.ams.log.LogInternalCorrelationId;
 import org.mifos.connector.ams.log.TraceZeebeArguments;
+import org.mifos.connector.ams.zeebe.workers.utils.BatchItem;
 import org.mifos.connector.ams.zeebe.workers.utils.BatchItemBuilder;
 import org.mifos.connector.ams.zeebe.workers.utils.CurrentAccountTransactionBody;
 import org.slf4j.Logger;
@@ -97,7 +98,7 @@ public class TransferToConversionAccountAndUpdateEHoldInAmsWorker {
                 eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "transferToConversionAccountAndUpdateEHoldInAmsWorker", internalCorrelationId, transactionGroupId, eventBuilder),
                 eventBuilder -> {
                     MDC.put("internalCorrelationId", internalCorrelationId);
-                    List items = new ArrayList<>();
+                    List<BatchItem> items = new ArrayList<>();
 
                     String apiPath = currentAccountApi.substring(1);
                     String holdUrl = String.format("%s%s/transactions?command=external-hold", apiPath, disposalAccountAmsId);
@@ -159,9 +160,10 @@ public class TransferToConversionAccountAndUpdateEHoldInAmsWorker {
                                     ), "dt_current_card_transaction_details")
                             )));
 
-                            items.add(batchItemBuilder.createExternalHoldItem(1, "transferToConversionAccountAndUpdateEHoldInAms", internalCorrelationId, holdUrl, tenantIdentifier, holdBody));
-                            batchItemBuilder.add(tenantIdentifier, internalCorrelationId, items, withdrawalUrl, cardTransactionBody, false);
-                            batchItemBuilder.add(tenantIdentifier, internalCorrelationId, items, depositUrl, cardTransactionBody, false);
+                            String caller = "transferToConversionAccountAndUpdateEHoldInAms";
+                            items.add(batchItemBuilder.createExternalHoldItem(1, caller, internalCorrelationId, holdUrl, tenantIdentifier, holdBody));
+                            items.add(batchItemBuilder.createTransactionItem(2, caller, internalCorrelationId, withdrawalUrl, tenantIdentifier, cardTransactionBody, null));
+                            items.add(batchItemBuilder.createTransactionItem(3, caller, internalCorrelationId, depositUrl, tenantIdentifier, cardTransactionBody, null));
                         }
 
                         // execute batch

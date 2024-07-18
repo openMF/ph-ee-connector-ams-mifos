@@ -32,7 +32,7 @@ public class BatchItemBuilder {
         String caller = Thread.currentThread().getStackTrace()[2].getMethodName();
         int stepNumber = items.size() + 1;
 
-        items.add(createTransactionItem(caller, internalCorrelationId, stepNumber, url, tenantId, body, isDetails ? items.size() : null));
+        items.add(createTransactionItem(stepNumber, caller, internalCorrelationId, url, tenantId, body, isDetails ? items.size() : null));
     }
 
     public ExternalHoldItem createExternalHoldItem(Integer stepNumber, String caller, String internalCorrelationId, String relativeUrl, String tenantId, String bodyItem) {
@@ -46,18 +46,18 @@ public class BatchItemBuilder {
                 .setBody(bodyItem);
     }
 
+    public TransactionItem createTransactionItem(Integer stepNumber, String caller, String internalCorrelationId, String relativeUrl, String tenantId, String bodyItem, Integer reference) throws JsonProcessingException {
+        String idempotencyKey = createIdempotencyKey(caller, internalCorrelationId, stepNumber);
+        logger.debug("creating transaction item with idempotencyKey: {}", idempotencyKey);
+        return new TransactionItem(stepNumber, relativeUrl, "POST", reference, createHeaders(tenantId, idempotencyKey), bodyItem);
+    }
+
     private @NotNull List<Header> createHeaders(String tenantId, String idempotencyKey) {
         return List.of(new Header("Idempotency-Key", idempotencyKey),
                 new Header("Content-Type", "application/json"),
                 new Header("Fineract-Platform-TenantId", tenantId),
                 new Header("Authorization", authTokenHelper.generateAuthToken())
         );
-    }
-
-    private TransactionItem createTransactionItem(String caller, String internalCorrelationId, Integer stepNumber, String relativeUrl, String tenantId, String bodyItem, Integer reference) throws JsonProcessingException {
-        String idempotencyKey = createIdempotencyKey(caller, internalCorrelationId, stepNumber);
-        logger.debug("creating transaction item with idempotencyKey: {}", idempotencyKey);
-        return new TransactionItem(stepNumber, relativeUrl, "POST", reference, createHeaders(tenantId, idempotencyKey), bodyItem);
     }
 
     public String createIdempotencyKey(String caller, String internalCorrelationId, Integer stepNumber) {
