@@ -35,16 +35,6 @@ public class BatchItemBuilder {
         items.add(createTransactionItem(stepNumber, caller, internalCorrelationId, url, tenantId, body, isDetails ? items.size() : null));
     }
 
-    public ExternalHoldItem createExternalHoldItem(Integer stepNumber, String idempotencyKey, String relativeUrl, String tenantId, String bodyItem) {
-        logger.debug("creating external hold item with idempotencyKey: {}", idempotencyKey);
-        return new ExternalHoldItem()
-                .setRelativeUrl(relativeUrl)
-                .setRequestId(stepNumber)
-                .setMethod("POST")
-                .setHeaders(createHeaders(tenantId, idempotencyKey))
-                .setBody(bodyItem);
-    }
-
     public TransactionItem createTransactionItem(Integer stepNumber, String caller, String internalCorrelationId, String relativeUrl, String tenantId, String bodyItem, Integer reference) throws JsonProcessingException {
         String idempotencyKey = createIdempotencyKey(caller, internalCorrelationId, stepNumber);
         logger.debug("creating transaction item with idempotencyKey: {}", idempotencyKey);

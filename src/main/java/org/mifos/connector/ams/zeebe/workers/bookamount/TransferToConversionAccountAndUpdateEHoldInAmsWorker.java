@@ -20,6 +20,7 @@ import org.mifos.connector.ams.log.TraceZeebeArguments;
 import org.mifos.connector.ams.zeebe.workers.utils.BatchItem;
 import org.mifos.connector.ams.zeebe.workers.utils.BatchItemBuilder;
 import org.mifos.connector.ams.zeebe.workers.utils.CurrentAccountTransactionBody;
+import org.mifos.connector.ams.zeebe.workers.utils.ExternalHoldItem;
 import org.mifos.connector.ams.zeebe.workers.utils.TransactionItem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -180,9 +181,6 @@ public class TransferToConversionAccountAndUpdateEHoldInAmsWorker {
                                         )
                                 );
 
-                        logger.debug("fee card transaction body: {}", cardTransactionBody);
-                        logger.debug("fee hold body: {}", holdBody);
-
                         if (transactionFeeAmount.equals(BigDecimal.ZERO)) {
                             logger.info("Transaction fee is zero, skipping fee handling");
                         } else {
@@ -205,8 +203,6 @@ public class TransferToConversionAccountAndUpdateEHoldInAmsWorker {
                         holdBody.setOriginalAmount(originalAmount);
                         cardTransactionBody.setTransactionAmount(amount);
                         cardTransactionBody.setOriginalAmount(originalAmount);
-                        logger.debug("amount card transaction body: {}", cardTransactionBody);
-                        logger.debug("amount hold body: {}", holdBody);
 
                         logger.info("Withdraw amount {} from disposal account {}", amount, disposalAccountAmsId);
                         Pair<BigDecimal, Boolean> balanceAndWithdraw = executeWithdraw("TRX", requestId, holdBody, cardTransactionBody, conversionAccountAmsId, disposalAccountAmsId, internalCorrelationId, tenantIdentifier, transactionGroupId, holdUrl, withdrawalUrl);
@@ -236,8 +232,16 @@ public class TransferToConversionAccountAndUpdateEHoldInAmsWorker {
             String holdIdempotencyKey = requestId + "_EH-" + idempotencyPostfix;
             String withdrawIdempotencyKey = requestId + "_" + idempotencyPostfix;
 
+            logger.debug("{} card transaction body: {}", idempotencyPostfix, cardTransactionBodyString);
+            logger.debug("{} hold body: {}", idempotencyPostfix, holdBodyString);
+
             List<BatchItem> items = List.of(
-                    batchItemBuilder.createExternalHoldItem(1, holdIdempotencyKey, holdUrl, tenantIdentifier, holdBodyString),
+                    new ExternalHoldItem()
+                            .setRelativeUrl(holdUrl)
+                            .setRequestId(1)
+                            .setMethod("POST")
+                            .setHeaders(batchItemBuilder.createHeaders(tenantIdentifier, holdIdempotencyKey))
+                            .setBody(holdBodyString),
                     new TransactionItem(2, withdrawalUrl, "POST", null, batchItemBuilder.createHeaders(tenantIdentifier, withdrawIdempotencyKey), cardTransactionBodyString)
             );
 
@@ -267,6 +271,8 @@ public class TransferToConversionAccountAndUpdateEHoldInAmsWorker {
         try {
             String idempotencyKey = UUID.randomUUID().toString();
             String cardTransactionBodyString = painMapper.writeValueAsString(cardTransactionBody);
+            logger.debug("amount card transaction body: {}", cardTransactionBodyString);
+
             List<BatchItem> items = List.of(new TransactionItem(1, depositUrl, "POST", null, batchItemBuilder.createHeaders(tenantIdentifier, idempotencyKey), cardTransactionBodyString));
             moneyInOutWorker.doBatch(items, tenantIdentifier, transactionGroupId, disposalAccountAmsId, conversionAccountAmsId, internalCorrelationId, "transferToConversionAccountAndUpdateEHoldInAmsWorker");
 
