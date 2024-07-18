@@ -31,7 +31,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static org.mifos.connector.ams.zeebe.workers.bookamount.MoneyInOutWorker.FORMAT;
+import static org.mifos.connector.ams.zeebe.workers.bookamount.MoneyInOutWorker.DATETIME_FORMAT;
 
 @Component
 public class TransferToConversionAccountAndUpdateEHoldInAmsWorker {
@@ -119,7 +119,7 @@ public class TransferToConversionAccountAndUpdateEHoldInAmsWorker {
                                     .setSequenceDateTime(sequenceDateTime)
                                     .setOriginalAmount(externalHoldAmount)
                                     .setLocale(locale)
-                                    .setDateFormat(FORMAT)
+                                    .setDateTimeFormat(DATETIME_FORMAT)
                                     .setPaymentTypeId(depositFeePaymentTypeId)
                                     .setDatatables(List.of(
                                             new CurrentAccountTransactionBody.DataTable(List.of(
@@ -139,7 +139,7 @@ public class TransferToConversionAccountAndUpdateEHoldInAmsWorker {
                             String cardTransactionBody = painMapper.writeValueAsString(new CurrentAccountTransactionBody()
                                     .setSequenceDateTime(sequenceDateTime)
                                     .setTransactionAmount(transactionFeeAmount)
-                                    .setDateFormat(FORMAT)
+                                    .setDateTimeFormat(DATETIME_FORMAT)
                                     .setLocale(locale)
                                     .setPaymentTypeId(depositFeePaymentTypeId)
                                     .setCurrencyCode(currency)

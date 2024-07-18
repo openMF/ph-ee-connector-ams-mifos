@@ -18,6 +18,7 @@ public class CurrentAccountTransactionBody {
     private BigDecimal originalAmount;
     private String sequenceDateTime;
     private String dateFormat;
+    private String dateTimeFormat;
     private String locale;
     private String paymentTypeId;
     private String currencyCode;

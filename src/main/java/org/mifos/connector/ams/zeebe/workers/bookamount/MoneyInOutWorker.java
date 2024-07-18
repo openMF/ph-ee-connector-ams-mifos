@@ -73,6 +73,7 @@ public class MoneyInOutWorker {
     private EventService eventService;
 
     public static final String FORMAT = "yyyyMMdd";
+    public static final String DATETIME_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSSX";
 
     @Retryable(retryFor = FineractOptimisticLockingException.class, maxAttemptsExpression = "${fineract.idempotency.count}", backoff = @Backoff(delayExpression = "${fineract.idempotency.interval}"))
     protected Long holdBatch(List<BatchItem> items,
@@ -163,6 +164,12 @@ public class MoneyInOutWorker {
     public void recoverDoBatchOnUs(ZeebeBpmnError e) {
         log.error(e.getMessage(), e);
         throw e;
+    }
+
+    @Recover
+    public void recoverDoBatch(RuntimeException e) {
+        log.error(e.getMessage(), e);
+        throw new ZeebeBpmnError("Error_CaughtException", "Failed to handle doBatch request");
     }
 
     private Long holdBatchInternal(String transactionGroupId, List<BatchItem> items, String tenantId, String internalCorrelationId, String from) {
