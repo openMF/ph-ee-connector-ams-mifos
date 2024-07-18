@@ -4,6 +4,7 @@ import com.baasflow.commons.events.EventService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
+import com.jayway.jsonpath.PathNotFoundException;
 import io.camunda.zeebe.client.api.response.ActivatedJob;
 import io.camunda.zeebe.client.api.worker.JobClient;
 import io.camunda.zeebe.spring.client.annotation.JobWorker;
@@ -240,10 +241,14 @@ public class TransferToConversionAccountAndUpdateEHoldInAmsWorker {
             BatchResponse response = out.getRight().get(0);
             DocumentContext json = JsonPath.parse(response.getBody());
             logger.debug("## json response: {}", response.getBody());
-            BigDecimal holdAmount = json.read("$.changes.appliedAmounts.holdAmount", BigDecimal.class);
             BigDecimal availableBalance = json.read("$.changes.availableBalance", BigDecimal.class);
-            logger.info("availableBalance: {} and holdAmount: {} from json response: {}", availableBalance, holdAmount, response.getBody());
-            return Pair.of(availableBalance, holdAmount.equals(BigDecimal.ZERO));
+            logger.info("availableBalance: {} from json response: {}", availableBalance, response.getBody());
+            try {
+                BigDecimal holdAmount = json.read("$.changes.appliedAmounts.holdAmount", BigDecimal.class);
+                return Pair.of(availableBalance, holdAmount.equals(BigDecimal.ZERO));
+            } catch (PathNotFoundException e) {
+                return Pair.of(availableBalance, true);
+            }
 
         } catch (ZeebeBpmnError z) {
             throw z;
