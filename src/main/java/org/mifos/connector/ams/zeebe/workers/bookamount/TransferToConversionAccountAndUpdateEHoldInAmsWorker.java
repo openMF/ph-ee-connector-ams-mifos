@@ -137,7 +137,6 @@ public class TransferToConversionAccountAndUpdateEHoldInAmsWorker {
                             );
 
                             String cardTransactionBody = painMapper.writeValueAsString(new CurrentAccountTransactionBody()
-                                    .setSequenceDateTime(sequenceDateTime)
                                     .setTransactionAmount(transactionFeeAmount)
                                     .setDateTimeFormat(DATETIME_FORMAT)
                                     .setLocale(locale)
