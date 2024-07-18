@@ -15,6 +15,7 @@ import org.mifos.connector.ams.fineract.TenantConfigs;
 import org.mifos.connector.ams.log.EventLogUtil;
 import org.mifos.connector.ams.log.LogInternalCorrelationId;
 import org.mifos.connector.ams.log.TraceZeebeArguments;
+import org.mifos.connector.ams.rest.authorize.FineractAuthorizeRequest;
 import org.mifos.connector.ams.zeebe.workers.utils.BatchItemBuilder;
 import org.mifos.connector.ams.zeebe.workers.utils.CurrentAccountTransactionBody;
 import org.mifos.connector.ams.zeebe.workers.utils.TransactionItem;
@@ -74,6 +75,7 @@ public class TransferToConversionAccountAndUpdateEHoldInAmsWorker {
             @Variable String cardToken,
             @Variable String conversionAccountAmsId,
             @Variable String currency,
+            @Variable String direction,
             @Variable String disposalAccountAmsId,
             @Variable String instructedAmount,
             @Variable String instructedCurrency,
@@ -89,10 +91,10 @@ public class TransferToConversionAccountAndUpdateEHoldInAmsWorker {
             @Variable String paymentTokenWallet,
             @Variable String processCode,
             @Variable String requestId,
+            @Variable String sequenceDateTime,
             @Variable String tenantIdentifier,
             @Variable String transactionGroupId,
-            @Variable String transactionReference,
-            @Variable String direction
+            @Variable String transactionReference
     ) {
         return eventService.auditedEvent(
                 eventBuilder -> EventLogUtil.initZeebeJob(activatedJob, "transferToConversionAccountAndUpdateEHoldInAmsWorker", internalCorrelationId, transactionGroupId, eventBuilder),
@@ -111,22 +113,11 @@ public class TransferToConversionAccountAndUpdateEHoldInAmsWorker {
                             logger.info("Transaction fee is zero, skipping fee handling");
                         } else {
                             logger.debug("Depositing fee {} to conversion account {}", transactionFeeAmount, conversionAccountAmsId);
-                            String depositFeeOperation = "transferToConversionAccountInAms.ConversionAccount.DepositTransactionFee";
+                            String depositFeeOperation = "transferToConversionAccountInAms.ConversionAccount.DepositTransactionFee"; // TODO use card types
                             String depositFeePaymentTypeId = tenantConfigs.findPaymentTypeId(tenantIdentifier, String.format("%s.%s", paymentScheme, depositFeeOperation));
                             String depositFeePaymentTypeCode = Optional.ofNullable(tenantConfigs.findResourceCode(tenantIdentifier, String.format("%s.%s", paymentScheme, depositFeeOperation))).orElse("");
-                            String holdBody = painMapper.writeValueAsString(new CurrentAccountTransactionBody(externalHoldAmount, FORMAT, locale, depositFeePaymentTypeId, currency, List.of(
-                                    new CurrentAccountTransactionBody.DataTable(List.of(
-                                            new CurrentAccountTransactionBody.HoldEntry()
-                                                    .setEnd_to_end_id("TODO")
-                                                    .setTransaction_id(transactionReference)
-                                                    .setInternal_correlation_id(internalCorrelationId)
-                                                    .setPartner_name(merchName)
-                                                    .setPayment_scheme(paymentScheme)
-                                                    .setPartner_account_iban("TODO")
-                                                    .setDirection(direction)
-                                                    .setAccount_iban("TODO")
-                                    ), "dt_current_transaction_details")
-                            )));
+                            String holdBody = painMapper.writeValueAsString(new FineractAuthorizeRequest(transactionFeeAmount, externalHoldAmount, sequenceDateTime, FORMAT));
+
                             String cardTransactionBody = painMapper.writeValueAsString(new CurrentAccountTransactionBody(transactionFeeAmount, FORMAT, locale, depositFeePaymentTypeId, currency, List.of(
                                     new CurrentAccountTransactionBody.DataTable(List.of(
                                             new CurrentAccountTransactionBody.Entry()
