@@ -92,7 +92,7 @@ public class MoneyInOutWorker {
     }
 
     @Retryable(retryFor = FineractOptimisticLockingException.class, maxAttemptsExpression = "${fineract.idempotency.count}", backoff = @Backoff(delayExpression = "${fineract.idempotency.interval}"))
-    protected Pair<String, List<BatchResponse>> doBatch(List<TransactionItem> items,
+    protected Pair<String, List<BatchResponse>> doBatch(List items,
                                                         String tenantId,
                                                         String transactionGroupId,
                                                         String disposalAccountId,
@@ -243,10 +243,10 @@ public class MoneyInOutWorker {
         return handleResponseElementError(responseItem, statusCode, retryCount);
     }
 
-    private Pair<String, List<BatchResponse>> doBatchInternal(List<TransactionItem> items, String tenantId, String transactionGroupId, String internalCorrelationId, String from) {
+    private Pair<String, List<BatchResponse>> doBatchInternal(List items, String tenantId, String transactionGroupId, String internalCorrelationId, String from) {
         HttpHeaders httpHeaders = createHeaders(tenantId, transactionGroupId);
 
-        HttpEntity<List<TransactionItem>> entity = new HttpEntity<>(items, httpHeaders);
+        HttpEntity<List> entity = new HttpEntity<>(items, httpHeaders);
 
         String urlTemplate = UriComponentsBuilder.fromHttpUrl(fineractApiUrl)
                 .path("/batches")

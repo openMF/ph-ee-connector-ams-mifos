@@ -6,6 +6,7 @@ import iso.std.iso._20022.tech.json.camt_053_001.AmountAndCurrencyExchange3;
 import iso.std.iso._20022.tech.json.camt_053_001.AmountAndCurrencyExchangeDetails3;
 import iso.std.iso._20022.tech.json.camt_053_001.EntryTransaction10;
 import iso.std.iso._20022.tech.json.pain_001_001.SupplementaryData1;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,7 +14,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -28,22 +28,36 @@ public class BatchItemBuilder {
     public int maxLength = 50;
 
 
-    public void add(String tenantId, String internalCorrelationId, List<TransactionItem> items, String url, String body, boolean isDetails) throws JsonProcessingException {
+    public void add(String tenantId, String internalCorrelationId, List items, String url, String body, boolean isDetails) throws JsonProcessingException {
         String caller = Thread.currentThread().getStackTrace()[2].getMethodName();
         int stepNumber = items.size() + 1;
 
         items.add(createTransactionItem(caller, internalCorrelationId, stepNumber, url, tenantId, body, isDetails ? items.size() : null));
     }
 
+    public ExternalHoldItem createExternalHoldItem(Integer stepNumber, String caller, String internalCorrelationId, String relativeUrl, String tenantId, String bodyItem) {
+        String idempotencyKey = createIdempotencyKey(caller, internalCorrelationId, stepNumber);
+        logger.debug("creating external hold item with idempotencyKey: {}", idempotencyKey);
+        return new ExternalHoldItem()
+                .setRelativeUrl(relativeUrl)
+                .setRequestId(stepNumber)
+                .setMethod("POST")
+                .setHeaders(createHeaders(tenantId, idempotencyKey))
+                .setBody(bodyItem);
+    }
+
+    private @NotNull List<Header> createHeaders(String tenantId, String idempotencyKey) {
+        return List.of(new Header("Idempotency-Key", idempotencyKey),
+                new Header("Content-Type", "application/json"),
+                new Header("Fineract-Platform-TenantId", tenantId),
+                new Header("Authorization", authTokenHelper.generateAuthToken())
+        );
+    }
+
     private TransactionItem createTransactionItem(String caller, String internalCorrelationId, Integer stepNumber, String relativeUrl, String tenantId, String bodyItem, Integer reference) throws JsonProcessingException {
         String idempotencyKey = createIdempotencyKey(caller, internalCorrelationId, stepNumber);
         logger.debug("creating transaction item with idempotencyKey: {}", idempotencyKey);
-        List<Header> headers = new ArrayList<>();
-        headers.add(new Header("Idempotency-Key", idempotencyKey));
-        headers.add(new Header("Content-Type", "application/json"));
-        headers.add(new Header("Fineract-Platform-TenantId", tenantId));
-        headers.add(new Header("Authorization", authTokenHelper.generateAuthToken()));
-        return new TransactionItem(stepNumber, relativeUrl, "POST", reference, headers, bodyItem);
+        return new TransactionItem(stepNumber, relativeUrl, "POST", reference, createHeaders(tenantId, idempotencyKey), bodyItem);
     }
 
     public String createIdempotencyKey(String caller, String internalCorrelationId, Integer stepNumber) {
