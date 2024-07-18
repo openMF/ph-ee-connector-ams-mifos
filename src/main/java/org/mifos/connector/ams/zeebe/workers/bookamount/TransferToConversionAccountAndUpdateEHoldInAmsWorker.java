@@ -202,7 +202,7 @@ public class TransferToConversionAccountAndUpdateEHoldInAmsWorker {
                         holdBody.setTransactionAmount(BigDecimal.ZERO);
                         holdBody.setOriginalAmount(originalAmount);
                         cardTransactionBody.setTransactionAmount(amount);
-                        cardTransactionBody.setOriginalAmount(originalAmount);
+                        cardTransactionBody.setOriginalAmount(null);
 
                         logger.info("Withdraw amount {} from disposal account {}", amount, disposalAccountAmsId);
                         Pair<BigDecimal, Boolean> balanceAndWithdraw = executeWithdraw("TRX", requestId, holdBody, cardTransactionBody, conversionAccountAmsId, disposalAccountAmsId, internalCorrelationId, tenantIdentifier, transactionGroupId, holdUrl, withdrawalUrl);
