@@ -164,6 +164,24 @@ public class MoneyInOutWorker {
         throw e;
     }
 
+    @Recover
+    public long recoverHoldBatch(RuntimeException e) {
+        log.error(e.getMessage(), e);
+        throw e;
+    }
+
+    @Recover
+    public Pair<String, List<BatchResponse>> recoverDoBatch(RuntimeException e) {
+        log.error(e.getMessage(), e);
+        throw e;
+    }
+
+    @Recover
+    public void recoverDoBatchOnUs(RuntimeException e) {
+        log.error(e.getMessage(), e);
+        throw e;
+    }
+
     private Long holdBatchInternal(String transactionGroupId, List<TransactionItem> items, String tenantId, String internalCorrelationId, String from) {
         HttpHeaders httpHeaders = createHeaders(tenantId, transactionGroupId);
         HttpEntity<List<TransactionItem>> entity = new HttpEntity<>(items, httpHeaders);
