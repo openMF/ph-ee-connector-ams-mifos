@@ -236,8 +236,8 @@ public class TransferToConversionAccountAndUpdateEHoldInAmsWorker {
                     batchItemBuilder.createTransactionItem(2, caller, internalCorrelationId, withdrawalUrl, tenantIdentifier, cardTransactionBodyString, null)
             );
 
-            // execute batch
             Pair<String, List<BatchResponse>> out = moneyInOutWorker.doBatch(items, tenantIdentifier, transactionGroupId, disposalAccountAmsId, conversionAccountAmsId, internalCorrelationId, "transferToConversionAccountAndUpdateEHoldInAmsWorker");
+
             BatchResponse response = out.getRight().get(0);
             DocumentContext json = JsonPath.parse(response.getBody());
             logger.debug("## json response: {}", response.getBody());
@@ -258,24 +258,17 @@ public class TransferToConversionAccountAndUpdateEHoldInAmsWorker {
         }
     }
 
-    private @NotNull BigDecimal executeDeposit(CurrentAccountTransactionBody cardTransactionBody, String conversionAccountAmsId, String disposalAccountAmsId, String internalCorrelationId, String tenantIdentifier, String transactionGroupId, String depositUrl) {
+    private void executeDeposit(CurrentAccountTransactionBody cardTransactionBody, String conversionAccountAmsId, String disposalAccountAmsId, String internalCorrelationId, String tenantIdentifier, String transactionGroupId, String depositUrl) {
         try {
             String cardTransactionBodyString = painMapper.writeValueAsString(cardTransactionBody);
             List<BatchItem> items = List.of(batchItemBuilder.createTransactionItem(1, caller, internalCorrelationId, depositUrl, tenantIdentifier, cardTransactionBodyString, null));
-
-            // execute batch
-            Pair<String, List<BatchResponse>> out = moneyInOutWorker.doBatch(items, tenantIdentifier, transactionGroupId, disposalAccountAmsId, conversionAccountAmsId, internalCorrelationId, "transferToConversionAccountAndUpdateEHoldInAmsWorker");
-            BatchResponse response = out.getRight().get(0);
-            DocumentContext json = JsonPath.parse(response.getBody());
-            BigDecimal availableBalance = json.read("$.changes.availableBalance", BigDecimal.class);
-            logger.info("returning availableBalance: {} from json response: {}", availableBalance, response.getBody());
-            return availableBalance;
+            moneyInOutWorker.doBatch(items, tenantIdentifier, transactionGroupId, disposalAccountAmsId, conversionAccountAmsId, internalCorrelationId, "transferToConversionAccountAndUpdateEHoldInAmsWorker");
 
         } catch (ZeebeBpmnError z) {
             throw z;
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new RuntimeException(e.getMessage(), e);
         }
     }
 
