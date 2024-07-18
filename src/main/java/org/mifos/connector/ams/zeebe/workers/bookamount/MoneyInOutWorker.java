@@ -73,7 +73,7 @@ public class MoneyInOutWorker {
     private EventService eventService;
 
     public static final String FORMAT = "yyyyMMdd";
-    public static final String DATETIME_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSSX";
+    public static final String DATETIME_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSS";
 
     @Retryable(retryFor = FineractOptimisticLockingException.class, maxAttemptsExpression = "${fineract.idempotency.count}", backoff = @Backoff(delayExpression = "${fineract.idempotency.interval}"))
     protected Long holdBatch(List<BatchItem> items,
