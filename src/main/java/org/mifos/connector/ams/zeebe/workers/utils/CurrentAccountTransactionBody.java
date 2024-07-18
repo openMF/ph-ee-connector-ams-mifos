@@ -15,11 +15,23 @@ import java.util.List;
 @Accessors(chain = true)
 public class CurrentAccountTransactionBody {
     private BigDecimal transactionAmount;
+    private BigDecimal originalAmount;
+    private String sequenceDateTime;
     private String dateFormat;
     private String locale;
     private String paymentTypeId;
     private String currencyCode;
     private List<DataTable<?>> datatables;
+
+    @Deprecated
+    public <E> CurrentAccountTransactionBody(BigDecimal amount, String format, String locale, String paymentTypeId, String currency, List<DataTable<?>> dtCurrentTransactionDetails) {
+        this.transactionAmount = amount;
+        this.dateFormat = format;
+        this.locale = locale;
+        this.paymentTypeId = paymentTypeId;
+        this.currencyCode = currency;
+        this.datatables = dtCurrentTransactionDetails;
+    }
 
     @Data
     @AllArgsConstructor
