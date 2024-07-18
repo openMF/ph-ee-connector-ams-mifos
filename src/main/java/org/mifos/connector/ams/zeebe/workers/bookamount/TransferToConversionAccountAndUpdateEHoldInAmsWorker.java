@@ -239,7 +239,7 @@ public class TransferToConversionAccountAndUpdateEHoldInAmsWorker {
             Pair<String, List<BatchResponse>> out = moneyInOutWorker.doBatch(items, tenantIdentifier, transactionGroupId, disposalAccountAmsId, conversionAccountAmsId, internalCorrelationId, "transferToConversionAccountAndUpdateEHoldInAmsWorker");
             BatchResponse response = out.getRight().get(0);
             DocumentContext json = JsonPath.parse(response.getBody());
-            logger.debug("## json response: {}", json);
+            logger.debug("## json response: {}", response.getBody());
             BigDecimal holdAmount = json.read("$.changes.appliedAmounts.holdAmount", BigDecimal.class);
             BigDecimal availableBalance = json.read("$.changes.availableBalance", BigDecimal.class);
             logger.info("availableBalance: {} and holdAmount: {} from json response: {}", availableBalance, holdAmount, response.getBody());
