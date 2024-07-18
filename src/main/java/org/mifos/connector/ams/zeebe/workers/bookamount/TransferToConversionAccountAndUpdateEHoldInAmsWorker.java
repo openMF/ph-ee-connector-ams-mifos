@@ -27,6 +27,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -138,7 +141,7 @@ public class TransferToConversionAccountAndUpdateEHoldInAmsWorker {
 
                             String cardTransactionBody = painMapper.writeValueAsString(new CurrentAccountTransactionBody()
                                     .setTransactionAmount(transactionFeeAmount)
-                                    .setDateTimeFormat(DATETIME_FORMAT)
+                                    .setDateTimeFormat(detectDateTimeFormat(sequenceDateTime))
                                     .setLocale(locale)
                                     .setPaymentTypeId(depositFeePaymentTypeId)
                                     .setCurrencyCode(currency)
@@ -199,5 +202,26 @@ public class TransferToConversionAccountAndUpdateEHoldInAmsWorker {
                     }
                 }
         );
+    }
+
+    List<String> possibleFormats = List.of(
+            "yyyy-MM-dd'T'HH:mm:ss.SSSXXX",
+            "yyyy-MM-dd'T'HH:mm:ss.SSSX",
+            "yyyy-MM-dd'T'HH:mm:ss.SSSZ",
+            "yyyy-MM-dd'T'HH:mm:ss.SSS"
+    );
+
+    private String detectDateTimeFormat(String dateTime) {
+        for (String format : possibleFormats) {
+            try {
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern(format);
+                LocalDateTime.parse(dateTime, formatter);
+                logger.debug("Detected date time format: {}", format);
+                return format;
+            } catch (DateTimeParseException e) {
+                // Ignore and try the next format
+            }
+        }
+        throw new RuntimeException("Could not detect date time format for: " + dateTime);
     }
 }
