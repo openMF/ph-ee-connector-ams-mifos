@@ -35,8 +35,7 @@ public class BatchItemBuilder {
         items.add(createTransactionItem(stepNumber, caller, internalCorrelationId, url, tenantId, body, isDetails ? items.size() : null));
     }
 
-    public ExternalHoldItem createExternalHoldItem(Integer stepNumber, String caller, String internalCorrelationId, String relativeUrl, String tenantId, String bodyItem) {
-        String idempotencyKey = createIdempotencyKey(caller, internalCorrelationId, stepNumber);
+    public ExternalHoldItem createExternalHoldItem(Integer stepNumber, String idempotencyKey, String relativeUrl, String tenantId, String bodyItem) {
         logger.debug("creating external hold item with idempotencyKey: {}", idempotencyKey);
         return new ExternalHoldItem()
                 .setRelativeUrl(relativeUrl)
@@ -52,7 +51,7 @@ public class BatchItemBuilder {
         return new TransactionItem(stepNumber, relativeUrl, "POST", reference, createHeaders(tenantId, idempotencyKey), bodyItem);
     }
 
-    private @NotNull List<Header> createHeaders(String tenantId, String idempotencyKey) {
+    public @NotNull List<Header> createHeaders(String tenantId, String idempotencyKey) {
         return List.of(new Header("Idempotency-Key", idempotencyKey),
                 new Header("Content-Type", "application/json"),
                 new Header("Fineract-Platform-TenantId", tenantId),

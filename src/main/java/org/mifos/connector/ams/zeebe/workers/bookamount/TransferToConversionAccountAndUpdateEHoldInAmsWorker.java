@@ -20,6 +20,7 @@ import org.mifos.connector.ams.log.TraceZeebeArguments;
 import org.mifos.connector.ams.zeebe.workers.utils.BatchItem;
 import org.mifos.connector.ams.zeebe.workers.utils.BatchItemBuilder;
 import org.mifos.connector.ams.zeebe.workers.utils.CurrentAccountTransactionBody;
+import org.mifos.connector.ams.zeebe.workers.utils.TransactionItem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -34,6 +35,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import static org.mifos.connector.ams.zeebe.workers.bookamount.MoneyInOutWorker.DATETIME_FORMAT;
 
@@ -116,10 +118,11 @@ public class TransferToConversionAccountAndUpdateEHoldInAmsWorker {
                         String withdrawFeeOperation = "transferToConversionAccountInAms.ConversionAccount.DepositTransactionFee"; // TODO use card types
                         String withdrawFeePaymentTypeId = tenantConfigs.findPaymentTypeId(tenantIdentifier, String.format("%s.%s", paymentScheme, withdrawFeeOperation));
 
+                        BigDecimal originalAmount = externalHoldAmount.subtract(transactionFeeAmount).max(BigDecimal.ZERO);
                         CurrentAccountTransactionBody holdBody = new CurrentAccountTransactionBody()
-                                .setTransactionAmount(transactionFeeAmount)
+                                .setTransactionAmount(BigDecimal.ZERO)
                                 .setSequenceDateTime(sequenceDateTime)
-                                .setOriginalAmount(externalHoldAmount)
+                                .setOriginalAmount(originalAmount)
                                 .setLocale(locale)
                                 .setDateTimeFormat(DATETIME_FORMAT)
                                 .setPaymentTypeId(depositFeePaymentTypeId)
@@ -185,7 +188,7 @@ public class TransferToConversionAccountAndUpdateEHoldInAmsWorker {
                         } else {
                             // STEP 1 - withdraw fee from disposal, execute
                             logger.info("Withdraw fee {} from disposal account {}", transactionFeeAmount, disposalAccountAmsId);
-                            Pair<BigDecimal, Boolean> balanceAndWithdraw = executeWithdraw(holdBody, cardTransactionBody, conversionAccountAmsId, disposalAccountAmsId, internalCorrelationId, tenantIdentifier, transactionGroupId, holdUrl, withdrawalUrl);
+                            Pair<BigDecimal, Boolean> balanceAndWithdraw = executeWithdraw("FEE", requestId, holdBody, cardTransactionBody, conversionAccountAmsId, disposalAccountAmsId, internalCorrelationId, tenantIdentifier, transactionGroupId, holdUrl, withdrawalUrl);
 
                             if (balanceAndWithdraw.getRight()) {
                                 // STEP 2 - deposit fee to conversion, execute
@@ -197,8 +200,8 @@ public class TransferToConversionAccountAndUpdateEHoldInAmsWorker {
                         }
 
                         // STEP 3 - withdraw amount from disposal, execute
-                        BigDecimal originalAmount = externalHoldAmount.subtract(transactionFeeAmount); // TODO review this
-                        holdBody.setTransactionAmount(amount);
+                        originalAmount = originalAmount.subtract(amount).max(BigDecimal.ZERO);
+                        holdBody.setTransactionAmount(BigDecimal.ZERO);
                         holdBody.setOriginalAmount(originalAmount);
                         cardTransactionBody.setTransactionAmount(amount);
                         cardTransactionBody.setOriginalAmount(originalAmount);
@@ -206,7 +209,7 @@ public class TransferToConversionAccountAndUpdateEHoldInAmsWorker {
                         logger.debug("amount hold body: {}", holdBody);
 
                         logger.info("Withdraw amount {} from disposal account {}", amount, disposalAccountAmsId);
-                        Pair<BigDecimal, Boolean> balanceAndWithdraw = executeWithdraw(holdBody, cardTransactionBody, conversionAccountAmsId, disposalAccountAmsId, internalCorrelationId, tenantIdentifier, transactionGroupId, holdUrl, withdrawalUrl);
+                        Pair<BigDecimal, Boolean> balanceAndWithdraw = executeWithdraw("TRX", requestId, holdBody, cardTransactionBody, conversionAccountAmsId, disposalAccountAmsId, internalCorrelationId, tenantIdentifier, transactionGroupId, holdUrl, withdrawalUrl);
 
                         if (balanceAndWithdraw.getRight()) {
                             // STEP 4 - deposit amount to conversion, execute
@@ -226,14 +229,16 @@ public class TransferToConversionAccountAndUpdateEHoldInAmsWorker {
         );
     }
 
-    private @NotNull Pair<BigDecimal, Boolean> executeWithdraw(CurrentAccountTransactionBody holdBody, CurrentAccountTransactionBody cardTransactionBody, String conversionAccountAmsId, String disposalAccountAmsId, String internalCorrelationId, String tenantIdentifier, String transactionGroupId, String holdUrl, String withdrawalUrl) {
+    private @NotNull Pair<BigDecimal, Boolean> executeWithdraw(String idempotencyPostfix, String requestId, CurrentAccountTransactionBody holdBody, CurrentAccountTransactionBody cardTransactionBody, String conversionAccountAmsId, String disposalAccountAmsId, String internalCorrelationId, String tenantIdentifier, String transactionGroupId, String holdUrl, String withdrawalUrl) {
         try {
             String holdBodyString = painMapper.writeValueAsString(holdBody);
             String cardTransactionBodyString = painMapper.writeValueAsString(cardTransactionBody);
+            String holdIdempotencyKey = requestId + "_EH-" + idempotencyPostfix;
+            String withdrawIdempotencyKey = requestId + "_" + idempotencyPostfix;
 
             List<BatchItem> items = List.of(
-                    batchItemBuilder.createExternalHoldItem(1, caller, internalCorrelationId, holdUrl, tenantIdentifier, holdBodyString),
-                    batchItemBuilder.createTransactionItem(2, caller, internalCorrelationId, withdrawalUrl, tenantIdentifier, cardTransactionBodyString, null)
+                    batchItemBuilder.createExternalHoldItem(1, holdIdempotencyKey, holdUrl, tenantIdentifier, holdBodyString),
+                    new TransactionItem(2, withdrawalUrl, "POST", null, batchItemBuilder.createHeaders(tenantIdentifier, withdrawIdempotencyKey), cardTransactionBodyString)
             );
 
             Pair<String, List<BatchResponse>> out = moneyInOutWorker.doBatch(items, tenantIdentifier, transactionGroupId, disposalAccountAmsId, conversionAccountAmsId, internalCorrelationId, "transferToConversionAccountAndUpdateEHoldInAmsWorker");
@@ -260,8 +265,9 @@ public class TransferToConversionAccountAndUpdateEHoldInAmsWorker {
 
     private void executeDeposit(CurrentAccountTransactionBody cardTransactionBody, String conversionAccountAmsId, String disposalAccountAmsId, String internalCorrelationId, String tenantIdentifier, String transactionGroupId, String depositUrl) {
         try {
+            String idempotencyKey = UUID.randomUUID().toString();
             String cardTransactionBodyString = painMapper.writeValueAsString(cardTransactionBody);
-            List<BatchItem> items = List.of(batchItemBuilder.createTransactionItem(1, caller, internalCorrelationId, depositUrl, tenantIdentifier, cardTransactionBodyString, null));
+            List<BatchItem> items = List.of(new TransactionItem(1, depositUrl, "POST", null, batchItemBuilder.createHeaders(tenantIdentifier, idempotencyKey), cardTransactionBodyString));
             moneyInOutWorker.doBatch(items, tenantIdentifier, transactionGroupId, disposalAccountAmsId, conversionAccountAmsId, internalCorrelationId, "transferToConversionAccountAndUpdateEHoldInAmsWorker");
 
         } catch (ZeebeBpmnError z) {
