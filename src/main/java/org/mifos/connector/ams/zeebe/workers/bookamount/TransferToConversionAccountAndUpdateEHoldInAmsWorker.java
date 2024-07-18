@@ -149,7 +149,7 @@ public class TransferToConversionAccountAndUpdateEHoldInAmsWorker {
                                             new CurrentAccountTransactionBody.DataTable(List.of(
                                                     new CurrentAccountTransactionBody.Entry()
                                                             .setAccount_iban("TODO")
-                                                            .setStructured_transaction_details("TODO")
+                                                            .setStructured_transaction_details("{}")
                                                             .setInternal_correlation_id(internalCorrelationId)
                                                             .setEnd_to_end_id("TODO")
                                                             .setTransaction_id(transactionReference)
