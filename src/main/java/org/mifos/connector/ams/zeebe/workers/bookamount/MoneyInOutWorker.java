@@ -322,7 +322,7 @@ public class MoneyInOutWorker {
 
 
     private Long handleResponseElementError(BatchResponse responseItem, int statusCode, int retryCount) {
-        log.debug("Got error {}, response item '{}' for request", statusCode, responseItem);
+        log.error("Got error {}, response item '{}' for request", statusCode, responseItem);
         switch (statusCode) {
             case SC_CONFLICT -> {
                 log.warn("Locking exception detected will retry for {} times", retryCount);

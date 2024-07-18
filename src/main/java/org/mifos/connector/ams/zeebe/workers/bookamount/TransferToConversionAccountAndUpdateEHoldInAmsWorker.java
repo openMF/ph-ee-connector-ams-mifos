@@ -178,6 +178,9 @@ public class TransferToConversionAccountAndUpdateEHoldInAmsWorker {
                                     ))
                             );
 
+                            logger.debug("card transaction body: {}", cardTransactionBody);
+                            logger.debug("hold body: {}", holdBody);
+
                             String caller = "transferToConversionAccountAndUpdateEHoldInAms";
                             items.add(batchItemBuilder.createExternalHoldItem(1, caller, internalCorrelationId, holdUrl, tenantIdentifier, holdBody));
                             items.add(batchItemBuilder.createTransactionItem(2, caller, internalCorrelationId, withdrawalUrl, tenantIdentifier, cardTransactionBody, null));
