@@ -22,7 +22,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.*;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Recover;
 import org.springframework.retry.annotation.Retryable;
@@ -37,11 +41,14 @@ import java.net.SocketTimeoutException;
 import java.util.List;
 import java.util.Map;
 
-import static org.apache.hc.core5.http.HttpStatus.*;
+import static org.apache.hc.core5.http.HttpStatus.SC_CONFLICT;
+import static org.apache.hc.core5.http.HttpStatus.SC_FORBIDDEN;
+import static org.apache.hc.core5.http.HttpStatus.SC_OK;
+import static org.apache.hc.core5.http.HttpStatus.SC_TOO_EARLY;
 
 @Component
 @Slf4j
-public class MoneyInOutWorker {
+public class MoneyInOutWorker implements InterfaceMoneyOutWorker<Void, Long, Pair<String, List<BatchResponse>>> {
 
     @Getter
     @Autowired
@@ -73,14 +80,15 @@ public class MoneyInOutWorker {
 
     public static final String FORMAT = "yyyyMMdd";
 
+    @Override
     @Retryable(retryFor = FineractOptimisticLockingException.class, maxAttemptsExpression = "${fineract.idempotency.count}", backoff = @Backoff(delayExpression = "${fineract.idempotency.interval}"))
-    protected Long holdBatch(List<TransactionItem> items,
-                             String tenantId,
-                             String transactionGroupId,
-                             String disposalAccountId,
-                             String conversionAccountId,
-                             String internalCorrelationId,
-                             String calledFrom) {
+    public Long holdBatch(List<TransactionItem> items,
+                          String tenantId,
+                          String transactionGroupId,
+                          String disposalAccountId,
+                          String conversionAccountId,
+                          String internalCorrelationId,
+                          String calledFrom) {
         return eventService.auditedEvent(
                 eventBuilder -> EventLogUtil.initFineractBatchCall(calledFrom,
                         items,
@@ -91,14 +99,15 @@ public class MoneyInOutWorker {
                 eventBuilder -> holdBatchInternal(transactionGroupId, items, tenantId, internalCorrelationId, calledFrom));
     }
 
+    @Override
     @Retryable(retryFor = FineractOptimisticLockingException.class, maxAttemptsExpression = "${fineract.idempotency.count}", backoff = @Backoff(delayExpression = "${fineract.idempotency.interval}"))
-    protected Pair<String, List<BatchResponse>> doBatch(List<TransactionItem> items,
-                                                        String tenantId,
-                                                        String transactionGroupId,
-                                                        String disposalAccountId,
-                                                        String conversionAccountId,
-                                                        String internalCorrelationId,
-                                                        String calledFrom) {
+    public Pair<String, List<BatchResponse>> doBatch(List<TransactionItem> items,
+                                                     String tenantId,
+                                                     String transactionGroupId,
+                                                     String disposalAccountId,
+                                                     String conversionAccountId,
+                                                     String internalCorrelationId,
+                                                     String calledFrom) {
         return eventService.auditedEvent(
                 eventBuilder -> EventLogUtil.initFineractBatchCall(calledFrom,
                         items,
@@ -109,14 +118,15 @@ public class MoneyInOutWorker {
                 eventBuilder -> doBatchInternal(items, tenantId, transactionGroupId, internalCorrelationId, calledFrom));
     }
 
+    @Override
     @Retryable(retryFor = FineractOptimisticLockingException.class, maxAttemptsExpression = "${fineract.idempotency.count}", backoff = @Backoff(delayExpression = "${fineract.idempotency.interval}"))
-    protected void doBatchOnUs(List<TransactionItem> items,
-                               String tenantId,
-                               String transactionGroupId,
-                               String debtorDisposalAccountAmsId,
-                               String debtorConversionAccountAmsId,
-                               String creditorDisposalAccountAmsId,
-                               String internalCorrelationId) {
+    public Void doBatchOnUs(List<TransactionItem> items,
+                            String tenantId,
+                            String transactionGroupId,
+                            String debtorDisposalAccountAmsId,
+                            String debtorConversionAccountAmsId,
+                            String creditorDisposalAccountAmsId,
+                            String internalCorrelationId) {
         eventService.auditedEvent(
                 eventBuilder -> EventLogUtil.initFineractBatchCallOnUs("transferTheAmountBetweenDisposalAccounts",
                         items,
@@ -126,61 +136,9 @@ public class MoneyInOutWorker {
                         internalCorrelationId,
                         eventBuilder),
                 eventBuilder -> doBatchInternal(items, tenantId, transactionGroupId, internalCorrelationId, "transferTheAmountBetweenDisposalAccounts"));
+        return null;
     }
 
-    @Recover
-    public long recoverHoldBatch(FineractOptimisticLockingException e) {
-        log.error(e.getMessage(), e);
-        throw new ZeebeBpmnError("Error_CaughtException", "Failed to handle holdBatch request");
-    }
-
-    @Recover
-    public Pair<String, List<BatchResponse>> recoverDoBatch(FineractOptimisticLockingException e) {
-        log.error(e.getMessage(), e);
-        throw new ZeebeBpmnError("Error_CaughtException", "Failed to handle doBatch request");
-    }
-
-    @Recover
-    public void recoverDoBatchOnUs(FineractOptimisticLockingException e) {
-        log.error(e.getMessage(), e);
-        throw new ZeebeBpmnError("Error_CaughtException", "Failed to handle batchOnUs request");
-    }
-
-    @Recover
-    public long recoverHoldBatch(ZeebeBpmnError e) {
-        log.error(e.getMessage(), e);
-        throw e;
-    }
-
-    @Recover
-    public Pair<String, List<BatchResponse>> recoverDoBatch(ZeebeBpmnError e) {
-        log.error(e.getMessage(), e);
-        throw e;
-    }
-
-    @Recover
-    public void recoverDoBatchOnUs(ZeebeBpmnError e) {
-        log.error(e.getMessage(), e);
-        throw e;
-    }
-
-    @Recover
-    public long recoverHoldBatch(RuntimeException e) {
-        log.error(e.getMessage(), e);
-        throw e;
-    }
-
-    @Recover
-    public Pair<String, List<BatchResponse>> recoverDoBatch(RuntimeException e) {
-        log.error(e.getMessage(), e);
-        throw e;
-    }
-
-    @Recover
-    public void recoverDoBatchOnUs(RuntimeException e) {
-        log.error(e.getMessage(), e);
-        throw e;
-    }
 
     private Long holdBatchInternal(String transactionGroupId, List<TransactionItem> items, String tenantId, String internalCorrelationId, String from) {
         HttpHeaders httpHeaders = createHeaders(tenantId, transactionGroupId);
@@ -361,5 +319,68 @@ public class MoneyInOutWorker {
         httpHeaders.set("Fineract-Platform-TenantId", tenantId);
         httpHeaders.set("X-Correlation-ID", transactionGroupId);
         return httpHeaders;
+    }
+
+    @Override
+    @Recover
+    public Long recoverHoldBatch(FineractOptimisticLockingException e) {
+        log.error(e.getMessage(), e);
+        throw new ZeebeBpmnError("Error_CaughtException", "Failed to handle holdBatch request");
+    }
+
+    @Override
+    @Recover
+    public Pair<String, List<BatchResponse>> recoverDoBatch(FineractOptimisticLockingException e) {
+        log.error(e.getMessage(), e);
+        throw new ZeebeBpmnError("Error_CaughtException", "Failed to handle doBatch request");
+    }
+
+    @Override
+    @Recover
+    public Void recoverDoBatchOnUs(FineractOptimisticLockingException e) {
+        log.error(e.getMessage(), e);
+        throw new ZeebeBpmnError("Error_CaughtException", "Failed to handle batchOnUs request");
+    }
+
+    @Override
+    @Recover
+    public Long recoverHoldBatch(ZeebeBpmnError e) {
+        log.error(e.getMessage(), e);
+        throw e;
+    }
+
+    @Override
+    @Recover
+    public Pair<String, List<BatchResponse>> recoverDoBatch(ZeebeBpmnError e) {
+        log.error(e.getMessage(), e);
+        throw e;
+    }
+
+    @Override
+    @Recover
+    public Void recoverDoBatchOnUs(ZeebeBpmnError e) {
+        log.error(e.getMessage(), e);
+        throw e;
+    }
+
+    @Override
+    @Recover
+    public Long recoverHoldBatch(RuntimeException e) {
+        log.error(e.getMessage(), e);
+        throw e;
+    }
+
+    @Override
+    @Recover
+    public Pair<String, List<BatchResponse>> recoverDoBatch(RuntimeException e) {
+        log.error(e.getMessage(), e);
+        throw e;
+    }
+
+    @Override
+    @Recover
+    public Void recoverDoBatchOnUs(RuntimeException e) {
+        log.error(e.getMessage(), e);
+        throw e;
     }
 }
