@@ -92,6 +92,8 @@ public class CardWorkers {
             @Variable BigDecimal amount,
             @Variable BigDecimal transactionFeeAmount,
             @Variable String cardAccountId,
+            @Variable String cardTransactionType,
+            @Variable String cardFeeTransactionType,
             @Variable String cardHolderName,
             @Variable String cardToken,
             @Variable String conversionAccountAmsId,
@@ -130,16 +132,13 @@ public class CardWorkers {
                     MDC.put("internalCorrelationId", internalCorrelationId);
                     String apiPath = currentAccountApi.substring(1);
                     String withdrawalUrl = String.format("%s%s/transactions?command=withdrawal&force-type=hold", apiPath, disposalAccountAmsId);
-                    String depositFeeOperation = "transferToConversionAccountInAms.ConversionAccount.WithdrawTransactionFee"; // TODO use card types
-                    String depositFeePaymentTypeId = tenantConfigs.findPaymentTypeId(tenantIdentifier, String.format("%s.%s", paymentScheme, depositFeeOperation));
-                    String withdrawFeeOperation = "transferToConversionAccountInAms.ConversionAccount.WithdrawTransactionFee"; // TODO use card types
-                    String withdrawFeePaymentTypeId = tenantConfigs.findPaymentTypeId(tenantIdentifier, String.format("%s.%s", paymentScheme, withdrawFeeOperation));
+                    String paymentTypeConversionWithdrawFee = tenantConfigs.findPaymentTypeId(tenantIdentifier, "%s:%s.conversion.withdraw".formatted(paymentScheme, cardFeeTransactionType));
+                    String paymentTypeConversionWithdrawAmount = tenantConfigs.findPaymentTypeId(tenantIdentifier, "%s:%s.conversion.withdraw".formatted(paymentScheme, cardTransactionType));
 
                     CurrentAccountTransactionBody cardTransactionBody = new CurrentAccountTransactionBody()
                             .setTransactionAmount(transactionFeeAmount)
                             .setDateTimeFormat(sequenceDateTimeFormat != null ? sequenceDateTimeFormat : detectDateTimeFormat(sequenceDateTime))
                             .setLocale(locale)
-                            .setPaymentTypeId(withdrawFeePaymentTypeId)
                             .setCurrencyCode(currency)
                             .setDatatables(List.of(
                                             new CurrentAccountTransactionBody.DataTable(List.of(
@@ -180,6 +179,7 @@ public class CardWorkers {
                         } else {
                             // STEP 1 - withdraw fee from conversion, execute
                             logger.info("Withdrawing fee {} from conversion account {}", transactionFeeAmount, conversionAccountAmsId);
+                            cardTransactionBody.setPaymentTypeId(paymentTypeConversionWithdrawFee);
                             executeWithdrawNoHold("FEE", withdrawalUrl, cardTransactionBody, conversionAccountAmsId, disposalAccountAmsId, tenantIdentifier, requestId, transactionGroupId, internalCorrelationId);
                         }
 
@@ -188,6 +188,7 @@ public class CardWorkers {
                         } else {
                             // STEP 2 - withdraw card amount from disposal account
                             logger.info("Withdrawing amount {} from disposal account {}", amount, disposalAccountAmsId);
+                            cardTransactionBody.setPaymentTypeId(paymentTypeConversionWithdrawAmount);
                             executeWithdrawNoHold("TRX", withdrawalUrl, cardTransactionBody, conversionAccountAmsId, disposalAccountAmsId, tenantIdentifier, requestId, transactionGroupId, internalCorrelationId);
                         }
                         return Map.of();
@@ -211,6 +212,8 @@ public class CardWorkers {
             @Variable String cardAccountId,
             @Variable String cardHolderName,
             @Variable String cardToken,
+            @Variable String cardTransactionType,
+            @Variable String cardFeeTransactionType,
             @Variable String conversionAccountAmsId,
             @Variable String currency,
             @Variable String direction,
@@ -225,7 +228,7 @@ public class CardWorkers {
             @Variable String messageId,
             @Variable String partnerCity,
             @Variable String partnerCountry,
-            @Variable String paymentScheme,
+            @Variable String paymentScheme, // "CARD_CLEARING"
             @Variable String paymentTokenWallet,
             @Variable String processCode,
             @Variable String requestId,
@@ -245,10 +248,11 @@ public class CardWorkers {
                         String holdUrl = String.format("%s%s/transactions?command=external-hold", apiPath, disposalAccountAmsId);
                         String withdrawalUrl = String.format("%s%s/transactions?command=withdrawal&force-type=hold", apiPath, disposalAccountAmsId);
                         String depositUrl = String.format("%s%s/transactions?command=deposit", apiPath, conversionAccountAmsId);
-                        String depositFeeOperation = "transferToConversionAccountInAms.ConversionAccount.DepositTransactionFee"; // TODO use card types
-                        String depositFeePaymentTypeId = tenantConfigs.findPaymentTypeId(tenantIdentifier, String.format("%s.%s", paymentScheme, depositFeeOperation));
-                        String withdrawFeeOperation = "transferToConversionAccountInAms.ConversionAccount.DepositTransactionFee"; // TODO use card types
-                        String withdrawFeePaymentTypeId = tenantConfigs.findPaymentTypeId(tenantIdentifier, String.format("%s.%s", paymentScheme, withdrawFeeOperation));
+
+                        String paymentTypeDisposalWithdrawFee = tenantConfigs.findPaymentTypeId(tenantIdentifier, "%s:%s.disposal.withdraw".formatted(paymentScheme, cardFeeTransactionType));
+                        String paymentTypeDisposalWithdrawAmount = tenantConfigs.findPaymentTypeId(tenantIdentifier, "%s:%s.disposal.withdraw".formatted(paymentScheme, cardTransactionType));
+                        String paymentTypeConversionDepositFee = tenantConfigs.findPaymentTypeId(tenantIdentifier, "%s:%s.conversion.deposit".formatted(paymentScheme, cardFeeTransactionType));
+                        String paymentTypeConversionDepositAmount = tenantConfigs.findPaymentTypeId(tenantIdentifier, "%s:%s.conversion.deposit".formatted(paymentScheme, cardTransactionType));
 
                         BigDecimal originalAmount = externalHoldAmount.subtract(transactionFeeAmount).max(BigDecimal.ZERO);
                         CurrentAccountTransactionBody holdBody = new CurrentAccountTransactionBody()
@@ -257,7 +261,6 @@ public class CardWorkers {
                                 .setOriginalAmount(originalAmount)
                                 .setLocale(locale)
                                 .setDateTimeFormat(DATETIME_FORMAT)
-                                .setPaymentTypeId(depositFeePaymentTypeId)
                                 .setDatatables(List.of(
                                                 new CurrentAccountTransactionBody.DataTable(List.of(
                                                         new CurrentAccountTransactionBody.HoldEntry()
@@ -277,7 +280,6 @@ public class CardWorkers {
                                 .setTransactionAmount(transactionFeeAmount)
                                 .setDateTimeFormat(sequenceDateTimeFormat != null ? sequenceDateTimeFormat : detectDateTimeFormat(sequenceDateTime))
                                 .setLocale(locale)
-                                .setPaymentTypeId(depositFeePaymentTypeId)
                                 .setCurrencyCode(currency)
                                 .setDatatables(List.of(
                                                 new CurrentAccountTransactionBody.DataTable(List.of(
@@ -319,11 +321,13 @@ public class CardWorkers {
                         } else {
                             // STEP 1 - withdraw fee from disposal, execute
                             logger.info("Withdraw fee {} from disposal account {}", transactionFeeAmount, disposalAccountAmsId);
+                            cardTransactionBody.setPaymentTypeId(paymentTypeDisposalWithdrawFee);
                             WithdrawWithHoldResponse holdResponse = executeWithdrawWithHold("FEE", holdUrl, holdBody, withdrawalUrl, cardTransactionBody, conversionAccountAmsId, disposalAccountAmsId, tenantIdentifier, requestId, transactionGroupId, internalCorrelationId);
 
                             if (holdResponse.isWithdraw()) {
                                 // STEP 2 - deposit fee to conversion, execute
                                 logger.info("Deposit fee {} to conversion account {}", transactionFeeAmount, conversionAccountAmsId);
+                                cardTransactionBody.setPaymentTypeId(paymentTypeConversionDepositFee);
                                 executeDeposit(cardTransactionBody, conversionAccountAmsId, disposalAccountAmsId, internalCorrelationId, tenantIdentifier, transactionGroupId, depositUrl);
                             } else {
                                 holdFeeIdentifier = holdResponse.getHoldIdentifier();
@@ -339,11 +343,13 @@ public class CardWorkers {
                         cardTransactionBody.setOriginalAmount(null);
 
                         logger.info("Withdraw amount {} from disposal account {}", amount, disposalAccountAmsId);
+                        cardTransactionBody.setPaymentTypeId(paymentTypeDisposalWithdrawAmount);
                         WithdrawWithHoldResponse balanceAndWithdraw = executeWithdrawWithHold("TRX", holdUrl, holdBody, withdrawalUrl, cardTransactionBody, conversionAccountAmsId, disposalAccountAmsId, tenantIdentifier, requestId, transactionGroupId, internalCorrelationId);
 
                         if (balanceAndWithdraw.isWithdraw()) {
                             // STEP 4 - deposit amount to conversion, execute
                             logger.info("Deposit amount {} to conversion account {}", amount, conversionAccountAmsId);
+                            cardTransactionBody.setPaymentTypeId(paymentTypeConversionDepositAmount);
                             executeDeposit(cardTransactionBody, conversionAccountAmsId, disposalAccountAmsId, internalCorrelationId, tenantIdentifier, transactionGroupId, depositUrl);
                         } else {
                             holdIdentifier = balanceAndWithdraw.getHoldIdentifier();
@@ -359,7 +365,7 @@ public class CardWorkers {
                             results.put("holdIdentifier", holdIdentifier);
                         }
                         return results;
-                        
+
                     } catch (Exception e) {
                         throw new RuntimeException(e);
                     } finally {
