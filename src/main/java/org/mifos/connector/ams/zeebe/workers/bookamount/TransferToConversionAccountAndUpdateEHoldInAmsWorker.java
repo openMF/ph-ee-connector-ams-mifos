@@ -284,14 +284,12 @@ public class TransferToConversionAccountAndUpdateEHoldInAmsWorker {
         }
     }
 
-    private final List<String> possibleFormats = List.of(
-            "yyyy-MM-dd'T'HH:mm:ss.SSSXXX",
-            "yyyy-MM-dd'T'HH:mm:ss.SSSX",
+    final List<String> possibleFormats = List.of(
             "yyyy-MM-dd'T'HH:mm:ss.SSSZ",
             "yyyy-MM-dd'T'HH:mm:ss.SSS"
     );
 
-    private String detectDateTimeFormat(String dateTime) {
+    String detectDateTimeFormat(String dateTime) {
         for (String format : possibleFormats) {
             try {
                 DateTimeFormatter formatter = DateTimeFormatter.ofPattern(format);
