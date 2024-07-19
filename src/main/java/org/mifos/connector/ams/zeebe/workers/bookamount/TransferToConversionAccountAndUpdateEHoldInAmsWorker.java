@@ -113,7 +113,7 @@ public class TransferToConversionAccountAndUpdateEHoldInAmsWorker {
                         // STEP 0 - prepare data
                         String apiPath = currentAccountApi.substring(1);
                         String holdUrl = String.format("%s%s/transactions?command=external-hold", apiPath, disposalAccountAmsId);
-                        String withdrawalUrl = String.format("%s%s/transactions?command=withdrawal", apiPath, disposalAccountAmsId);  // &force-type=hold
+                        String withdrawalUrl = String.format("%s%s/transactions?command=withdrawal&force-type=hold", apiPath, disposalAccountAmsId);
                         String depositUrl = String.format("%s%s/transactions?command=deposit", apiPath, conversionAccountAmsId);
                         String depositFeeOperation = "transferToConversionAccountInAms.ConversionAccount.DepositTransactionFee"; // TODO use card types
                         String depositFeePaymentTypeId = tenantConfigs.findPaymentTypeId(tenantIdentifier, String.format("%s.%s", paymentScheme, depositFeeOperation));
