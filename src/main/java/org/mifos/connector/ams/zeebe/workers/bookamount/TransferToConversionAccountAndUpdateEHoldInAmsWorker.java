@@ -100,6 +100,7 @@ public class TransferToConversionAccountAndUpdateEHoldInAmsWorker {
             @Variable String processCode,
             @Variable String requestId,
             @Variable String sequenceDateTime,
+            @Variable String sequenceDateTimeFormat,
             @Variable String tenantIdentifier,
             @Variable String transactionGroupId,
             @Variable String transactionReference
@@ -144,7 +145,7 @@ public class TransferToConversionAccountAndUpdateEHoldInAmsWorker {
 
                         CurrentAccountTransactionBody cardTransactionBody = new CurrentAccountTransactionBody()
                                 .setTransactionAmount(transactionFeeAmount)
-                                .setDateTimeFormat(detectDateTimeFormat(sequenceDateTime))
+                                .setDateTimeFormat(sequenceDateTimeFormat != null ? sequenceDateTimeFormat : detectDateTimeFormat(sequenceDateTime))
                                 .setLocale(locale)
                                 .setPaymentTypeId(depositFeePaymentTypeId)
                                 .setCurrencyCode(currency)
