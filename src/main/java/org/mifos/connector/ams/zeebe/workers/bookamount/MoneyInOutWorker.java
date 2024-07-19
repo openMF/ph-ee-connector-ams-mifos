@@ -100,13 +100,13 @@ public class MoneyInOutWorker {
     }
 
     @Retryable(retryFor = FineractOptimisticLockingException.class, maxAttemptsExpression = "${fineract.idempotency.count}", backoff = @Backoff(delayExpression = "${fineract.idempotency.interval}"))
-    protected Pair<String, List<BatchResponse>> doBatch(List items,
-                                                        String tenantId,
-                                                        String transactionGroupId,
-                                                        String disposalAccountId,
-                                                        String conversionAccountId,
-                                                        String internalCorrelationId,
-                                                        String calledFrom) {
+    public Pair<String, List<BatchResponse>> doBatch(List items,
+                                                     String tenantId,
+                                                     String transactionGroupId,
+                                                     String disposalAccountId,
+                                                     String conversionAccountId,
+                                                     String internalCorrelationId,
+                                                     String calledFrom) {
         return eventService.auditedEvent(
                 eventBuilder -> EventLogUtil.initFineractBatchCall(calledFrom,
                         items,
