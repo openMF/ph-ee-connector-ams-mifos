@@ -10,6 +10,8 @@ import io.camunda.zeebe.client.api.worker.JobClient;
 import io.camunda.zeebe.spring.client.annotation.JobWorker;
 import io.camunda.zeebe.spring.client.annotation.Variable;
 import io.camunda.zeebe.spring.client.exception.ZeebeBpmnError;
+import lombok.Data;
+import lombok.experimental.Accessors;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.fineract.client.models.BatchResponse;
 import org.jetbrains.annotations.NotNull;
@@ -35,6 +37,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -66,6 +69,18 @@ public class CardWorkers {
     @Autowired
     @Qualifier("painMapper")
     ObjectMapper painMapper;
+
+    @Data
+    @Accessors(chain = true)
+    static class WithdrawWithHoldResponse {
+        BigDecimal availableBalance;
+        BigDecimal holdAmount;
+        String holdIdentifier;
+
+        public boolean isWithdraw() {
+            return holdIdentifier == null;
+        }
+    }
 
 
     @JobWorker
@@ -297,18 +312,21 @@ public class CardWorkers {
                                         )
                                 );
 
+                        String holdFeeIdentifier = null;
+                        String holdIdentifier = null;
                         if (transactionFeeAmount.equals(BigDecimal.ZERO)) {
                             logger.info("Transaction fee is zero, skipping fee handling");
                         } else {
                             // STEP 1 - withdraw fee from disposal, execute
                             logger.info("Withdraw fee {} from disposal account {}", transactionFeeAmount, disposalAccountAmsId);
-                            Pair<BigDecimal, Boolean> balanceAndWithdraw = executeWithdrawWithHold("FEE", holdUrl, holdBody, withdrawalUrl, cardTransactionBody, conversionAccountAmsId, disposalAccountAmsId, tenantIdentifier, requestId, transactionGroupId, internalCorrelationId);
+                            WithdrawWithHoldResponse holdResponse = executeWithdrawWithHold("FEE", holdUrl, holdBody, withdrawalUrl, cardTransactionBody, conversionAccountAmsId, disposalAccountAmsId, tenantIdentifier, requestId, transactionGroupId, internalCorrelationId);
 
-                            if (balanceAndWithdraw.getRight()) {
+                            if (holdResponse.isWithdraw()) {
                                 // STEP 2 - deposit fee to conversion, execute
                                 logger.info("Deposit fee {} to conversion account {}", transactionFeeAmount, conversionAccountAmsId);
                                 executeDeposit(cardTransactionBody, conversionAccountAmsId, disposalAccountAmsId, internalCorrelationId, tenantIdentifier, transactionGroupId, depositUrl);
                             } else {
+                                holdFeeIdentifier = holdResponse.getHoldIdentifier();
                                 logger.info("Insufficient balance at disposal {} for fee {}, no deposit made to conversion", disposalAccountAmsId, transactionFeeAmount);
                             }
                         }
@@ -321,17 +339,27 @@ public class CardWorkers {
                         cardTransactionBody.setOriginalAmount(null);
 
                         logger.info("Withdraw amount {} from disposal account {}", amount, disposalAccountAmsId);
-                        Pair<BigDecimal, Boolean> balanceAndWithdraw = executeWithdrawWithHold("TRX", holdUrl, holdBody, withdrawalUrl, cardTransactionBody, conversionAccountAmsId, disposalAccountAmsId, tenantIdentifier, requestId, transactionGroupId, internalCorrelationId);
+                        WithdrawWithHoldResponse balanceAndWithdraw = executeWithdrawWithHold("TRX", holdUrl, holdBody, withdrawalUrl, cardTransactionBody, conversionAccountAmsId, disposalAccountAmsId, tenantIdentifier, requestId, transactionGroupId, internalCorrelationId);
 
-                        if (balanceAndWithdraw.getRight()) {
+                        if (balanceAndWithdraw.isWithdraw()) {
                             // STEP 4 - deposit amount to conversion, execute
                             logger.info("Deposit amount {} to conversion account {}", amount, conversionAccountAmsId);
                             executeDeposit(cardTransactionBody, conversionAccountAmsId, disposalAccountAmsId, internalCorrelationId, tenantIdentifier, transactionGroupId, depositUrl);
                         } else {
+                            holdIdentifier = balanceAndWithdraw.getHoldIdentifier();
                             logger.info("Insufficient balance at disposal {} for amount {}, no deposit made to conversion", disposalAccountAmsId, amount);
                         }
 
-                        return Map.of("availableBalance", balanceAndWithdraw.getLeft());
+                        Map<String, Object> results = new HashMap<>();
+                        results.put("availableBalance", balanceAndWithdraw.getAvailableBalance());
+                        if (holdFeeIdentifier != null) {
+                            results.put("holdFeeIdentifier", holdFeeIdentifier);
+                        }
+                        if (holdIdentifier != null) {
+                            results.put("holdIdentifier", holdIdentifier);
+                        }
+                        return results;
+                        
                     } catch (Exception e) {
                         throw new RuntimeException(e);
                     } finally {
@@ -363,7 +391,7 @@ public class CardWorkers {
         }
     }
 
-    private @NotNull Pair<BigDecimal, Boolean> executeWithdrawWithHold(String idempotencyPostfix, String holdUrl, CurrentAccountTransactionBody holdBody, String withdrawalUrl, CurrentAccountTransactionBody cardTransactionBody, String conversionAccountAmsId, String disposalAccountAmsId, String tenantIdentifier, String requestId, String transactionGroupId, String internalCorrelationId) {
+    private @NotNull WithdrawWithHoldResponse executeWithdrawWithHold(String idempotencyPostfix, String holdUrl, CurrentAccountTransactionBody holdBody, String withdrawalUrl, CurrentAccountTransactionBody cardTransactionBody, String conversionAccountAmsId, String disposalAccountAmsId, String tenantIdentifier, String requestId, String transactionGroupId, String internalCorrelationId) {
         try {
             String holdBodyString = painMapper.writeValueAsString(holdBody);
             String holdIdempotencyKey = requestId + "_EH-" + idempotencyPostfix;
@@ -391,9 +419,14 @@ public class CardWorkers {
 
             try {
                 BigDecimal holdAmount = json.read("$.changes.appliedAmounts.holdAmount", BigDecimal.class);
-                return Pair.of(availableBalance, holdAmount.equals(BigDecimal.ZERO));
+                String holdIdentifier = json.read("$.resourceIdentifier", String.class);
+                return new WithdrawWithHoldResponse()
+                        .setAvailableBalance(availableBalance)
+                        .setHoldAmount(holdAmount)
+                        .setHoldIdentifier(holdIdentifier);
             } catch (PathNotFoundException e) {
-                return Pair.of(availableBalance, true);  // withdraw did happen
+                return new WithdrawWithHoldResponse()
+                        .setAvailableBalance(availableBalance);  // withdraw did happen
             }
         } catch (Exception e) {
             throw new RuntimeException(e);
