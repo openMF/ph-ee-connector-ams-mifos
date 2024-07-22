@@ -135,7 +135,7 @@ public class CardWorkers {
                 event -> {
                     MDC.put("internalCorrelationId", internalCorrelationId);
                     String apiPath = currentAccountApi.substring(1);
-                    String withdrawalUrl = String.format("%s%s/transactions?command=withdrawal&force-type=hold", apiPath, disposalAccountAmsId);
+                    String withdrawalUrl = String.format("%s%s/transactions?command=withdrawal&force-type=hold", apiPath, conversionAccountAmsId);
                     String paymentTypeConversionWithdrawFee = tenantConfigs.findPaymentTypeId(tenantIdentifier, "%s:%s.conversion.withdraw".formatted(paymentScheme, cardFeeTransactionType));
                     String paymentTypeConversionWithdrawAmount = tenantConfigs.findPaymentTypeId(tenantIdentifier, "%s:%s.conversion.withdraw".formatted(paymentScheme, cardTransactionType));
 
