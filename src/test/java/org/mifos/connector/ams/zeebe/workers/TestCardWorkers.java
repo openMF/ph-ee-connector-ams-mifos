@@ -21,5 +21,10 @@ class TestCardWorkers {
         CardWorkers cardWorkers = new CardWorkers();
         String format = cardWorkers.detectDateTimeFormat(sample);
         System.out.println(cardWorkers.increase(sample, format));
+
+        String sample2 = "2024-07-22T15:04:33.090";
+        String format2 = cardWorkers.detectDateTimeFormat(sample2);
+        System.out.println(cardWorkers.increase(sample2, format2));
+
     }
 }

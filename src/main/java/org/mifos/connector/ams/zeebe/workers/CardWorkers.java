@@ -471,7 +471,7 @@ public class CardWorkers {
 
     String increase(String dateTime, String dateTimeFormat) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern(dateTimeFormat);
-        OffsetDateTime localDateTime = OffsetDateTime.parse(dateTime, formatter);
+        OffsetDateTime localDateTime = LocalDateTime.parse(dateTime, formatter).atOffset(ZoneOffset.UTC);
         return localDateTime.plus(1, ChronoUnit.MILLIS).format(formatter);
     }
 
