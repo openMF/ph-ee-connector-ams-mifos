@@ -34,6 +34,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -483,7 +484,7 @@ public class CardWorkers {
         for (String format : possibleFormats) {
             try {
                 DateTimeFormatter formatter = DateTimeFormatter.ofPattern(format);
-                OffsetDateTime.parse(dateTime, formatter);
+                LocalDate.parse(dateTime, formatter);
                 logger.debug("Detected date time format: {}", format);
                 return format;
             } catch (DateTimeParseException e) {
