@@ -41,6 +41,7 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -78,11 +79,15 @@ public class CardWorkers {
     @Accessors(chain = true)
     static class WithdrawWithHoldResponse {
         BigDecimal availableBalance;
-        BigDecimal holdAmount;
-        String holdIdentifier;
+        String holdFeeIdentifier;
+        String holdAmountIdentifier;
 
-        public boolean isWithdraw() {
-            return holdIdentifier == null;
+        public boolean isFeeWithdraw() {
+            return holdFeeIdentifier == null;
+        }
+
+        public boolean isAmountWithdraw() {
+            return holdAmountIdentifier == null;
         }
     }
 
@@ -264,7 +269,8 @@ public class CardWorkers {
                         String paymentTypeConversionDepositAmount = tenantConfigs.findPaymentTypeId(tenantIdentifier, "%s:%s.conversion.deposit".formatted(paymentScheme, cardTransactionType));
                         String dateTimeFormat = sequenceDateTimeFormat != null ? sequenceDateTimeFormat : detectDateTimeFormat(sequenceDateTime);
 
-                        BigDecimal originalAmount = externalHoldAmount.subtract(transactionFeeAmount).max(BigDecimal.ZERO);
+                        BigDecimal originalAmount = externalHoldAmount.subtract(transactionFeeAmount).subtract(amount).max(BigDecimal.ZERO);
+
                         CurrentAccountTransactionBody holdBody = new CurrentAccountTransactionBody()
                                 .setTransactionAmount(BigDecimal.ZERO)
                                 .setSequenceDateTime(sequenceDateTime)
@@ -286,11 +292,51 @@ public class CardWorkers {
                                         )
                                 );
 
-                        CurrentAccountTransactionBody cardTransactionBody = new CurrentAccountTransactionBody()
+                        CurrentAccountTransactionBody feeTransactionBody = new CurrentAccountTransactionBody()
                                 .setTransactionAmount(transactionFeeAmount)
                                 .setDateTimeFormat(dateTimeFormat)
                                 .setLocale(locale)
                                 .setCurrencyCode(currency)
+                                .setPaymentTypeId(paymentTypeDisposalWithdrawFee)
+                                .setDatatables(List.of(
+                                                new CurrentAccountTransactionBody.DataTable(List.of(
+                                                        new CurrentAccountTransactionBody.Entry()
+                                                                .setAccount_iban("TODO")
+                                                                .setStructured_transaction_details("{}")
+                                                                .setInternal_correlation_id(internalCorrelationId)
+                                                                .setEnd_to_end_id("TODO")
+                                                                .setTransaction_id(transactionReference)
+                                                                .setTransaction_group_id(transactionGroupId)
+                                                                .setPayment_scheme(paymentScheme)
+                                                                .setDirection(direction)
+                                                                .setPartner_name(merchName)
+                                                                .setPartner_account_iban("")
+                                                ), "dt_current_transaction_details"),
+                                                new CurrentAccountTransactionBody.DataTable(List.of(
+                                                        new CurrentAccountTransactionBody.CardEntry()
+                                                                .setInstruction_identification(requestId)
+                                                                .setMessage_id(messageId)
+                                                                .setCard_token(cardToken)
+                                                                .setMasked_pan(maskedPan)
+                                                                .setCard_holder_name(cardHolderName)
+                                                                .setPartner_city(partnerCity)
+                                                                .setPartner_country(partnerCountry)
+                                                                .setInstructed_amount(instructedAmount)
+                                                                .setInstructed_currency(instructedCurrency)
+                                                                .setProcess_code(processCode)
+                                                                .setMerchant_category_code(merchantCategoryCode)
+                                                                .setIs_ecommerce(isEcommerce)
+                                                                .setPayment_token_wallet(paymentTokenWallet)
+                                                ), "dt_current_card_transaction_details")
+                                        )
+                                );
+
+                        CurrentAccountTransactionBody amountTransactionBody = new CurrentAccountTransactionBody()
+                                .setTransactionAmount(amount)
+                                .setDateTimeFormat(dateTimeFormat)
+                                .setLocale(locale)
+                                .setCurrencyCode(currency)
+                                .setPaymentTypeId(paymentTypeDisposalWithdrawAmount)
                                 .setDatatables(List.of(
                                                 new CurrentAccountTransactionBody.DataTable(List.of(
                                                         new CurrentAccountTransactionBody.Entry()
@@ -326,49 +372,33 @@ public class CardWorkers {
 
                         String holdFeeIdentifier = null;
                         String holdIdentifier = null;
-                        if (transactionFeeAmount.equals(BigDecimal.ZERO)) {
-                            logger.info("Transaction fee is zero, skipping fee handling");
-                        } else {
-                            // STEP 1 - withdraw fee from disposal, execute
-                            logger.info("Withdraw fee {} from disposal account {}", transactionFeeAmount, disposalAccountAmsId);
-                            cardTransactionBody.setPaymentTypeId(paymentTypeDisposalWithdrawFee);
-                            WithdrawWithHoldResponse holdResponse = executeWithdrawWithHold("FEE-R", holdUrl, holdBody, withdrawalUrl, cardTransactionBody, conversionAccountAmsId, disposalAccountAmsId, tenantIdentifier, requestId, transactionGroupId, internalCorrelationId);
 
-                            if (holdResponse.isWithdraw()) {
-                                // STEP 2 - deposit fee to conversion, execute
-                                logger.info("Deposit fee {} to conversion account {}", transactionFeeAmount, conversionAccountAmsId);
-                                cardTransactionBody.setPaymentTypeId(paymentTypeConversionDepositFee);
-                                executeDeposit(cardTransactionBody, conversionAccountAmsId, disposalAccountAmsId, internalCorrelationId, tenantIdentifier, transactionGroupId, depositUrl);
-                            } else {
-                                holdFeeIdentifier = holdResponse.getHoldIdentifier();
-                                logger.info("Insufficient balance at disposal {} for fee {}, no deposit made to conversion", disposalAccountAmsId, transactionFeeAmount);
-                            }
+                        // STEP 1 - withdraw fee and amount from disposal, execute
+                        logger.info("Withdraw fee {} from disposal account {}", transactionFeeAmount, disposalAccountAmsId);
+                        WithdrawWithHoldResponse holdResponse = executeWithdrawWithHold("R", holdUrl, holdBody, withdrawalUrl, feeTransactionBody, amountTransactionBody, conversionAccountAmsId, disposalAccountAmsId, tenantIdentifier, requestId, transactionGroupId, internalCorrelationId);
+
+                        if (holdResponse.isFeeWithdraw()) {
+                            // STEP 2 - deposit fee to conversion, execute
+                            logger.info("Deposit fee {} to conversion account {}", transactionFeeAmount, conversionAccountAmsId);
+                            feeTransactionBody.setPaymentTypeId(paymentTypeConversionDepositFee);
+                            executeDeposit(feeTransactionBody, conversionAccountAmsId, disposalAccountAmsId, internalCorrelationId, tenantIdentifier, transactionGroupId, depositUrl);
+                        } else {
+                            holdFeeIdentifier = holdResponse.getHoldFeeIdentifier();
+                            logger.info("Insufficient balance at disposal {} for fee {}, no deposit made to conversion", disposalAccountAmsId, transactionFeeAmount);
                         }
 
-                        // STEP 3 - withdraw amount from disposal, execute
-                        originalAmount = originalAmount.subtract(amount).max(BigDecimal.ZERO);
-                        holdBody.setTransactionAmount(BigDecimal.ZERO);
-                        holdBody.setOriginalAmount(originalAmount);
-                        holdBody.setSequenceDateTime(increase(holdBody.getSequenceDateTime(), dateTimeFormat));
-                        cardTransactionBody.setTransactionAmount(amount);
-                        cardTransactionBody.setOriginalAmount(null);
-
-                        logger.info("Withdraw amount {} from disposal account {}", amount, disposalAccountAmsId);
-                        cardTransactionBody.setPaymentTypeId(paymentTypeDisposalWithdrawAmount);
-                        WithdrawWithHoldResponse balanceAndWithdraw = executeWithdrawWithHold("TRX-R", holdUrl, holdBody, withdrawalUrl, cardTransactionBody, conversionAccountAmsId, disposalAccountAmsId, tenantIdentifier, requestId, transactionGroupId, internalCorrelationId);
-
-                        if (balanceAndWithdraw.isWithdraw()) {
-                            // STEP 4 - deposit amount to conversion, execute
+                        if (holdResponse.isAmountWithdraw()) {
+                            // STEP 3 - deposit amount to conversion, execute
                             logger.info("Deposit amount {} to conversion account {}", amount, conversionAccountAmsId);
-                            cardTransactionBody.setPaymentTypeId(paymentTypeConversionDepositAmount);
-                            executeDeposit(cardTransactionBody, conversionAccountAmsId, disposalAccountAmsId, internalCorrelationId, tenantIdentifier, transactionGroupId, depositUrl);
+                            amountTransactionBody.setPaymentTypeId(paymentTypeConversionDepositAmount);
+                            executeDeposit(amountTransactionBody, conversionAccountAmsId, disposalAccountAmsId, internalCorrelationId, tenantIdentifier, transactionGroupId, depositUrl);
                         } else {
-                            holdIdentifier = balanceAndWithdraw.getHoldIdentifier();
+                            holdIdentifier = holdResponse.getHoldAmountIdentifier();
                             logger.info("Insufficient balance at disposal {} for amount {}, no deposit made to conversion", disposalAccountAmsId, amount);
                         }
 
                         Map<String, Object> results = new HashMap<>();
-                        results.put("availableBalance", balanceAndWithdraw.getAvailableBalance());
+                        results.put("availableBalance", holdResponse.getAvailableBalance());
                         if (holdFeeIdentifier != null) {
                             results.put("holdFeeIdentifier", holdFeeIdentifier);
                         }
@@ -409,43 +439,63 @@ public class CardWorkers {
         }
     }
 
-    private @NotNull WithdrawWithHoldResponse executeWithdrawWithHold(String idempotencyPostfix, String holdUrl, CurrentAccountTransactionBody holdBody, String withdrawalUrl, CurrentAccountTransactionBody cardTransactionBody, String conversionAccountAmsId, String disposalAccountAmsId, String tenantIdentifier, String requestId, String transactionGroupId, String internalCorrelationId) {
+    private @NotNull WithdrawWithHoldResponse executeWithdrawWithHold(String idempotencyPostfix, String holdUrl, CurrentAccountTransactionBody holdBody, String withdrawalUrl, CurrentAccountTransactionBody feeTransactionBody, CurrentAccountTransactionBody amountTransactionBody, String conversionAccountAmsId, String disposalAccountAmsId, String tenantIdentifier, String requestId, String transactionGroupId, String internalCorrelationId) {
         try {
             String holdBodyString = painMapper.writeValueAsString(holdBody);
-            String holdIdempotencyKey = requestId + "_EH-" + idempotencyPostfix;
+            String holdIdempotencyKey = requestId + "_EH";
             logger.debug("{} hold body: {}", idempotencyPostfix, holdBodyString);
 
-            String cardTransactionBodyString = painMapper.writeValueAsString(cardTransactionBody);
-            String withdrawIdempotencyKey = requestId + "_" + idempotencyPostfix;
-            logger.debug("{} card transaction body: {}", idempotencyPostfix, cardTransactionBodyString);
+            String amountTransactionBodyString = painMapper.writeValueAsString(amountTransactionBody);
+            String withdrawAmountIdempotencyKey = requestId + "_TRX-" + idempotencyPostfix;
 
-            List<BatchItem> items = List.of(
-                    new ExternalHoldItem()
-                            .setRelativeUrl(holdUrl)
-                            .setRequestId(1)
-                            .setMethod("POST")
-                            .setHeaders(batchItemBuilder.createHeaders(tenantIdentifier, holdIdempotencyKey))
-                            .setBody(holdBodyString),
-                    new TransactionItem(2, withdrawalUrl, "POST", null, batchItemBuilder.createHeaders(tenantIdentifier, withdrawIdempotencyKey), cardTransactionBodyString)
-            );
-            Pair<String, List<BatchResponse>> out = moneyInOutWorker.doBatch(items, tenantIdentifier, transactionGroupId, disposalAccountAmsId, conversionAccountAmsId, internalCorrelationId, "transferToConversionAccountAndUpdateEHoldInAmsWorker");
+            List<BatchItem> items = new ArrayList<>();
+            int stepCount = 0;
 
-            BatchResponse response = out.getRight().get(0);
-            DocumentContext json = JsonPath.parse(response.getBody());
-            BigDecimal availableBalance = json.read("$.changes.availableBalance", BigDecimal.class);
-            logger.info("availableBalance: {} from json response: {}", availableBalance, response.getBody());
+            items.add(new ExternalHoldItem()
+                    .setRelativeUrl(holdUrl)
+                    .setRequestId(++stepCount)
+                    .setMethod("POST")
+                    .setHeaders(batchItemBuilder.createHeaders(tenantIdentifier, holdIdempotencyKey))
+                    .setBody(holdBodyString));
 
-            try {
-                BigDecimal holdAmount = json.read("$.changes.appliedAmounts.holdAmount", BigDecimal.class);
-                String holdIdentifier = json.read("$.resourceIdentifier", String.class);
-                return new WithdrawWithHoldResponse()
-                        .setAvailableBalance(availableBalance)
-                        .setHoldAmount(holdAmount)
-                        .setHoldIdentifier(holdIdentifier);
-            } catch (PathNotFoundException e) {
-                return new WithdrawWithHoldResponse()
-                        .setAvailableBalance(availableBalance);  // withdraw did happen
+            boolean hasFee = feeTransactionBody.getTransactionAmount().compareTo(BigDecimal.ZERO) > 0;
+            if (hasFee) {
+                String feeTransactionBodyString = painMapper.writeValueAsString(feeTransactionBody);
+                String withdrawFeeIdempotencyKey = requestId + "_FEE-" + idempotencyPostfix;
+                logger.debug("{} fee transaction body: {}", idempotencyPostfix, feeTransactionBodyString);
+                items.add(new TransactionItem(++stepCount, withdrawalUrl, "POST", null, batchItemBuilder.createHeaders(tenantIdentifier, withdrawFeeIdempotencyKey), feeTransactionBodyString));
             }
+            items.add(new TransactionItem(++stepCount, withdrawalUrl, "POST", null, batchItemBuilder.createHeaders(tenantIdentifier, withdrawAmountIdempotencyKey), amountTransactionBodyString));
+
+            Pair<String, List<BatchResponse>> out = moneyInOutWorker.doBatch(items, tenantIdentifier, transactionGroupId, disposalAccountAmsId, conversionAccountAmsId, internalCorrelationId, "transferToConversionAccountAndUpdateEHoldInAmsWorker");
+            String holdFeeIdentifier = null;
+            String holdAmountIdentifier = null;
+
+            if (hasFee) {
+                BatchResponse feeResponse = out.getRight().get(1);
+                DocumentContext feeJson = JsonPath.parse(feeResponse.getBody());
+
+                try {
+                    holdFeeIdentifier = feeJson.read("$.resourceIdentifier", String.class);
+                } catch (PathNotFoundException ignored) {
+                }
+            }
+
+            BatchResponse amountResponse = hasFee ? out.getRight().get(2) : out.getRight().get(1);
+            DocumentContext amountJson = JsonPath.parse(amountResponse.getBody());
+            try {
+                holdAmountIdentifier = amountJson.read("$.resourceIdentifier", String.class);
+            } catch (PathNotFoundException ignored) {
+            }
+
+            BigDecimal availableBalance = amountJson.read("$.changes.availableBalance", BigDecimal.class);
+            logger.info("availableBalance: {} from json response: {}", availableBalance, amountJson);
+
+            return new WithdrawWithHoldResponse()
+                    .setAvailableBalance(availableBalance)
+                    .setHoldFeeIdentifier(holdFeeIdentifier)
+                    .setHoldAmountIdentifier(holdAmountIdentifier);
+
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
