@@ -41,7 +41,6 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
-import java.time.temporal.TemporalUnit;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -186,7 +185,7 @@ public class CardWorkers {
                             // STEP 1 - withdraw fee from conversion, execute
                             logger.info("Withdrawing fee {} from conversion account {}", transactionFeeAmount, conversionAccountAmsId);
                             cardTransactionBody.setPaymentTypeId(paymentTypeConversionWithdrawFee);
-                            executeWithdrawNoHold("FEE", withdrawalUrl, cardTransactionBody, conversionAccountAmsId, disposalAccountAmsId, tenantIdentifier, requestId, transactionGroupId, internalCorrelationId);
+                            executeWithdrawNoHold("FEE-K", withdrawalUrl, cardTransactionBody, conversionAccountAmsId, disposalAccountAmsId, tenantIdentifier, requestId, transactionGroupId, internalCorrelationId);
                         }
 
                         if (holdIdentifier != null) {
@@ -195,7 +194,7 @@ public class CardWorkers {
                             // STEP 2 - withdraw card amount from disposal account
                             logger.info("Withdrawing amount {} from disposal account {}", amount, disposalAccountAmsId);
                             cardTransactionBody.setPaymentTypeId(paymentTypeConversionWithdrawAmount);
-                            executeWithdrawNoHold("TRX", withdrawalUrl, cardTransactionBody, conversionAccountAmsId, disposalAccountAmsId, tenantIdentifier, requestId, transactionGroupId, internalCorrelationId);
+                            executeWithdrawNoHold("TRX-K", withdrawalUrl, cardTransactionBody, conversionAccountAmsId, disposalAccountAmsId, tenantIdentifier, requestId, transactionGroupId, internalCorrelationId);
                         }
                         return Map.of();
                     } catch (Exception e) {
@@ -332,7 +331,7 @@ public class CardWorkers {
                             // STEP 1 - withdraw fee from disposal, execute
                             logger.info("Withdraw fee {} from disposal account {}", transactionFeeAmount, disposalAccountAmsId);
                             cardTransactionBody.setPaymentTypeId(paymentTypeDisposalWithdrawFee);
-                            WithdrawWithHoldResponse holdResponse = executeWithdrawWithHold("FEE", holdUrl, holdBody, withdrawalUrl, cardTransactionBody, conversionAccountAmsId, disposalAccountAmsId, tenantIdentifier, requestId, transactionGroupId, internalCorrelationId);
+                            WithdrawWithHoldResponse holdResponse = executeWithdrawWithHold("FEE-R", holdUrl, holdBody, withdrawalUrl, cardTransactionBody, conversionAccountAmsId, disposalAccountAmsId, tenantIdentifier, requestId, transactionGroupId, internalCorrelationId);
 
                             if (holdResponse.isWithdraw()) {
                                 // STEP 2 - deposit fee to conversion, execute
@@ -355,7 +354,7 @@ public class CardWorkers {
 
                         logger.info("Withdraw amount {} from disposal account {}", amount, disposalAccountAmsId);
                         cardTransactionBody.setPaymentTypeId(paymentTypeDisposalWithdrawAmount);
-                        WithdrawWithHoldResponse balanceAndWithdraw = executeWithdrawWithHold("TRX", holdUrl, holdBody, withdrawalUrl, cardTransactionBody, conversionAccountAmsId, disposalAccountAmsId, tenantIdentifier, requestId, transactionGroupId, internalCorrelationId);
+                        WithdrawWithHoldResponse balanceAndWithdraw = executeWithdrawWithHold("TRX-R", holdUrl, holdBody, withdrawalUrl, cardTransactionBody, conversionAccountAmsId, disposalAccountAmsId, tenantIdentifier, requestId, transactionGroupId, internalCorrelationId);
 
                         if (balanceAndWithdraw.isWithdraw()) {
                             // STEP 4 - deposit amount to conversion, execute
