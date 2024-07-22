@@ -476,6 +476,7 @@ public class CardWorkers {
                 DocumentContext feeJson = JsonPath.parse(feeResponse.getBody());
 
                 try {
+                    feeJson.read("$.changes.appliedAmounts.holdAmount");
                     holdFeeIdentifier = feeJson.read("$.resourceIdentifier", String.class);
                 } catch (PathNotFoundException ignored) {
                 }
@@ -484,6 +485,7 @@ public class CardWorkers {
             BatchResponse amountResponse = hasFee ? out.getRight().get(2) : out.getRight().get(1);
             DocumentContext amountJson = JsonPath.parse(amountResponse.getBody());
             try {
+                amountJson.read("$.changes.appliedAmounts.holdAmount");
                 holdAmountIdentifier = amountJson.read("$.resourceIdentifier", String.class);
             } catch (PathNotFoundException ignored) {
             }
