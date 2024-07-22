@@ -192,8 +192,9 @@ public class CardWorkers {
                             logger.info("Hold detected with id {}, skipping card amount withdrawal", holdIdentifier);
                         } else {
                             // STEP 2 - withdraw card amount from disposal account
-                            logger.info("Withdrawing amount {} from disposal account {}", amount, disposalAccountAmsId);
+                            logger.info("Withdrawing amount {} from disposal account {}", amount, conversionAccountAmsId);
                             cardTransactionBody.setPaymentTypeId(paymentTypeConversionWithdrawAmount);
+                            cardTransactionBody.setTransactionAmount(amount);
                             executeWithdrawNoHold("TRX-K", withdrawalUrl, cardTransactionBody, conversionAccountAmsId, disposalAccountAmsId, tenantIdentifier, requestId, transactionGroupId, internalCorrelationId);
                         }
                         return Map.of();
