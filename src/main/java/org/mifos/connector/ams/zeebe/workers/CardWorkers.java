@@ -35,8 +35,12 @@ import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.time.temporal.ChronoUnit;
+import java.time.temporal.TemporalUnit;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -135,9 +139,10 @@ public class CardWorkers {
                     String paymentTypeConversionWithdrawFee = tenantConfigs.findPaymentTypeId(tenantIdentifier, "%s:%s.conversion.withdraw".formatted(paymentScheme, cardFeeTransactionType));
                     String paymentTypeConversionWithdrawAmount = tenantConfigs.findPaymentTypeId(tenantIdentifier, "%s:%s.conversion.withdraw".formatted(paymentScheme, cardTransactionType));
 
+                    String dateTimeFormat = sequenceDateTimeFormat != null ? sequenceDateTimeFormat : detectDateTimeFormat(sequenceDateTime);
                     CurrentAccountTransactionBody cardTransactionBody = new CurrentAccountTransactionBody()
                             .setTransactionAmount(transactionFeeAmount)
-                            .setDateTimeFormat(sequenceDateTimeFormat != null ? sequenceDateTimeFormat : detectDateTimeFormat(sequenceDateTime))
+                            .setDateTimeFormat(dateTimeFormat)
                             .setLocale(locale)
                             .setCurrencyCode(currency)
                             .setDatatables(List.of(
@@ -256,6 +261,7 @@ public class CardWorkers {
                         String paymentTypeDisposalWithdrawAmount = tenantConfigs.findPaymentTypeId(tenantIdentifier, "%s:%s.disposal.withdraw".formatted(paymentScheme, cardTransactionType));
                         String paymentTypeConversionDepositFee = tenantConfigs.findPaymentTypeId(tenantIdentifier, "%s:%s.conversion.deposit".formatted(paymentScheme, cardFeeTransactionType));
                         String paymentTypeConversionDepositAmount = tenantConfigs.findPaymentTypeId(tenantIdentifier, "%s:%s.conversion.deposit".formatted(paymentScheme, cardTransactionType));
+                        String dateTimeFormat = sequenceDateTimeFormat != null ? sequenceDateTimeFormat : detectDateTimeFormat(sequenceDateTime);
 
                         BigDecimal originalAmount = externalHoldAmount.subtract(transactionFeeAmount).max(BigDecimal.ZERO);
                         CurrentAccountTransactionBody holdBody = new CurrentAccountTransactionBody()
@@ -281,7 +287,7 @@ public class CardWorkers {
 
                         CurrentAccountTransactionBody cardTransactionBody = new CurrentAccountTransactionBody()
                                 .setTransactionAmount(transactionFeeAmount)
-                                .setDateTimeFormat(sequenceDateTimeFormat != null ? sequenceDateTimeFormat : detectDateTimeFormat(sequenceDateTime))
+                                .setDateTimeFormat(dateTimeFormat)
                                 .setLocale(locale)
                                 .setCurrencyCode(currency)
                                 .setDatatables(List.of(
@@ -342,6 +348,7 @@ public class CardWorkers {
                         originalAmount = originalAmount.subtract(amount).max(BigDecimal.ZERO);
                         holdBody.setTransactionAmount(BigDecimal.ZERO);
                         holdBody.setOriginalAmount(originalAmount);
+                        holdBody.setSequenceDateTime(increase(holdBody.getSequenceDateTime(), dateTimeFormat));
                         cardTransactionBody.setTransactionAmount(amount);
                         cardTransactionBody.setOriginalAmount(null);
 
@@ -461,6 +468,12 @@ public class CardWorkers {
         }
     }
 
+    String increase(String dateTime, String dateTimeFormat) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(dateTimeFormat);
+        OffsetDateTime localDateTime = OffsetDateTime.parse(dateTime, formatter);
+        return localDateTime.plus(1, ChronoUnit.MILLIS).format(formatter);
+    }
+
     final List<String> possibleFormats = List.of(
             "yyyy-MM-dd'T'HH:mm:ss.SSSZ",
             "yyyy-MM-dd'T'HH:mm:ss.SSS"
@@ -470,7 +483,7 @@ public class CardWorkers {
         for (String format : possibleFormats) {
             try {
                 DateTimeFormatter formatter = DateTimeFormatter.ofPattern(format);
-                LocalDateTime.parse(dateTime, formatter);
+                OffsetDateTime.parse(dateTime, formatter);
                 logger.debug("Detected date time format: {}", format);
                 return format;
             } catch (DateTimeParseException e) {

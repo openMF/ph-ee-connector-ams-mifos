@@ -327,8 +327,8 @@ public class MoneyInOutWorker {
     }
 
 
-    private Long handleResponseElementError(BatchResponse responseItem, int statusCode, int retryCount) {
-        log.error("Got error {}, response item '{}' for request", statusCode, responseItem);
+    private Long handleResponseElementError(BatchResponse response, int statusCode, int retryCount) {
+        log.error("Got error {}, response: '{}'", statusCode, response.getBody());
         switch (statusCode) {
             case SC_CONFLICT -> {
                 log.warn("Locking exception detected will retry for {} times", retryCount);
@@ -339,12 +339,14 @@ public class MoneyInOutWorker {
                 throw new FineractOptimisticLockingException("Locking exception detected");
             }
             case SC_FORBIDDEN -> {
-                String body = responseItem.getBody();
+                String body = response.getBody();
                 if (body != null && (body.contains("error.msg.current.insufficient.funds"))) {
                     log.error("insufficient funds for request");
                     throw new ZeebeBpmnError("Error_InsufficientFunds", "Insufficient funds");
+                } else {
+                    log.error("HTTP 403 returned by Fineract: {}", body);
+                    throw new RuntimeException("HTTP 403 returned by Fineract: " + body);
                 }
-                throw new ZeebeBpmnError("Error_CaughtException", "Forbidden");
             }
             default -> throw new RuntimeException("An unexpected error occurred for request: " + statusCode);
         }
