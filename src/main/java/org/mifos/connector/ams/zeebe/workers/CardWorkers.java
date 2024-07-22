@@ -192,6 +192,9 @@ public class CardWorkers {
                             executeWithdrawNoHold("TRX", withdrawalUrl, cardTransactionBody, conversionAccountAmsId, disposalAccountAmsId, tenantIdentifier, requestId, transactionGroupId, internalCorrelationId);
                         }
                         return Map.of();
+                    } catch (Exception e) {
+                        logger.error("## Exception in bookCardTransactionOnConversionAccountInAms ##", e);
+                        throw e;
                     } finally {
                         MDC.remove("internalCorrelationId");
                     }
@@ -367,7 +370,8 @@ public class CardWorkers {
                         return results;
 
                     } catch (Exception e) {
-                        throw new RuntimeException(e);
+                        logger.error("## Exception in transferToConversionAccountAndUpdateEHoldInAms ##", e);
+                        throw e;
                     } finally {
                         MDC.remove("internalCorrelationId");
                     }
