@@ -4,7 +4,7 @@ import com.baasflow.commons.events.Event;
 import com.baasflow.commons.events.EventLogLevel;
 import io.camunda.zeebe.client.api.response.ActivatedJob;
 import lombok.experimental.UtilityClass;
-import org.mifos.connector.ams.zeebe.workers.utils.TransactionItem;
+import org.mifos.connector.ams.zeebe.workers.utils.BatchItem;
 
 import java.util.HashMap;
 import java.util.List;
@@ -31,7 +31,7 @@ public class EventLogUtil {
     }
 
     public Event.Builder initFineractBatchCall(String event,
-                                               List<TransactionItem> batchItems,
+                                               List<BatchItem> batchItems,
                                                String disposalAccountId,
                                                String conversionAccountId,
                                                String internalCorrelationId,
@@ -43,14 +43,14 @@ public class EventLogUtil {
                 .internalCorrelationId(internalCorrelationId)
                 // TODO should use operation text instead of the requestId
                 .add("batchItems", batchItems.stream()
-                        .map(item -> item.requestId().toString())
+                        .map(item -> item.getRequestId().toString())
                         .collect(Collectors.joining(",")))
                 .build());
         return eventBuilder;
     }
 
     public Event.Builder initFineractBatchCallOnUs(String event,
-                                                   List<TransactionItem> batchItems,
+                                                   List<BatchItem> batchItems,
                                                    String debtorDisposalAccountAmsId,
                                                    String debtorConversionAccountAmsId,
                                                    String creditorDisposalAccountAmsId,
@@ -64,7 +64,7 @@ public class EventLogUtil {
                 .internalCorrelationId(internalCorrelationId)
                 // TODO should use operation text instead of the requestId
                 .add("batchItems", batchItems.stream()
-                        .map(item -> item.requestId().toString())
+                        .map(item -> item.getRequestId().toString())
                         .collect(Collectors.joining(",")))
                 .build());
         return eventBuilder;

@@ -185,7 +185,7 @@ public class RevertInAmsWorker {
             String endToEndId = creditTransferTransaction.getPaymentIdentification().getEndToEndIdentification();
             Contact4 contactDetails = creditTransferTransaction.getCreditor().getContactDetails();
 
-            List<TransactionItem> items = new ArrayList<>();
+            List<BatchItem> items = new ArrayList<>();
 
             // STEP 1a - re-deposit amount in disposal account
             log.debug("re-deposit amount {} in disposal account: {}", amount, disposalAccountAmsId);
@@ -557,7 +557,7 @@ public class RevertInAmsWorker {
             String creditorContactDetails = contactDetailsUtil.getId(contactDetails);
             String unstructured = Optional.ofNullable(creditTransferTransaction.getRemittanceInformation()).map(RemittanceInformation16::getUnstructured).map(it -> String.join(",", it)).orElse("");
             String endToEndId = creditTransferTransaction.getPaymentIdentification().getEndToEndIdentification();
-            List<TransactionItem> items = new ArrayList<>();
+            List<BatchItem> items = new ArrayList<>();
 
             // STEP 1 - batch: deposit amount
             if (accountProductType.equalsIgnoreCase("SAVINGS")) {
@@ -795,7 +795,7 @@ public class RevertInAmsWorker {
             PaymentTransactionInformation27 paymentTransactionInformation = pacs004.getPmtRtr().getTxInf().get(0);
             String unstructured = Optional.ofNullable(paymentTransactionInformation.getOrgnlTxRef().getRmtInf())
                     .map(RemittanceInformation5::getUstrd).map(it -> String.join(",", it)).orElse("");
-            List<TransactionItem> items = new ArrayList<>();
+            List<BatchItem> items = new ArrayList<>();
 
             // STEP 1 - deposit amount
             BankToCustomerStatementV08 camt053Object = pacs004Camt053Mapper.convert(pacs004, new BankToCustomerStatementV08()

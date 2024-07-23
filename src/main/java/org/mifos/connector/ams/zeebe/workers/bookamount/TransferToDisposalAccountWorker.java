@@ -158,7 +158,7 @@ public class TransferToDisposalAccountWorker {
             ContactDetails2 contactDetails = creditTransferTransaction.getDbtr().getCtctDtls();
             String debtorContactDetails = contactDetailsUtil.getId(contactDetails);
             String endToEndId = creditTransferTransaction.getPmtId().getEndToEndId();
-            List<TransactionItem> items = new ArrayList<>();
+            List<BatchItem> items = new ArrayList<>();
 
             // STEP 1 - batch: deposit amount
             if (accountProductType.equalsIgnoreCase("SAVINGS")) {
@@ -335,7 +335,7 @@ public class TransferToDisposalAccountWorker {
             String paymentTypeId = tenantConfigs.findPaymentTypeId(tenantIdentifier, depositAmountConfigOperationKey);
             String paymentTypeCode = tenantConfigs.findResourceCode(tenantIdentifier, depositAmountConfigOperationKey);
             String direction = tenantConfigs.findDirection(tenantIdentifier, depositAmountConfigOperationKey);
-            List<TransactionItem> items = new ArrayList<>();
+            List<BatchItem> items = new ArrayList<>();
 
             // STEP 1 - deposit transaction
             if (accountProductType.equalsIgnoreCase("SAVINGS")) {
@@ -520,7 +520,7 @@ public class TransferToDisposalAccountWorker {
             var paymentTypeCode = tenantConfigs.findResourceCode(tenantIdentifier, depositAmountConfigOperationKey);
             var direction = tenantConfigs.findDirection(tenantIdentifier, depositAmountConfigOperationKey);
 
-            List<TransactionItem> items = new ArrayList<>();
+            List<BatchItem> items = new ArrayList<>();
 
             // STEP 1 - deposit transaction
             if (accountProductType.equals("SAVINGS")) {

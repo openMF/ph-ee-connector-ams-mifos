@@ -145,7 +145,7 @@ public class BookCreditedAmountFromTechnicalAccountWorker {
             iso.std.iso._20022.tech.xsd.pacs_002_001.Document pacs002 = jaxbUtils.unmarshalPacs002(originalPacs002);
             String apiPath = accountProductType.equalsIgnoreCase("SAVINGS") ? incomingMoneyApi.substring(1) : currentAccountApi.substring(1);
 
-            List<TransactionItem> items = new ArrayList<>();
+            List<BatchItem> items = new ArrayList<>();
 
             String taLookup = String.format("%s.%s", paymentScheme, caseIdentifier);
 

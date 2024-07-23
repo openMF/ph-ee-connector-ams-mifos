@@ -17,12 +17,16 @@ import org.mifos.connector.ams.common.exception.FineractOptimisticLockingExcepti
 import org.mifos.connector.ams.log.EventLogUtil;
 import org.mifos.connector.ams.log.IOTxLogger;
 import org.mifos.connector.ams.zeebe.workers.utils.AuthTokenHelper;
-import org.mifos.connector.ams.zeebe.workers.utils.TransactionItem;
+import org.mifos.connector.ams.zeebe.workers.utils.BatchItem;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.*;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Recover;
 import org.springframework.retry.annotation.Retryable;
@@ -37,7 +41,10 @@ import java.net.SocketTimeoutException;
 import java.util.List;
 import java.util.Map;
 
-import static org.apache.hc.core5.http.HttpStatus.*;
+import static org.apache.hc.core5.http.HttpStatus.SC_CONFLICT;
+import static org.apache.hc.core5.http.HttpStatus.SC_FORBIDDEN;
+import static org.apache.hc.core5.http.HttpStatus.SC_OK;
+import static org.apache.hc.core5.http.HttpStatus.SC_TOO_EARLY;
 
 @Component
 @Slf4j
@@ -72,9 +79,10 @@ public class MoneyInOutWorker {
     private EventService eventService;
 
     public static final String FORMAT = "yyyyMMdd";
+    public static final String DATETIME_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSS";
 
     @Retryable(retryFor = FineractOptimisticLockingException.class, maxAttemptsExpression = "${fineract.idempotency.count}", backoff = @Backoff(delayExpression = "${fineract.idempotency.interval}"))
-    protected Long holdBatch(List<TransactionItem> items,
+    protected Long holdBatch(List<BatchItem> items,
                              String tenantId,
                              String transactionGroupId,
                              String disposalAccountId,
@@ -92,13 +100,13 @@ public class MoneyInOutWorker {
     }
 
     @Retryable(retryFor = FineractOptimisticLockingException.class, maxAttemptsExpression = "${fineract.idempotency.count}", backoff = @Backoff(delayExpression = "${fineract.idempotency.interval}"))
-    protected Pair<String, List<BatchResponse>> doBatch(List<TransactionItem> items,
-                                                        String tenantId,
-                                                        String transactionGroupId,
-                                                        String disposalAccountId,
-                                                        String conversionAccountId,
-                                                        String internalCorrelationId,
-                                                        String calledFrom) {
+    public Pair<String, List<BatchResponse>> doBatch(List items,
+                                                     String tenantId,
+                                                     String transactionGroupId,
+                                                     String disposalAccountId,
+                                                     String conversionAccountId,
+                                                     String internalCorrelationId,
+                                                     String calledFrom) {
         return eventService.auditedEvent(
                 eventBuilder -> EventLogUtil.initFineractBatchCall(calledFrom,
                         items,
@@ -110,7 +118,7 @@ public class MoneyInOutWorker {
     }
 
     @Retryable(retryFor = FineractOptimisticLockingException.class, maxAttemptsExpression = "${fineract.idempotency.count}", backoff = @Backoff(delayExpression = "${fineract.idempotency.interval}"))
-    protected void doBatchOnUs(List<TransactionItem> items,
+    protected void doBatchOnUs(List<BatchItem> items,
                                String tenantId,
                                String transactionGroupId,
                                String debtorDisposalAccountAmsId,
@@ -182,9 +190,9 @@ public class MoneyInOutWorker {
         throw e;
     }
 
-    private Long holdBatchInternal(String transactionGroupId, List<TransactionItem> items, String tenantId, String internalCorrelationId, String from) {
+    private Long holdBatchInternal(String transactionGroupId, List<BatchItem> items, String tenantId, String internalCorrelationId, String from) {
         HttpHeaders httpHeaders = createHeaders(tenantId, transactionGroupId);
-        HttpEntity<List<TransactionItem>> entity = new HttpEntity<>(items, httpHeaders);
+        HttpEntity<List<BatchItem>> entity = new HttpEntity<>(items, httpHeaders);
 
         String urlTemplate = UriComponentsBuilder.fromHttpUrl(fineractApiUrl)
                 .path("/batches")
@@ -261,10 +269,10 @@ public class MoneyInOutWorker {
         return handleResponseElementError(responseItem, statusCode, retryCount);
     }
 
-    private Pair<String, List<BatchResponse>> doBatchInternal(List<TransactionItem> items, String tenantId, String transactionGroupId, String internalCorrelationId, String from) {
+    private Pair<String, List<BatchResponse>> doBatchInternal(List items, String tenantId, String transactionGroupId, String internalCorrelationId, String from) {
         HttpHeaders httpHeaders = createHeaders(tenantId, transactionGroupId);
 
-        HttpEntity<List<TransactionItem>> entity = new HttpEntity<>(items, httpHeaders);
+        HttpEntity<List> entity = new HttpEntity<>(items, httpHeaders);
 
         String urlTemplate = UriComponentsBuilder.fromHttpUrl(fineractApiUrl)
                 .path("/batches")
@@ -331,8 +339,8 @@ public class MoneyInOutWorker {
     }
 
 
-    private Long handleResponseElementError(BatchResponse responseItem, int statusCode, int retryCount) {
-        log.debug("Got error {}, response item '{}' for request", statusCode, responseItem);
+    private Long handleResponseElementError(BatchResponse response, int statusCode, int retryCount) {
+        log.error("Got error {}, response: '{}'", statusCode, response.getBody());
         switch (statusCode) {
             case SC_CONFLICT -> {
                 log.warn("Locking exception detected will retry for {} times", retryCount);
@@ -343,12 +351,14 @@ public class MoneyInOutWorker {
                 throw new FineractOptimisticLockingException("Locking exception detected");
             }
             case SC_FORBIDDEN -> {
-                String body = responseItem.getBody();
+                String body = response.getBody();
                 if (body != null && (body.contains("error.msg.current.insufficient.funds"))) {
                     log.error("insufficient funds for request");
                     throw new ZeebeBpmnError("Error_InsufficientFunds", "Insufficient funds");
+                } else {
+                    log.error("HTTP 403 returned by Fineract: {}", body);
+                    throw new RuntimeException("HTTP 403 returned by Fineract: " + body);
                 }
-                throw new ZeebeBpmnError("Error_CaughtException", "Forbidden");
             }
             default -> throw new RuntimeException("An unexpected error occurred for request: " + statusCode);
         }

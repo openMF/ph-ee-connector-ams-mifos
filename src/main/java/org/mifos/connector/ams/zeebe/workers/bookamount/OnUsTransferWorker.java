@@ -196,7 +196,7 @@ public class OnUsTransferWorker {
 
             String interbankSettlementDate = LocalDate.now().format(PATTERN);
             boolean hasFee = !BigDecimal.ZERO.equals(transactionFeeAmount);
-            List<TransactionItem> items = new ArrayList<>();
+            List<BatchItem> items = new ArrayList<>();
 
             if (accountProductType.equalsIgnoreCase("SAVINGS")) {
                 // STEP 1a - add hold amount

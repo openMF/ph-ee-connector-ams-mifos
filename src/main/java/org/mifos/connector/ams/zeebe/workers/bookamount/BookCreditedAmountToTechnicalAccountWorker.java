@@ -163,7 +163,7 @@ public class BookCreditedAmountToTechnicalAccountWorker {
             String endToEndId = creditTransferTransactionInformation11.getPmtId().getEndToEndId();
             String debtorName = creditTransferTransactionInformation11.getDbtr().getNm();
             ContactDetails2 contactDetails = creditTransferTransactionInformation11.getCdtr().getCtctDtls();
-            List<TransactionItem> items = new ArrayList<>();
+            List<BatchItem> items = new ArrayList<>();
 
             // STEP 1 - batch: withdraw amount
             if (accountProductTypeCopy.equalsIgnoreCase("SAVINGS")) {
