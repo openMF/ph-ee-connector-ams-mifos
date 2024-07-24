@@ -90,7 +90,7 @@ public class GetAccountDetailsFromAmsWorker extends AbstractAmsWorker {
                                                          String direction,
                                                          Event.Builder eventBuilder) {
         String paymentSchemePrefix = paymentScheme.split(":")[0];
-        String iban = null;
+        String iban = inboundIban;
 
         try {
             CAGetResponse disposalAccount;
