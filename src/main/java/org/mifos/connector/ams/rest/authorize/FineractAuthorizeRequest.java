@@ -4,8 +4,10 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
+import org.mifos.connector.ams.zeebe.workers.utils.CurrentAccountTransactionBody;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -17,4 +19,6 @@ public class FineractAuthorizeRequest {
     String sequenceDateTime;
     final String locale = "en";
     String dateTimeFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSZ";
+    List<CurrentAccountTransactionBody.DataTable<?>> datatables;
+
 }

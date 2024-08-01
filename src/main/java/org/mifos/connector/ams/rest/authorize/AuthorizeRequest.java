@@ -6,10 +6,20 @@ import java.math.BigDecimal;
 
 @Data
 public class AuthorizeRequest {
-    BigDecimal transactionAmount;
     BigDecimal originalAmount;
-    String sequenceDateTime;
+    BigDecimal transactionAmount;
+    Boolean isContactless;
+    Boolean isEcommerce;
     String accId;
-    String tenantId;
+    String cardToken;
     String dateTimeFormat;
+    String instructedAmount;
+    String instructedCurrency;
+    String merchantCategoryCode;
+    String messageId;
+    String partnerCountry;
+    String processCode;
+    String requestId;
+    String sequenceDateTime;
+    String tenantId;
 }

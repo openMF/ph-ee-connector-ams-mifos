@@ -2,6 +2,7 @@ package org.mifos.connector.ams.rest.authorize;
 
 import org.jetbrains.annotations.NotNull;
 import org.mifos.connector.ams.zeebe.workers.utils.AuthTokenHelper;
+import org.mifos.connector.ams.zeebe.workers.utils.CurrentAccountTransactionBody;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,7 +12,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -20,6 +20,7 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Random;
 
 
@@ -42,7 +43,26 @@ public class AuthorizeEndpoint {
     public AuthorizeResponse authorize(@RequestBody AuthorizeRequest request) {
         logger.trace("authorize request: {}", request);
 
-        FineractAuthorizeRequest fineractRequest = new FineractAuthorizeRequest(request.transactionAmount, request.originalAmount, request.sequenceDateTime, request.dateTimeFormat);
+        FineractAuthorizeRequest fineractRequest = new FineractAuthorizeRequest()
+                .setTransactionAmount(request.transactionAmount)
+                .setOriginalAmount(request.originalAmount)
+                .setSequenceDateTime(request.sequenceDateTime)
+                .setDateTimeFormat(request.dateTimeFormat)
+                .setDatatables(List.of(
+                        new CurrentAccountTransactionBody.DataTable(List.of(
+                                new CurrentAccountTransactionBody.CardEntry()
+                                        .setCard_token(request.cardToken)
+                                        .setInstructed_amount(request.instructedAmount)
+                                        .setInstructed_currency(request.instructedCurrency)
+                                        .setInstruction_identification(request.requestId)
+                                        .setIs_contactless(request.isContactless)
+                                        .setIs_ecommerce(request.isEcommerce)
+                                        .setMerchant_category_code(request.merchantCategoryCode)
+                                        .setMessage_id(request.messageId)
+                                        .setPartner_country(request.partnerCountry)
+                                        .setProcess_code(request.processCode)
+                        ), "dt_current_card_transaction_details")
+                ));
         logger.trace("fineract request: {}", fineractRequest);
 
         try {
