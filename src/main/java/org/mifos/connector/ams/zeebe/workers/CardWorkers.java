@@ -109,12 +109,14 @@ public class CardWorkers {
             @Variable String currency,
             @Variable String direction,
             @Variable String disposalAccountAmsId,
+            @Variable String exchangeRate,
             @Variable String holdFeeIdentifier,
             @Variable String holdIdentifier,
+            @Variable String iban,
             @Variable String instructedAmount,
             @Variable String instructedCurrency,
             @Variable String internalCorrelationId,
-            @Variable String isEcommerce,
+            @Variable Boolean isEcommerce,
             @Variable String maskedPan,
             @Variable String merchName,
             @Variable String merchantCategoryCode,
@@ -153,32 +155,42 @@ public class CardWorkers {
                             .setDatatables(List.of(
                                             new CurrentAccountTransactionBody.DataTable(List.of(
                                                     new CurrentAccountTransactionBody.Entry()
-                                                            .setAccount_iban("TODO")
-                                                            .setStructured_transaction_details("{}")
-                                                            .setInternal_correlation_id(internalCorrelationId)
-                                                            .setEnd_to_end_id("TODO")
-                                                            .setTransaction_id(transactionReference)
-                                                            .setTransaction_group_id(transactionGroupId)
-                                                            .setPayment_scheme(paymentScheme)
+                                                            .setAccount_iban(iban)
+                                                            .setCategory_purpose_code(transactionCategoryPurpose)
                                                             .setDirection(direction)
-                                                            .setPartner_name(merchName)
+//                                                            .setEnd_to_end_id("TODO")
+                                                            .setInternal_correlation_id(internalCorrelationId)
                                                             .setPartner_account_iban("")
+                                                            .setPartner_name(merchName)
+                                                            .setPayment_scheme(paymentScheme)
+//                                                            .setSource_ams_account_id(conversionAccountAmsId)
+                                                            .setStructured_transaction_details("{}")
+//                                                            .setTarget_ams_account_id(disposalAccountAmsId)
+                                                            .setTransaction_group_id(transactionGroupId)
+                                                            .setTransaction_id(transactionReference)
                                             ), "dt_current_transaction_details"),
                                             new CurrentAccountTransactionBody.DataTable(List.of(
                                                     new CurrentAccountTransactionBody.CardEntry()
-                                                            .setInstruction_identification(requestId)
-                                                            .setMessage_id(messageId)
-                                                            .setCard_token(cardToken)
-                                                            .setMasked_pan(maskedPan)
                                                             .setCard_holder_name(cardHolderName)
-                                                            .setPartner_city(partnerCity)
-                                                            .setPartner_country(partnerCountry)
+                                                            .setCard_token(cardToken)
+                                                            .setExchange_rate(exchangeRate)
                                                             .setInstructed_amount(instructedAmount)
                                                             .setInstructed_currency(instructedCurrency)
-                                                            .setProcess_code(processCode)
-                                                            .setMerchant_category_code(merchantCategoryCode)
+                                                            .setInstruction_identification(requestId)
+                                                            .setIs_contactless(true) // TODO
                                                             .setIs_ecommerce(isEcommerce)
+                                                            .setMasked_pan(maskedPan)
+                                                            .setMerchant_category_code(merchantCategoryCode)
+                                                            .setMessage_id(messageId)
+//                                                            .setSettlement_amount()  // TODO
+//                                                            .setSettlement_currency()  // TODO
+                                                            .setPartner_city(partnerCity)
+                                                            .setPartner_country(partnerCountry)
                                                             .setPayment_token_wallet(paymentTokenWallet)
+                                                            .setProcess_code(processCode)
+                                                            .setTransaction_country("TODO") // TODO
+//                                                            .setTransaction_description()
+                                                            .setTransaction_type(cardTransactionType)
                                             ), "dt_current_card_transaction_details")
                                     )
                             );
@@ -232,10 +244,12 @@ public class CardWorkers {
             @Variable String currency,
             @Variable String direction,
             @Variable String disposalAccountAmsId,
+            @Variable String exchangeRate,
+            @Variable String iban,
             @Variable String instructedAmount,
             @Variable String instructedCurrency,
             @Variable String internalCorrelationId,
-            @Variable String isEcommerce,
+            @Variable Boolean isEcommerce,
             @Variable String maskedPan,
             @Variable String merchName,
             @Variable String merchantCategoryCode,
@@ -249,6 +263,8 @@ public class CardWorkers {
             @Variable String sequenceDateTime,
             @Variable String sequenceDateTimeFormat,
             @Variable String tenantIdentifier,
+            @Variable String transactionCategoryPurpose,
+            @Variable String transactionFeeCategoryPurpose,
             @Variable String transactionGroupId,
             @Variable String transactionReference
     ) {
@@ -279,15 +295,20 @@ public class CardWorkers {
                                 .setDateTimeFormat(DATETIME_FORMAT)
                                 .setDatatables(List.of(
                                                 new CurrentAccountTransactionBody.DataTable(List.of(
-                                                        new CurrentAccountTransactionBody.HoldEntry()
-                                                                .setEnd_to_end_id("TODO")
-                                                                .setTransaction_id(transactionReference)
+                                                        new CurrentAccountTransactionBody.Entry()
+                                                                .setAccount_iban(iban)
+                                                                .setCategory_purpose_code(transactionCategoryPurpose)
+                                                                .setDirection(direction)
+//                                                            .setEnd_to_end_id("TODO")
                                                                 .setInternal_correlation_id(internalCorrelationId)
+                                                                .setPartner_account_iban("")
                                                                 .setPartner_name(merchName)
                                                                 .setPayment_scheme(paymentScheme)
-                                                                .setPartner_account_iban("TODO")
-                                                                .setDirection(direction)
-                                                                .setAccount_iban("TODO")
+//                                                            .setSource_ams_account_id(conversionAccountAmsId)
+                                                                .setStructured_transaction_details("{}")
+//                                                            .setTarget_ams_account_id(disposalAccountAmsId)
+                                                                .setTransaction_group_id(transactionGroupId)
+                                                                .setTransaction_id(transactionReference)
                                                 ), "dt_current_transaction_details")
                                         )
                                 );
@@ -300,33 +321,45 @@ public class CardWorkers {
                                 .setPaymentTypeId(paymentTypeDisposalWithdrawFee)
                                 .setDatatables(List.of(
                                                 new CurrentAccountTransactionBody.DataTable(List.of(
-                                                        new CurrentAccountTransactionBody.Entry()
-                                                                .setAccount_iban("TODO")
-                                                                .setStructured_transaction_details("{}")
-                                                                .setInternal_correlation_id(internalCorrelationId)
-                                                                .setEnd_to_end_id("TODO")
-                                                                .setTransaction_id(transactionReference)
-                                                                .setTransaction_group_id(transactionGroupId)
-                                                                .setPayment_scheme(paymentScheme)
-                                                                .setDirection(direction)
-                                                                .setPartner_name(merchName)
-                                                                .setPartner_account_iban("")
+                                                        new CurrentAccountTransactionBody.DataTable(List.of(
+                                                                new CurrentAccountTransactionBody.Entry()
+                                                                        .setAccount_iban(iban)
+                                                                        .setCategory_purpose_code(transactionFeeCategoryPurpose)
+                                                                        .setDirection(direction)
+//                                                            .setEnd_to_end_id("TODO")
+                                                                        .setInternal_correlation_id(internalCorrelationId)
+                                                                        .setPartner_account_iban("")
+                                                                        .setPartner_name(merchName)
+                                                                        .setPayment_scheme(paymentScheme)
+//                                                            .setSource_ams_account_id(conversionAccountAmsId)
+                                                                        .setStructured_transaction_details("{}")
+//                                                            .setTarget_ams_account_id(disposalAccountAmsId)
+                                                                        .setTransaction_group_id(transactionGroupId)
+                                                                        .setTransaction_id(transactionReference)
+                                                        ), "dt_current_transaction_details")
                                                 ), "dt_current_transaction_details"),
                                                 new CurrentAccountTransactionBody.DataTable(List.of(
                                                         new CurrentAccountTransactionBody.CardEntry()
-                                                                .setInstruction_identification(requestId)
-                                                                .setMessage_id(messageId)
-                                                                .setCard_token(cardToken)
-                                                                .setMasked_pan(maskedPan)
                                                                 .setCard_holder_name(cardHolderName)
-                                                                .setPartner_city(partnerCity)
-                                                                .setPartner_country(partnerCountry)
+                                                                .setCard_token(cardToken)
+                                                                .setExchange_rate(exchangeRate)
                                                                 .setInstructed_amount(instructedAmount)
                                                                 .setInstructed_currency(instructedCurrency)
-                                                                .setProcess_code(processCode)
-                                                                .setMerchant_category_code(merchantCategoryCode)
+                                                                .setInstruction_identification(requestId)
+                                                                .setIs_contactless(true) // TODO
                                                                 .setIs_ecommerce(isEcommerce)
+                                                                .setMasked_pan(maskedPan)
+                                                                .setMerchant_category_code(merchantCategoryCode)
+                                                                .setMessage_id(messageId)
+//                                                            .setSettlement_amount()  // TODO
+//                                                            .setSettlement_currency()  // TODO
+                                                                .setPartner_city(partnerCity)
+                                                                .setPartner_country(partnerCountry)
                                                                 .setPayment_token_wallet(paymentTokenWallet)
+                                                                .setProcess_code(processCode)
+                                                                .setTransaction_country("TODO") // TODO
+//                                                            .setTransaction_description()
+                                                                .setTransaction_type(cardTransactionType)
                                                 ), "dt_current_card_transaction_details")
                                         )
                                 );
@@ -340,32 +373,42 @@ public class CardWorkers {
                                 .setDatatables(List.of(
                                                 new CurrentAccountTransactionBody.DataTable(List.of(
                                                         new CurrentAccountTransactionBody.Entry()
-                                                                .setAccount_iban("TODO")
-                                                                .setStructured_transaction_details("{}")
-                                                                .setInternal_correlation_id(internalCorrelationId)
-                                                                .setEnd_to_end_id("TODO")
-                                                                .setTransaction_id(transactionReference)
-                                                                .setTransaction_group_id(transactionGroupId)
-                                                                .setPayment_scheme(paymentScheme)
+                                                                .setAccount_iban(iban)
+                                                                .setCategory_purpose_code(transactionCategoryPurpose)
                                                                 .setDirection(direction)
-                                                                .setPartner_name(merchName)
+//                                                            .setEnd_to_end_id("TODO")
+                                                                .setInternal_correlation_id(internalCorrelationId)
                                                                 .setPartner_account_iban("")
+                                                                .setPartner_name(merchName)
+                                                                .setPayment_scheme(paymentScheme)
+//                                                            .setSource_ams_account_id(conversionAccountAmsId)
+                                                                .setStructured_transaction_details("{}")
+//                                                            .setTarget_ams_account_id(disposalAccountAmsId)
+                                                                .setTransaction_group_id(transactionGroupId)
+                                                                .setTransaction_id(transactionReference)
                                                 ), "dt_current_transaction_details"),
                                                 new CurrentAccountTransactionBody.DataTable(List.of(
                                                         new CurrentAccountTransactionBody.CardEntry()
-                                                                .setInstruction_identification(requestId)
-                                                                .setMessage_id(messageId)
-                                                                .setCard_token(cardToken)
-                                                                .setMasked_pan(maskedPan)
                                                                 .setCard_holder_name(cardHolderName)
-                                                                .setPartner_city(partnerCity)
-                                                                .setPartner_country(partnerCountry)
+                                                                .setCard_token(cardToken)
+                                                                .setExchange_rate(exchangeRate)
                                                                 .setInstructed_amount(instructedAmount)
                                                                 .setInstructed_currency(instructedCurrency)
-                                                                .setProcess_code(processCode)
-                                                                .setMerchant_category_code(merchantCategoryCode)
+                                                                .setInstruction_identification(requestId)
+                                                                .setIs_contactless(true) // TODO
                                                                 .setIs_ecommerce(isEcommerce)
+                                                                .setMasked_pan(maskedPan)
+                                                                .setMerchant_category_code(merchantCategoryCode)
+                                                                .setMessage_id(messageId)
+//                                                            .setSettlement_amount()  // TODO
+//                                                            .setSettlement_currency()  // TODO
+                                                                .setPartner_city(partnerCity)
+                                                                .setPartner_country(partnerCountry)
                                                                 .setPayment_token_wallet(paymentTokenWallet)
+                                                                .setProcess_code(processCode)
+                                                                .setTransaction_country("TODO") // TODO
+//                                                            .setTransaction_description()
+                                                                .setTransaction_type(cardTransactionType)
                                                 ), "dt_current_card_transaction_details")
                                         )
                                 );

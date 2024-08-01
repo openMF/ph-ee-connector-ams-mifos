@@ -60,19 +60,26 @@ public class CurrentAccountTransactionBody {
     @NoArgsConstructor
     @Accessors(chain = true)
     public static class CardEntry {
-        private String instruction_identification;
-        private String message_id;
-        private String card_token;
-        private String masked_pan;
         private String card_holder_name;
-        private String partner_city;
-        private String partner_country;
+        private String card_token;
+        private String exchange_rate;
         private String instructed_amount;
         private String instructed_currency;
-        private String process_code;
+        private String instruction_identification;
+        private Boolean is_contactless;
+        private Boolean is_ecommerce;
+        private String masked_pan;
         private String merchant_category_code;
-        private String is_ecommerce;
+        private String message_id;
+        private String partner_city;
+        private String partner_country;
         private String payment_token_wallet;
+        private String process_code;
+        private String settlement_amount;
+        private String settlement_currency;
+        private String transaction_country;
+        private String transaction_description;
+        private String transaction_type;
     }
 
     @Data
