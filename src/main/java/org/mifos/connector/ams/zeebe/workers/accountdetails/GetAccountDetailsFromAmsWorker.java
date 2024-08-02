@@ -170,6 +170,7 @@ public class GetAccountDetailsFromAmsWorker extends AbstractAmsWorker {
                 outputVariables.put("internalAccountId", internalAccountId);
             }
 
+            outputVariables.put("iban", iban);
             outputVariables.put("accountProductType", "CURRENT");
             outputVariables.put("reasonCode", reasonCode);
             return outputVariables;
