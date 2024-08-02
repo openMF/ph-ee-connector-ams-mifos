@@ -379,6 +379,8 @@ public class CardWorkers {
                                                                 .setSettlement_currency(settlementCurrency)
                                                                 .setTransaction_country(transactionCountry)
                                                                 .setTransaction_description(transactionDescription)
+                                                                .setTransaction_country("HUN") // TODO: max 3 chars
+//                                                            .setTransaction_description()
                                                                 .setTransaction_type(cardTransactionType)
                                                 ), "dt_current_card_transaction_details")
                                         )
@@ -428,6 +430,8 @@ public class CardWorkers {
                                                                 .setPartner_region(partnerRegion)
                                                                 .setPayment_token_wallet(paymentTokenWallet)
                                                                 .setProcess_code(processCode)
+                                                                .setTransaction_country("HUN") // TODO
+//                                                            .setTransaction_description()
                                                                 .setSettlement_amount(settlementAmount)
                                                                 .setSettlement_currency(settlementCurrency)
                                                                 .setTransaction_country(transactionCountry)
