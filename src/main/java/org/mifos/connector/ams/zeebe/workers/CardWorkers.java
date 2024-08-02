@@ -321,22 +321,20 @@ public class CardWorkers {
                                 .setPaymentTypeId(paymentTypeDisposalWithdrawFee)
                                 .setDatatables(List.of(
                                                 new CurrentAccountTransactionBody.DataTable(List.of(
-                                                        new CurrentAccountTransactionBody.DataTable(List.of(
-                                                                new CurrentAccountTransactionBody.Entry()
-                                                                        .setAccount_iban(iban)
-                                                                        .setCategory_purpose_code(transactionFeeCategoryPurpose)
-                                                                        .setDirection(direction)
+                                                        new CurrentAccountTransactionBody.Entry()
+                                                                .setAccount_iban(iban)
+                                                                .setCategory_purpose_code(transactionFeeCategoryPurpose)
+                                                                .setDirection(direction)
 //                                                            .setEnd_to_end_id("TODO")
-                                                                        .setInternal_correlation_id(internalCorrelationId)
-                                                                        .setPartner_account_iban("")
-                                                                        .setPartner_name(merchName)
-                                                                        .setPayment_scheme(paymentScheme)
+                                                                .setInternal_correlation_id(internalCorrelationId)
+                                                                .setPartner_account_iban("")
+                                                                .setPartner_name(merchName)
+                                                                .setPayment_scheme(paymentScheme)
 //                                                            .setSource_ams_account_id(conversionAccountAmsId)
-                                                                        .setStructured_transaction_details("{}")
+                                                                .setStructured_transaction_details("{}")
 //                                                            .setTarget_ams_account_id(disposalAccountAmsId)
-                                                                        .setTransaction_group_id(transactionGroupId)
-                                                                        .setTransaction_id(transactionReference)
-                                                        ), "dt_current_transaction_details")
+                                                                .setTransaction_group_id(transactionGroupId)
+                                                                .setTransaction_id(transactionReference)
                                                 ), "dt_current_transaction_details"),
                                                 new CurrentAccountTransactionBody.DataTable(List.of(
                                                         new CurrentAccountTransactionBody.CardEntry()
