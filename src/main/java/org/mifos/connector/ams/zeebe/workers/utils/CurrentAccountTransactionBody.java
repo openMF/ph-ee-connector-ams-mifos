@@ -73,6 +73,8 @@ public class CurrentAccountTransactionBody {
         private String message_id;
         private String partner_city;
         private String partner_country;
+        private String partner_postcode;
+        private String partner_region;
         private String payment_token_wallet;
         private String process_code;
         private String settlement_amount;
