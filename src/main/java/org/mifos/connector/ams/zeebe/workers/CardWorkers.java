@@ -321,28 +321,15 @@ public class CardWorkers {
                                 .setPaymentTypeId(paymentTypeDisposalWithdrawFee)
                                 .setDatatables(List.of(
                                                 new CurrentAccountTransactionBody.DataTable(List.of(
-<<<<<<< Updated upstream
                                                         new CurrentAccountTransactionBody.Entry()
                                                                 .setAccount_iban(iban)
                                                                 .setCategory_purpose_code(transactionFeeCategoryPurpose)
                                                                 .setDirection(direction)
-//                                                            .setEnd_to_end_id("TODO")
+                                                                .setEnd_to_end_id("")
                                                                 .setInternal_correlation_id(internalCorrelationId)
                                                                 .setPartner_account_iban("")
                                                                 .setPartner_name(merchName)
                                                                 .setPayment_scheme(paymentScheme)
-=======
-                                                        new CurrentAccountTransactionBody.DataTable(List.of(
-                                                                new CurrentAccountTransactionBody.Entry()
-                                                                        .setAccount_iban(iban)
-                                                                        .setCategory_purpose_code(transactionFeeCategoryPurpose)
-                                                                        .setDirection(direction)
-                                                                        .setEnd_to_end_id("")
-                                                                        .setInternal_correlation_id(internalCorrelationId)
-                                                                        .setPartner_account_iban("")
-                                                                        .setPartner_name(merchName)
-                                                                        .setPayment_scheme(paymentScheme)
->>>>>>> Stashed changes
 //                                                            .setSource_ams_account_id(conversionAccountAmsId)
                                                                 .setStructured_transaction_details("{}")
 //                                                            .setTarget_ams_account_id(disposalAccountAmsId)
