@@ -160,6 +160,7 @@ public class CardWorkers {
                             .setDateTimeFormat(dateTimeFormat)
                             .setLocale(locale)
                             .setCurrencyCode(currency)
+                            .setSequenceDateTime(sequenceDateTime)
                             .setDatatables(List.of(
                                             new CurrentAccountTransactionBody.DataTable(List.of(
                                                     new CurrentAccountTransactionBody.Entry()
