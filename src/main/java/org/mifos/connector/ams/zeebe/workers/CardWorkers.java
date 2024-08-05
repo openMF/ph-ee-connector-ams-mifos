@@ -369,6 +369,7 @@ public class CardWorkers {
                                 .setDateTimeFormat(dateTimeFormat)
                                 .setLocale(locale)
                                 .setCurrencyCode(currency)
+                                .setSequenceDateTime(sequenceDateTime)
                                 .setPaymentTypeId(paymentTypeDisposalWithdrawFee)
                                 .setDatatables(List.of(
                                                 new CurrentAccountTransactionBody.DataTable(List.of(
@@ -425,6 +426,7 @@ public class CardWorkers {
                                 .setDateTimeFormat(dateTimeFormat)
                                 .setLocale(locale)
                                 .setCurrencyCode(currency)
+                                .setSequenceDateTime(sequenceDateTime)
                                 .setPaymentTypeId(paymentTypeDisposalWithdrawAmount)
                                 .setDatatables(List.of(
                                                 new CurrentAccountTransactionBody.DataTable(List.of(
