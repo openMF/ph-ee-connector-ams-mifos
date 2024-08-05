@@ -126,6 +126,7 @@ public class CardWorkers {
             @Variable String partnerCountry,
             @Variable String partnerPostcode,
             @Variable String partnerRegion,
+            @Variable String partnerStreet,
             @Variable String paymentScheme,
             @Variable String paymentTokenWallet,
             @Variable String processCode,
@@ -195,6 +196,7 @@ public class CardWorkers {
                                                             .setPartner_country(partnerCountry)
                                                             .setPartner_postcode(partnerPostcode)
                                                             .setPartner_region(partnerRegion)
+                                                            .setPartner_street(partnerStreet)
                                                             .setPayment_token_wallet(paymentTokenWallet)
                                                             .setProcess_code(processCode)
                                                             .setSettlement_amount(settlementAmount)
@@ -247,10 +249,10 @@ public class CardWorkers {
             @Variable BigDecimal externalHoldAmount,
             @Variable BigDecimal transactionFeeAmount,
             @Variable String cardAccountId,
+            @Variable String cardFeeTransactionType,
             @Variable String cardHolderName,
             @Variable String cardToken,
             @Variable String cardTransactionType,
-            @Variable String cardFeeTransactionType,
             @Variable String conversionAccountAmsId,
             @Variable String currency,
             @Variable String direction,
@@ -260,8 +262,8 @@ public class CardWorkers {
             @Variable String instructedAmount,
             @Variable String instructedCurrency,
             @Variable String internalCorrelationId,
-            @Variable Boolean isEcommerce,
             @Variable Boolean isContactless,
+            @Variable Boolean isEcommerce,
             @Variable String maskedPan,
             @Variable String merchName,
             @Variable String merchantCategoryCode,
@@ -270,6 +272,7 @@ public class CardWorkers {
             @Variable String partnerCountry,
             @Variable String partnerPostcode,
             @Variable String partnerRegion,
+            @Variable String partnerStreet,
             @Variable String paymentScheme, // "CARD_CLEARING"
             @Variable String paymentTokenWallet,
             @Variable String processCode,
@@ -327,7 +330,37 @@ public class CardWorkers {
 //                                                            .setTarget_ams_account_id(disposalAccountAmsId)
                                                                 .setTransaction_group_id(transactionGroupId)
                                                                 .setTransaction_id(transactionReference)
-                                                ), "dt_current_transaction_details")
+                                                ), "dt_current_transaction_details"),
+                                                new CurrentAccountTransactionBody.DataTable(List.of(
+                                                        new CurrentAccountTransactionBody.CardEntry()
+                                                                .setCard_holder_name(cardHolderName)
+                                                                .setCard_token(cardToken)
+                                                                .setExchange_rate(exchangeRate)
+                                                                .setInstructed_amount(instructedAmount)
+                                                                .setInstructed_currency(instructedCurrency)
+                                                                .setInstruction_identification(requestId)
+                                                                .setIs_contactless(isContactless)
+                                                                .setIs_ecommerce(isEcommerce)
+                                                                .setMasked_pan(maskedPan)
+                                                                .setMerchant_category_code(merchantCategoryCode)
+                                                                .setMessage_id(messageId)
+                                                                .setSettlement_amount(settlementAmount)
+                                                                .setSettlement_currency(settlementCurrency)
+                                                                .setPartner_city(partnerCity)
+                                                                .setPartner_country(partnerCountry)
+                                                                .setPartner_postcode(partnerPostcode)
+                                                                .setPartner_region(partnerRegion)
+                                                                .setPartner_street(partnerStreet)
+                                                                .setPayment_token_wallet(paymentTokenWallet)
+                                                                .setProcess_code(processCode)
+                                                                .setSettlement_amount(settlementAmount)
+                                                                .setSettlement_currency(settlementCurrency)
+                                                                .setTransaction_country(transactionCountry)
+                                                                .setTransaction_description(transactionDescription)
+                                                                .setTransaction_country(transactionCountry)
+//                                                            .setTransaction_description()
+                                                                .setTransaction_type(cardTransactionType)
+                                                ), "dt_current_card_transaction_details")
                                         )
                                 );
 
@@ -373,13 +406,14 @@ public class CardWorkers {
                                                                 .setPartner_country(partnerCountry)
                                                                 .setPartner_postcode(partnerPostcode)
                                                                 .setPartner_region(partnerRegion)
+                                                                .setPartner_street(partnerStreet)
                                                                 .setPayment_token_wallet(paymentTokenWallet)
                                                                 .setProcess_code(processCode)
                                                                 .setSettlement_amount(settlementAmount)
                                                                 .setSettlement_currency(settlementCurrency)
                                                                 .setTransaction_country(transactionCountry)
                                                                 .setTransaction_description(transactionDescription)
-                                                                .setTransaction_country("HUN") // TODO: max 3 chars
+                                                                .setTransaction_country(transactionCountry)
 //                                                            .setTransaction_description()
                                                                 .setTransaction_type(cardTransactionType)
                                                 ), "dt_current_card_transaction_details")
@@ -428,9 +462,10 @@ public class CardWorkers {
                                                                 .setPartner_country(partnerCountry)
                                                                 .setPartner_postcode(partnerPostcode)
                                                                 .setPartner_region(partnerRegion)
+                                                                .setPartner_street(partnerStreet)
                                                                 .setPayment_token_wallet(paymentTokenWallet)
                                                                 .setProcess_code(processCode)
-                                                                .setTransaction_country("HUN") // TODO
+                                                                .setTransaction_country(transactionCountry)
 //                                                            .setTransaction_description()
                                                                 .setSettlement_amount(settlementAmount)
                                                                 .setSettlement_currency(settlementCurrency)
