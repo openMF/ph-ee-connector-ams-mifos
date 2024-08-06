@@ -208,14 +208,19 @@ public class CardWorkers {
                                     )
                             );
 
+                    boolean hasFee = transactionFeeAmount.compareTo(BigDecimal.ZERO) > 0;
+
                     try {
                         if (holdFeeIdentifier != null) {
                             logger.info("Hold fee detected with id {}, skipping fee withdrawal", holdFeeIdentifier);
                         } else {
                             // STEP 1 - withdraw fee from conversion, execute
-                            logger.info("Withdrawing fee {} from conversion account {}", transactionFeeAmount, conversionAccountAmsId);
-                            cardTransactionBody.setPaymentTypeId(paymentTypeConversionWithdrawFee);
-                            executeWithdrawNoHold("FEE-K", withdrawalUrl, cardTransactionBody, conversionAccountAmsId, disposalAccountAmsId, tenantIdentifier, requestId, transactionGroupId, internalCorrelationId);
+                            if (hasFee) {
+                                logger.info("Withdrawing fee {} from conversion account {}", transactionFeeAmount, conversionAccountAmsId);
+                                cardTransactionBody.setPaymentTypeId(paymentTypeConversionWithdrawFee);
+                                executeWithdrawNoHold("FEE-K", withdrawalUrl, cardTransactionBody, conversionAccountAmsId, disposalAccountAmsId, tenantIdentifier, requestId, transactionGroupId, internalCorrelationId);
+                            }
+
                         }
 
                         if (holdIdentifier != null) {
@@ -490,8 +495,10 @@ public class CardWorkers {
                             feeTransactionBody.setPaymentTypeId(paymentTypeConversionDepositFee);
                             executeDeposit(feeTransactionBody, conversionAccountAmsId, disposalAccountAmsId, internalCorrelationId, tenantIdentifier, transactionGroupId, depositUrl);
                         } else {
-                            holdFeeIdentifier = holdResponse.getHoldFeeIdentifier();
-                            logger.info("Insufficient balance at disposal {} for fee {}, no deposit made to conversion", disposalAccountAmsId, transactionFeeAmount);
+                            if (hasFee) {
+                                holdFeeIdentifier = holdResponse.getHoldFeeIdentifier();
+                                logger.info("Insufficient balance at disposal {} for fee {}, no deposit made to conversion", disposalAccountAmsId, transactionFeeAmount);
+                            }
                         }
 
                         if (holdResponse.isAmountWithdraw()) {
