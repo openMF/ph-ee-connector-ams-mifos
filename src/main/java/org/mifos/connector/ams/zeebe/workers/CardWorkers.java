@@ -483,7 +483,8 @@ public class CardWorkers {
                         logger.info("Withdraw fee {} from disposal account {}", transactionFeeAmount, disposalAccountAmsId);
                         WithdrawWithHoldResponse holdResponse = executeWithdrawWithHold("R", holdUrl, holdBody, withdrawalUrl, feeTransactionBody, amountTransactionBody, conversionAccountAmsId, disposalAccountAmsId, tenantIdentifier, requestId, transactionGroupId, internalCorrelationId);
 
-                        if (holdResponse.isFeeWithdraw()) {
+                        boolean hasFee = transactionFeeAmount.compareTo(BigDecimal.ZERO) > 0;
+                        if (hasFee && holdResponse.isFeeWithdraw()) {
                             // STEP 2 - deposit fee to conversion, execute
                             logger.info("Deposit fee {} to conversion account {}", transactionFeeAmount, conversionAccountAmsId);
                             feeTransactionBody.setPaymentTypeId(paymentTypeConversionDepositFee);
