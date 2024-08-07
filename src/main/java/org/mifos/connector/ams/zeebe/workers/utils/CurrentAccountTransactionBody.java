@@ -110,23 +110,23 @@ public class CurrentAccountTransactionBody {
 
         public Entry(String account_iban, String structured_transaction_details, String internal_correlation_id, String partner_name, String partner_account_iban, String transaction_group_id, String transaction_id, String end_to_end_id, String category_purpose_code, String payment_scheme, String remittance_information_unstructured, String source_ams_account_id, String target_ams_account_id, String transactionCreationChannel, String partner_secondary_id_mobile, String partner_secondary_id_email, String partner_secondary_id_tax_id, String partner_secondary_id_tax_number, String partner_account_internal_account_id, boolean value_dated, String direction) {
             this.account_iban = account_iban;
-            this.structured_transaction_details = structured_transaction_details;
+            this.structured_transaction_details = sanitize(structured_transaction_details);
             this.internal_correlation_id = internal_correlation_id;
-            this.partner_name = partner_name;
+            this.partner_name = sanitize(partner_name);
             this.partner_account_iban = partner_account_iban;
             this.transaction_group_id = transaction_group_id;
             this.transaction_id = transaction_id;
             this.end_to_end_id = end_to_end_id;
             this.category_purpose_code = category_purpose_code;
             this.payment_scheme = payment_scheme;
-            this.remittance_information_unstructured = remittance_information_unstructured;
+            this.remittance_information_unstructured = sanitize(remittance_information_unstructured);
             this.source_ams_account_id = source_ams_account_id;
             this.target_ams_account_id = target_ams_account_id;
             this.transactionCreationChannel = transactionCreationChannel;
-            this.partner_secondary_id_mobile = partner_secondary_id_mobile;
-            this.partner_secondary_id_email = partner_secondary_id_email;
-            this.partner_secondary_id_tax_id = partner_secondary_id_tax_id;
-            this.partner_secondary_id_tax_number = partner_secondary_id_tax_number;
+            this.partner_secondary_id_mobile = sanitize(partner_secondary_id_mobile);
+            this.partner_secondary_id_email = sanitize(partner_secondary_id_email);
+            this.partner_secondary_id_tax_id = sanitize(partner_secondary_id_tax_id);
+            this.partner_secondary_id_tax_number = sanitize(partner_secondary_id_tax_number);
             this.partner_account_internal_account_id = partner_account_internal_account_id;
             this.value_dated = value_dated;
             this.direction = direction;
@@ -142,5 +142,14 @@ public class CurrentAccountTransactionBody {
             this.partner_name = "";
             this.partner_account_iban = "";
         }
+
+    }
+
+    static String sanitize(String input) {
+        return
+                input.replaceAll("\\t", "")
+                .replaceAll("\\r", "")
+                .replaceAll("\\n", " ") // replace with space
+                ;
     }
 }
