@@ -149,10 +149,11 @@ public class CurrentAccountTransactionBody {
     }
 
     static String sanitize(String input) {
-        return
-                input.replaceAll("\\t", "")
+        if (input == null) {
+            return "";
+        }
+        return input.replaceAll("\\t", "")
                 .replaceAll("\\r", "")
-                .replaceAll("\\n", " ") // replace with space
-                ;
+                .replaceAll("\\n", " ");
     }
 }
