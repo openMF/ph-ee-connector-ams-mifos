@@ -149,10 +149,7 @@ public class CurrentAccountTransactionBody {
     }
 
     static String sanitize(String input) {
-        if (input == null) {
-            return "";
-        }
-        return input.replaceAll("\\t", "")
+        return input == null ? null : input.replaceAll("\\t", "")
                 .replaceAll("\\r", "")
                 .replaceAll("\\n", " ");
     }
