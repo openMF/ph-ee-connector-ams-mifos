@@ -137,10 +137,10 @@ public class CardWorkers {
             @Variable String sequenceDateTime,
             @Variable String sequenceDateTimeFormat,
             @Variable String tenantIdentifier,
-            @Variable String transactionCategoryPurpose,
+            @Variable String transactionCategoryPurposeCode,
             @Variable String transactionCountry,
             @Variable String transactionDescription,
-            @Variable String transactionFeeCategoryPurpose,
+            @Variable String transactionFeeCategoryPurposeCode,
             @Variable String transactionFeeInternalCorrelationId,
             @Variable String transactionGroupId,
             @Variable String transactionReference
@@ -165,7 +165,7 @@ public class CardWorkers {
                                             new CurrentAccountTransactionBody.DataTable(List.of(
                                                     new CurrentAccountTransactionBody.Entry()
                                                             .setAccount_iban(iban)
-                                                            .setCategory_purpose_code(transactionCategoryPurpose)
+                                                            .setCategory_purpose_code(transactionCategoryPurposeCode)
                                                             .setDirection(direction)
                                                             .setEnd_to_end_id(transactionReference)
                                                             .setInternal_correlation_id(internalCorrelationId)
@@ -290,10 +290,10 @@ public class CardWorkers {
             @Variable String sequenceDateTime,
             @Variable String sequenceDateTimeFormat,
             @Variable String tenantIdentifier,
-            @Variable String transactionCategoryPurpose,
+            @Variable String transactionCategoryPurposeCode,
             @Variable String transactionCountry,
             @Variable String transactionDescription,
-            @Variable String transactionFeeCategoryPurpose,
+            @Variable String transactionFeeCategoryPurposeCode,
             @Variable String transactionGroupId,
             @Variable String transactionReference
     ) {
@@ -326,7 +326,7 @@ public class CardWorkers {
                                                 new CurrentAccountTransactionBody.DataTable(List.of(
                                                         new CurrentAccountTransactionBody.Entry()
                                                                 .setAccount_iban(iban)
-                                                                .setCategory_purpose_code(transactionCategoryPurpose)
+                                                                .setCategory_purpose_code(transactionCategoryPurposeCode)
                                                                 .setDirection(direction)
                                                                 .setEnd_to_end_id(transactionReference)
                                                                 .setInternal_correlation_id(internalCorrelationId)
@@ -383,7 +383,7 @@ public class CardWorkers {
                                                 new CurrentAccountTransactionBody.DataTable(List.of(
                                                         new CurrentAccountTransactionBody.Entry()
                                                                 .setAccount_iban(iban)
-                                                                .setCategory_purpose_code(transactionFeeCategoryPurpose)
+                                                                .setCategory_purpose_code(transactionFeeCategoryPurposeCode)
                                                                 .setDirection(direction)
                                                                 .setEnd_to_end_id(transactionReference)
                                                                 .setInternal_correlation_id(internalCorrelationId)
@@ -440,7 +440,7 @@ public class CardWorkers {
                                                 new CurrentAccountTransactionBody.DataTable(List.of(
                                                         new CurrentAccountTransactionBody.Entry()
                                                                 .setAccount_iban(iban)
-                                                                .setCategory_purpose_code(transactionCategoryPurpose)
+                                                                .setCategory_purpose_code(transactionCategoryPurposeCode)
                                                                 .setDirection(direction)
                                                                 .setEnd_to_end_id(transactionReference)
                                                                 .setInternal_correlation_id(internalCorrelationId)
