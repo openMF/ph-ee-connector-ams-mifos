@@ -80,6 +80,7 @@ public class CurrentAccountTransactionBody {
         private String process_code;
         private String settlement_amount;
         private String settlement_currency;
+        private String transaction_creation_channel = "card_connector";
         private String transaction_country;
         private String transaction_description;
         private String transaction_type;
