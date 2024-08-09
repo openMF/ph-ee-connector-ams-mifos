@@ -80,7 +80,6 @@ public class CurrentAccountTransactionBody {
         private String process_code;
         private String settlement_amount;
         private String settlement_currency;
-        private String transaction_creation_channel = "card_connector";
         private String transaction_country;
         private String transaction_description;
         private String transaction_type;
@@ -109,6 +108,7 @@ public class CurrentAccountTransactionBody {
         private String partner_secondary_id_tax_id;
         private String partner_secondary_id_tax_number;
         private String partner_account_internal_account_id; // onus / ig2
+        private String transaction_creation_channel;
         private boolean value_dated; // onus / ig2
         private String direction;
 

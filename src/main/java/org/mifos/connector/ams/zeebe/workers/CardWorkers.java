@@ -105,6 +105,7 @@ public class CardWorkers {
             @Variable String cardFeeTransactionType,
             @Variable String cardHolderName,
             @Variable String cardToken,
+            @Variable String channel,
             @Variable String conversionAccountAmsId,
             @Variable String currency,
             @Variable String direction,
@@ -174,6 +175,7 @@ public class CardWorkers {
                                                             .setSource_ams_account_id(conversionAccountAmsId)
                                                             .setStructured_transaction_details("{}")
                                                             .setTarget_ams_account_id(null)
+                                                            .setTransaction_creation_channel(channel)
                                                             .setTransaction_group_id(transactionGroupId)
                                                             .setTransaction_id(transactionReference)
                                             ), "dt_current_transaction_details"),
@@ -258,6 +260,7 @@ public class CardWorkers {
             @Variable String cardHolderName,
             @Variable String cardToken,
             @Variable String cardTransactionType,
+            @Variable String channel,
             @Variable String conversionAccountAmsId,
             @Variable String currency,
             @Variable String direction,
@@ -333,6 +336,7 @@ public class CardWorkers {
                                                                 .setSource_ams_account_id(disposalAccountAmsId)
                                                                 .setStructured_transaction_details("{}")
                                                                 .setTarget_ams_account_id(conversionAccountAmsId)
+                                                                .setTransaction_creation_channel(channel)
                                                                 .setTransaction_group_id(transactionGroupId)
                                                                 .setTransaction_id(transactionReference)
                                                 ), "dt_current_transaction_details"),
@@ -389,6 +393,7 @@ public class CardWorkers {
                                                                 .setSource_ams_account_id(disposalAccountAmsId)
                                                                 .setStructured_transaction_details("{}")
                                                                 .setTarget_ams_account_id(conversionAccountAmsId)
+                                                                .setTransaction_creation_channel(channel)
                                                                 .setTransaction_group_id(transactionGroupId)
                                                                 .setTransaction_id(transactionReference)
                                                 ), "dt_current_transaction_details"),
@@ -445,6 +450,7 @@ public class CardWorkers {
                                                                 .setSource_ams_account_id(disposalAccountAmsId)
                                                                 .setStructured_transaction_details("{}")
                                                                 .setTarget_ams_account_id(conversionAccountAmsId)
+                                                                .setTransaction_creation_channel(channel)
                                                                 .setTransaction_group_id(transactionGroupId)
                                                                 .setTransaction_id(transactionReference)
                                                 ), "dt_current_transaction_details"),
