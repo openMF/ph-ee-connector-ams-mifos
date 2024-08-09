@@ -171,9 +171,9 @@ public class CardWorkers {
                                                             .setPartner_account_iban("")
                                                             .setPartner_name(merchName)
                                                             .setPayment_scheme(paymentScheme)
-                                                            .setSource_ams_account_id(disposalAccountAmsId)
+                                                            .setSource_ams_account_id(conversionAccountAmsId)
                                                             .setStructured_transaction_details("{}")
-                                                            .setTarget_ams_account_id(conversionAccountAmsId)
+                                                            .setTarget_ams_account_id(null)
                                                             .setTransaction_group_id(transactionGroupId)
                                                             .setTransaction_id(transactionReference)
                                             ), "dt_current_transaction_details"),
