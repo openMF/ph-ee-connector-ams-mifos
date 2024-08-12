@@ -73,6 +73,9 @@ public class CurrentAccountTransactionBody {
         private String message_id;
         private String partner_city;
         private String partner_country;
+        private String partner_postcode;
+        private String partner_region;
+        private String partner_street;
         private String payment_token_wallet;
         private String process_code;
         private String settlement_amount;
@@ -105,6 +108,7 @@ public class CurrentAccountTransactionBody {
         private String partner_secondary_id_tax_id;
         private String partner_secondary_id_tax_number;
         private String partner_account_internal_account_id; // onus / ig2
+        private String transaction_creation_channel;
         private boolean value_dated; // onus / ig2
         private String direction;
 
@@ -146,10 +150,8 @@ public class CurrentAccountTransactionBody {
     }
 
     static String sanitize(String input) {
-        return
-                input.replaceAll("\\t", "")
+        return input == null ? null : input.replaceAll("\\t", "")
                 .replaceAll("\\r", "")
-                .replaceAll("\\n", " ") // replace with space
-                ;
+                .replaceAll("\\n", " ");
     }
 }
