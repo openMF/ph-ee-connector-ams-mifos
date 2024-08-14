@@ -24,6 +24,7 @@ public final class ZeebeVariables {
     public static final String QUOTE_SWITCH_REQUEST = "quoteSwitchRequest";
     public static final String QUOTE_SWITCH_REQUEST_AMOUNT = "quoteSwitchRequestAmount";
     public static final String TENANT_ID = "tenantId";
+    public static final String ACCOUNT_HOLDING_INSTITUTION_ID = "accountHoldingInstitutionId";
     public static final String BOOK_TRANSACTION_ID = "bookTransactionId";
     public static final String TRANSACTION_ID = "transactionId";
     public static final String TRANSFER_CODE = "transferCode";
