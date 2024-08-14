@@ -10,6 +10,7 @@ import static org.mifos.connector.ams.zeebe.ZeebeUtil.zeebeVariable;
 import static org.mifos.connector.ams.zeebe.ZeebeUtil.zeebeVariablesToCamelProperties;
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.ACCOUNT;
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.ACCOUNT_CURRENCY;
+import static org.mifos.connector.ams.zeebe.ZeebeVariables.ACCOUNT_HOLDING_INSTITUTION_ID;
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.ACCOUNT_IDENTIFIER;
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.ACCOUNT_NUMBER;
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.BOOK_TRANSACTION_ID;
@@ -410,11 +411,11 @@ public class ZeebeeWorkers {
                     Map<String, Object> existingVariables = job.getVariablesAsMap();
                     logger.debug("Exisiting variables {}", existingVariables);
 
-                    String tenantId = (String) existingVariables.get(TENANT_ID);
-
+                    String accountHoldingInstitutionId = (String) existingVariables.get(ACCOUNT_HOLDING_INSTITUTION_ID);
                     Exchange ex = new DefaultExchange(camelContext);
                     Map<String, Object> variables = job.getVariablesAsMap();
-                    zeebeVariablesToCamelProperties(variables, ex, TRANSACTION_ID, TENANT_ID, CHANNEL_REQUEST);
+                    zeebeVariablesToCamelProperties(variables, ex, TRANSACTION_ID, accountHoldingInstitutionId, CHANNEL_REQUEST);
+
                     ex.setProperty(TRANSFER_ACTION, CREATE.name());
                     ex.setProperty("payeeTenantId", existingVariables.get("payeeTenantId"));
                     ex.setProperty(ZEEBE_JOB_KEY, job.getKey());
@@ -440,7 +441,7 @@ public class ZeebeeWorkers {
                     logWorkerDetails(job);
                     Map<String, Object> existingVariables = job.getVariablesAsMap();
                     logger.debug("Exisiting variables {}", existingVariables);
-                    String accountHoldingInstitutionId = (String) existingVariables.get(TENANT_ID);
+                    String accountHoldingInstitutionId = (String) existingVariables.get(ACCOUNT_HOLDING_INSTITUTION_ID);
                     Exchange ex = new DefaultExchange(camelContext);
                     Map<String, Object> variables = job.getVariablesAsMap();
                     GsmaTransfer gsmaTransfer = objectMapper.readValue((String) variables.get(CHANNEL_REQUEST), GsmaTransfer.class);

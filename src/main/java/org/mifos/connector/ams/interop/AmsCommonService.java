@@ -4,6 +4,7 @@ import static org.apache.camel.Exchange.HTTP_METHOD;
 import static org.apache.camel.Exchange.HTTP_PATH;
 import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSFER_ACTION;
 import static org.mifos.connector.ams.camel.cxfrs.HeaderBasedInterceptor.CXF_TRACE_HEADER;
+import static org.mifos.connector.ams.zeebe.ZeebeVariables.ACCOUNT_HOLDING_INSTITUTION_ID;
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.ACCOUNT_NUMBER;
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.PARTY_ID;
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.PARTY_ID_TYPE;
@@ -118,7 +119,9 @@ public class AmsCommonService {
         headers.put(HTTP_PATH, amsLoanRepaymentPath.replace("{accountNumber}", e.getProperty(ACCOUNT_NUMBER, String.class)));
         logger.debug("Loan Repayment Body: {}", e.getIn().getBody());
         headers.put("Content-Type", APPLICATION_TYPE);
-        headers.putAll(tenantService.getHeaders(e.getProperty(TENANT_ID, String.class)));
+        Map<String, Object> variables = e.getProperty("zeebeVariables", Map.class);
+        String accountHoldingInstitutionId = (String) variables.get(ACCOUNT_HOLDING_INSTITUTION_ID);
+        headers.putAll(tenantService.getHeaders(accountHoldingInstitutionId));
         if (isAmsLocalEnabled) {
             cxfrsUtil.sendInOut("cxfrs:bean:ams.local.loan", e, headers, e.getIn().getBody());
         } else {
