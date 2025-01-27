@@ -2,6 +2,7 @@ target/
 catalina*
 .gradle
 build/
+bin/main/org/**/*class
 !gradle/wrapper/gradle-wrapper.jar
 
 ### STS ###
