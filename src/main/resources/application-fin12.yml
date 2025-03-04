@@ -6,11 +6,11 @@ camel:
     json-jackson:
       auto-discover-object-mapper: true
 
-dfspids: "DFSPID"
+dfspids: "greenbank,bluebank"
 
 zeebe:
   broker:
-    contactpoint: "zeebe-gateway.mifos.gazelle.test:80"
+    contactpoint: "zeebe-gateway.mifos.gazelle.test"
 
 ams:
   local:

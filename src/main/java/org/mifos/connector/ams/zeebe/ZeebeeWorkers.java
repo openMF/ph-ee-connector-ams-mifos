@@ -289,13 +289,16 @@ public class ZeebeeWorkers {
                 }).name(WORKER_PAYEE_COMMIT_TRANSFER + dfspid).maxJobsActive(workerMaxJobs).open();
 
                 logger.info("## generating " + WORKER_PARTY_LOOKUP_LOCAL + "{} worker", dfspid);
+                logger.info("##TDDEBUG:AMS-ZEEBE-1a party lookup local enabled {} ", isAmsLocalEnabled);
                 zeebeClient.newWorker().jobType(WORKER_PARTY_LOOKUP_LOCAL + dfspid).handler((client, job) -> {
                     logWorkerDetails(job);
+                    logger.info("##TDDEBUG:AMS-ZEEBE-1b party lookup local got to here ");
                     Map<String, Object> existingVariables = job.getVariablesAsMap();
                     String partyIdType = (String) existingVariables.get(PARTY_ID_TYPE);
                     String partyId = (String) existingVariables.get(PARTY_ID);
                     String tenantId = (String) existingVariables.get(TENANT_ID); // payer
                     if (isAmsLocalEnabled) {
+                        logger.info("##TDDEBUG:AMS-ZEEBE-1 party lookup local enabled");
                         Exchange ex = new DefaultExchange(camelContext);
                         ex.setProperty(PARTY_ID_TYPE, partyIdType);
                         ex.setProperty(PARTY_ID, partyId);
@@ -319,6 +322,7 @@ public class ZeebeeWorkers {
                          * PLATFORM-TENANT-ID -> PAYER/PAYEE
                          */
                     } else {
+                        logger.info("##TDDEBUG:AMS-ZEEBE-2 returning fspId from configuration");
                         Map<String, Object> variables = new HashMap<>();
                         Party party = new Party(// only return fspId from configuration
                                 new PartyIdInfo(IdentifierType.valueOf(partyIdType), partyId, null,

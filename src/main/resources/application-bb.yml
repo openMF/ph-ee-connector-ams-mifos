@@ -1,13 +1,13 @@
 ams:
   local:
     interop:
-      host: https://mifos.mifos.gazelle.test
+      host: http://mifos.mifos.gazelle.test
     customer:
-      host: https://mifos.mifos.gazelle.test
+      host: http://mifos.mifos.gazelle.test
     account:
-      host: https://mifos.mifos.gazelle.test
+      host: http://mifos.mifos.gazelle.test
     auth:
-      host: https://mifos.mifos.gazelle.test
+      host: http://mifos.mifos.gazelle.test
     tenants:
       - name: "greenbank"
         user: mifos
