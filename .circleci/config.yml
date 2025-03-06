@@ -4,6 +4,23 @@ executors:
     docker:
       - image: circleci/openjdk:13.0-buster-node-browsers-legacy
 
+commands:
+  install-docker-buildx:
+    description: Install Docker Buildx
+    steps:
+      - run:
+          name: Install Docker Buildx
+          command: |
+            mkdir -vp ~/.docker/cli-plugins/
+            curl --silent -L "https://github.com/docker/buildx/releases/download/v0.5.1/buildx-v0.5.1.linux-amd64" > ~/.docker/cli-plugins/docker-buildx
+            chmod a+x ~/.docker/cli-plugins/docker-buildx
+            docker buildx version
+            sudo apt-get update && sudo apt-get install -y binfmt-support qemu-user-static
+            docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+            # docker run --privileged --rm tonistiigi/binfmt --install arm64
+            docker context create buildcontext
+            docker buildx create buildcontext --use
+
 jobs:
   build_and_push_tag_image:
     executor: docker-executor
@@ -16,6 +33,8 @@ jobs:
       - checkout
       - setup_remote_docker:
           version: 20.10.24
+      - install-docker-buildx
+      
       - run:
           name: Build and Push Docker tag Image
           command: |
@@ -23,18 +42,33 @@ jobs:
             IMAGE_TAG=$CIRCLE_TAG
 
             # Check if the Docker image with the same tag already exists in Docker Hub
-            if curl -s -f -u "$DOCKERHUB_USERNAME":"$DOCKERHUB_PASSWORD" "https://hub.docker.com/v2/repositories/openmf/ph-ee-connector-ams-mifos/tags/$IMAGE_TAG" > /dev/null; then
+            if curl -s -f -u "$DOCKERHUB_USERNAME":"$DOCKERHUB_PASSWORD" "https://hub.docker.com/v2/repositories/devarsh10/ph-ee-connector-ams-mifos/tags/$IMAGE_TAG" > /dev/null; then
               echo "Skipping the build and push as the tag $IMAGE_TAG already exists in Docker Hub."
               exit 0
             fi
+            
+            # Enable experimental Buildx feature
+            docker buildx ls
+            docker buildx create --use --name mybuilder || true
+            docker buildx inspect --bootstrap
 
-            # Build and tag the Docker image
+            # Log in to Docker Hub
+            echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+
+            # Build and push the multi-architecture Docker image
             ./gradlew bootJar
-            docker build -t "openmf/ph-ee-connector-ams-mifos:$IMAGE_TAG" .
+            
+            docker buildx build  --push --platform linux/amd64,linux/arm64 \
+              -t "devarsh10/ph-ee-connector-ams-mifos:$IMAGE_TAG" \
+              . 
+            
+            # # Build and tag the Docker image
+            # ./gradlew bootJar
+            # docker build -t "openmf/ph-ee-connector-ams-mifos:$IMAGE_TAG" .
 
-            # Push the Docker image to Docker Hub
-            docker login -u "$DOCKERHUB_USERNAME" -p "$DOCKERHUB_PASSWORD"
-            docker push "openmf/ph-ee-connector-ams-mifos:$IMAGE_TAG"
+            # # Push the Docker image to Docker Hub
+            # docker login -u "$DOCKERHUB_USERNAME" -p "$DOCKERHUB_PASSWORD"
+            # docker push "openmf/ph-ee-connector-ams-mifos:$IMAGE_TAG"
 
           # when: always  # The job will be executed even if there's no match for the tag filter
 
@@ -49,42 +83,55 @@ jobs:
       # Install Docker to build and push the image
       - setup_remote_docker:
           version: 20.10.24
+      - install-docker-buildx
 
-      # Build the Docker image
-      - run:
-          name: Build Docker image
-          command: |
-            #Check for PR title Validity
-
-            IMAGE_TAG=$CIRCLE_TAG
-            ./gradlew checkstyleMain
-            ./gradlew clean bootJar
-            docker build -t openmf/ph-ee-connector-ams-mifos:latest .
-            if [ "$CIRCLE_BRANCH" != "master" ]; then
-              PR_NUMBER=$(basename $CIRCLE_PULL_REQUEST)
-              PR_TITLE=$(curl -sSL "https://api.github.com/repos/openmf/$CIRCLE_PR_REPONAME/pulls/$PR_NUMBER" | jq -r '.title')
-              JIRA_STORY=$(echo $PR_TITLE | cut -d "[" -f2 | cut -d "]" -f1 | tr '[A-Z]' '[a-z]')
-              if [ -z "$JIRA_STORY" ]; then echo "Invalid PR title" && exit 1; else echo "Ticket NO: $JIRA_STORY"; fi
-              docker image tag openmf/$CIRCLE_PR_REPONAME:latest openmf/$CIRCLE_PR_REPONAME:$JIRA_STORY
-            fi
       # Log in to DockerHub using environment variables
       - run:
           name: Login to DockerHub
           command: echo "${DOCKERHUB_PASSWORD}" | docker login -u "${DOCKERHUB_USERNAME}" --password-stdin
-
-      # Push the Docker image to DockerHub
+          
+      # Build the Docker image
       - run:
-          name: Push Docker image to DockerHub
+          name: Build and Push Docker image
           command: |
-            if [ "$CIRCLE_BRANCH" = "master" ]; then
-            docker push openmf/ph-ee-connector-ams-mifos:latest
-            fi
-            if [ "$CIRCLE_BRANCH" != "master" ]; then
-            PR_NUMBER=$(basename $CIRCLE_PULL_REQUEST)
-            PR_TITLE=$(curl -sSL "https://api.github.com/repos/openmf/$CIRCLE_PR_REPONAME/pulls/$PR_NUMBER" | jq -r '.title')
-            JIRA_STORY=$(echo $PR_TITLE | cut -d "[" -f2 | cut -d "]" -f1 | tr '[A-Z]' '[a-z]')
-            docker push openmf/$CIRCLE_PR_REPONAME:${JIRA_STORY}
-            fi
+            # Set environment variables
+            IMAGE_TAG=$CIRCLE_TAG
+            
+            # Check for PR title Validity  
+            ./gradlew checkstyleMain
+            ./gradlew clean bootJar
+
+            # Tag and push the docker image
+            docker buildx build --push --platform linux/amd64,linux/arm64 \
+            -t "devarsh10/ph-ee-connector-ams-mifos:latest" \
+            .
+            
+            # docker build -t openmf/ph-ee-connector-ams-mifos:latest .
+            # if [ "$CIRCLE_BRANCH" != "master" ]; then
+            #   PR_NUMBER=$(basename $CIRCLE_PULL_REQUEST)
+            #   PR_TITLE=$(curl -sSL "https://api.github.com/repos/openmf/$CIRCLE_PR_REPONAME/pulls/$PR_NUMBER" | jq -r '.title')
+            #   JIRA_STORY=$(echo $PR_TITLE | cut -d "[" -f2 | cut -d "]" -f1 | tr '[A-Z]' '[a-z]')
+            #   if [ -z "$JIRA_STORY" ]; then echo "Invalid PR title" && exit 1; else echo "Ticket NO: $JIRA_STORY"; fi
+            #   docker image tag openmf/$CIRCLE_PR_REPONAME:latest openmf/$CIRCLE_PR_REPONAME:$JIRA_STORY
+            # fi
+      # # Log in to DockerHub using environment variables
+      # - run:
+      #     name: Login to DockerHub
+      #     command: echo "${DOCKERHUB_PASSWORD}" | docker login -u "${DOCKERHUB_USERNAME}" --password-stdin
+
+      # # Push the Docker image to DockerHub
+      # - run:
+      #     name: Push Docker image to DockerHub
+      #     command: |
+      #       if [ "$CIRCLE_BRANCH" = "master" ]; then
+      #       docker push openmf/ph-ee-connector-ams-mifos:latest
+      #       fi
+      #       if [ "$CIRCLE_BRANCH" != "master" ]; then
+      #       PR_NUMBER=$(basename $CIRCLE_PULL_REQUEST)
+      #       PR_TITLE=$(curl -sSL "https://api.github.com/repos/openmf/$CIRCLE_PR_REPONAME/pulls/$PR_NUMBER" | jq -r '.title')
+      #       JIRA_STORY=$(echo $PR_TITLE | cut -d "[" -f2 | cut -d "]" -f1 | tr '[A-Z]' '[a-z]')
+      #       docker push openmf/$CIRCLE_PR_REPONAME:${JIRA_STORY}
+      #       fi
 workflows:
   version: 2
   build-and-push:
