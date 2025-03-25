@@ -1,7 +1,8 @@
 version: 2.1
 orbs:
   # Add your new orb
-  docker-buildx: devarsh/docker-buildx-orb@dev:first
+  docker-buildx: devarsh/docker-buildx-orb@0.1.1
+
 executors:
   docker-executor:
     docker:
