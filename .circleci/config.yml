@@ -42,8 +42,8 @@ jobs:
           
       - docker-buildx/build-and-push:
           # image-name: "devarsh10/ph-ee-connector-ams-mifos" configure this variable in CircleCI
-          image-name: $IMAGE_NAME
-          tag: $IMAGE_TAG
+          image-name: $CIRCLE_PROJECT_NAME
+          tag: $CIRCLE_TAG
           # when: always  # The job will be executed even if there's no match for the tag filter
 
   build_and_push_latest_image:
@@ -66,7 +66,7 @@ jobs:
             ./gradlew clean bootJar
             
       - docker-buildx/build-and-push:
-          image-name: $IMAGE_NAME
+          image-name: $CIRCLE_PROJECT_NAME
           tag: "latest"
       # # Log in to DockerHub using environment variables
       # - run:
