@@ -43,7 +43,7 @@ jobs:
       - docker-buildx/build-and-push:
           # image-name: "devarsh10/ph-ee-connector-ams-mifos" configure this variable in CircleCI
           image-name: "$IMAGE_NAME"
-          tag: "$IMAGE_TAG-gazelle"
+          tag: "$IMAGE_TAG"
           # when: always  # The job will be executed even if there's no match for the tag filter
 
   build_and_push_latest_image:
