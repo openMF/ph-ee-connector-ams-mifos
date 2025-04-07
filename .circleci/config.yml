@@ -1,7 +1,6 @@
 version: 2.1
 orbs:
-  # Add your new orb
-  docker-buildx: devarsh/docker-buildx-orb@dev:test
+  docker-buildx: devarsh/docker-buildx-orb@0.1.1
 
 executors:
   docker-executor:
@@ -14,88 +13,82 @@ jobs:
     environment:
       JVM_OPTS: -Xmx512m
       TERM: dumb
-      GITHUB_TOKEN: ${GITHUB_TOKEN}  # Add the GitHub token as an environment variable
-
+      GITHUB_TOKEN: ${GITHUB_TOKEN}
     steps:
       - checkout
       - setup_remote_docker:
           version: 20.10.24
       - docker-buildx/install
-      
       - run:
           name: Check if Docker image tag exists
           command: |
-            # Set environment variables
             IMAGE_TAG=$CIRCLE_TAG
-            # I thought, this will be the best place to put this variable
-            IMAGE_NAME=$CIRCLE_PROJECT_NAME
-
-            # Check if the Docker image with the same tag already exists in Docker Hub
-            if curl -s -f -u "$DOCKERHUB_USERNAME":"$DOCKERHUB_PASSWORD" "https://hub.docker.com/v2/repositories/devarsh10/ph-ee-connector-ams-mifos/tags/$IMAGE_TAG" > /dev/null; then
+            if curl -s -f -u "$DOCKERHUB_USERNAME":"$DOCKERHUB_PASSWORD" "https://hub.docker.com/v2/repositories/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME/tags/$IMAGE_TAG" > /dev/null; then
               echo "Skipping the build and push as the tag $IMAGE_TAG already exists in Docker Hub."
               exit 0
             fi
-      
       - run:
           name: Build Application
           command: ./gradlew bootJar
-          
       - docker-buildx/build-and-push:
-          # image-name: "devarsh10/ph-ee-connector-ams-mifos" configure this variable in CircleCI
-          image-name: $CIRCLE_PROJECT_NAME
-          tag: $CIRCLE_TAG
-          # when: always  # The job will be executed even if there's no match for the tag filter
+          image-name: "$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME" # Using repo name
+          tag: "$CIRCLE_TAG"
+
+  build_and_push_branch_image:
+    executor: docker-executor
+    environment:
+      JVM_OPTS: -Xmx512m
+      TERM: dumb
+    steps:
+      - checkout
+      - setup_remote_docker:
+          version: 20.10.24
+      - docker-buildx/install
+      - run:
+          name: Build Application
+          command: |
+            ./gradlew checkstyleMain
+            ./gradlew clean bootJar
+      - docker-buildx/build-and-push:
+          image-name: "$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME" # Using repo name
+          tag: "${CIRCLE_BRANCH}-latest"
 
   build_and_push_latest_image:
     executor: docker-executor
     environment:
       JVM_OPTS: -Xmx512m
       TERM: dumb
-
     steps:
       - checkout
-      # Install Docker to build and push the image
       - setup_remote_docker:
           version: 20.10.24
       - docker-buildx/install
-
       - run:
           name: Build Application
           command: |
             ./gradlew checkstyleMain
             ./gradlew clean bootJar
-            
       - docker-buildx/build-and-push:
-          image-name: $CIRCLE_PROJECT_NAME
+          image-name: "$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME" # Using repo name
           tag: "latest"
-      # # Log in to DockerHub using environment variables
-      # - run:
-      #     name: Login to DockerHub
-      #     command: echo "${DOCKERHUB_PASSWORD}" | docker login -u "${DOCKERHUB_USERNAME}" --password-stdin
 
-      # # Push the Docker image to DockerHub
-      # - run:
-      #     name: Push Docker image to DockerHub
-      #     command: |
-      #       if [ "$CIRCLE_BRANCH" = "master" ]; then
-      #       docker push openmf/ph-ee-connector-ams-mifos:latest
-      #       fi
-      #       if [ "$CIRCLE_BRANCH" != "master" ]; then
-      #       PR_NUMBER=$(basename $CIRCLE_PULL_REQUEST)
-      #       PR_TITLE=$(curl -sSL "https://api.github.com/repos/openmf/$CIRCLE_PR_REPONAME/pulls/$PR_NUMBER" | jq -r '.title')
-      #       JIRA_STORY=$(echo $PR_TITLE | cut -d "[" -f2 | cut -d "]" -f1 | tr '[A-Z]' '[a-z]')
-      #       docker push openmf/$CIRCLE_PR_REPONAME:${JIRA_STORY}
-      #       fi
 workflows:
   version: 2
-  build-and-push:
+  build-and-push-tags:
     jobs:
       - build_and_push_tag_image:
           filters:
             tags:
-              only: /^v\d+\.\d+\.\d+$/  # Match tags in the format v1.2.3
+              only: /^v\d+\.\d+\.\d+$/
           context:
-              - DOCKER
+            - DOCKER
+  build-and-push-branches:
+    jobs:
+      - build_and_push_branch_image:
+          context:
+            - DOCKER
       - build_and_push_latest_image:
+          requires:
+            - build_and_push_branch_image
           context:
-              - DOCKER
+            - DOCKER
