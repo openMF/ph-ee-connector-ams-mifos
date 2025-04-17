@@ -31,7 +31,7 @@ jobs:
           name: Build Application
           command: ./gradlew bootJar
       - docker-buildx/build-and-push:
-          image-name: "$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME" # Using repo name
+          image-name: "openmf/$CIRCLE_PROJECT_REPONAME" # Using repo name
           tag: "$CIRCLE_TAG"
 
   build_and_push_branch_image:
