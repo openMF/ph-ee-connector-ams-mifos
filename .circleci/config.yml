@@ -74,10 +74,14 @@ jobs:
           name: Sanitize Branch Name
           command: |
             echo "export SANITIZED_BRANCH=$(echo $CIRCLE_BRANCH | sed 's/[^a-zA-Z0-9.-]/-/g' | tr '[:upper:]' '[:lower:]')" >> $BASH_ENV # Also ensure branch tag is lowercase
+      # First build and push with branch-latest tag
       - docker-buildx/build-and-push:
-          # Using lowercase variables defined above
           image-name: "$DOCKER_ORG_LOWER/$DOCKER_REPO_LOWER"
           tag: "${SANITIZED_BRANCH}-latest"
+      # Then build and push with branch-version tag
+      - docker-buildx/build-and-push:
+          image-name: "$DOCKER_ORG_LOWER/$DOCKER_REPO_LOWER"
+          tag: "${SANITIZED_BRANCH}-${APP_VERSION}"
           # Add dockerhub credentials if needed
           # dockerhub-username: "$DOCKERHUB_USERNAME"
           # dockerhub-password: "$DOCKERHUB_PASSWORD"
