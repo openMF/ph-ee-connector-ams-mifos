@@ -81,7 +81,7 @@ jobs:
       # Then build and push with branch-version tag
       - docker-buildx/build-and-push:
           image-name: "$DOCKER_ORG_LOWER/$DOCKER_REPO_LOWER"
-          tag: "${SANITIZED_BRANCH}-${CIRCLE_TAG}"
+          tag: "${SANITIZED_BRANCH}"
           # Add dockerhub credentials if needed
           # dockerhub-username: "$DOCKERHUB_USERNAME"
           # dockerhub-password: "$DOCKERHUB_PASSWORD"
