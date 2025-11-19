@@ -49,8 +49,22 @@ public class AmsFinXService extends AmsCommonService implements AmsService {
         headers.put(CXF_TRACE_HEADER, true);
         headers.put(HTTP_METHOD, "GET");
         logger.debug(":{}", amsInteropAccountsPath);
-        logger.debug(":{}", e.getProperty(EXTERNAL_ACCOUNT_ID, String.class));
-        headers.put(HTTP_PATH, amsInteropAccountsPath.replace("{externalAccountId}", e.getProperty(EXTERNAL_ACCOUNT_ID, String.class)));
+        
+        // Extract the property safely
+        String externalAccountId = e.getProperty(EXTERNAL_ACCOUNT_ID, String.class);
+        
+        // Line 52 (Modified): Now logs the local variable
+        logger.debug(":{}", externalAccountId); 
+
+        // FIX (Line 66 equivalent): Throw a useful exception if the property is missing
+        if (externalAccountId == null) {
+            String errorMessage = String.format("Required Exchange property %s is missing. Cannot proceed with getSavingsAccount request.", EXTERNAL_ACCOUNT_ID);
+            logger.error(errorMessage);
+            throw new RuntimeException(errorMessage);
+        }
+        
+        // This is now safe because externalAccountId is guaranteed non-null
+        headers.put(HTTP_PATH, amsInteropAccountsPath.replace("{externalAccountId}", externalAccountId));
         headers.putAll(tenantService.getHeaders(e.getProperty(TENANT_ID, String.class)));
         cxfrsUtil.sendInOut("cxfrs:bean:ams.local.interop", e, headers, null);
     }
@@ -70,10 +84,22 @@ public class AmsFinXService extends AmsCommonService implements AmsService {
 
     public void getSavingsAccountsTransactions(Exchange e) {
         Map<String, Object> headers = new HashMap<>();
+        String extAccountId = e.getProperty(EXTERNAL_ACCOUNT_ID, String.class);
+        
+        // Consistency fix: throw exception if missing
+        if (extAccountId == null) {
+            String errorMessage = String.format("Required Exchange property %s is missing. Cannot proceed with getSavingsAccountsTransactions request.", EXTERNAL_ACCOUNT_ID);
+            logger.error(errorMessage);
+            throw new RuntimeException(errorMessage);
+        }
+        
         headers.put(CXF_TRACE_HEADER, true);
         headers.put(HTTP_METHOD, "GET");
+        
+        // This line is now safe because extAccountId is guaranteed non-null
         headers.put(HTTP_PATH,
-                amsInteropAccountsPath.replace("{externalAccountId}", e.getProperty(EXTERNAL_ACCOUNT_ID, String.class) + "/transactions"));
+                amsInteropAccountsPath.replace("{externalAccountId}", extAccountId + "/transactions"));
+                
         headers.putAll(tenantService.getHeaders(e.getProperty(TENANT_ID, String.class)));
         cxfrsUtil.sendInOut("cxfrs:bean:ams.local.account", e, headers, null);
     }

@@ -133,6 +133,7 @@ public class InteroperationRouteBuilder extends ErrorHandlerRouteBuilder {
                                 + PARTY_ID + "}")
                 // .process(amsService::getExternalAccount)
                 .process(exchange -> {
+                    log.info("TDDEBUG exchange details b4 looking up external account are " + exchange.getProperties()); 
                     try {
                         amsService.getExternalAccount(exchange);
                     } catch (TenantNotExistException e) {

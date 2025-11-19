@@ -11,14 +11,21 @@
         http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.0.xsd
         http://cxf.apache.org/core http://cxf.apache.org/schemas/core.xsd">
 
+    <!-- The global bus definition. Both inbound and outbound interceptors must be DISABLED 
+         to avoid the JDK 17 / JAAS "UnsupportedOperationException" on both request and response processing. -->
     <cxf-core:bus>
-        <cxf-core:inInterceptors>
+        <!-- FIX 3: The global inbound chain must be commented out to prevent the failing LoggingInInterceptor from running. -->
+        <!-- <cxf-core:inInterceptors>
             <ref bean="inboundInterceptor"/>
-        </cxf-core:inInterceptors>
-        <cxf-core:outInterceptors>
+        </cxf-core:inInterceptors> -->
+        
+        <!-- FIX 1: The global outbound chain must remain commented out. -->
+        <!-- <cxf-core:outInterceptors>
             <ref bean="outboundInterceptor"/>
-        </cxf-core:outInterceptors>
+        </cxf-core:outInterceptors> -->
     </cxf-core:bus>
+
+    <!-- FIX 2: Explicit outbound interceptors were removed in the previous step. No changes needed here. -->
 
     <cxf:rsClient id="ams.local.interop" address="{{ams.local.interop.host}}">
         <cxf:properties>

@@ -8,6 +8,10 @@ ams:
       host: http://mifos.mifos.gazelle.test
     auth:
       host: http://mifos.mifos.gazelle.test
+    loan:
+      host:  http://mifos.mifos.gazelle.test
+      repayment-path: /fineract-provider/api/v1/interoperation/transactions/{accountNumber}/loanrepayment
+
     tenants:
       - name: "greenbank"
         user: mifos

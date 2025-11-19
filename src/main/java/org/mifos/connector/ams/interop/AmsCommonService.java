@@ -40,6 +40,10 @@ public class AmsCommonService {
     @Value("${ams.local.loan.repayment-path}")
     private String amsLoanRepaymentPath;
 
+    // NEW: Inject the host URL to log it for debugging
+    @Value("${ams.local.interop.host}")
+    protected String amsLocalInteropHost; 
+
     @Autowired
     private TenantService tenantService;
 
@@ -72,15 +76,57 @@ public class AmsCommonService {
         cxfrsUtil.sendInOut("cxfrs:bean:ams.local.interop", e, headers, e.getIn().getBody());
     }
 
+    // public void getExternalAccount(Exchange e) {
+    //     Map<String, Object> headers = new HashMap<>();
+    //     headers.put(CXF_TRACE_HEADER, true);
+    //     headers.put(HTTP_METHOD, "GET");
+    //     logger.debug(":{}", e.getProperty(PARTY_ID_TYPE, String.class));
+    //     logger.debug(":{}", e.getProperty(PARTY_ID, String.class));
+    //     headers.put(HTTP_PATH, amsInteropPartiesPath.replace("{idType}", e.getProperty(PARTY_ID_TYPE, String.class)).replace("{idValue}",
+    //             e.getProperty(PARTY_ID, String.class)));
+    //     headers.putAll(tenantService.getHeaders(e.getProperty(TENANT_ID, String.class)));
+    //     // This log helps us debug the 404 by confirming the path being sent.
+    //     logger.info("TDDEBUG Constructed Interop Path for GET: {}", HTTP_PATH);
+    //     // FIX: Log the full constructed path to verify the 404 issue.
+    //     logger.info("TDDEBUG Constructed Interop Path for GET: {}", headers );
+
+    //     if (isAmsLocalEnabled) {
+    //         cxfrsUtil.sendInOut("cxfrs:bean:ams.local.interop", e, headers, null);
+    //     } else {
+    //         logger.info("-------------- Calling Mock external Account API --------------");
+    //         headers.put(HTTP_PATH, mockServiceAmsInteropPartiesPath);
+    //         cxfrsUtil.sendInOut("cxfrs:bean:mock-service.local.interop", e, headers, null);
+    //     }
+    //     // cxfrsUtil.sendInOut("cxfrs:bean:ams.local.interop", e, headers, null);
+    // }
+
+        // gemini debugging 
     public void getExternalAccount(Exchange e) {
         Map<String, Object> headers = new HashMap<>();
         headers.put(CXF_TRACE_HEADER, true);
         headers.put(HTTP_METHOD, "GET");
-        logger.debug(":{}", e.getProperty(PARTY_ID_TYPE, String.class));
-        logger.debug(":{}", e.getProperty(PARTY_ID, String.class));
-        headers.put(HTTP_PATH, amsInteropPartiesPath.replace("{idType}", e.getProperty(PARTY_ID_TYPE, String.class)).replace("{idValue}",
-                e.getProperty(PARTY_ID, String.class)));
+        
+        String partyIdType = e.getProperty(PARTY_ID_TYPE, String.class);
+        String partyIdValue = e.getProperty(PARTY_ID, String.class);
+        
+        logger.debug("Party ID Type: {}", partyIdType);
+        logger.debug("Party ID Value: {}", partyIdValue);
+        
+        String httpPath = amsInteropPartiesPath
+                .replace("{idType}", partyIdType)
+                .replace("{idValue}", partyIdValue);
+
+        // This log helps us debug the 404 by confirming the path being sent.
+        logger.info("TDDEBUG Constructed Interop Path for GET: {}", httpPath);
+
+        headers.put(HTTP_PATH, httpPath);
+        
         headers.putAll(tenantService.getHeaders(e.getProperty(TENANT_ID, String.class)));
+        logger.info("TDDEBUG headers {} ", headers.toString());
+
+        // NEW: Log the host URL
+        logger.info("CXF Client Base URL (Host): {}", amsLocalInteropHost);
+        
         if (isAmsLocalEnabled) {
             cxfrsUtil.sendInOut("cxfrs:bean:ams.local.interop", e, headers, null);
         } else {
@@ -88,7 +134,6 @@ public class AmsCommonService {
             headers.put(HTTP_PATH, mockServiceAmsInteropPartiesPath);
             cxfrsUtil.sendInOut("cxfrs:bean:mock-service.local.interop", e, headers, null);
         }
-        // cxfrsUtil.sendInOut("cxfrs:bean:ams.local.interop", e, headers, null);
     }
 
     public void sendTransfer(Exchange e) {

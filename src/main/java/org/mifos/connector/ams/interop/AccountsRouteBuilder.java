@@ -44,7 +44,7 @@ public class AccountsRouteBuilder extends RouteBuilder {
                     InteropAccountDTO account = e.getIn().getBody(InteropAccountDTO.class);
                     JSONObject response = new JSONObject();
                     response.put("accountStatus", account.getStatus().getCode());
-                    response.put("subStatus", account.getSubStatus().getCode());
+                    response.put("fieldName", "FRED");
                     response.put("lei", "");
                     e.getIn().setBody(response.toString());
                 });

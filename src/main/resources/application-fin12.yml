@@ -16,7 +16,7 @@ ams:
   local:
     enabled: true
     version: 1.2
-    keystore-path: keystore.jks
+    keystore-path: /app/keystore.jks
     keystore-password: openmf
     interop:
       host: http://mifos.mifos.gazelle.test
