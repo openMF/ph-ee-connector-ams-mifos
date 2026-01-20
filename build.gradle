@@ -23,11 +23,10 @@ repositories {
     maven {
         url = uri('https://mifos.jfrog.io/artifactory/phee-gradle-local')
     }
-    
+
     maven {
         url = uri('https://mifos.jfrog.io/artifactory/mifosx-gradle-local')
     }
-
 }
 
 
