@@ -1,13 +1,12 @@
 package org.mifos.connector.ams.camel.cxfrs;
 
-import javax.net.ssl.X509TrustManager;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Stream;
-
+import javax.net.ssl.X509TrustManager;
 
 public class CompositeX509TrustManager implements X509TrustManager {
 
@@ -34,7 +33,7 @@ public class CompositeX509TrustManager implements X509TrustManager {
 
     @Override
     public void checkServerTrusted(X509Certificate[] chain, String authType) throws CertificateException {
-        if(checkServerCert) {
+        if (checkServerCert) {
             for (X509TrustManager trustManager : trustManagers) {
                 try {
                     trustManager.checkServerTrusted(chain, authType);
@@ -49,10 +48,7 @@ public class CompositeX509TrustManager implements X509TrustManager {
 
     @Override
     public X509Certificate[] getAcceptedIssuers() {
-        return trustManagers
-                .stream()
-                .flatMap(it -> Stream.of(it.getAcceptedIssuers()))
-                .toArray(X509Certificate[]::new);
+        return trustManagers.stream().flatMap(it -> Stream.of(it.getAcceptedIssuers())).toArray(X509Certificate[]::new);
     }
 
 }

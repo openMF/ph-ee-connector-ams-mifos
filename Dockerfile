@@ -1,7 +1,7 @@
-FROM openjdk:13
+FROM eclipse-temurin:17-jre
 EXPOSE 5000
 
-COPY target/*.jar .
-COPY target/classes/keystore.jks .
+COPY build/libs/*.jar .
+#COPY build/resources/main/keystore.jks .
 CMD java -jar *.jar
 

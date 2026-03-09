@@ -1,11 +1,10 @@
 package org.mifos.connector.ams.zeebe;
 
-import org.mifos.connector.common.ams.dto.TransferActionType;
-
 import java.util.HashMap;
 import java.util.Map;
+import org.mifos.connector.common.ams.dto.TransferActionType;
 
-public class ZeebeVariables {
+public final class ZeebeVariables {
 
     public static final Map<String, String> ACTION_FAILURE_MAP = new HashMap<>();
 
@@ -25,6 +24,7 @@ public class ZeebeVariables {
     public static final String QUOTE_SWITCH_REQUEST = "quoteSwitchRequest";
     public static final String QUOTE_SWITCH_REQUEST_AMOUNT = "quoteSwitchRequestAmount";
     public static final String TENANT_ID = "tenantId";
+    public static final String ACCOUNT_HOLDING_INSTITUTION_ID = "accountHoldingInstitutionId";
     public static final String BOOK_TRANSACTION_ID = "bookTransactionId";
     public static final String TRANSACTION_ID = "transactionId";
     public static final String TRANSFER_CODE = "transferCode";
@@ -32,6 +32,16 @@ public class ZeebeVariables {
     public static final String TRANSFER_PREPARE_FAILED = "transferPrepareFailed";
     public static final String TRANSFER_RELEASE_FAILED = "transferReleaseFailed";
     public static final String TRANSFER_RESPONSE_PREFIX = "transferResponse";
+    public static final String FINERACT_RESPONSE_BODY = "fineractResponseBody";
+    public static final String ACCOUNT_IDENTIFIER = "accountIdentifier";
+    public static final String ACCOUNT_NUMBER = "accountNumber";
+
+    public static final String ERROR_CODE = "errorCode";
+    public static final String ERROR_PAYLOAD = "errorPayload";
+    public static final String IS_ERROR_HANDLED = "isErrorHandled";
+    public static final String NOTE = "note";
+    public static final String REQUESTED_DATE = "requestedDate";
+    public static final String CALLBACK_SUCCESS = "callbackSuccessful";
 
     static {
         ACTION_FAILURE_MAP.put(TransferActionType.PREPARE.name(), TRANSFER_PREPARE_FAILED);

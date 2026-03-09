@@ -10,15 +10,56 @@ dfspids: "DFSPID"
 
 zeebe:
   client:
-    max-execution-threads: 1000
+    max-execution-threads: 50
     evenly-allocated-max-jobs: 1000
-#    max-execution-threads: 100
+    poll-interval: 10
 #    number-of-workers: 8
 #    evenly-allocated-max-jobs: "#{${zeebe.client.max-execution-threads} / ${zeebe.client.number-of-workers}}"
   broker:
-    contactpoint: "127.0.0.1:26500"
+    # contactpoint: "127.0.0.1:26500"
+    contactpoint: "zeebe-gateway.mifos.gazelle.test"
 
 ams:
-  local:
-    server-cert-check: false
-    enabled: false
+ local:
+   server-cert-check: false
+   enabled: true
+
+# ams:
+#   local:
+#     server-cert-check: false
+#     enabled: false
+
+interop-party-registration:
+  enabled: false
+
+spring:
+  profiles:
+    active: "bb,fin12"
+  jackson:
+    date-format: org.mifos.connector.fineractstub.RFC3339DateFormat
+    serialization:
+      WRITE_DATES_AS_TIMESTAMPS: false
+
+
+springfox:
+  documentation:
+    open-api:
+      v3:
+        path: /api-docs
+server:
+  servlet:
+    contextPath: /fineract
+  port: 7070
+
+
+
+management:
+  endpoint:
+    health:
+      enabled: true
+      probes:
+        enabled: true
+      liveness:
+        enabled: true
+      readiness:
+        enabled: true

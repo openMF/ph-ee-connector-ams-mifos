@@ -6,7 +6,13 @@ plugins {
     id 'java'
     id 'maven-publish'
     id 'eclipse'
+    id 'checkstyle'
+    id 'org.springframework.boot' version '2.6.2'
+    id 'com.diffplug.spotless' version '6.19.0'
+    id 'net.ltgt.errorprone' version '3.1.0'
+    id "com.jfrog.artifactory" version '5.+'
 }
+apply plugin: "com.jfrog.artifactory"
 
 repositories {
     mavenLocal()
@@ -15,12 +21,40 @@ repositories {
     }
 
     maven {
-        url = uri('https://fynarfin.jfrog.io/artifactory/fyn-libs-snapshot-local/')
+        url = uri('https://mifos.jfrog.io/artifactory/phee-gradle-local')
+    }
+
+    maven {
+        url = uri('https://mifos.jfrog.io/artifactory/mifosx-gradle-local')
     }
 }
 
+
+apply plugin:'com.diffplug.spotless'
+spotless {
+    format 'misc', {
+        target '**/*.md', '**/*.properties', '**/.gitignore', '**/.openapi-generator-ignore', '**/*.yml', '**/*.xml', '**/**.json', '**/*.sql'
+        targetExclude '**/build/**', '**/bin/**', '**/.settings/**', '**/.idea/**', '**/.gradle/**', '**/gradlew.bat', '**/licenses/**', '**/banner.txt', '.vscode/**'
+        indentWithSpaces(4)
+        endWithNewline()
+        trimTrailingWhitespace()
+    }
+
+    groovyGradle {
+        target '*.gradle', '**/*.gradle'
+        targetExclude '**/build/**'
+        greclipse()
+        indentWithSpaces(4)
+        endWithNewline()
+        trimTrailingWhitespace()
+    }
+
+    lineEndings 'UNIX'
+}
+
+
 dependencies {
-    implementation 'org.mifos:ph-ee-connector-common:1.0.0-SNAPSHOT'
+    implementation 'org.mifos:ph-ee-connector-common:1.5.1-gazelle'
     implementation 'com.sun.xml.ws:jaxws-ri:2.3.2'
     implementation 'org.apache.camel.springboot:camel-spring-boot-starter:3.4.0'
     implementation 'org.apache.camel:camel-endpointdsl:3.4.0'
@@ -31,15 +65,231 @@ dependencies {
     implementation 'org.json:json:20210307'
     implementation 'org.apache.cxf:cxf-rt-rs-client:3.2.5'
     implementation 'org.apache.cxf:cxf-rt-frontend-jaxrs:3.2.5'
-    implementation 'io.camunda:zeebe-client-java:1.1.0'
+    implementation 'io.camunda:zeebe-client-java:8.1.23'
     testImplementation 'org.springframework.boot:spring-boot-starter-test:2.2.2.RELEASE'
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.6.0'
     testImplementation 'org.junit.jupiter:junit-jupiter-engine:5.6.0'
+    compileOnly 'org.projectlombok:lombok:1.18.24'
+    annotationProcessor 'org.projectlombok:lombok:1.18.24'
+    implementation group: 'org.springframework', name: 'spring-web', version: '3.0.2.RELEASE'
+    checkstyle 'com.puppycrawl.tools:checkstyle:10.9.3'
+    checkstyle 'com.github.sevntu-checkstyle:sevntu-checks:1.44.1'
+    implementation 'org.springframework.boot:spring-boot-starter:2.5.2'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator:2.6.2'
+    implementation 'org.springframework.boot:spring-boot-starter-web:2.5.2'
+    implementation 'org.springframework.boot:spring-boot-starter-tomcat:2.5.2'
 }
 
+dependencies {
+    implementation "io.springfox:springfox-oas:3.0.0"
+    implementation "io.springfox:springfox-swagger-ui:3.0.0"
+    implementation "com.github.joschi.jackson:jackson-datatype-threetenbp:2.6.4"
+    implementation "javax.validation:validation-api:*"
+    implementation "org.springframework.plugin:spring-plugin-core:2.0.0.RELEASE"
+    implementation 'io.swagger.codegen.v3:swagger-codegen-maven-plugin:3.0.16'
+}
+
+configure(this) {
+    // NOTE: order matters!
+    apply plugin: 'java'
+    apply plugin: 'idea'
+    apply plugin: 'eclipse'
+    apply plugin: 'checkstyle'
+    apply plugin: 'net.ltgt.errorprone'
+    configurations {
+        implementation.setCanBeResolved(true)
+        api.setCanBeResolved(true)
+    }
+    tasks.withType(JavaCompile) {
+        options.compilerArgs += [
+            "-Xlint:unchecked",
+            "-Xlint:cast",
+            "-Xlint:auxiliaryclass",
+            "-Xlint:deprecation",
+            "-Xlint:dep-ann",
+            "-Xlint:divzero",
+            "-Xlint:empty",
+            "-Xlint:exports",
+            "-Xlint:fallthrough",
+            "-Xlint:finally",
+            "-Xlint:module",
+            "-Xlint:opens",
+            "-Xlint:options",
+            "-Xlint:overloads",
+            "-Xlint:overrides",
+            "-Xlint:path",
+            "-Xlint:processing",
+            "-Xlint:removal",
+            "-Xlint:requires-automatic",
+            "-Xlint:requires-transitive-automatic",
+            "-Xlint:try",
+            "-Xlint:varargs",
+            "-Xlint:preview",
+            "-Xlint:static",
+            // -Werror needs to be disabled because EclipseLink's static weaving doesn't generate warning-free code
+            // and during an IntelliJ recompilation, it fails
+            //"-Werror",
+            "-Xmaxwarns",
+            1500,
+            "-Xmaxerrs",
+            1500
+        ]
+        options.deprecation = true
+    }
+    // Configuration for the spotless plugin
+    // https://github.com/diffplug/spotless/tree/main/plugin-gradle
+    spotless {
+        java {
+            targetExclude '**/build/**', '**/bin/**', '**/out/**'
+            importOrder() //sort imports alphabetically
+            removeUnusedImports()
+            eclipse().configFile "$rootDir/config/ams-formatter.xml"
+            endWithNewline()
+            trimTrailingWhitespace()
+            // Enforce style modifier order
+            custom 'Modifier ordering', {
+                def modifierRanking = [
+                    public      : 1,
+                    protected   : 2,
+                    private     : 3,
+                    abstract    : 4,
+                    default     : 5,
+                    static      : 6,
+                    final       : 7,
+                    transient   : 8,
+                    volatile    : 9,
+                    synchronized: 10,
+                    native      : 11,
+                    strictfp    : 12]
+                // Find any instance of multiple modifiers. Lead with a non-word character to avoid
+                // accidental matching against for instance, "an alternative default value"
+                it.replaceAll(/\W(?:public |protected |private |abstract |default |static |final |transient |volatile |synchronized |native |strictfp ){2,}/, {
+                    // Do not replace the leading non-word character.  Identify the modifiers
+                    it.replaceAll(/(?:public |protected |private |abstract |default |static |final |transient |volatile |synchronized |native |strictfp ){2,}/, {
+                        // Sort the modifiers according to the ranking above
+                        it.split().sort({ modifierRanking[it] }).join(' ') + ' '
+                    }
+                    )
+                }
+                )
+            }
+        }
+        lineEndings 'UNIX'
+    }
+    // If we are running Gradle within Eclipse to enhance classes,
+    // set the classes directory to point to Eclipse's default build directory
+    if (project.hasProperty('env') && project.getProperty('env') == 'eclipse') {
+        sourceSets.main.java.outputDir = file("$projectDir/bin/main")
+    }
+    // Configuration for the Checkstyle plugin
+    // https://docs.gradle.org/current/userguide/checkstyle_plugin.html
+    dependencies {
+        checkstyle 'com.puppycrawl.tools:checkstyle:10.3.1'
+        checkstyle 'com.github.sevntu-checkstyle:sevntu-checks:1.42.0'
+    }
+    // Configuration for the errorprone plugin
+    // https://github.com/tbroyer/gradle-errorprone-plugin
+    dependencies {
+        errorprone "com.google.errorprone:error_prone_core:2.20.0"
+    }
+
+    tasks.withType(JavaCompile) {
+        options.errorprone {
+            enabled = project.gradle.startParameter.taskNames.contains('build') || project.gradle.startParameter.taskNames.contains('check')
+            disableWarningsInGeneratedCode = true
+            excludedPaths = ".*/build/.*"
+            disable(
+                    // TODO Remove disabled checks from this list, by fixing remaining usages
+                    "UnusedVariable",
+                    "TypeParameterUnusedInFormals",
+                    "EmptyBlockTag",
+                    "MissingSummary",
+                    "InvalidParam",
+                    "ReturnFromVoid",
+                    "AlmostJavadoc",
+                    "InvalidBlockTag",
+                    "JavaUtilDate", // TODO FINERACT-1298
+                    "ReturnValueIgnored",
+                    "DirectInvocationOnMock",
+                    "CanIgnoreReturnValueSuggester",
+                    "SameNameButDifferent", // Until errorprone recognizes Lombok
+                    "MultiVariableDeclaration", // Until errorprone recognizes Lombok
+                    "UnnecessaryDefaultInEnumSwitch" // FINERACT-1911
+                    )
+            error(
+                    "DefaultCharset",
+                    "RemoveUnusedImports",
+                    "WaitNotInLoop",
+                    "ThreeLetterTimeZoneID",
+                    "VariableNameSameAsType",
+                    "UnnecessaryParentheses",
+                    "MultipleTopLevelClasses",
+                    "MixedMutabilityReturnType",
+                    "AssertEqualsArgumentOrderChecker",
+                    "EmptySetMultibindingContributions",
+                    "BigDecimalEquals",
+                    "MixedArrayDimensions",
+                    "PackageLocation",
+                    "UseBinds",
+                    "BadImport",
+                    "IntLongMath",
+                    "FloatCast",
+                    "ReachabilityFenceUsage",
+                    "StreamResourceLeak",
+                    "TruthIncompatibleType",
+                    "ByteBufferBackingArray",
+                    "OrphanedFormatString",
+                    "CatchAndPrintStackTrace",
+                    "ObjectToString",
+                    "StringSplitter",
+                    "AssertThrowsMultipleStatements",
+                    "BoxedPrimitiveConstructor",
+                    "EmptyCatch",
+                    "BoxedPrimitiveEquality",
+                    "SynchronizeOnNonFinalField",
+                    "WildcardImport",
+                    "PrivateConstructorForNoninstantiableModule",
+                    "ClassCanBeStatic",
+                    "ClassNewInstance",
+                    "UnnecessaryStaticImport",
+                    "UnsafeFinalization",
+                    "JavaTimeDefaultTimeZone",
+                    "JodaPlusMinusLong",
+                    "SwitchDefault",
+                    "VarTypeName",
+                    "ArgumentSelectionDefectChecker",
+                    "CompareToZero",
+                    "InjectOnConstructorOfAbstractClass",
+                    "ImmutableEnumChecker",
+                    "NarrowingCompoundAssignment",
+                    "MissingCasesInEnumSwitch",
+                    "ReferenceEquality",
+                    "UnescapedEntity",
+                    "ModifyCollectionInEnhancedForLoop",
+                    "NonCanonicalType",
+                    "InvalidInlineTag",
+                    "MutablePublicArray",
+                    "StaticAssignmentInConstructor",
+                    "ProtectedMembersInFinalClass",
+                    "OperatorPrecedence",
+                    "EqualsUnsafeCast",
+                    "DoubleBraceInitialization",
+                    "UnusedNestedClass",
+                    "UnusedMethod",
+                    "ModifiedButNotUsed",
+                    "InconsistentCapitalization",
+                    )
+        }
+    }
+}
 group = 'org.mifos'
-version = '1.0.0-SNAPSHOT'
-sourceCompatibility = '1.8'
+version = '2.0.0.mifos-SNAPSHOT'
+sourceCompatibility = JavaVersion.VERSION_13
+
+checkstyle {
+    checkstyleMain.exclude '**/fineractstub/**'
+}
+
 
 publishing {
     publications {
@@ -47,6 +297,10 @@ publishing {
             from(components.java)
         }
     }
+}
+
+test {
+    useJUnitPlatform()
 }
 
 tasks.withType(JavaCompile) {
