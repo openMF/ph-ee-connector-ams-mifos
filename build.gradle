@@ -7,12 +7,11 @@ plugins {
     id 'maven-publish'
     id 'eclipse'
     id 'checkstyle'
-    id 'org.springframework.boot' version '2.6.2'
+    id 'org.springframework.boot' version '3.4.4'
+    id 'io.spring.dependency-management' version '1.1.6'
     id 'com.diffplug.spotless' version '6.19.0'
     id 'net.ltgt.errorprone' version '3.1.0'
-    id "com.jfrog.artifactory" version '5.+'
 }
-apply plugin: "com.jfrog.artifactory"
 
 repositories {
     mavenLocal()
@@ -26,6 +25,20 @@ repositories {
 
     maven {
         url = uri('https://mifos.jfrog.io/artifactory/mifosx-gradle-local')
+    }
+
+    // Mifos Platform BOM + ph-ee-connector-common 2.0.0-SNAPSHOT are consumed
+    // from the local JFrog Artifactory sandbox (Docker Compose in
+    // proposal/local-jfrog/). Swap this host for the production Mifos JFrog
+    // when the official BOM is ready.
+    maven {
+        name = 'LocalJFrog'
+        url = uri('http://localhost:8081/artifactory/mifos-platform-snapshot')
+        allowInsecureProtocol = true
+        credentials {
+            username = findProperty('localJfrog.user') ?: System.getenv('LOCAL_JFROG_USER')
+            password = findProperty('localJfrog.key') ?: System.getenv('LOCAL_JFROG_KEY')
+        }
     }
 }
 
@@ -53,40 +66,58 @@ spotless {
 }
 
 
-dependencies {
-    implementation 'org.mifos:ph-ee-connector-common:1.5.1-gazelle'
-    implementation 'com.sun.xml.ws:jaxws-ri:2.3.2'
-    implementation 'org.apache.camel.springboot:camel-spring-boot-starter:3.4.0'
-    implementation 'org.apache.camel:camel-endpointdsl:3.4.0'
-    implementation 'org.apache.camel:camel-undertow:3.4.0'
-    implementation 'org.apache.camel:camel-cxf:3.4.0'
-    implementation 'org.apache.camel.springboot:camel-jackson-starter:3.4.0'
-    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.6.0'
-    implementation 'org.json:json:20210307'
-    implementation 'org.apache.cxf:cxf-rt-rs-client:3.2.5'
-    implementation 'org.apache.cxf:cxf-rt-frontend-jaxrs:3.2.5'
-    implementation 'io.camunda:zeebe-client-java:8.1.23'
-    testImplementation 'org.springframework.boot:spring-boot-starter-test:2.2.2.RELEASE'
-    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.6.0'
-    testImplementation 'org.junit.jupiter:junit-jupiter-engine:5.6.0'
-    compileOnly 'org.projectlombok:lombok:1.18.24'
-    annotationProcessor 'org.projectlombok:lombok:1.18.24'
-    implementation group: 'org.springframework', name: 'spring-web', version: '3.0.2.RELEASE'
-    checkstyle 'com.puppycrawl.tools:checkstyle:10.9.3'
-    checkstyle 'com.github.sevntu-checkstyle:sevntu-checks:1.44.1'
-    implementation 'org.springframework.boot:spring-boot-starter:2.5.2'
-    implementation 'org.springframework.boot:spring-boot-starter-actuator:2.6.2'
-    implementation 'org.springframework.boot:spring-boot-starter-web:2.5.2'
-    implementation 'org.springframework.boot:spring-boot-starter-tomcat:2.5.2'
+configurations.all {
+    // camel-xml-jaxb (via connector-common) pulls the com.sun.xml.bind
+    // re-publication of the JAXB runtime; the same classes already arrive via
+    // the canonical org.glassfish.jaxb coordinates, and bootJar rejects the
+    // duplicate jaxb-core jar entry.
+    exclude group: 'com.sun.xml.bind', module: 'jaxb-core'
+    exclude group: 'com.sun.xml.bind', module: 'jaxb-impl'
 }
 
 dependencies {
-    implementation "io.springfox:springfox-oas:3.0.0"
-    implementation "io.springfox:springfox-swagger-ui:3.0.0"
+    // Mifos Platform BOM pins Spring Boot 3.4, Camel 4, CXF 4, Zeebe 8,
+    // Jakarta EE 10 and every other shared library version. Do NOT hardcode
+    // managed versions. Deployable application -> enforcedPlatform().
+    implementation enforcedPlatform('org.mifos.platform:mifos-platform-bom:1.0.0-SNAPSHOT')
+
+    implementation 'org.mifos:ph-ee-connector-common:2.0.0-SNAPSHOT'
+    implementation 'org.apache.camel.springboot:camel-spring-boot-starter'
+    implementation 'org.apache.camel:camel-endpointdsl'
+    implementation 'org.apache.camel:camel-undertow'
+    // Camel 4 split camel-cxf; this connector uses the JAXRS side (cxfrs)
+    implementation 'org.apache.camel:camel-cxf-rest'
+    // Spring-XML namespace handler for <cxf:rsClient> in endpoints.xml — in Camel 4
+    // the XML support moved out of camel-cxf into camel-cxf-spring-rest (without it:
+    // "Unable to locate Spring NamespaceHandler for [http://camel.apache.org/schema/cxf]")
+    implementation 'org.apache.camel:camel-cxf-spring-rest'
+    implementation 'org.apache.camel.springboot:camel-jackson-starter'
+    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
+    implementation 'org.json:json'
+    implementation 'org.apache.cxf:cxf-rt-rs-client'
+    implementation 'org.apache.cxf:cxf-rt-frontend-jaxrs'
+    implementation 'io.camunda:zeebe-client-java'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api'
+    testImplementation 'org.junit.jupiter:junit-jupiter-engine'
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+    implementation 'org.springframework:spring-web'
+    checkstyle 'com.puppycrawl.tools:checkstyle:10.9.3'
+    checkstyle 'com.github.sevntu-checkstyle:sevntu-checks:1.44.1'
+    implementation 'org.springframework.boot:spring-boot-starter'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-tomcat'
+
+    // springfox removed (SB3-incompatible); springdoc serves the io.swagger.v3
+    // annotations used by the generated fineractstub API and the swagger UI.
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui'
     implementation "com.github.joschi.jackson:jackson-datatype-threetenbp:2.6.4"
-    implementation "javax.validation:validation-api:*"
-    implementation "org.springframework.plugin:spring-plugin-core:2.0.0.RELEASE"
-    implementation 'io.swagger.codegen.v3:swagger-codegen-maven-plugin:3.0.16'
+    implementation 'jakarta.validation:jakarta.validation-api'
+    // Dropped: jaxws-ri (unused, javax-based), spring-plugin-core (springfox
+    // support lib), swagger-codegen-maven-plugin (build tool, not a runtime dep),
+    // spring-web 3.0.2.RELEASE pin (2010-era, now managed by the BOM).
 }
 
 configure(this) {
@@ -180,12 +211,6 @@ configure(this) {
     // set the classes directory to point to Eclipse's default build directory
     if (project.hasProperty('env') && project.getProperty('env') == 'eclipse') {
         sourceSets.main.java.outputDir = file("$projectDir/bin/main")
-    }
-    // Configuration for the Checkstyle plugin
-    // https://docs.gradle.org/current/userguide/checkstyle_plugin.html
-    dependencies {
-        checkstyle 'com.puppycrawl.tools:checkstyle:10.3.1'
-        checkstyle 'com.github.sevntu-checkstyle:sevntu-checks:1.42.0'
     }
     // Configuration for the errorprone plugin
     // https://github.com/tbroyer/gradle-errorprone-plugin
@@ -284,7 +309,8 @@ configure(this) {
 }
 group = 'org.mifos'
 version = '2.0.0.mifos-SNAPSHOT'
-sourceCompatibility = JavaVersion.VERSION_13
+sourceCompatibility = JavaVersion.VERSION_21
+targetCompatibility = JavaVersion.VERSION_21
 
 checkstyle {
     checkstyleMain.exclude '**/fineractstub/**'

@@ -5,12 +5,12 @@ import static org.mifos.connector.ams.camel.config.CamelProperties.LOGIN_PASSWOR
 import static org.mifos.connector.ams.camel.config.CamelProperties.LOGIN_USERNAME;
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.TENANT_ID;
 
+import jakarta.ws.rs.core.HttpHeaders;
 import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import javax.ws.rs.core.HttpHeaders;
 import org.apache.camel.CamelContext;
 import org.apache.camel.Exchange;
 import org.apache.camel.ProducerTemplate;

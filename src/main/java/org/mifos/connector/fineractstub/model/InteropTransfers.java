@@ -2,8 +2,8 @@ package org.mifos.connector.fineractstub.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.Valid;
 import java.util.Objects;
-import javax.validation.Valid;
 import org.springframework.validation.annotation.Validated;
 
 /**
@@ -11,7 +11,7 @@ import org.springframework.validation.annotation.Validated;
  */
 @SuppressWarnings("checkstyle:Dynamic")
 @Validated
-@javax.annotation.Generated(value = "io.swagger.codegen.v3.generators.java.SpringCodegen", date = "2023-08-10T10:13:07.472376795Z[GMT]")
+@jakarta.annotation.Generated(value = "io.swagger.codegen.v3.generators.java.SpringCodegen", date = "2023-08-10T10:13:07.472376795Z[GMT]")
 
 public class InteropTransfers {
 

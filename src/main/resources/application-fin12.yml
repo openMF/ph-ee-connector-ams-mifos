@@ -3,8 +3,9 @@ camel:
   springboot:
     main-run-controller: true
   dataformat:
-    json-jackson:
+    jackson:
       auto-discover-object-mapper: true
+      module-class-names: com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 
 dfspids: "greenbank,bluebank"
 

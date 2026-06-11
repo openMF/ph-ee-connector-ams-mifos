@@ -93,7 +93,7 @@ public class SSLConfig {
     private Optional<KeyManagersParameters> getKeyManagerParameter() {
         if (keyStoreFile != null) {
             KeyStoreParameters keyStore = new KeyStoreParameters();
-            keyStore.setResource(keyStoreFile.toString());
+            keyStore.setResource("file:" + keyStoreFile.toString());
             keyStore.setPassword(keystorePassword);
 
             KeyManagersParameters keyManagers = new KeyManagersParameters();
