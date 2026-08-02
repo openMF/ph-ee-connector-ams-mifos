@@ -16,8 +16,8 @@ ams:
   local:
     enabled: true
     version: cn
-    keystore-path: /tls/keystore.p12
-    keystore-password: changeit
+    keystore-path: keystore.jks
+    keystore-password: openmf
     interop:
       host: http://localhost:2034
       base-url: /interoperation/v1

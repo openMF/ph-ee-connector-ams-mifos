@@ -17,7 +17,7 @@ zeebe:
 #    evenly-allocated-max-jobs: "#{${zeebe.client.max-execution-threads} / ${zeebe.client.number-of-workers}}"
   broker:
     # contactpoint: "127.0.0.1:26500"
-    contactpoint: "zeebe-gateway.mifos.gazelle.test"
+    contactpoint: "zeebe-gateway.mifos.gazelle.test1"
 
 ams:
  local:
@@ -56,7 +56,6 @@ server:
 management:
   endpoint:
     health:
-      enabled: true
       probes:
         enabled: true
       liveness:
