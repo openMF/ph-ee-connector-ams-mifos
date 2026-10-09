@@ -16,8 +16,8 @@ ams:
   local:
     enabled: true
     version: 1.2
-    keystore-path: /tls/keystore.p12
-    keystore-password: changeit
+    keystore-path: keystore.jks
+    keystore-password: openmf
     interop:
       host: http://mifos.mifos.gazelle.test
       base-url: /fineract-provider/api/v1
