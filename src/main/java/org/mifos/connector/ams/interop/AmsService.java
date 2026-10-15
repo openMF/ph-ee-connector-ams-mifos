@@ -36,4 +36,6 @@ public interface AmsService {
 
     default void getClientImage(Exchange e) {}
 
+    void getLoan(Exchange e);
+
 }
