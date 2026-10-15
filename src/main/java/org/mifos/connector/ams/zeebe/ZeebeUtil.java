@@ -19,6 +19,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 import org.apache.camel.Exchange;
+import org.apache.commons.lang3.StringUtils;
 import org.mifos.connector.common.ams.dto.LoanRepaymentDTO;
 import org.mifos.connector.common.channel.dto.TransactionChannelRequestDTO;
 import org.mifos.connector.common.gsma.dto.CustomData;
@@ -180,5 +181,15 @@ public class ZeebeUtil {
         transactionChannelRequestDTO.setPayer(partyPayer);
 
         return objectMapper.writeValueAsString(transactionChannelRequestDTO);
+    }
+
+    public void setAccountTypeAndNumber(Exchange exchange) {
+
+        if ((exchange.getIn().getHeader("IdentifierType", String.class)).startsWith("ACCOUNT")) {
+            setAccountTypeAndNumber(exchange, exchange.getIn().getHeader("IdentifierId", String.class));
+            if (StringUtils.isNotBlank(exchange.getProperty(ACCOUNT_NUMBER, String.class))) {
+                exchange.getIn().setHeader("IdentifierId", exchange.getProperty(ACCOUNT_NUMBER, String.class));
+            }
+        }
     }
 }

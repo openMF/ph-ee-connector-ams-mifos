@@ -9,6 +9,8 @@ import org.apache.camel.LoggingLevel;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.model.dataformat.JsonLibrary;
 import org.json.JSONObject;
+import org.mifos.connector.ams.zeebe.ZeebeUtil;
+import org.mifos.connector.ams.zeebe.ZeebeVariables;
 import org.mifos.connector.common.ams.dto.ClientData;
 import org.mifos.connector.common.ams.dto.Customer;
 import org.mifos.connector.common.ams.dto.InteropAccountDTO;
@@ -25,6 +27,14 @@ public class AccountsRouteBuilder extends RouteBuilder {
     @Value("${ams.local.version}")
     private String amsVersion;
 
+    @Autowired
+    private ZeebeUtil zeebeUtil;
+
+    @Autowired
+    private LoanAccountLookup loanAccountLookup;
+
+
+
     @Override
     public void configure() {
         from("rest:GET:/ams/accounts/{IdentifierType}/{IdentifierId}/status").id("ams-connector-account-management-status-check")
@@ -39,15 +49,22 @@ public class AccountsRouteBuilder extends RouteBuilder {
                 .log(LoggingLevel.INFO,
                         "##ams-connector-account-management-status-check: ${exchangeProperty." + PARTY_ID_TYPE
                                 + "} with value: ${exchangeProperty." + PARTY_ID + "}")
-                .to("direct:get-external-account").process(amsService::getSavingsAccount).unmarshal()
-                .json(JsonLibrary.Jackson, InteropAccountDTO.class).process(e -> {
-                    InteropAccountDTO account = e.getIn().getBody(InteropAccountDTO.class);
-                    JSONObject response = new JSONObject();
-                    response.put("accountStatus", account.getStatus().getCode());
-                    response.put("subStatus", account.getSubStatus().getCode());
-                    response.put("lei", "");
-                    e.getIn().setBody(response.toString());
-                });
+                .process(zeebeUtil::setAccountTypeAndNumber)
+                .choice()
+                    .when(e -> "L".equals(e.getProperty(ZeebeVariables.ACCOUNT_IDENTIFIER, String.class)))
+                            .process(loanAccountLookup::checkStatus)
+                            .endChoice()
+                    .otherwise()
+                        .to("direct:get-external-account").process(amsService::getSavingsAccount).unmarshal()
+                        .json(JsonLibrary.Jackson, InteropAccountDTO.class).process(e -> {
+                            InteropAccountDTO account = e.getIn().getBody(InteropAccountDTO.class);
+                            JSONObject response = new JSONObject();
+                            response.put("accountStatus", account.getStatus().getCode());
+                            response.put("subStatus", account.getSubStatus().getCode());
+                            response.put("lei", "");
+                            e.getIn().setBody(response.toString());
+                        })
+                    .end();
         // @formatter:off
         from("rest:GET:/ams/accounts/{IdentifierType}/{IdentifierId}/accountname")
                 .id("ams-connector-account-management-get-name")
@@ -61,52 +78,59 @@ public class AccountsRouteBuilder extends RouteBuilder {
                     e.setProperty(TENANT_ID, tenantId);
                 })
                 .log(LoggingLevel.INFO, "##ams-connector-account-management-status-check: ${exchangeProperty." + PARTY_ID_TYPE + "} with value: ${exchangeProperty." + PARTY_ID + "}")
-                .to("direct:get-external-account")
-                .process(amsService::getSavingsAccount)
+                .process(zeebeUtil::setAccountTypeAndNumber)
                 .choice()
-                    .when(e -> "1.2".equals(amsVersion))
-                        .unmarshal().json(JsonLibrary.Jackson, InteropAccountDTO.class)
-                        .process(e -> e.setProperty(CLIENT_ID, e.getIn().getBody(InteropAccountDTO.class).getClientId()))
-                        .process(amsService::getClientImage)
-                        .process(e -> e.setProperty("client_image", e.getIn().getBody(String.class)))
-                        .process(amsService::getClient)
-                        .unmarshal().json(JsonLibrary.Jackson, ClientData.class)
-                        .process(e -> {
-                            ClientData customer = e.getIn().getBody(ClientData.class);
-                            JSONObject response = new JSONObject();
-                            JSONObject name = new JSONObject();
-                            name.put("title", "");
-                            name.put("firstName", customer.getFirstname());
-                            name.put("middleName", customer.getMiddlename());
-                            name.put("lastName", customer.getLastname());
-                            name.put("fullName", customer.getFullname());
-                            name.put("nativeName", customer.getDisplayName());
-                            response.put("name", name);
-                            response.put("lei", "");
-                            response.put("image", e.getProperty("client_image"));
-                            e.getIn().setBody(response.toString());
-                        })
+                    .when(e -> "L".equals(e.getProperty(ZeebeVariables.ACCOUNT_IDENTIFIER, String.class)))
+                    .process(loanAccountLookup::checkName)
                     .endChoice()
-                    .otherwise() // cn
-                        .unmarshal().json(JsonLibrary.Jackson, ProductInstance.class)
-                            .process(e -> e.setProperty(CLIENT_ID, e.getIn().getBody(ProductInstance.class).getCustomerIdentifier()))
-                        .process(amsService::getClient)
-                        .unmarshal().json(JsonLibrary.Jackson, Customer.class)
-                        .process(e -> {
-                            Customer customer = e.getIn().getBody(Customer.class);
-                            JSONObject response = new JSONObject();
-                            JSONObject name = new JSONObject();
-                            name.put("title","");
-                            name.put("firstName", "");
-                            name.put("middleName", "");
-                            name.put("lastName", customer.getSurname());
-                            name.put("fullName", customer.getGivenName());
-                            name.put("nativeName", customer.getGivenName());
-                            response.put("name", name);
-                            response.put("lei", "");
-                            e.getIn().setBody(response.toString());
-                        })
-                    .endChoice()
+                .otherwise()
+                    .to("direct:get-external-account")
+                    .process(amsService::getSavingsAccount)
+                    .choice()
+                        .when(e -> "1.2".equals(amsVersion))
+                            .unmarshal().json(JsonLibrary.Jackson, InteropAccountDTO.class)
+                            .process(e -> e.setProperty(CLIENT_ID, e.getIn().getBody(InteropAccountDTO.class).getClientId()))
+                            .process(amsService::getClientImage)
+                            .process(e -> e.setProperty("client_image", e.getIn().getBody(String.class)))
+                            .process(amsService::getClient)
+                            .unmarshal().json(JsonLibrary.Jackson, ClientData.class)
+                            .process(e -> {
+                                ClientData customer = e.getIn().getBody(ClientData.class);
+                                JSONObject response = new JSONObject();
+                                JSONObject name = new JSONObject();
+                                name.put("title", "");
+                                name.put("firstName", customer.getFirstname());
+                                name.put("middleName", customer.getMiddlename());
+                                name.put("lastName", customer.getLastname());
+                                name.put("fullName", customer.getFullname());
+                                name.put("nativeName", customer.getDisplayName());
+                                response.put("name", name);
+                                response.put("lei", "");
+                                response.put("image", e.getProperty("client_image"));
+                                e.getIn().setBody(response.toString());
+                            })
+                        .endChoice()
+                        .otherwise() // cn
+                            .unmarshal().json(JsonLibrary.Jackson, ProductInstance.class)
+                                .process(e -> e.setProperty(CLIENT_ID, e.getIn().getBody(ProductInstance.class).getCustomerIdentifier()))
+                            .process(amsService::getClient)
+                            .unmarshal().json(JsonLibrary.Jackson, Customer.class)
+                            .process(e -> {
+                                Customer customer = e.getIn().getBody(Customer.class);
+                                JSONObject response = new JSONObject();
+                                JSONObject name = new JSONObject();
+                                name.put("title","");
+                                name.put("firstName", "");
+                                name.put("middleName", "");
+                                name.put("lastName", customer.getSurname());
+                                name.put("fullName", customer.getGivenName());
+                                name.put("nativeName", customer.getGivenName());
+                                response.put("name", name);
+                                response.put("lei", "");
+                                e.getIn().setBody(response.toString());
+                            })
+                        .endChoice()
+                    .end()
                 .end();
         from("rest:GET:/ams/accounts/{IdentifierType}/{IdentifierId}/balance")
                 .id("ams-connector-account-management-balance-check")
@@ -120,20 +144,27 @@ public class AccountsRouteBuilder extends RouteBuilder {
                     e.setProperty(TENANT_ID, tenantId);
                 })
                 .log(LoggingLevel.INFO, "##ams-connector-account-management-status-check: ${exchangeProperty." + PARTY_ID_TYPE + "} with value: ${exchangeProperty." + PARTY_ID + "}")
-                .to("direct:get-external-account")
-                .process(amsService::getSavingsAccount)
-                .unmarshal().json(JsonLibrary.Jackson, InteropAccountDTO.class)
-                .process(e -> {
-                    InteropAccountDTO account = e.getIn().getBody(InteropAccountDTO.class);
-                    JSONObject response = new JSONObject();
-                    response.put("currentBalance", account.getAccountBalance().toString());
-                    response.put("availableBalance", account.getAvailableBalance().toString());
-                    response.put("reservedBalance",  "");
-                    response.put("unclearedBalance", "");
-                    response.put("currency", account.getCurrency());
-                    response.put("accountStatus", account.getStatus().getCode());
-                    e.getIn().setBody(response.toString());
-                });
+                .process(zeebeUtil::setAccountTypeAndNumber)
+                .choice()
+                    .when(e -> "L".equals(e.getProperty(ZeebeVariables.ACCOUNT_IDENTIFIER, String.class)))
+                    .process(loanAccountLookup::checkBalance)
+                    .endChoice()
+                .otherwise()
+                    .to("direct:get-external-account")
+                    .process(amsService::getSavingsAccount)
+                    .unmarshal().json(JsonLibrary.Jackson, InteropAccountDTO.class)
+                    .process(e -> {
+                        InteropAccountDTO account = e.getIn().getBody(InteropAccountDTO.class);
+                        JSONObject response = new JSONObject();
+                        response.put("currentBalance", account.getAccountBalance().toString());
+                        response.put("availableBalance", account.getAvailableBalance().toString());
+                        response.put("reservedBalance",  "");
+                        response.put("unclearedBalance", "");
+                        response.put("currency", account.getCurrency());
+                        response.put("accountStatus", account.getStatus().getCode());
+                        e.getIn().setBody(response.toString());
+                    })
+                .end();
         from("rest:GET:/ams/accounts/{IdentifierType}/{IdentifierId}/transactions")
                 .id("ams-connector-account-management-get-transactions")
                 .log(LoggingLevel.INFO, "## ams-connector-account-management-get-transactions")

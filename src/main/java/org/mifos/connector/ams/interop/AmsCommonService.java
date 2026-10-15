@@ -2,6 +2,7 @@ package org.mifos.connector.ams.interop;
 
 import static org.apache.camel.Exchange.HTTP_METHOD;
 import static org.apache.camel.Exchange.HTTP_PATH;
+import static org.apache.camel.Exchange.HTTP_QUERY;
 import static org.mifos.connector.ams.camel.config.CamelProperties.TRANSFER_ACTION;
 import static org.mifos.connector.ams.camel.cxfrs.HeaderBasedInterceptor.CXF_TRACE_HEADER;
 import static org.mifos.connector.ams.zeebe.ZeebeVariables.ACCOUNT_HOLDING_INSTITUTION_ID;
@@ -40,6 +41,9 @@ public class AmsCommonService {
 
     @Value("${ams.local.loan.repayment-path}")
     private String amsLoanRepaymentPath;
+
+    @Value("${ams.local.loan.loan-account}")
+    private String amsLoanAccountPath;
 
     @Autowired
     private TenantService tenantService;
@@ -110,6 +114,33 @@ public class AmsCommonService {
             headers.put(HTTP_PATH, mockServiceInteropTransfersPath);
             cxfrsUtil.sendInOut("cxfrs:bean:mock-service.local.interop", e, headers, e.getIn().getBody().toString());
         }
+    }
+
+    public void getLoan(Exchange e) {
+        Map<String, Object> headers = new HashMap<>();
+        headers.put(CXF_TRACE_HEADER, true);
+        headers.put(HTTP_METHOD, "GET");
+        headers.put(HTTP_PATH, amsLoanAccountPath.replace("{loanAccountNo}", e.getProperty(ACCOUNT_NUMBER, String.class)));
+        headers.put(HTTP_QUERY, "accountNo=" + e.getProperty(ACCOUNT_NUMBER, String.class));
+        logger.debug("Loan Repayment Body: {}", e.getIn().getBody());
+        headers.put("Content-Type", APPLICATION_TYPE);
+        Map<String, Object> variables = e.getProperty("zeebeVariables", Map.class);
+
+        if (variables != null && variables.get(ACCOUNT_HOLDING_INSTITUTION_ID) != null) {
+            String accountHoldingInstitutionId = (String) variables.get(ACCOUNT_HOLDING_INSTITUTION_ID);
+            headers.putAll(tenantService.getHeaders(accountHoldingInstitutionId));
+        } else {
+            headers.putAll(tenantService.getHeaders(e.getProperty(TENANT_ID, String.class)));
+        }
+
+        if (isAmsLocalEnabled) {
+            cxfrsUtil.sendInOut("cxfrs:bean:ams.local.loan", e, headers, e.getIn().getBody());
+        } else {
+            logger.info("-------------- Calling Mock Loan repayment APIs --------------");
+            //headers.put(HTTP_PATH, mockServiceLoanRepaymentPath);
+            cxfrsUtil.sendInOut("cxfrs:bean:mock-service.local.loan", e, headers, e.getIn().getBody().toString());
+        }
+        // cxfrsUtil.sendInOut("cxfrs:bean:ams.local.loan", e, headers, e.getIn().getBody());
     }
 
     public void repayLoan(Exchange e) {

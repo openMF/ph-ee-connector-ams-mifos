@@ -39,13 +39,14 @@ ams:
     loan:
       host: http://localhost:8443
       repayment-path: /fineract-provider/api/v1/interoperation/transactions/{accountNumber}/loanrepayment
-
+      loan-account: /fineract-provider/api/v1/loans
 mock-service:
   local:
     loan:
       host: http://localhost:7070
       base-url: /fineract
       repayment-path: ${mock-service.local.loan.base-url}/transactions/loanrepayment
+      loan-account: ${mock-service.local.interop.base-url}/loans?accountNo={loanAccountNo}
     interop:
       host: http://localhost:7070
       base-url: /fineract
