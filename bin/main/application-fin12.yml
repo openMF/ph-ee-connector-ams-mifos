@@ -1,0 +1,57 @@
+camel:
+  server-port: 5000
+  springboot:
+    main-run-controller: true
+  dataformat:
+    json-jackson:
+      auto-discover-object-mapper: true
+
+dfspids: "greenbank,bluebank"
+
+zeebe:
+  broker:
+    contactpoint: "zeebe-gateway.mifos.gazelle.test"
+
+ams:
+  local:
+    enabled: true
+    version: 1.2
+    keystore-path: keystore.jks
+    keystore-password: openmf
+    interop:
+      host: http://mifos.mifos.gazelle.test
+      base-url: /fineract-provider/api/v1
+      quotes-path: ${ams.local.interop.base-url}/interoperation/quotes
+      parties-path: ${ams.local.interop.base-url}/interoperation/parties/{idType}/{idValue}
+      transfers-path: ${ams.local.interop.base-url}/interoperation/transfers
+      accounts-path: ${ams.local.interop.base-url}/interoperation/accounts/{externalAccountId}
+    customer:
+      host: http://mifos.mifos.gazelle.test
+      base-url: /fineract-provider/api/v1
+      path: ${ams.local.customer.base-url}/clients/{clientId}
+      image: ${ams.local.customer.base-url}/clients/{clientId}/images
+    account:
+      host:  http://mifos.mifos.gazelle.test
+      base-url: /fineract-provider/api/v1
+      savingsaccounts-path: ${ams.local.account.base-url}/savingsaccounts
+    auth:
+      host:  http://mifos.mifos.gazelle.test
+    loan:
+      host:  http://mifos.mifos.gazelle.test
+      repayment-path: /fineract-provider/api/v1/interoperation/transactions/{accountNumber}/loanrepayment
+
+mock-service:
+  local:
+    loan:
+      host: http://localhost:7070
+      base-url: /fineract
+      repayment-path: ${mock-service.local.loan.base-url}/transactions/loanrepayment
+    interop:
+      host: http://localhost:7070
+      base-url: /fineract
+      quotes-path: ${mock-service.local.interop.base-url}/savingsaccount
+      parties-path: ${mock-service.local.interop.base-url}/savingsaccount
+      transfers-path: ${mock-service.local.interop.base-url}/savingsaccount/transfers
+      accounts-path: ${mock-service.local.interop.base-url}/savingsaccount
+# Savings : S , Loan : L
+accountPrefixes: "S,L"
