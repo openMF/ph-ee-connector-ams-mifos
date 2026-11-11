@@ -1,39 +1,39 @@
 ams:
   local:
     interop:
-      host: https://rhino.mifos.io:8443
+      host: http://mifos.mifos.gazelle.test
     customer:
-      host: https://rhino.mifos.io:8443
+      host: http://mifos.mifos.gazelle.test
     account:
-      host: https://rhino.mifos.io:8443
+      host: http://mifos.mifos.gazelle.test
     auth:
-      host: https://rhino.mifos.io:8443
+      host: http://mifos.mifos.gazelle.test
     tenants:
-      - name: "gorilla"
+      - name: "greenbank"
         user: mifos
         password: password
         authtype: basic
         fspId: payerfsp
-      - name: "wakanda"
+      - name: "bluebank"
         user: mifos
         password: password
         authtype: basic
         fspId: payerfsp
-      - name: "venus"
-        user: mifos
-        password: password
-        authtype: basic
-        fspId: payeefsp
-      - name: "jupiter"
-        user: mifos
-        password: password
-        authtype: basic
-        fspId: payeefsp
-      - name: "pluto"
-        user: mifos
-        password: password
-        authtype: basic
-        fspId: payeefsp
+      # - name: "venus"
+      #   user: mifos
+      #   password: password
+      #   authtype: basic
+      #   fspId: payeefsp
+      # - name: "jupiter"
+      #   user: mifos
+      #   password: password
+      #   authtype: basic
+      #   fspId: payeefsp
+      # - name: "pluto"
+      #   user: mifos
+      #   password: password
+      #   authtype: basic
+      #   fspId: payeefsp
 
 # Savings : S , Loan : L
 accountPrefixes: "S,L"
